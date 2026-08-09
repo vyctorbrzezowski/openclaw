@@ -326,6 +326,7 @@ function createChatHeaderState(
   overrides: {
     model?: string | null;
     modelProvider?: string | null;
+    modelOverrideSource?: GatewaySessionRow["modelOverrideSource"];
     models?: ModelCatalogEntry[];
     defaultsThinkingDefault?: string;
     thinkingDefault?: string;
@@ -410,6 +411,7 @@ function createChatHeaderState(
       return createSessionsListResult({
         model: currentModel,
         modelProvider: currentModelProvider,
+        modelOverrideSource: overrides.modelOverrideSource,
         defaultsThinkingDefault: overrides.defaultsThinkingDefault,
         thinkingDefault: overrides.thinkingDefault,
         omitSessionFromList,
@@ -436,6 +438,7 @@ function createChatHeaderState(
   const initialSessionsResult = createSessionsListResult({
     model: currentModel,
     modelProvider: currentModelProvider,
+    modelOverrideSource: overrides.modelOverrideSource,
     defaultsThinkingDefault: overrides.defaultsThinkingDefault,
     thinkingDefault: overrides.thinkingDefault,
     omitSessionFromList,
@@ -5546,26 +5549,29 @@ describe("chat model controls", () => {
     expect(onThinkingSelect).not.toHaveBeenCalled();
   });
 
-  it("marks the inherited default muted and resets an override from the provenance row", () => {
+  it("hides provenance controls for an inherited default and resets a user pin", () => {
     const { state } = createChatHeaderState({
-      model: null,
-      models: createOpenAiModelCatalog(),
+      model: "gpt-5",
+      modelProvider: "openai",
+      modelOverrideSource: null,
+      models: [{ id: "gpt-5", name: "GPT-5", provider: "openai" }, ...createOpenAiModelCatalog()],
     });
     const container = renderModelControls(state);
 
-    expect(
-      container.querySelector(".chat-controls__model-provenance-value--inherit"),
-    ).not.toBeNull();
+    expect(container.querySelector(".chat-controls__model-provenance")).toBeNull();
     expect(container.querySelector("[data-chat-model-reset]")).toBeNull();
 
     const onModelSelect = vi.fn(async () => true);
-    renderModelControls(
-      state,
-      { modelOverrides: { main: "openai/gpt-5.4" }, onModelSelect },
-      container,
-    );
+    state.sessionsResult = createSessionsListResult({
+      model: "gpt-5.4",
+      modelProvider: "openai",
+      modelOverrideSource: "user",
+    });
+    renderModelControls(state, { onModelSelect }, container);
 
-    expect(container.querySelector(".chat-controls__model-provenance-value--inherit")).toBeNull();
+    expect(container.querySelector(".chat-controls__model-provenance")?.textContent).toContain(
+      "Only for this session",
+    );
     const reset = container.querySelector<HTMLButtonElement>("[data-chat-model-reset]");
     const modelSelect = getChatModelSelect(container);
     const details = modelSelect.closest<HTMLDetailsElement>("details");
@@ -5574,7 +5580,7 @@ describe("chat model controls", () => {
       details.open = true;
     }
     expect(reset).toBeInstanceOf(HTMLButtonElement);
-    expect(reset?.textContent?.trim()).toBe("Use default");
+    expect(reset?.textContent?.trim()).toBe("Use default (GPT-5)");
     reset?.focus();
     reset?.click();
     expect(onModelSelect).toHaveBeenCalledWith("", "main");
@@ -5743,13 +5749,18 @@ describe("chat model controls", () => {
     ]);
     expect(visibleOptions[0]?.hasAttribute("data-chat-model-highlighted")).toBe(true);
     expect(
-      visibleOptions[0]
-        ?.querySelector("[data-chat-model-shortcut]")
-        ?.getAttribute("data-chat-model-shortcut-number"),
-    ).toBe("1");
-    expect(
       visibleOptions[0]?.querySelector(".chat-controls__model-option-provider"),
     ).not.toBeNull();
+
+    // A query owns the digit keys, so the keycap promise is withdrawn with it.
+    expect(
+      visibleOptions[0]?.querySelector<HTMLElement>("[data-chat-model-shortcut]")?.hidden,
+    ).toBe(true);
+    expect(visibleOptions[0]?.hasAttribute("aria-keyshortcuts")).toBe(false);
+    const digit = new KeyboardEvent("keydown", { key: "1", bubbles: true, cancelable: true });
+    search!.dispatchEvent(digit);
+    expect(digit.defaultPrevented).toBe(false);
+    expect(onModelSelect).not.toHaveBeenCalled();
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     const highlighted = container.querySelector<HTMLButtonElement>("[data-chat-model-highlighted]");
@@ -5757,6 +5768,43 @@ describe("chat model controls", () => {
     expect(search?.getAttribute("aria-activedescendant")).toBe(highlighted?.id);
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(onModelSelect).toHaveBeenCalledWith("anthropic/claude-sonnet-4-6", "main");
+    expect(details?.open).toBe(false);
+    container.remove();
+  });
+
+  it("selects a model with its digit shortcut while the search is empty", () => {
+    const { state } = createChatHeaderState({
+      model: "gpt-5",
+      modelProvider: "openai",
+      modelOverrideSource: null,
+      models: [
+        { id: "gpt-5", name: "GPT-5", provider: "openai" },
+        { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", provider: "anthropic" },
+      ],
+    });
+    const onModelSelect = vi.fn(async () => true);
+    const container = renderModelControls(state, { onModelSelect });
+    document.body.append(container);
+
+    const details = container.querySelector<HTMLDetailsElement>(".chat-controls__model-picker");
+    const search = container.querySelector<HTMLInputElement>("[data-chat-model-search]");
+    details!.open = true;
+    search!.dispatchEvent(new InputEvent("input", { bubbles: true }));
+
+    const options = Array.from(
+      container.querySelectorAll<HTMLButtonElement>("[data-chat-model-option]"),
+    );
+    // The selected row keeps its check mark and still owns position 1.
+    expect(options[0]?.getAttribute("aria-selected")).toBe("true");
+    expect(options[1]?.dataset.chatModelOption).toBe("anthropic/claude-sonnet-4-6");
+    const shortcut = options[1]?.querySelector<HTMLElement>("[data-chat-model-shortcut]");
+    expect(shortcut?.hidden).toBe(false);
+    expect(shortcut?.textContent).toBe("2");
+    expect(shortcut?.closest("openclaw-tooltip")?.content).toBe("Press 2 to select");
+    expect(options[1]?.getAttribute("aria-keyshortcuts")).toBe("2");
+
+    search!.dispatchEvent(new KeyboardEvent("keydown", { key: "2", bubbles: true }));
     expect(onModelSelect).toHaveBeenCalledWith("anthropic/claude-sonnet-4-6", "main");
     expect(details?.open).toBe(false);
     container.remove();

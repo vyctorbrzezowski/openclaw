@@ -30,3 +30,19 @@ it("projects session actors and explicitly clears absent attribution", () => {
     archivedBy: { type: "human", id: "profile-bob", label: "Bob" },
   });
 });
+
+it.each(["user", null] as const)(
+  "carries model override source %s into session change events",
+  (source) => {
+    expect(
+      buildGatewaySessionEventFields({
+        sessionRow: {
+          key: "agent:main:pinned",
+          kind: "direct",
+          updatedAt: 1,
+          modelOverrideSource: source,
+        },
+      }).modelOverrideSource,
+    ).toBe(source);
+  },
+);
