@@ -1389,6 +1389,9 @@ function installControlUiMockGateway(
         patch[key] = params[key];
       }
     }
+    if (hasOwn(params, "model")) {
+      patch.modelOverrideSource = params.model == null ? null : "user";
+    }
     if (scenario.sessionArchiveFiltering && hasOwn(params, "archived")) {
       patch.archived = params.archived;
     }

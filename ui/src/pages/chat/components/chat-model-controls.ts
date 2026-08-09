@@ -184,6 +184,7 @@ export function renderChatModelControls(props: ChatModelControlsProps) {
     currentOverride,
     defaultModel,
     defaultLabel,
+    isSessionModelPinned,
     options: selectOptions,
   } = resolveChatModelSelectState({
     agentDefaultModel: props.agentDefaultModel,
@@ -267,7 +268,6 @@ export function renderChatModelControls(props: ChatModelControlsProps) {
       ),
     };
   });
-  const explicitOverride = props.modelOverrides?.[props.sessionKey];
   const currentCatalogEntry = resolveChatModelCatalogEntry(currentOverride, props.modelCatalog);
   if (
     currentOverride &&
@@ -294,10 +294,12 @@ export function renderChatModelControls(props: ChatModelControlsProps) {
       ),
     });
   }
-  const pickerValue =
-    !explicitOverride && currentOverride.trim().toLowerCase() === defaultModel.trim().toLowerCase()
-      ? ""
-      : currentOverride;
+  // The empty sentinel means "inherits the agent default", which is provenance, not
+  // model identity: a pin the default later grew into is still a pin, and rendering it
+  // as inherited would make the default row a no-op that never clears the stored pin.
+  // An in-flight local selection still wins until the Gateway row carrying it lands.
+  const hasPendingSelection = Object.hasOwn(props.modelOverrides ?? {}, props.sessionKey);
+  const pickerValue = hasPendingSelection || isSessionModelPinned ? currentOverride : "";
   const activeModelOption =
     pickerValue === ""
       ? modelOptions.find((option) => option.isDefault)
@@ -408,6 +410,7 @@ export function renderChatModelControls(props: ChatModelControlsProps) {
         modelOptions,
         targetGroups: props.modelPickerTargetGroups,
         selectedModelValue: pickerValue,
+        sessionModelPinned: isSessionModelPinned,
         sessionKey: props.sessionKey,
         triggerModelLabel: formatPickerModelLabel(committedModelLabel),
         triggerStatusLabel: catalogTriggerStatus,

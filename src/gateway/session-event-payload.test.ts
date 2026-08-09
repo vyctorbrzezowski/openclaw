@@ -61,3 +61,19 @@ it("projects the prepared permission boundary only for an explicit mode", () => 
     }),
   ).toMatchObject({ permissionMode: "workspace", sessionRoot: "/workspace/project" });
 });
+
+it.each(["user", null] as const)(
+  "carries model override source %s into session change events",
+  (source) => {
+    expect(
+      buildGatewaySessionEventFields({
+        sessionRow: {
+          key: "agent:main:pinned",
+          kind: "direct",
+          updatedAt: 1,
+          modelOverrideSource: source,
+        },
+      }).modelOverrideSource,
+    ).toBe(source);
+  },
+);

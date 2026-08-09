@@ -324,6 +324,7 @@ function createChatHeaderState(
   overrides: {
     model?: string | null;
     modelProvider?: string | null;
+    modelOverrideSource?: GatewaySessionRow["modelOverrideSource"];
     models?: ModelCatalogEntry[];
     defaultsThinkingDefault?: string;
     thinkingDefault?: string;
@@ -408,6 +409,7 @@ function createChatHeaderState(
       return createSessionsListResult({
         model: currentModel,
         modelProvider: currentModelProvider,
+        modelOverrideSource: overrides.modelOverrideSource,
         defaultsThinkingDefault: overrides.defaultsThinkingDefault,
         thinkingDefault: overrides.thinkingDefault,
         omitSessionFromList,
@@ -434,6 +436,7 @@ function createChatHeaderState(
   const initialSessionsResult = createSessionsListResult({
     model: currentModel,
     modelProvider: currentModelProvider,
+    modelOverrideSource: overrides.modelOverrideSource,
     defaultsThinkingDefault: overrides.defaultsThinkingDefault,
     thinkingDefault: overrides.thinkingDefault,
     omitSessionFromList,
@@ -5901,20 +5904,27 @@ describe("chat model controls", () => {
     expect(onThinkingSelect).not.toHaveBeenCalled();
   });
 
-  it("shows override provenance without a separate reset action", () => {
+  it("shows user-pin provenance without a separate reset action", () => {
     const { state } = createChatHeaderState({
-      model: null,
-      models: createOpenAiModelCatalog(),
+      model: "gpt-5",
+      modelProvider: "openai",
+      modelOverrideSource: null,
+      models: [{ id: "gpt-5", name: "GPT-5", provider: "openai" }, ...createOpenAiModelCatalog()],
     });
     const container = renderModelControls(state);
 
     expect(container.querySelector(".chat-controls__model-provenance")).toBeNull();
     expect(container.querySelector("[data-chat-model-reset]")).toBeNull();
 
-    renderModelControls(state, { modelOverrides: { main: "openai/gpt-5.4" } }, container);
+    state.sessionsResult = createSessionsListResult({
+      model: "gpt-5.4",
+      modelProvider: "openai",
+      modelOverrideSource: "user",
+    });
+    renderModelControls(state, {}, container);
 
     expect(container.querySelector(".chat-controls__model-provenance")?.textContent?.trim()).toBe(
-      "Session override",
+      "Only for this session",
     );
     expect(container.querySelector("[data-chat-model-reset]")).toBeNull();
   });
@@ -6079,13 +6089,18 @@ describe("chat model controls", () => {
     ]);
     expect(visibleOptions[0]?.hasAttribute("data-chat-model-highlighted")).toBe(true);
     expect(
-      visibleOptions[0]
-        ?.querySelector("[data-chat-model-shortcut]")
-        ?.getAttribute("data-chat-model-shortcut-number"),
-    ).toBe("1");
-    expect(
       visibleOptions[0]?.querySelector(".chat-controls__model-option-provider"),
     ).not.toBeNull();
+
+    // A query owns the digit keys, so the keycap promise is withdrawn with it.
+    expect(
+      visibleOptions[0]?.querySelector<HTMLElement>("[data-chat-model-shortcut]")?.hidden,
+    ).toBe(true);
+    expect(visibleOptions[0]?.hasAttribute("aria-keyshortcuts")).toBe(false);
+    const digit = new KeyboardEvent("keydown", { key: "1", bubbles: true, cancelable: true });
+    search!.dispatchEvent(digit);
+    expect(digit.defaultPrevented).toBe(false);
+    expect(onModelSelect).not.toHaveBeenCalled();
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     const highlighted = container.querySelector<HTMLButtonElement>("[data-chat-model-highlighted]");
