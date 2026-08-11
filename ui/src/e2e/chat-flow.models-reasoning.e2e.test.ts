@@ -459,8 +459,8 @@ suite.define(() => {
       await expect
         .poll(() => activePane.locator('[data-chat-model-option="openai/gpt-5.6-sol"]').count())
         .toBe(1);
-      expect(await main.locator("[data-chat-model-reset]").count()).toBe(0);
-      expect(await main.locator(".chat-controls__model-provenance").count()).toBe(0);
+      expect(await activePane.locator("[data-chat-model-reset]").count()).toBe(0);
+      expect(await activePane.locator(".chat-controls__model-provenance").count()).toBe(0);
       expect(
         (await main.locator("[data-chat-model-option]").allTextContents()).join(" "),
       ).not.toContain("@openai:");
@@ -521,10 +521,10 @@ suite.define(() => {
       await expect
         .poll(() => activePane.locator('[data-chat-model-option="openai/gpt-5.6-sol"]').count())
         .toBe(1);
-      expect(await main.locator(".chat-controls__model-provenance").textContent()).toContain(
+      expect(await activePane.locator(".chat-controls__model-provenance").textContent()).toContain(
         "Only for this session",
       );
-      expect(await main.locator("[data-chat-model-reset]").textContent()).toContain(
+      expect(await activePane.locator("[data-chat-model-reset]").textContent()).toContain(
         "Use default (GPT-5.6 Sol)",
       );
       await expect
@@ -537,7 +537,7 @@ suite.define(() => {
         await page.screenshot({ path: `${artifactDir}/explicit-sol.png`, fullPage: true });
       }
 
-      await main.locator("[data-chat-model-reset]").click();
+      await activePane.locator("[data-chat-model-reset]").click();
       await expect
         .poll(async () => await gateway.getRequests("sessions.patch"))
         .toContainEqual(
@@ -547,8 +547,8 @@ suite.define(() => {
         .poll(() => modelSelect.evaluate((element) => element === document.activeElement))
         .toBe(true);
       await modelSelect.click();
-      expect(await main.locator("[data-chat-model-reset]").count()).toBe(0);
-      expect(await main.locator(".chat-controls__model-provenance").count()).toBe(0);
+      expect(await activePane.locator("[data-chat-model-reset]").count()).toBe(0);
+      expect(await activePane.locator(".chat-controls__model-provenance").count()).toBe(0);
       if (artifactDir) {
         await page.screenshot({ path: `${artifactDir}/cleared-sol.png`, fullPage: true });
       }
