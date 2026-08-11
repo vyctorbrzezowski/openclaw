@@ -647,8 +647,8 @@ suite.define(() => {
       await expect
         .poll(() => activePane.locator('[data-chat-model-option="openai/gpt-5.6-sol"]').count())
         .toBe(1);
-      expect(await main.locator("[data-chat-model-reset]").count()).toBe(0);
-      expect(await main.locator(".chat-controls__model-provenance").count()).toBe(0);
+      expect(await activePane.locator("[data-chat-model-reset]").count()).toBe(0);
+      expect(await activePane.locator(".chat-controls__model-provenance").count()).toBe(0);
       expect(
         (await main.locator("[data-chat-model-option]").allTextContents()).join(" "),
       ).not.toContain("@openai:");
@@ -709,10 +709,10 @@ suite.define(() => {
       await expect
         .poll(() => activePane.locator('[data-chat-model-option="openai/gpt-5.6-sol"]').count())
         .toBe(1);
-      expect(await main.locator(".chat-controls__model-provenance").textContent()).toContain(
+      expect(await activePane.locator(".chat-controls__model-provenance").textContent()).toContain(
         "Only for this session",
       );
-      expect(await main.locator("[data-chat-model-reset]").count()).toBe(0);
+      expect(await activePane.locator("[data-chat-model-reset]").count()).toBe(0);
       await expect
         .poll(() => thinkingSlider.getAttribute("data-chat-thinking-values"))
         .toBe(expectedThinkingValues);
@@ -733,8 +733,8 @@ suite.define(() => {
         .poll(() => modelSelect.evaluate((element) => element === document.activeElement))
         .toBe(true);
       await modelSelect.click();
-      expect(await main.locator("[data-chat-model-reset]").count()).toBe(0);
-      expect(await main.locator(".chat-controls__model-provenance").count()).toBe(0);
+      expect(await activePane.locator("[data-chat-model-reset]").count()).toBe(0);
+      expect(await activePane.locator(".chat-controls__model-provenance").count()).toBe(0);
       if (artifactDir) {
         await page.screenshot({ path: `${artifactDir}/cleared-sol.png`, fullPage: true });
       }
