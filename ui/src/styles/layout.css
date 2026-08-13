@@ -2456,11 +2456,11 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-child-session-toggle--running {
-  color: var(--run);
+  color: var(--muted);
 }
 
 .sidebar-child-session-toggle--failed {
-  color: var(--danger);
+  color: var(--muted);
 }
 
 .sidebar-child-session-toggle__icon {
