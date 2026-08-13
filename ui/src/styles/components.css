@@ -5875,6 +5875,53 @@ td.data-table-key-col {
   fill: currentColor;
 }
 
+.session-row-origin {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.session-row-origin--compound,
+.session-row-origin--qualifier-only {
+  min-height: 16px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-muted) 74%, transparent);
+  color: var(--muted);
+}
+
+.session-row-origin--compound {
+  gap: 2px;
+  min-height: 18px;
+  padding-inline-end: 4px;
+  border-radius: var(--radius-full);
+}
+
+.session-row-origin__qualifier {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 4px;
+  font-size: calc(10px * var(--control-ui-text-scale));
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.session-row-origin--compound .session-row-origin__qualifier {
+  padding-inline: 0;
+}
+
+.session-row-origin__qualifier--icon {
+  padding-inline: 2px;
+}
+
+.session-row-origin__qualifier--icon svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Standalone qualifiers are also used after the title (Archived) and in the
+   chat header, where they do not participate in the sidebar origin badge. */
 .session-row-qualifier {
   display: inline-flex;
   align-items: center;
@@ -5985,15 +6032,16 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__swap {
-  display: inline-grid;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   min-width: 0;
   min-height: 24px;
-  place-items: center end;
 }
 
 .session-row-endcap__rest-summary,
 .session-row-endcap__management {
-  grid-area: 1 / 1;
   gap: 6px;
   white-space: nowrap;
   transition: opacity 100ms ease-out;
@@ -6007,6 +6055,10 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__management {
+  position: absolute;
+  inset-inline-end: 0;
+  padding-inline-start: 6px;
+  background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
   opacity: 0;
   pointer-events: none;
 }
@@ -6177,6 +6229,8 @@ td.data-table-key-col {
   .session-row-endcap__management {
     position: static;
     grid-area: auto;
+    padding-inline-start: 0;
+    background: transparent;
     opacity: 1;
     pointer-events: auto;
   }

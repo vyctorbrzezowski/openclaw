@@ -29,7 +29,7 @@ import { icons } from "./icons.ts";
 import type { SessionDataController } from "./session-data-controller.ts";
 import type { SessionPullRequestIndicatorState } from "./session-menu-work.ts";
 import type { SessionOrganizerController } from "./session-organizer-controller.ts";
-import { renderSessionOwnerChip } from "./session-owner-chip.ts";
+import { renderSessionOwnerChip, type SessionCreatedActor } from "./session-owner-chip.ts";
 import {
   getSessionPrimaryStateModel,
   renderSessionPrimaryStateIndicator,
@@ -65,6 +65,42 @@ function renderOperationalPullRequest(state: SessionPullRequestIndicatorState) {
     title=${label}
     >${icons.gitBranch}</span
   >`;
+}
+
+function renderSessionRowOrigin(params: {
+  actor?: SessionCreatedActor;
+  attribution: "created" | "archived";
+  draft: boolean;
+  incognito: boolean;
+}) {
+  const owner = params.actor?.id
+    ? renderSessionOwnerChip(params.actor, "row", params.attribution)
+    : nothing;
+  const qualifier = params.incognito
+    ? html`<span
+        class="session-row-origin__qualifier session-row-origin__qualifier--icon"
+        role="img"
+        aria-label=${t("sessionsView.incognito")}
+        title=${t("sessionsView.incognito")}
+        >${icons.hatGlasses}</span
+      >`
+    : params.draft
+      ? html`<span class="session-row-origin__qualifier" title=${t("chat.sessionSharing.draft")}
+          >${t("chat.sessionSharing.draft")}</span
+        >`
+      : nothing;
+  if (owner === nothing) {
+    return qualifier === nothing
+      ? nothing
+      : html`<span class="session-row-origin session-row-origin--qualifier-only"
+          >${qualifier}</span
+        >`;
+  }
+  return qualifier === nothing
+    ? owner
+    : html`<span class="session-row-origin session-row-origin--compound"
+        >${owner}${qualifier}</span
+      >`;
 }
 
 export interface SessionListHost {
@@ -320,23 +356,12 @@ export function renderRecentSession(params: {
         >
           <span class="sidebar-recent-session__text">
             <span class="sidebar-recent-session__title-line">
-              ${session.incognito
-                ? html`<span
-                    class="session-row-qualifier session-row-qualifier--icon"
-                    role="img"
-                    aria-label=${t("sessionsView.incognito")}
-                    title=${t("sessionsView.incognito")}
-                    >${icons.hatGlasses}</span
-                  >`
-                : nothing}
-              ${session.visibility === "draft"
-                ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
-                    >${t("chat.sessionSharing.draft")}</span
-                  >`
-                : nothing}
-              ${ownerActor?.id
-                ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
-                : nothing}
+              ${renderSessionRowOrigin({
+                actor: ownerActor,
+                attribution: ownerAttribution,
+                draft: session.visibility === "draft",
+                incognito: session.incognito,
+              })}
               <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
                 >${label}</span
               >

@@ -56,13 +56,29 @@ type SessionListOptions = {
   totalCount: number;
 };
 
-type SessionCreatorFixture = { type: "human" | "agent"; id: string; label: string };
+type SessionCreatorFixture = {
+  type: "human" | "agent";
+  id: string;
+  label: string;
+  avatarUrl?: string;
+};
+
+const MOCK_MIRA_AVATAR_PATH = "/api/users/profile-mira/avatar";
+const MOCK_MIRA_AVATAR_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAFaklEQVRYhaXWe0xTVxwH8Pufmqj/LXFZopnQWyhQKKUUBFrKq1WzDZf4itkUhkMRlKn4mA9QAV1FHiKP8lYUEJhb3JYsW2JcTCzD/bFkWaJzj0RGRm8fFHrb3tvb8ltu29v2tre04kl+/97POfec7/kdBIlywLBqvfO+ci81WtTrvFc4Td3NxxzDBQ7HnXwHOZSHkYOKaaI/t4fUyPdA35Z10X434oAHW1HXuLLfOVZkdY4VgXOkEJz3CoAaLgDqdj44hvLAMZAHZL8CyN5cIHrkYO+SW4lOWR/RJeOtHB7fucY1oWpyjisp1/0iYHDqbjCu8OMaORDdciA6ZWDvyAHbzWyHtTVLDYPy1a+HT27nuSZUv7kmlODGR5fB+wJxGdhp/FYO2NuzwdaWDbbWLMCbM7V4c87b0eETKpFrUom5xjnwO/kefJAD7+LAW7LA2rwFrE2ZYLmeOWNRS4URVl7AY+P0fvtxBwvPBbInFLfdpPEsFo5fzwT8iwxYbJTO4GrJBm58UL7aOaH61Y2PceBDXpze734FUF+VA/W4AahH9UBOHgR7h5wbV2e4cctVKVga02GxXvIL3MhYEzIB14SyKQQfZvA8N07DjrFdsPTPIwDzn6xy/fUj2Pt3gJXGb3DgDTSeDouXJbBQJ77EXv3oVtR5X0mFxCwYH34Plv57FoIztTQ7DbaOIj9+LRCXePE0WLgotuC1AVvhGnPnPGLGnc+6wuJMOZ60e3GpH78SgNeKYeFCKsyfF3V6Vj+sWk+NFlqjyfjS7M8RJ7A0o/XgjRz4RTGYL6SC+VwqmD8X4foa/jrEOVKwN9qMg+l5xAmA8Tkbv5TGhcP8mRQw1wh3I9RIYW+0GV+anYo4AdcrLVjqw+EimD/rwedPJYPppFCDUHcLpqPNOKXtjHwGHrf58Vovfp4LTwbTCaEWcdzO17MyHox35PguGLtG5T7pYVf/7xRY1AovLg7FT6eAybNyGgdjdaIOIQcVJBMzH94ditN3Op1xW28xuF7+EII7X3wPeNv2UJze77MpbPy4EIyfJYHhWCKBkAMKkjnpZI+cjbcH4lsCLphMsN/eD8R3dUB8WwvWgY9g8XJ6QMw48BoPbvTixmOJYKhMIBCiX6Fn+nhgK+XC3Xd6FBn34WeC8SQwVnvxqgQwVAp0CNGbOx3cxwNbqftOD8YjZ5yNn/DjBj8OWIVAixDdsp5wfdyD+7uZ5ZoUXp4QwTcf8kEj2wzNkk3u0uS8Cw+LUXheIfTj9H4H40e9+BEB6CsEgB2K60bIzuw9y/VxBjfVS+DL9/mgTt24bE1u4wF2XOjH6f2uTvThei+uPxQP2Kf8nQjckq+13crGl+vjpvp0GMqPiYgzNZC7GfQ0HIhXevHDPhzXVQjWuvuBtS27b7k+/nBH5JUH19fbYjyHjYXHe/E40H3C7/F1Q6JVxsObsxxcffzvkyJQi18PZ+pFaTwLx8q9eBlKzpXwNrPeBNamTDVXH3/wAboinK4HyhjPfgfgWBkf5kp5V0OfZLXy1RZ1hjYw46a6NGhJ37TiCbRINsIc/cvL4wA7SK+cD7oS9OkfVbGrON+FuFqyYbFR+orJ+ItjKSvGmfp9H+rD50p4s4aPee8s+zK2NEiFC1fSZug7/ekBwRtP4ElxLH3gQFeKvpo7wE9CohmLDSlvmevEP4Xt41FlnP7tfA9egj7V7d/E/RwPN6AqdtX8edEl8zkRztHHI2ScwenTjjaG3XMkiqE7Kdkwfzq503QqGff1caabhck4VobiulJUExK1Nxn0rWU8LtxtqE7qNh5NnDIcFej0RxJIrCKe1B+O02HlcVPYwbgurAzd5bvhohj/A/cIwOnj29YoAAAAAElFTkSuQmCC",
+  "base64",
+);
 
 // Two creator identities so the sidebar's collaborative ownership chrome
 // (owner avatars + People filter) renders in the mock harness.
 const MOCK_SESSION_CREATORS: readonly SessionCreatorFixture[] = [
   { type: "human", id: "profile-peter", label: "Peter" },
-  { type: "human", id: "profile-mira", label: "Mira" },
+  {
+    type: "human",
+    id: "profile-mira",
+    label: "Mira",
+    avatarUrl: `${MOCK_MIRA_AVATAR_PATH}?v=orange`,
+  },
 ];
 const [MOCK_CREATOR_PETER, MOCK_CREATOR_MIRA] = MOCK_SESSION_CREATORS as [
   SessionCreatorFixture,
@@ -2650,6 +2666,11 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
           },
         );
       }
+      server.middlewares.use(MOCK_MIRA_AVATAR_PATH, (_req, res) => {
+        res.statusCode = 200;
+        res.setHeader("content-type", "image/png");
+        res.end(MOCK_MIRA_AVATAR_PNG);
+      });
     },
     // ui/vite.config.ts registers a placeholder bootstrap-config middleware and
     // config-file plugins load first, so without "pre" its stub answers every
