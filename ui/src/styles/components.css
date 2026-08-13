@@ -6034,12 +6034,12 @@ td.data-table-key-col {
 }
 
 .session-primary-state .session-glyph__ring {
-  inset: 0;
+  inset: 1px;
 }
 
 .sidebar .session-primary-state .session-run-spinner {
-  width: var(--sidebar-operational-icon-size, 16px);
-  height: var(--sidebar-operational-icon-size, 16px);
+  width: var(--sidebar-run-indicator-size, 14px);
+  height: var(--sidebar-run-indicator-size, 14px);
 }
 
 .sidebar .session-primary-state .sidebar-session-attention__icon,
