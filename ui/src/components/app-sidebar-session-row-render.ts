@@ -309,6 +309,11 @@ export function renderRecentSession(params: {
       >
         <span class="sidebar-recent-session__text">
           <span class="sidebar-recent-session__title-line">
+            ${session.visibility === "draft"
+              ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
+                  >${t("chat.sessionSharing.draft")}</span
+                >`
+              : nothing}
             <span class="sidebar-recent-session__name">${label}</span>
             ${session.archived
               ? html`<span
@@ -317,11 +322,6 @@ export function renderRecentSession(params: {
                   aria-label=${t("sessionsView.archived")}
                   title=${t("sessionsView.archived")}
                   >${icons.archive}</span
-                >`
-              : nothing}
-            ${session.visibility === "draft"
-              ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
-                  >${t("chat.sessionSharing.draft")}</span
                 >`
               : nothing}
           </span>
