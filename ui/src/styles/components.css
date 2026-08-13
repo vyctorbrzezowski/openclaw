@@ -6287,8 +6287,8 @@ td.data-table-key-col {
 
 .sidebar .session-unread-dot,
 .sidebar .session-glyph__badge--unread {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   background: var(--session-unread-indicator);
   color: var(--session-unread-indicator);
   box-shadow: 0 0 0 1.5px var(--sidebar-bg, var(--bg));
