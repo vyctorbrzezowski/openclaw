@@ -1513,8 +1513,7 @@ async function createChatPickerScenario(
     }),
     mainChildRow,
     sessionRow("agent:main:home-server", "Home server migration", baseTime - 240_000, {
-      execCwd: "/Users/peter/Projects",
-      execNode: "commit 8f90",
+      lastMessagePreview: "Reviewing the migration plan",
       pinned: true,
     }),
     sessionRow("agent:main:whatsapp:group:family", "Family", baseTime - 90_000, {
