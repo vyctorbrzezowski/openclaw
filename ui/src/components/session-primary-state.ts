@@ -152,6 +152,12 @@ function renderPrimaryContent(
         ? html`<span class="session-unread-dot" aria-hidden="true"></span>`
         : nothing;
     }
+    if (model.attention.kind === "error") {
+      return html`<span
+        class="session-unread-dot session-unread-dot--danger"
+        aria-hidden="true"
+      ></span>`;
+    }
     return renderSessionAttentionIcon(model.attention);
   }
   if (model.kind === "running") {
@@ -171,9 +177,10 @@ function renderPrimaryContent(
     >`;
   }
   if (model.kind === "failed" || model.kind === "timeout") {
-    return html`<span class="session-primary-state__terminal" aria-hidden="true"
-      >${icons.alertTriangle}</span
-    >`;
+    return html`<span
+      class="session-unread-dot session-unread-dot--danger"
+      aria-hidden="true"
+    ></span>`;
   }
   return nothing;
 }

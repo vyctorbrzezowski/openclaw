@@ -6294,6 +6294,11 @@ td.data-table-key-col {
   box-shadow: 0 0 0 1.5px var(--sidebar-bg, var(--bg));
 }
 
+.sidebar .session-unread-dot--danger {
+  background: var(--danger);
+  color: var(--danger);
+}
+
 .sidebar .session-primary-state .session-glyph__badge--unread {
   width: 4px;
   height: 4px;

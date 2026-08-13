@@ -151,8 +151,14 @@ class Tooltip extends OpenClawLitElement {
     wa-tooltip {
       --max-width: var(--openclaw-tooltip-max-width, min(260px, calc(100vw - 16px)));
       --wa-tooltip-arrow-size: var(--openclaw-tooltip-arrow-size, 4px);
-      --wa-tooltip-background-color: color-mix(in srgb, var(--bg-elevated) 97%, var(--text) 3%);
-      --wa-tooltip-border-color: color-mix(in srgb, var(--border-strong) 62%, transparent);
+      --wa-tooltip-background-color: var(
+        --openclaw-tooltip-background-color,
+        color-mix(in srgb, var(--bg-elevated) 97%, var(--text) 3%)
+      );
+      --wa-tooltip-border-color: var(
+        --openclaw-tooltip-border-color,
+        color-mix(in srgb, var(--border-strong) 62%, transparent)
+      );
       --wa-tooltip-border-width: 1px;
       --wa-tooltip-border-style: solid;
       --wa-tooltip-content-color: var(--text);
@@ -162,9 +168,11 @@ class Tooltip extends OpenClawLitElement {
 
     wa-tooltip::part(body) {
       padding: var(--openclaw-tooltip-padding, 5px 7px);
-      box-shadow:
+      box-shadow: var(
+        --openclaw-tooltip-shadow,
         0 1px 2px rgb(0 0 0 / 0.08),
-        0 4px 12px rgb(0 0 0 / 0.1);
+        0 4px 12px rgb(0 0 0 / 0.1)
+      );
       font-size: 11px;
       font-weight: 500;
       line-height: 1.25;
