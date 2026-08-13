@@ -877,6 +877,7 @@ openclaw-settings-save-indicator {
 /* 1px overlay on the nav border edge; the divider paints its own centered
    line, so the host needs no background here. */
 .sidebar-resizer {
+  --accent: var(--muted);
   grid-area: nav;
   align-self: stretch;
   justify-self: end;
