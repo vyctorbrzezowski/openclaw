@@ -32,14 +32,18 @@ class TooltipProvider extends OpenClawLitElement {
   @property({ type: Number }) delay = HOVER_DELAY;
   @property({ type: Number }) skipDelay = SKIP_DELAY;
   @property({ type: Number }) touchDelay = TOUCH_DELAY;
+  @property({ type: Boolean, attribute: "retain-delay-within" }) retainDelayWithin = false;
 
   private activeTooltip: Tooltip | null = null;
   private delayed = true;
+  private pointerWithin = false;
   private skipDelayTimer: number | null = null;
 
   override connectedCallback() {
     super.connectedCallback();
     this.style.display = "contents";
+    this.addEventListener("pointerover", this.handlePointerOver);
+    this.addEventListener("pointerout", this.handlePointerOut);
   }
 
   override disconnectedCallback() {
@@ -48,6 +52,8 @@ class TooltipProvider extends OpenClawLitElement {
     activeTooltip?.closeFromProvider();
     this.clearSkipDelayTimer();
     this.delayed = true;
+    this.removeEventListener("pointerover", this.handlePointerOver);
+    this.removeEventListener("pointerout", this.handlePointerOut);
     super.disconnectedCallback();
   }
 
@@ -66,6 +72,9 @@ class TooltipProvider extends OpenClawLitElement {
     }
     this.activeTooltip = null;
     this.clearSkipDelayTimer();
+    if (this.retainDelayWithin && this.pointerWithin) {
+      return;
+    }
     if (this.skipDelay <= 0) {
       this.delayed = true;
       return;
@@ -87,6 +96,21 @@ class TooltipProvider extends OpenClawLitElement {
     }
   }
 
+  private readonly handlePointerOver = () => {
+    this.pointerWithin = true;
+  };
+
+  private readonly handlePointerOut = (event: PointerEvent) => {
+    if (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) {
+      return;
+    }
+    this.pointerWithin = false;
+    if (!this.activeTooltip) {
+      this.clearSkipDelayTimer();
+      this.delayed = true;
+    }
+  };
+
   override render() {
     return html`<slot></slot>`;
   }
@@ -94,6 +118,8 @@ class TooltipProvider extends OpenClawLitElement {
 
 class Tooltip extends OpenClawLitElement {
   @property() content = "";
+  @property({ type: Number }) delay?: number;
+  @property() placement = "top";
 
   /** Let a reveal-only trigger open on click instead of dismissing. */
   @property({ type: Boolean, attribute: "open-on-click" }) openOnClick = false;
@@ -130,12 +156,12 @@ class Tooltip extends OpenClawLitElement {
       --wa-tooltip-border-width: 1px;
       --wa-tooltip-border-style: solid;
       --wa-tooltip-content-color: var(--text);
-      --wa-tooltip-border-radius: var(--radius-sm);
+      --wa-tooltip-border-radius: var(--openclaw-tooltip-border-radius, var(--radius-sm));
       font-family: var(--font-body);
     }
 
     wa-tooltip::part(body) {
-      padding: 5px 7px;
+      padding: var(--openclaw-tooltip-padding, 5px 7px);
       box-shadow:
         0 1px 2px rgb(0 0 0 / 0.08),
         0 4px 12px rgb(0 0 0 / 0.1);
@@ -186,7 +212,7 @@ class Tooltip extends OpenClawLitElement {
   }
 
   private get hoverDelay() {
-    return Math.max(0, this.provider?.delay ?? HOVER_DELAY);
+    return Math.max(0, this.delay ?? this.provider?.delay ?? HOVER_DELAY);
   }
 
   private get touchDelay() {
@@ -554,7 +580,7 @@ class Tooltip extends OpenClawLitElement {
   override render() {
     return html`
       <slot @slotchange=${() => this.attachTrigger()}></slot>
-      <wa-tooltip id=${this.tooltipId} trigger="manual" distance="6">
+      <wa-tooltip id=${this.tooltipId} trigger="manual" distance="6" placement=${this.placement}>
         <span class="tooltip-content">${this.content}</span>
         <span
           class="tooltip-rich-content"

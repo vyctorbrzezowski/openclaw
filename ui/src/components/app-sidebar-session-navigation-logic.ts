@@ -195,6 +195,9 @@ export function buildSidebarSessionNavigationState(input: {
         Boolean(row.worktree || row.execNode) ||
         context?.sessions.isPreparedWorkSession(row.key) === true,
       acpSession: isAcpSessionKey(row.key),
+      worktree: row.worktree,
+      execCwd: row.execCwd,
+      execNode: row.execNode,
       worktreeId: row.worktree?.id,
       placementState: row.placement?.state,
       workspaceConflictCount:

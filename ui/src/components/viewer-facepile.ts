@@ -120,6 +120,18 @@ export function hasSessionPresenceViewers(
   );
 }
 
+export function sessionPresenceViewers(
+  value: unknown,
+  authenticatedSelfUserId: string | undefined,
+  selfInstanceId: string | undefined,
+  sessionKey: string,
+): readonly PresenceViewer[] {
+  const projection = projectPresencePayload(value, authenticatedSelfUserId, selfInstanceId);
+  return projection.users.filter(
+    (user) => user.id !== projection.selfUserId && user.watchedSessions.includes(sessionKey),
+  );
+}
+
 export function hasMultiplePresenceIdentities(value: unknown): boolean {
   return projectPresencePayload(value).users.length >= 2;
 }

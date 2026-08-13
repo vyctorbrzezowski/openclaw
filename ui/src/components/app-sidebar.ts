@@ -515,43 +515,48 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
             @scroll=${(event: Event) =>
               this.sessionData.updateSessionsScrollState(event.currentTarget as HTMLElement)}
           >
-            <nav class="sidebar-nav" @contextmenu=${this.sidebarMenus.openCustomizeMenuFromContext}>
-              ${renderAppSidebarZoneGroup(
-                this,
-                html`
-                  ${renderAppSidebarHomeRow(this)}
-                  ${navEntries.map((entry) =>
-                    renderAppSidebarZoneEntry(
-                      this,
-                      entry,
-                      sidebarZone.sessionRows,
-                      sidebarZone.workboardRows,
-                    ),
-                  )}
-                  ${sidebarPluginTabs(this.context?.gateway.snapshot.hello?.controlUiTabs).map(
-                    (tab) => renderAppSidebarPluginTabEntry(this, tab),
-                  )}
-                  ${renderAppSidebarMoreRow(this)}
-                `,
-              )}
-              ${pinnedEntries.length > 0
-                ? html`${renderAppSidebarPinnedHead(this)}
-                  ${pinnedCollapsed
-                    ? nothing
-                    : renderAppSidebarZoneGroup(
+            <openclaw-tooltip-provider retain-delay-within>
+              <nav
+                class="sidebar-nav"
+                @contextmenu=${this.sidebarMenus.openCustomizeMenuFromContext}
+              >
+                ${renderAppSidebarZoneGroup(
+                  this,
+                  html`
+                    ${renderAppSidebarHomeRow(this)}
+                    ${navEntries.map((entry) =>
+                      renderAppSidebarZoneEntry(
                         this,
-                        pinnedEntries.map((entry) =>
-                          renderAppSidebarZoneEntry(
-                            this,
-                            entry,
-                            sidebarZone.sessionRows,
-                            sidebarZone.workboardRows,
+                        entry,
+                        sidebarZone.sessionRows,
+                        sidebarZone.workboardRows,
+                      ),
+                    )}
+                    ${sidebarPluginTabs(this.context?.gateway.snapshot.hello?.controlUiTabs).map(
+                      (tab) => renderAppSidebarPluginTabEntry(this, tab),
+                    )}
+                    ${renderAppSidebarMoreRow(this)}
+                  `,
+                )}
+                ${pinnedEntries.length > 0
+                  ? html`${renderAppSidebarPinnedHead(this)}
+                    ${pinnedCollapsed
+                      ? nothing
+                      : renderAppSidebarZoneGroup(
+                          this,
+                          pinnedEntries.map((entry) =>
+                            renderAppSidebarZoneEntry(
+                              this,
+                              entry,
+                              sidebarZone.sessionRows,
+                              sidebarZone.workboardRows,
+                            ),
                           ),
-                        ),
-                      )}`
-                : nothing}
-            </nav>
-            ${this.renderSessions()}
+                        )}`
+                  : nothing}
+              </nav>
+              ${this.renderSessions()}
+            </openclaw-tooltip-provider>
           </div>
           <div class="sidebar-shell__footer">
             ${renderAppSidebarAttention(this)}

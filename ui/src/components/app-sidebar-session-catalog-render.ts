@@ -33,7 +33,9 @@ import { icons } from "./icons.ts";
 import { hasProviderBrandIcon, renderProviderBrandIcon } from "./provider-icon.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
 import { renderSessionRowEndcap } from "./session-row-endcap.ts";
+import { renderCatalogSessionHoverCard } from "./session-row-hover-card.ts";
 import { workspaceIconRouteUrl } from "./workspace-icon.ts";
+import "./tooltip.ts";
 
 type SessionCatalogGroupsParams = {
   catalogs: readonly SessionCatalog[];
@@ -376,7 +378,7 @@ function renderCatalogHostGroup(
                             session,
                             liveRowsByKey,
                             params,
-                            true,
+                            group.label,
                           ),
                         )}
                       </div>`}
@@ -400,7 +402,7 @@ function renderCatalogSessionRow(
   session: SessionCatalogSession,
   liveRowsByKey: ReadonlyMap<string, GatewaySessionRow>,
   params: SessionCatalogGroupsParams,
-  projectChild = false,
+  project?: string,
 ) {
   const rawTimestamp = session.recencyAt ?? session.updatedAt ?? session.createdAt;
   const timestamp =
@@ -465,7 +467,7 @@ function renderCatalogSessionRow(
     <div
       class="sidebar-recent-session session-row-host ${active
         ? "sidebar-recent-session--active"
-        : ""} ${projectChild ? "sidebar-recent-session--catalog-project-child" : ""} ${running
+        : ""} ${project ? "sidebar-recent-session--catalog-project-child" : ""} ${running
         ? "session-row-host--running"
         : ""}"
       data-session-key=${key}
@@ -476,32 +478,46 @@ function renderCatalogSessionRow(
       @keydown=${openMenuFromEvent}
     >
       <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
-      <a
-        href=${href}
-        class="sidebar-recent-session__link"
-        title=${[`${label} · ${host.label}`, stateDescription].filter(Boolean).join(" · ")}
-        aria-current=${active ? "page" : nothing}
-        aria-describedby=${stateId ?? nothing}
-        @click=${(event: MouseEvent) => {
-          if (!shouldHandleNavigationClick(event)) {
-            return;
-          }
-          event.preventDefault();
-          if (params.catalogOpenTarget === "terminal" && canOpenTerminal) {
-            openTerminal();
-          } else {
-            params.onNavigate?.(routeId, navigation);
-          }
-        }}
+      <openclaw-tooltip
+        class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
+        delay="500"
+        placement="right"
       >
-        <span class="sidebar-recent-session__text">
-          <span class="sidebar-recent-session__title-line">
-            <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
-              >${label}</span
-            >
+        <a
+          href=${href}
+          class="sidebar-recent-session__link"
+          aria-label=${[`${label} · ${host.label}`, stateDescription].filter(Boolean).join(" · ")}
+          aria-current=${active ? "page" : nothing}
+          aria-describedby=${stateId ?? nothing}
+          @click=${(event: MouseEvent) => {
+            if (!shouldHandleNavigationClick(event)) {
+              return;
+            }
+            event.preventDefault();
+            if (params.catalogOpenTarget === "terminal" && canOpenTerminal) {
+              openTerminal();
+            } else {
+              params.onNavigate?.(routeId, navigation);
+            }
+          }}
+        >
+          <span class="sidebar-recent-session__text">
+            <span class="sidebar-recent-session__title-line">
+              <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
+                >${label}</span
+              >
+            </span>
           </span>
-        </span>
-      </a>
+        </a>
+        ${renderCatalogSessionHoverCard({
+          label,
+          meta,
+          project,
+          cwd: session.cwd,
+          branch: session.gitBranch,
+          stateLabel: stateDescription,
+        })}
+      </openclaw-tooltip>
       ${renderSessionRowEndcap({
         child: false,
         restSummary: renderSessionRowBadges({

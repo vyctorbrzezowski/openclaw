@@ -1402,6 +1402,11 @@ async function createChatPickerScenario(
               startedAt: baseTime - 180_000,
               status: "running",
               unread: true,
+              worktree: {
+                id: "mock-release-readiness-worktree",
+                branch: "main",
+                repoRoot: "/Users/peter/Projects/openclaw",
+              },
             },
           ),
           sessionRow(

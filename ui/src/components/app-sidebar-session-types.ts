@@ -80,6 +80,9 @@ export type SidebarRecentSession = {
   workSession?: boolean;
   /** ACP-backed harness session; lands in the Coding zone with work sessions. */
   acpSession?: boolean;
+  worktree?: { id: string; branch: string; repoRoot: string };
+  execCwd?: string;
+  execNode?: string;
   worktreeId?: string;
   placementState?: SessionPlacementState;
   workspaceConflictCount?: number;

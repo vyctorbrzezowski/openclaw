@@ -39,12 +39,15 @@ import {
 } from "./session-primary-state.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
 import { renderSessionRowEndcap } from "./session-row-endcap.ts";
+import { renderSessionRowHoverCard } from "./session-row-hover-card.ts";
 import {
   renderSidebarSessionSubtitle,
   resolveSidebarSessionSubtitle,
 } from "./session-row-subtitle.ts";
 import type { SidebarMenusController } from "./sidebar-menus-controller.ts";
+import { presenceViewerLabel, sessionPresenceViewers } from "./viewer-facepile.ts";
 import "./elapsed-time.ts";
+import "./tooltip.ts";
 
 const SIDEBAR_VISIBLE_CHILD_SESSION_LIMIT = 4;
 
@@ -214,6 +217,12 @@ export function renderRecentSession(params: {
     .join(" · ");
   const meta = display?.meta ?? formatSidebarTimestamp(session.updatedAt);
   const rowMeta = session.pinned ? "" : meta;
+  const presenceViewers = sessionPresenceViewers(
+    host.sessionData.presencePayload,
+    host.sessionDataContext?.gateway.snapshot.selfUser?.id,
+    host.sessionData.presenceInstanceId,
+    session.key,
+  );
   const hasTrail = session.isChild && (session.runtimeMs != null || session.startedAt != null);
   const metaId = hasTrail ? sidebarSessionMetaId(session.key) : undefined;
   const stateId = sessionPrimaryStateHasVisibleIndicator(primaryState, approvalIsExplicitInSubtitle)
@@ -301,50 +310,73 @@ export function renderRecentSession(params: {
       @keydown=${openMenuFromEvent ?? nothing}
     >
       <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
-      <a
-        href=${session.href}
-        class="sidebar-recent-session__link"
-        draggable="false"
-        title=${title}
-        aria-current=${session.visuallyActive ? "page" : nothing}
-        aria-describedby=${[stateId, metaId].filter(Boolean).join(" ") || nothing}
-        @click=${(event: MouseEvent) => host.handleSessionRowClick(event, session)}
+      <openclaw-tooltip
+        class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
+        delay="500"
+        placement="right"
       >
-        <span class="sidebar-recent-session__text">
-          <span class="sidebar-recent-session__title-line">
-            ${session.incognito
-              ? html`<span
-                  class="session-row-qualifier session-row-qualifier--icon"
-                  role="img"
-                  aria-label=${t("sessionsView.incognito")}
-                  title=${t("sessionsView.incognito")}
-                  >${icons.hatGlasses}</span
-                >`
-              : nothing}
-            ${session.visibility === "draft"
-              ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
-                  >${t("chat.sessionSharing.draft")}</span
-                >`
-              : nothing}
-            <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
-              >${label}</span
-            >
-            ${session.archived
-              ? html`<span
-                  class="session-row-qualifier session-row-qualifier--icon"
-                  role="img"
-                  aria-label=${t("sessionsView.archived")}
-                  title=${t("sessionsView.archived")}
-                  >${icons.archive}</span
-                >`
-              : nothing}
+        <a
+          href=${session.href}
+          class="sidebar-recent-session__link"
+          draggable="false"
+          aria-label=${title}
+          aria-current=${session.visuallyActive ? "page" : nothing}
+          aria-describedby=${[stateId, metaId].filter(Boolean).join(" ") || nothing}
+          @click=${(event: MouseEvent) => host.handleSessionRowClick(event, session)}
+        >
+          <span class="sidebar-recent-session__text">
+            <span class="sidebar-recent-session__title-line">
+              ${session.incognito
+                ? html`<span
+                    class="session-row-qualifier session-row-qualifier--icon"
+                    role="img"
+                    aria-label=${t("sessionsView.incognito")}
+                    title=${t("sessionsView.incognito")}
+                    >${icons.hatGlasses}</span
+                  >`
+                : nothing}
+              ${session.visibility === "draft"
+                ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
+                    >${t("chat.sessionSharing.draft")}</span
+                  >`
+                : nothing}
+              <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
+                >${label}</span
+              >
+              ${session.archived
+                ? html`<span
+                    class="session-row-qualifier session-row-qualifier--icon"
+                    role="img"
+                    aria-label=${t("sessionsView.archived")}
+                    title=${t("sessionsView.archived")}
+                    >${icons.archive}</span
+                  >`
+                : nothing}
+            </span>
+            ${renderSidebarSessionSubtitle(
+              { subtitle, narration },
+              { approval: approvalIsExplicitInSubtitle },
+            )}
           </span>
-          ${renderSidebarSessionSubtitle(
-            { subtitle, narration },
-            { approval: approvalIsExplicitInSubtitle },
-          )}
-        </span>
-      </a>
+        </a>
+        ${renderSessionRowHoverCard({
+          session,
+          label,
+          meta,
+          ownerLabel: ownerActor?.id
+            ? t(
+                ownerAttribution === "archived"
+                  ? "sessionsView.archivedBy"
+                  : "sessionsView.createdBy",
+                { name: ownerActor.label || ownerActor.id },
+              )
+            : undefined,
+          participantLabels: presenceViewers.map(presenceViewerLabel),
+          pullRequestState,
+          primaryStateLabel: primaryState.accessibleLabel,
+          hasBoard: sessionHasBoard(session.key),
+        })}
+      </openclaw-tooltip>
       ${renderSessionRowEndcap({
         child: session.isChild,
         treeControl:
