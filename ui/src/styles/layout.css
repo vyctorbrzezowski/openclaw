@@ -1046,7 +1046,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-shell__footer {
   flex-shrink: 0;
-  padding: 6px 0 0;
+  padding: 6px var(--sidebar-pad-x) 0 0;
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
