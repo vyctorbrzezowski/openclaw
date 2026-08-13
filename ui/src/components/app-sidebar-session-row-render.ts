@@ -229,6 +229,7 @@ export function renderRecentSession(params: {
         );
   const title = [
     display?.title ?? [label, narration, rowMeta].filter(Boolean).join(" · "),
+    session.incognito ? t("sessionsView.incognito") : "",
     ownerActor?.id
       ? t(ownerAttribution === "archived" ? "sessionsView.archivedBy" : "sessionsView.createdBy", {
           name: ownerActor.label || ownerActor.id,
@@ -311,6 +312,15 @@ export function renderRecentSession(params: {
       >
         <span class="sidebar-recent-session__text">
           <span class="sidebar-recent-session__title-line">
+            ${session.incognito
+              ? html`<span
+                  class="session-row-qualifier session-row-qualifier--icon"
+                  role="img"
+                  aria-label=${t("sessionsView.incognito")}
+                  title=${t("sessionsView.incognito")}
+                  >${icons.hatGlasses}</span
+                >`
+              : nothing}
             ${session.visibility === "draft"
               ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
                   >${t("chat.sessionSharing.draft")}</span
@@ -414,6 +424,7 @@ export function renderRecentSession(params: {
                 : nothing}
               ${renderSessionRowBadges({
                 ...session,
+                incognito: false,
                 hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
                 pullRequest: session.pullRequest ?? display?.pullRequest,
                 hasApproval:
