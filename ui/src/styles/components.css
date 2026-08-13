@@ -5649,7 +5649,7 @@ td.data-table-key-col {
 }
 
 .sidebar-session-group-toggle {
-  padding-inline-start: 10px;
+  padding-inline-start: calc(var(--sidebar-page-label-start, 34px) - 8px);
 }
 
 .sidebar-nav__head {
@@ -5657,7 +5657,7 @@ td.data-table-key-col {
 }
 
 .sidebar-nav__head--pinned .sidebar-session-group-toggle {
-  padding-inline-start: 10px;
+  padding-inline-start: calc(var(--sidebar-page-label-start, 34px) - 8px);
 }
 
 .sidebar-session-group-drag-handle {
@@ -6107,6 +6107,8 @@ td.data-table-key-col {
 /* Pinned sessions use the same parent text rail and inset surface as every
    other section; the nav wrapper must not add its legacy page-row padding. */
 .sidebar-zone-entry .sidebar-recent-session {
+  --session-row-content-start: var(--sidebar-page-label-start, 34px);
+
   min-height: 36px;
   padding: 0;
   border: 0;
