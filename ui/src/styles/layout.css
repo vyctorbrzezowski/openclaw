@@ -3371,13 +3371,13 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   flex: none;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--muted) 16%, var(--bg-elevated));
   color: var(--text-strong);
-  font-size: 15px;
+  font-size: 10px;
   font-weight: 600;
 }
 
