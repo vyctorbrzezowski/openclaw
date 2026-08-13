@@ -22,6 +22,7 @@ import {
 } from "./app-sidebar-session-types.ts";
 import { icons } from "./icons.ts";
 import { renderPanelRefreshStatus, type PanelRefreshStatus } from "./panel-refresh-status.ts";
+import { workspaceIconRouteUrl } from "./workspace-icon.ts";
 
 type RenderableSessionSection = SidebarSessionSection<SidebarRecentSession> & {
   totalRowCount: number;
@@ -52,10 +53,98 @@ type SessionCatalogRenderSnapshot = {
   terminalAvailable: boolean;
 };
 
+type WorkspaceIconContext = Pick<
+  SessionCatalogRenderSnapshot,
+  "basePath" | "workspaceIconAuthReady" | "workspaceIconAuthTokens"
+>;
+
+function codingProjectPath(session: SidebarRecentSession): string | null {
+  const path = (session.worktree?.repoRoot ?? session.execCwd)?.trim().replace(/[\\/]+$/, "");
+  return path || null;
+}
+
+function groupCodingSessionsByProject(sessions: readonly SidebarRecentSession[]) {
+  const groups = new Map<
+    string,
+    { key: string; label: string; sessions: SidebarRecentSession[] }
+  >();
+  const ungrouped: SidebarRecentSession[] = [];
+  for (const session of sessions) {
+    const path = codingProjectPath(session);
+    if (!path) {
+      ungrouped.push(session);
+      continue;
+    }
+    let group = groups.get(path);
+    if (!group) {
+      group = {
+        key: path,
+        label: path.split(/[\\/]/).at(-1) || path,
+        sessions: [],
+      };
+      groups.set(path, group);
+    }
+    group.sessions.push(session);
+  }
+  return { groups: [...groups.values()], ungrouped };
+}
+
+function renderSessionSectionRows(params: {
+  host: SidebarSessionListHost;
+  section: RenderableSessionSection;
+  workspaceIcons?: WorkspaceIconContext;
+}) {
+  const { host, section, workspaceIcons } = params;
+  if (!section.work || !workspaceIcons) {
+    return section.rows.map((session) => renderSessionTree({ host, session }));
+  }
+  const projects = groupCodingSessionsByProject(section.rows);
+  return html`${projects.groups.map((group) => {
+    const projectSectionId = `coding-project:${group.key}`;
+    const collapsed = host.collapsedSessionSections.has(projectSectionId);
+    const representative = group.sessions[0];
+    return html`<div class="sidebar-session-catalog-project" role="listitem">
+      <button
+        type="button"
+        class="sidebar-session-catalog-project__head"
+        data-sidebar-coding-project=${group.key}
+        aria-expanded=${String(!collapsed)}
+        title=${group.key}
+        @click=${() => host.toggleSection(projectSectionId)}
+      >
+        <openclaw-workspace-icon
+          class="sidebar-session-catalog-project__mark"
+          .routeUrl=${representative
+            ? workspaceIconRouteUrl(workspaceIcons.basePath, representative.key)
+            : null}
+          .authTokens=${workspaceIcons.workspaceIconAuthTokens}
+          .authReady=${workspaceIcons.workspaceIconAuthReady}
+        ></openclaw-workspace-icon>
+        <span class="sidebar-session-catalog-project__label">${group.label}</span>
+        <span class="sidebar-session-catalog-project__icon" aria-hidden="true"
+          >${collapsed ? icons.chevronRight : icons.chevronDown}</span
+        >
+      </button>
+      ${collapsed
+        ? nothing
+        : html`<div
+            class="sidebar-session-catalog-project__sessions"
+            role="list"
+            aria-label=${group.label}
+          >
+            ${group.sessions.map((session) =>
+              renderSessionTree({ host, session, projectChild: true }),
+            )}
+          </div>`}
+    </div>`;
+  })}${projects.ungrouped.map((session) => renderSessionTree({ host, session }))}`;
+}
+
 function renderSessionSection(params: {
   host: SidebarSessionListHost;
   section: RenderableSessionSection;
   nativeSessionsHaveMore?: boolean;
+  workspaceIcons?: WorkspaceIconContext;
 }) {
   const { host, section } = params;
   const totalRowCount = section.totalRowCount;
@@ -229,7 +318,11 @@ function renderSessionSection(params: {
               : nothing}
             ${section.rows.length > 0
               ? html`<div class="sidebar-recent-sessions__list" role="list" aria-label=${label}>
-                  ${section.rows.map((session) => renderSessionTree({ host, session }))}
+                  ${renderSessionSectionRows({
+                    host,
+                    section,
+                    workspaceIcons: params.workspaceIcons,
+                  })}
                 </div>`
               : nothing}
             ${renderSessionPagination({
@@ -400,7 +493,7 @@ function renderSessionListBody(params: {
         if (section.totalRowCount === 0) {
           return nothing;
         }
-        return renderSessionSection({ host, section });
+        return renderSessionSection({ host, section, workspaceIcons: params.catalogs });
       }
       // Hide an empty Threads header only when it does not own reachable
       // actions for categorized threads, collaborators, or an active drag.

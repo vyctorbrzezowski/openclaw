@@ -79,6 +79,7 @@ const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
 const OBSERVER_DEMO_RUN_ID = "mock-session-observer-run";
 const MULTI_USER_DEMO_SESSION_KEY = "agent:main:team-release-review";
 const MOCK_OPENCLAW_PROJECT_SESSION_KEY = "agent:main:catalog-openclaw-project";
+const MOCK_CODING_SESSION_KEY = "agent:main:sidebar-zones";
 const CUSTODIAN_CHAT_REPLY_DELAY_MS = 600;
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -1528,7 +1529,7 @@ async function createChatPickerScenario(
       kind: "group",
       channel: "discord",
     }),
-    sessionRow("agent:main:sidebar-zones", "sidebar zones", baseTime - 150_000, {
+    sessionRow(MOCK_CODING_SESSION_KEY, "sidebar zones", baseTime - 150_000, {
       worktree: {
         id: "wt-sidebar-zones",
         branch: "claude/sidebar-agent-zones",
@@ -1781,6 +1782,7 @@ async function createChatPickerScenario(
                     sessionKey: MOCK_OPENCLAW_PROJECT_SESSION_KEY,
                     name: "Release checklist sweep",
                     cwd: "/Users/demo/projects/openclaw",
+                    gitBranch: "main",
                     status: fixture === "session-rows" ? "running" : "idle",
                     updatedAt: baseTime - 10 * 60_000,
                     archived: false,
@@ -1791,6 +1793,7 @@ async function createChatPickerScenario(
                     threadId: "codex-thread-2",
                     name: "Sidebar context-menu proof",
                     cwd: "/Users/demo/projects/openclaw",
+                    gitBranch: "codex/sidebar-context-menu",
                     status: "idle",
                     updatedAt: baseTime - 45 * 60_000,
                     archived: false,
@@ -1816,6 +1819,7 @@ async function createChatPickerScenario(
                     threadId: "claude-thread-1",
                     name: "Docs refresh",
                     cwd: "/Users/demo/projects/peekaboo",
+                    gitBranch: "claude/docs-refresh",
                     status: "idle",
                     updatedAt: baseTime - 30 * 60_000,
                     archived: false,
@@ -2628,14 +2632,16 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
         res.setHeader("content-type", "application/json");
         res.end(bootstrapBody);
       });
-      server.middlewares.use(
-        `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(MOCK_OPENCLAW_PROJECT_SESSION_KEY)}`,
-        (_req, res) => {
-          res.statusCode = 200;
-          res.setHeader("content-type", "image/svg+xml");
-          res.end(mockOpenClawProjectIcon);
-        },
-      );
+      for (const sessionKey of [MOCK_OPENCLAW_PROJECT_SESSION_KEY, MOCK_CODING_SESSION_KEY]) {
+        server.middlewares.use(
+          `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(sessionKey)}`,
+          (_req, res) => {
+            res.statusCode = 200;
+            res.setHeader("content-type", "image/svg+xml");
+            res.end(mockOpenClawProjectIcon);
+          },
+        );
+      }
     },
     // ui/vite.config.ts registers a placeholder bootstrap-config middleware and
     // config-file plugins load first, so without "pre" its stub answers every

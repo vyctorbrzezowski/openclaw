@@ -179,8 +179,9 @@ export function renderRecentSession(params: {
   session: SidebarRecentSession;
   display?: CatalogBackingSessionDisplay;
   listItem?: boolean;
+  projectChild?: boolean;
 }) {
-  const { host, session, display, listItem = true } = params;
+  const { host, session, display, listItem = true, projectChild = false } = params;
   const pinAccess = host.readSessionMutationAccess({
     method: "sessions.patch",
     params: { key: session.key, pinned: !session.pinned },
@@ -250,6 +251,7 @@ export function renderRecentSession(params: {
   const rowClass = [
     "sidebar-recent-session",
     "session-row-host",
+    projectChild ? "sidebar-recent-session--catalog-project-child" : "",
     session.isChild ? "sidebar-recent-session--child" : "",
     session.archived ? "sidebar-session--archived" : "",
     session.visuallyActive ? "sidebar-recent-session--active" : "",
@@ -503,8 +505,9 @@ export function renderSessionTree(params: {
   host: SessionListHost;
   session: SidebarRecentSession;
   listItem?: boolean;
+  projectChild?: boolean;
 }): TemplateResult {
-  const { host, session, listItem = true } = params;
+  const { host, session, listItem = true, projectChild = false } = params;
   const expanded = host.isSessionChildrenExpanded(session);
   const visibleChildren = visibleSessionChildren({
     session,
@@ -516,7 +519,7 @@ export function renderSessionTree(params: {
     data-session-tree=${session.key}
     role=${ifDefined(listItem ? "listitem" : undefined)}
   >
-    ${renderRecentSession({ host, session, listItem: false })}
+    ${renderRecentSession({ host, session, listItem: false, projectChild })}
     ${expanded
       ? html`<div class="sidebar-session-tree__children">
           ${visibleChildren.length > 0

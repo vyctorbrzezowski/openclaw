@@ -414,6 +414,7 @@ function renderCatalogSessionRow(
     const label = session.name || session.threadId;
     return params.renderLiveRow(adoptedRow, {
       label,
+      ...(session.gitBranch ? { subtitle: session.gitBranch } : {}),
       meta: formatSidebarTimestamp(timestamp),
       title: `${label} · ${host.label}`,
       ...(session.pullRequest ? { pullRequest: session.pullRequest } : {}),
@@ -507,6 +508,17 @@ function renderCatalogSessionRow(
                 >${label}</span
               >
             </span>
+            ${session.gitBranch
+              ? html`<span
+                  class="sidebar-recent-session__subtitle sidebar-catalog-session__git-context"
+                  ${ref(createOverflowFadeRef())}
+                >
+                  <span class="sidebar-catalog-session__git-icon" aria-hidden="true"
+                    >${icons.gitBranch}</span
+                  >
+                  <span>${session.gitBranch}</span>
+                </span>`
+              : nothing}
           </span>
         </a>
         ${renderSessionRowEndcap({

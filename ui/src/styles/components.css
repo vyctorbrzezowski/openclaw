@@ -5857,6 +5857,20 @@ td.data-table-key-col {
   margin-block-start: 1px;
 }
 
+.sidebar-catalog-session__git-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sidebar-catalog-session__git-icon,
+.sidebar-catalog-session__git-icon svg {
+  display: inline-flex;
+  width: 11px;
+  height: 11px;
+  flex: 0 0 11px;
+}
+
 .session-row-qualifier {
   display: inline-flex;
   align-items: center;
