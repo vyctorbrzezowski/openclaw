@@ -2152,6 +2152,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-tree__show-more {
   min-height: 28px;
+  margin-block-start: 4px;
   padding: 6px calc(var(--sidebar-session-content-start) + 16px);
   border: 0;
   background: transparent;
