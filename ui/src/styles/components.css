@@ -5547,7 +5547,7 @@ td.data-table-key-col {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
+  width: var(--sidebar-trailing-slot, 20px);
   height: 24px;
   padding: 0;
   border: none;
@@ -5645,11 +5645,11 @@ td.data-table-key-col {
 /* Text-first sidebar session rows. The hit target remains full-width while the
    visual surface, text rail, and operational endcap have independent geometry. */
 .sidebar-recent-sessions__head {
-  padding-inline: 8px;
+  padding-inline: var(--sidebar-row-inset, 10px);
 }
 
 .sidebar-session-group-toggle {
-  padding-inline-start: calc(var(--sidebar-page-label-start, 34px) - 8px);
+  padding-inline-start: calc(var(--sidebar-page-label-start, 10px) - 8px);
 }
 
 .sidebar-nav__head {
@@ -5657,12 +5657,12 @@ td.data-table-key-col {
 }
 
 .sidebar-nav__head--pinned .sidebar-session-group-toggle {
-  padding-inline-start: calc(var(--sidebar-page-label-start, 34px) - 8px);
+  padding-inline-start: calc(var(--sidebar-page-label-start, 10px) - 8px);
 }
 
 .sidebar-session-group-drag-handle {
   inset-inline-start: auto;
-  inset-inline-end: 34px;
+  inset-inline-end: calc(var(--sidebar-row-inset, 10px) + var(--sidebar-trailing-slot, 20px) + 4px);
 }
 
 .sidebar-recent-session {
@@ -5684,8 +5684,8 @@ td.data-table-key-col {
   position: absolute;
   z-index: -1;
   inset-block: 0;
-  inset-inline-start: calc(var(--session-row-content-start) - 8px);
-  inset-inline-end: 8px;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   border-radius: var(--radius-md);
   background: transparent;
   box-shadow: none;
@@ -5694,6 +5694,10 @@ td.data-table-key-col {
     background var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     opacity var(--duration-fast) ease;
+}
+
+.sidebar-recent-session[data-session-depth="1"] > .sidebar-recent-session__surface {
+  inset-inline-start: calc(var(--session-row-content-start) - 8px);
 }
 
 .sidebar-recent-session:hover,
@@ -5880,7 +5884,7 @@ td.data-table-key-col {
   gap: 6px;
   min-width: 0;
   min-height: 24px;
-  margin-inline-end: 16px;
+  margin-inline-end: var(--sidebar-row-inset, 10px);
   padding-block-start: 6px;
   color: var(--muted);
   white-space: nowrap;
@@ -5930,8 +5934,8 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__rest-summary > openclaw-session-owner-chip {
-  width: 20px;
-  height: 20px;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
   align-items: center;
   justify-content: center;
 }
@@ -5968,9 +5972,9 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__primary {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
+  flex: 0 0 var(--sidebar-trailing-slot, 20px);
 }
 
 .session-row-endcap__primary:empty {
@@ -5981,8 +5985,8 @@ td.data-table-key-col {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
   color: var(--muted);
 }
 
@@ -6114,7 +6118,7 @@ td.data-table-key-col {
 /* Pinned sessions use the same parent text rail and inset surface as every
    other section; the nav wrapper must not add its legacy page-row padding. */
 .sidebar-zone-entry .sidebar-recent-session {
-  --session-row-content-start: var(--sidebar-page-label-start, 34px);
+  --session-row-content-start: var(--sidebar-page-label-start, 10px);
 
   min-height: 36px;
   padding: 0;
@@ -6128,7 +6132,7 @@ td.data-table-key-col {
 }
 
 .sidebar-zone-entry .sidebar-recent-session[data-session-depth="1"] {
-  --session-row-content-start: calc(var(--sidebar-page-label-start, 34px) + 16px);
+  --session-row-content-start: calc(var(--sidebar-page-label-start, 10px) + 16px);
 
   min-height: 34px;
 }

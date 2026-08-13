@@ -918,6 +918,8 @@ openclaw-settings-save-indicator {
 
 .sidebar-shell {
   --sidebar-pad-x: 10px;
+  --sidebar-row-inset: var(--sidebar-pad-x);
+  --sidebar-trailing-slot: 20px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1048,7 +1050,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   gap: 8px;
   width: 100%;
   min-height: 36px;
-  padding: 0 9px;
+  padding: 0 var(--sidebar-row-inset, 10px);
   margin-bottom: 2px;
   border: 0;
   border-radius: var(--radius-md);
@@ -1101,9 +1103,9 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-status-strip__dot {
   display: grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 16px;
+  height: 20px;
+  flex: 0 0 16px;
   place-items: center;
 }
 
@@ -1132,6 +1134,10 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-status-strip__more {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
   flex: none;
   color: var(--muted);
 }
@@ -1673,7 +1679,7 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-nav {
-  --sidebar-page-label-start: 10px;
+  --sidebar-page-label-start: var(--sidebar-row-inset, 10px);
 
   padding: 0;
 }
@@ -1681,7 +1687,7 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-sessions {
   /* Session content uses the page rows' leading icon rail, removing the empty
      text-only gutter without changing the page navigation itself. */
-  --sidebar-page-label-start: 10px;
+  --sidebar-page-label-start: var(--sidebar-row-inset, 10px);
 
   display: flex;
   flex-direction: column;
@@ -1793,7 +1799,7 @@ body.update-dialog-open .sidebar-update-card__status {
   align-items: center;
   gap: 8px;
   min-height: 32px;
-  padding: 0 10px 0 8px;
+  padding: 0 var(--sidebar-row-inset, 10px);
   border-radius: var(--radius-md);
   color: color-mix(in srgb, var(--muted) 72%, var(--text) 28%);
 }
@@ -1897,16 +1903,16 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-group-status {
   display: inline-grid;
-  width: 16px;
+  width: var(--sidebar-trailing-slot, 20px);
   height: 26px;
-  flex: 0 0 16px;
+  flex: 0 0 var(--sidebar-trailing-slot, 20px);
   place-items: center;
 }
 
 .sidebar-session-catalog-load-more {
   display: block;
-  width: calc(100% - var(--sidebar-session-content-start) - 10px);
-  margin: 3px 10px 5px var(--sidebar-session-content-start);
+  width: calc(100% - var(--sidebar-session-content-start) - var(--sidebar-row-inset, 10px));
+  margin: 3px var(--sidebar-row-inset, 10px) 5px var(--sidebar-session-content-start);
   padding: 4px 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -1963,7 +1969,7 @@ body.update-dialog-open .sidebar-update-card__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
+  width: var(--sidebar-trailing-slot, 20px);
   height: 26px;
   flex: 0 0 auto;
   border: none;
@@ -2010,7 +2016,7 @@ body.update-dialog-open .sidebar-update-card__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
+  width: var(--sidebar-trailing-slot, 20px);
   height: 26px;
   padding: 0;
   flex: 0 0 auto;
@@ -2241,7 +2247,7 @@ body.update-dialog-open .sidebar-update-card__status {
   display: flex;
   justify-content: flex-start;
   gap: 14px;
-  padding: 0 10px 10px var(--sidebar-session-content-start);
+  padding: 0 var(--sidebar-row-inset, 10px) 10px var(--sidebar-session-content-start);
 }
 
 .sidebar-session-pagination__button {
@@ -2260,7 +2266,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-empty-hint {
   display: block;
-  padding: 4px 10px 10px var(--sidebar-session-content-start);
+  padding: 4px var(--sidebar-row-inset, 10px) 10px var(--sidebar-session-content-start);
   color: var(--muted);
   font-size: var(--control-ui-text-xs);
 }
@@ -3042,7 +3048,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   justify-content: flex-start;
   gap: 8px;
   min-height: 32px;
-  padding: 0 9px;
+  padding: 0 calc(var(--sidebar-row-inset, 10px) - 1px);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -3121,9 +3127,9 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
+  padding: 0 4px;
   margin-left: auto;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--warn) 14%, transparent);
@@ -3221,7 +3227,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 4px 9px;
+  padding: 4px var(--sidebar-row-inset, 10px);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -3357,6 +3363,11 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 /* Home carries approval and outbox counts at the row's edge; run/unread state
    rings the leading icon instead (see .session-glyph). */
 .nav-item__state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
   flex: none;
   margin-left: auto;
 }
@@ -3381,7 +3392,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   gap: 8px;
   width: 100%;
   min-width: 0;
-  padding: 5px 9px;
+  padding: 5px var(--sidebar-row-inset, 10px);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -3485,6 +3496,10 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .sidebar-identity-card__chevron {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
   flex: none;
   color: var(--muted);
 }
