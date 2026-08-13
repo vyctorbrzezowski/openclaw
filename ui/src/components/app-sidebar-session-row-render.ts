@@ -376,9 +376,19 @@ export function renderRecentSession(params: {
           : nothing,
         restSummary: session.isChild
           ? nothing
-          : html`${ownerActor?.id
-                ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
-                : nothing}
+          : html`<span class="session-row-identity-stack">
+                ${ownerActor?.id
+                  ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
+                  : nothing}
+                <openclaw-viewer-facepile
+                  .presencePayload=${host.sessionData.presencePayload}
+                  .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
+                  .selfInstanceId=${host.sessionData.presenceInstanceId}
+                  .sessionKey=${session.key}
+                  .maxVisible=${2}
+                  variant="session"
+                ></openclaw-viewer-facepile>
+              </span>
               ${session.forkSource
                 ? html`<span
                     class="session-row-fork-indicator"
@@ -398,14 +408,6 @@ export function renderRecentSession(params: {
                     >${icons.layoutDashboard}</span
                   >`
                 : nothing}
-              <openclaw-viewer-facepile
-                .presencePayload=${host.sessionData.presencePayload}
-                .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
-                .selfInstanceId=${host.sessionData.presenceInstanceId}
-                .sessionKey=${session.key}
-                .maxVisible=${2}
-                variant="session"
-              ></openclaw-viewer-facepile>
               ${renderSessionRowBadges({
                 ...session,
                 hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,

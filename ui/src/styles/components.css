@@ -5687,6 +5687,30 @@ td.data-table-key-col {
   background: transparent;
 }
 
+.sidebar-recent-session:has(> .session-row-endcap__tree) {
+  grid-template-columns: minmax(0, max-content) auto minmax(0, 1fr) auto;
+  column-gap: 4px;
+}
+
+.sidebar-recent-session:has(> .session-row-endcap__tree) > .sidebar-recent-session__link {
+  grid-column: 1;
+}
+
+.session-row-endcap__tree {
+  z-index: 1;
+  grid-column: 2;
+  align-self: start;
+  padding-block-start: 6px;
+}
+
+.sidebar-recent-session:has(.sidebar-recent-session__subtitle) > .session-row-endcap__tree {
+  padding-block-start: 4px;
+}
+
+.sidebar-recent-session:has(> .session-row-endcap__tree) > .session-row-endcap {
+  grid-column: 4;
+}
+
 .sidebar-recent-session__surface {
   position: absolute;
   z-index: -1;
@@ -5848,6 +5872,30 @@ td.data-table-key-col {
   box-shadow: none;
   color: var(--text);
   font-size: 9px;
+}
+
+.session-row-identity-stack {
+  display: inline-flex;
+  align-items: center;
+  isolation: isolate;
+}
+
+.session-row-identity-stack > openclaw-session-owner-chip {
+  z-index: 2;
+}
+
+.session-row-identity-stack .session-owner-chip--row {
+  width: 18px;
+  height: 18px;
+}
+
+.session-row-identity-stack .viewer-facepile--session {
+  margin-inline-start: -4px;
+}
+
+.session-row-identity-stack .viewer-avatar {
+  width: 16px;
+  height: 16px;
 }
 
 .session-row-host--draft-other {

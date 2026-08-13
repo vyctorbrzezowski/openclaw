@@ -1908,14 +1908,6 @@ body.update-dialog-open .sidebar-update-card__status {
   flex: 0 0 12px;
 }
 
-.sidebar-session-group-count {
-  flex: 0 0 auto;
-  color: var(--muted);
-  font-size: calc(10px * var(--control-ui-text-scale));
-  font-variant-numeric: tabular-nums;
-  opacity: 0.7;
-}
-
 .sidebar-session-group-attention {
   width: 7px;
   height: 7px;
@@ -2152,7 +2144,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-tree__show-more {
   min-height: 28px;
-  margin-block-start: 4px;
+  margin-block-start: 10px;
   padding: 6px calc(var(--sidebar-session-content-start) + 16px);
   border: 0;
   background: transparent;

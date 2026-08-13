@@ -137,9 +137,6 @@ function renderSessionSection(params: {
                 >${collapsed ? icons.chevronRight : icons.chevronDown}</span
               >
             </span>
-            ${collapsed && totalRowCount > 0 && !collapsedRunningDot && !collapsedAttentionDot
-              ? html`<span class="sidebar-session-group-count">${totalRowCount}</span>`
-              : nothing}
           </button>
           ${section.id === "ungrouped"
             ? html`

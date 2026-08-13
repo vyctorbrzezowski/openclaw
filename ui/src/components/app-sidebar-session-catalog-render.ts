@@ -218,11 +218,6 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
                   >${collapsed ? icons.chevronRight : icons.chevronDown}</span
                 >
               </span>
-              ${collapsed && rows.length > 0 && !hasError && !hasActiveRun && !hasUnread
-                ? html`<span class="sidebar-session-group-count" aria-hidden="true"
-                    >${rows.length}</span
-                  >`
-                : nothing}
             </button>
             <button
               type="button"

@@ -20,16 +20,18 @@ export function renderSessionRowEndcap(params: {
     primary = nothing,
     child,
   } = params;
-  return html`<span class="session-row-endcap" data-session-endcap=${child ? "child" : "parent"}>
-    ${treeControl}
-    ${duration === nothing
+  return html`${treeControl === nothing
       ? nothing
-      : html`<span class="session-row-endcap__duration">${duration}</span>`}
-    ${child
-      ? html`${auxiliary}<span class="session-row-endcap__primary">${primary}</span>`
-      : html`<span class="session-row-endcap__swap">
-          <span class="session-row-endcap__rest-summary">${restSummary}${primary}</span>
-          <span class="session-row-endcap__management">${management}</span>
-        </span>`}
-  </span>`;
+      : html`<span class="session-row-endcap__tree">${treeControl}</span>`}
+    <span class="session-row-endcap" data-session-endcap=${child ? "child" : "parent"}>
+      ${duration === nothing
+        ? nothing
+        : html`<span class="session-row-endcap__duration">${duration}</span>`}
+      ${child
+        ? html`${auxiliary}<span class="session-row-endcap__primary">${primary}</span>`
+        : html`<span class="session-row-endcap__swap">
+            <span class="session-row-endcap__rest-summary">${restSummary}${primary}</span>
+            <span class="session-row-endcap__management">${management}</span>
+          </span>`}
+    </span>`;
 }

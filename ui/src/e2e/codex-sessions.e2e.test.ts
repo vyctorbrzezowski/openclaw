@@ -564,7 +564,7 @@ suite.define(() => {
       expect(await section.getByText("Worktree fix session", { exact: true }).count()).toBe(1);
       const toggle = section.locator(".sidebar-session-group-toggle");
       expect(await toggle.getAttribute("title")).toBeNull();
-      // Counts only render while a section is collapsed.
+      // Section headers stay count-free; disclosure owns the closed state.
       expect(await section.locator(".sidebar-session-group-count").count()).toBe(0);
 
       // Header actions are hover-revealed; hover the head so the button

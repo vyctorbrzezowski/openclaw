@@ -1418,6 +1418,7 @@ async function createChatPickerScenario(
           ),
           sessionRow(MULTI_USER_DEMO_SESSION_KEY, "Team release review", baseTime - 12_500, {
             createdActor: MOCK_CREATOR_MIRA,
+            lastMessagePreview: "Coordinating final launch checks with the release team",
           }),
           sessionRow(
             "agent:main:long-metadata",
@@ -1427,6 +1428,7 @@ async function createChatPickerScenario(
               createdActor: MOCK_CREATOR_MIRA,
               hasAutomation: true,
               incognito: true,
+              lastMessagePreview: "Reviewing shared workspace changes before publishing",
               placement: {
                 state: "reclaimed",
                 generation: 1,
@@ -1497,7 +1499,7 @@ async function createChatPickerScenario(
     mainChildRow,
     sessionRow("agent:main:home-server", "Home server migration", baseTime - 240_000, {
       execCwd: "/Users/peter/Projects",
-      execNode: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      execNode: "commit 8f90",
       pinned: true,
     }),
     sessionRow("agent:main:whatsapp:group:family", "Family", baseTime - 90_000, {

@@ -168,12 +168,8 @@ describe("AppSidebar session catalog pagination", () => {
       const claudeSection = sidebar.querySelector('[data-session-section="catalog:claude"]');
       expect(codexSection).not.toBeNull();
       expect(claudeSection).not.toBeNull();
-      expect(codexSection?.querySelector(".sidebar-session-group-count")?.textContent).not.toBe(
-        "0",
-      );
-      expect(claudeSection?.querySelector(".sidebar-session-group-count")?.textContent).not.toBe(
-        "0",
-      );
+      expect(codexSection?.querySelector(".sidebar-session-group-count")).toBeNull();
+      expect(claudeSection?.querySelector(".sidebar-session-group-count")).toBeNull();
       expect(
         codexSection?.querySelector(".sidebar-session-group-toggle")?.getAttribute("aria-label"),
       ).toContain("[unavailable] Codex provider unavailable");
