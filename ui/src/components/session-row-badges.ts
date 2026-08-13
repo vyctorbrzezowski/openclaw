@@ -11,6 +11,33 @@ export type SessionPlacementState = NonNullable<GatewaySessionRow["placement"]>[
 
 export { isCloudWorkerPlacementState } from "../../../packages/gateway-protocol/src/schema/session-placement-state.js";
 
+export function resolveCloudPlacementIcon(
+  state: SessionPlacementState | undefined,
+  hasWorkspaceConflict: boolean,
+): TemplateResult {
+  if (hasWorkspaceConflict || state === "failed") {
+    return icons.cloudAlert;
+  }
+  switch (state) {
+    case "requested":
+      return icons.cloud;
+    case "provisioning":
+    case "starting":
+      return icons.cloudCog;
+    case "syncing":
+    case "reconciling":
+      return icons.cloudSync;
+    case "active":
+      return icons.cloudCheck;
+    case "draining":
+    case "reclaimed":
+      return icons.cloudOff;
+    case "local":
+    case undefined:
+      return icons.cloud;
+  }
+}
+
 function pullRequestStateLabel(state: SessionCatalogPullRequestSummary["state"]): string {
   switch (state) {
     case "open":
@@ -122,7 +149,7 @@ export function renderSessionRowBadges(params: {
     label: cloudLabel,
     content: renderSessionRowBadge(
       cloudLabel,
-      icons.globe,
+      resolveCloudPlacementIcon(displayedPlacementState, hasWorkspaceConflict),
       "session-row-badge--cloud",
       0,
       undefined,

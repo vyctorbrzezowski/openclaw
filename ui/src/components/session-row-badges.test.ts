@@ -3,7 +3,12 @@
 import { render } from "lit";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { i18n } from "../i18n/index.ts";
-import { renderSessionRowBadges, type SessionPlacementState } from "./session-row-badges.ts";
+import { icons } from "./icons.ts";
+import {
+  renderSessionRowBadges,
+  resolveCloudPlacementIcon,
+  type SessionPlacementState,
+} from "./session-row-badges.ts";
 import "./tooltip.ts";
 
 let container: HTMLDivElement;
@@ -37,6 +42,27 @@ function expectTooltipText(badge: Element | null | undefined, text: string) {
 }
 
 describe("session row placement badges", () => {
+  it.each([
+    ["requested", icons.cloud],
+    ["provisioning", icons.cloudCog],
+    ["starting", icons.cloudCog],
+    ["syncing", icons.cloudSync],
+    ["reconciling", icons.cloudSync],
+    ["active", icons.cloudCheck],
+    ["draining", icons.cloudOff],
+    ["reclaimed", icons.cloudOff],
+    ["failed", icons.cloudAlert],
+  ] satisfies Array<[SessionPlacementState, (typeof icons)[keyof typeof icons]]>)(
+    "maps %s to its cloud-state icon",
+    (state, expected) => {
+      expect(resolveCloudPlacementIcon(state, false)).toBe(expected);
+    },
+  );
+
+  it("uses cloud-alert for a workspace conflict regardless of placement state", () => {
+    expect(resolveCloudPlacementIcon("reclaimed", true)).toBe(icons.cloudAlert);
+  });
+
   it("renders the incognito indicator", () => {
     render(
       renderSessionRowBadges({
@@ -88,15 +114,14 @@ describe("session row placement badges", () => {
     "draining",
     "reconciling",
     "failed",
-  ] satisfies SessionPlacementState[])("renders %s as a cloud-worker globe", (placementState) => {
+  ] satisfies SessionPlacementState[])("renders %s with a cloud-state icon", (placementState) => {
     renderBadges(placementState);
 
     const badge = container.querySelector<HTMLElement>(".session-row-badge--cloud");
     expect(badge?.dataset.placementState).toBe(placementState);
     expect(badge?.getAttribute("aria-label")).toBe(`Cloud worker: ${placementState}`);
     expectTooltipText(badge, `Cloud worker: ${placementState}`);
-    expect(badge?.querySelector("circle")).not.toBeNull();
-    expect(badge?.querySelector("rect")).toBeNull();
+    expect(badge?.querySelector("svg")).not.toBeNull();
   });
 
   it("keeps unrelated badges while omitting local placement", () => {
