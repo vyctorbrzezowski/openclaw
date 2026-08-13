@@ -5929,6 +5929,13 @@ td.data-table-key-col {
   transition: opacity 100ms ease-out;
 }
 
+.session-row-endcap__rest-summary > openclaw-session-owner-chip {
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
 .session-row-endcap__management {
   opacity: 0;
   pointer-events: none;
