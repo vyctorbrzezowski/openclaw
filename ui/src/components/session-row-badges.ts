@@ -180,7 +180,7 @@ export function renderSessionRowBadges(params: {
           label: t("sessionsView.incognito"),
           content: renderSessionRowBadge(
             t("sessionsView.incognito"),
-            icons.lock,
+            icons.hatGlasses,
             "session-row-badge--incognito",
           ),
         }

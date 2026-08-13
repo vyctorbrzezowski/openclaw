@@ -458,7 +458,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
             role="img"
             aria-label=${t("chat.sessionHeader.incognito")}
             title=${t("chat.sessionHeader.incognito")}
-            >${icons.lock}</span
+            >${icons.hatGlasses}</span
           >`
         : nothing}
       ${renderIdentityCrumbs(props, copied, copyPathLabel, copyBranchLabel)}

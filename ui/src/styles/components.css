@@ -6139,23 +6139,23 @@ td.data-table-key-col {
   color: color-mix(in srgb, var(--danger) 86%, var(--text));
 }
 
-/* Approval already owns the subtitle slot, so a restrained text sweep adds
-   liveliness without another icon or any change to the row's geometry. */
+/* Approval already owns the subtitle slot, so the moving highlight carries
+   the live state without another icon or any change to the row's geometry. */
 @media (prefers-reduced-motion: no-preference) {
   .sidebar-recent-session__subtitle--approval {
     background-image: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 0%,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 38%,
-      color-mix(in srgb, var(--warn) 48%, var(--text)) 50%,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 62%,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 100%
+      color-mix(in srgb, var(--warn) 84%, var(--text)) 0%,
+      color-mix(in srgb, var(--warn) 84%, var(--text)) 40%,
+      color-mix(in srgb, var(--warn) 26%, var(--text)) 50%,
+      color-mix(in srgb, var(--warn) 84%, var(--text)) 60%,
+      color-mix(in srgb, var(--warn) 84%, var(--text)) 100%
     );
-    background-size: 200% 100%;
+    background-size: 240% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: session-approval-text-shimmer 3.2s ease-in-out infinite;
+    animation: session-approval-text-shimmer 2.4s linear infinite;
   }
 }
 
