@@ -6093,7 +6093,7 @@ td.data-table-key-col {
   .sidebar-recent-session__name[data-overflow-reveal]
   .sidebar-recent-session__name-content {
   transform: translateX(var(--overflow-reveal-translate, 0));
-  transition-duration: 720ms;
+  transition-duration: var(--overflow-reveal-duration, 900ms);
   transition-delay: 180ms;
 }
 
