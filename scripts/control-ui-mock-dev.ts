@@ -1438,7 +1438,6 @@ async function createChatPickerScenario(
             "Deployment notes for the final review",
             baseTime - 11_000,
             {
-              createdActor: MOCK_CREATOR_PETER,
               sharingRole: "owner",
               visibility: "draft",
             },
