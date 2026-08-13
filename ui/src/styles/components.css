@@ -5435,6 +5435,15 @@ td.data-table-key-col {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
+.session-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+
 .session-row-trail {
   display: inline-flex;
   align-items: center;

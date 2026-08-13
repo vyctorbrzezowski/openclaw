@@ -142,7 +142,17 @@ export function sessionPrimaryStateHasVisibleIndicator(
 function renderPrimaryContent(
   model: SessionPrimaryStateModel,
   suppressAttentionIcon: boolean,
+  compact: boolean,
 ): TemplateResult | typeof nothing {
+  if (compact) {
+    if (model.kind === null) {
+      return nothing;
+    }
+    if (model.kind === "running" || model.runningRing) {
+      return html`<span class="session-run-spinner" aria-hidden="true"></span>`;
+    }
+    return html`<span class="session-status-dot" aria-hidden="true"></span>`;
+  }
   if (model.kind === "attention" && model.attention) {
     if (suppressAttentionIcon) {
       if (model.runningRing) {
@@ -188,16 +198,19 @@ function renderPrimaryContent(
 export function renderSessionPrimaryStateIndicator(
   model: SessionPrimaryStateModel,
   stateId?: string,
-  options: { suppressAttentionIcon?: boolean } = {},
+  options: { suppressAttentionIcon?: boolean; compact?: boolean } = {},
 ) {
   const suppressAttentionIcon = options.suppressAttentionIcon === true;
-  const content = renderPrimaryContent(model, suppressAttentionIcon);
+  const compact = options.compact === true;
+  const content = renderPrimaryContent(model, suppressAttentionIcon, compact);
   if (content === nothing) {
     return nothing;
   }
-  const composite = suppressAttentionIcon
-    ? model.runningRing && model.unreadBadge
-    : model.runningRing || model.unreadBadge;
+  const composite = compact
+    ? false
+    : suppressAttentionIcon
+      ? model.runningRing && model.unreadBadge
+      : model.runningRing || model.unreadBadge;
   return html`<span
     class="session-primary-state session-primary-state--${model.kind} session-primary-state--${model.tone}"
     id=${stateId ?? nothing}

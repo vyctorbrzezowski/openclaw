@@ -9,7 +9,6 @@ import type { ApplicationNavigationOptions } from "../app/context.ts";
 import type { AuthenticatedUser } from "../app/user-profile.ts";
 import { t } from "../i18n/index.ts";
 import { sessionHasBoard } from "../lib/board/provider.ts";
-import { formatDurationCompact } from "../lib/format.ts";
 import { handleContextMenuEvent } from "../lib/keyboard-shortcuts.ts";
 import { createOverflowFadeRef } from "../lib/overflow-fade.ts";
 import { writeSessionDragData } from "../lib/sessions/drag.ts";
@@ -22,7 +21,6 @@ import type {
 import { formatSidebarTimestamp } from "./app-sidebar-session-catalogs.ts";
 import {
   rowDemandsVisibility,
-  sidebarSessionMetaId,
   sidebarSessionStateId,
   type SidebarRecentSession,
   type SidebarSessionStatusFilter,
@@ -46,7 +44,6 @@ import {
 } from "./session-row-subtitle.ts";
 import type { SidebarMenusController } from "./sidebar-menus-controller.ts";
 import { presenceViewerLabel, sessionPresenceViewers } from "./viewer-facepile.ts";
-import "./elapsed-time.ts";
 import "./tooltip.ts";
 
 const SIDEBAR_VISIBLE_CHILD_SESSION_LIMIT = 4;
@@ -207,7 +204,8 @@ export function renderRecentSession(params: {
       : session.createdActor
     : undefined;
   const primaryState = getSessionPrimaryStateModel(session);
-  const approvalIsExplicitInSubtitle = subtitle === t("sessionsView.waitingForApproval");
+  const visibleSubtitle = session.isChild ? null : subtitle;
+  const approvalIsExplicitInSubtitle = visibleSubtitle === t("sessionsView.waitingForApproval");
   const running = session.hasActiveRun;
   const auxiliaryDescription = [
     session.forkSource ? t("sessionsView.forkedSession") : "",
@@ -223,8 +221,6 @@ export function renderRecentSession(params: {
     host.sessionData.presenceInstanceId,
     session.key,
   );
-  const hasTrail = session.isChild && (session.runtimeMs != null || session.startedAt != null);
-  const metaId = hasTrail ? sidebarSessionMetaId(session.key) : undefined;
   const stateId = sessionPrimaryStateHasVisibleIndicator(primaryState, approvalIsExplicitInSubtitle)
     ? sidebarSessionStateId(session.key)
     : undefined;
@@ -321,7 +317,7 @@ export function renderRecentSession(params: {
           draggable="false"
           aria-label=${title}
           aria-current=${session.visuallyActive ? "page" : nothing}
-          aria-describedby=${[stateId, metaId].filter(Boolean).join(" ") || nothing}
+          aria-describedby=${stateId ?? nothing}
           @click=${(event: MouseEvent) => host.handleSessionRowClick(event, session)}
         >
           <span class="sidebar-recent-session__text">
@@ -354,7 +350,7 @@ export function renderRecentSession(params: {
                 : nothing}
             </span>
             ${renderSidebarSessionSubtitle(
-              { subtitle, narration },
+              { subtitle: visibleSubtitle, narration: session.isChild ? null : narration },
               { approval: approvalIsExplicitInSubtitle },
             )}
           </span>
@@ -388,20 +384,7 @@ export function renderRecentSession(params: {
                   >
                 </button>`
               : nothing,
-          duration: hasTrail
-            ? html`<span class="session-row-trail" id=${metaId}
-                >${session.runtimeMs != null
-                  ? session.hasActiveRun
-                    ? html`<openclaw-elapsed-time
-                        .startMs=${session.runtimeSampledAt! - session.runtimeMs}
-                      ></openclaw-elapsed-time>`
-                    : (formatDurationCompact(session.runtimeMs) ?? "0ms")
-                  : html`<openclaw-elapsed-time
-                      .startMs=${session.startedAt!}
-                      .endMs=${session.endedAt ?? null}
-                    ></openclaw-elapsed-time>`}</span
-              >`
-            : nothing,
+          duration: nothing,
           restSummary: session.isChild
             ? nothing
             : html`<span class="session-row-identity-stack">
@@ -484,6 +467,7 @@ export function renderRecentSession(params: {
               </span>`,
           primary: renderSessionPrimaryStateIndicator(primaryState, stateId, {
             suppressAttentionIcon: approvalIsExplicitInSubtitle,
+            compact: session.isChild,
           }),
         })}
       </div>
