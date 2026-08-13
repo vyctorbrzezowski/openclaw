@@ -154,9 +154,7 @@ suite.define(() => {
       const state = row.locator(".session-row-state");
       const pin = row.getByRole("button", { name: "Pin session" });
       const menu = row.getByRole("button", { name: "Open session menu" });
-      await expect
-        .poll(() => state.locator(".session-row-worktree-indicator").isVisible())
-        .toBe(true);
+      await expect.poll(() => state.locator(".session-row-worktree-indicator").count()).toBe(0);
       await expect.poll(() => state.locator(".session-run-spinner").count()).toBe(0);
 
       const [nameBounds, stateBounds, pinBounds, menuBounds] = await Promise.all([
@@ -297,9 +295,7 @@ suite.define(() => {
       const row = page.locator('[data-session-key="agent:main:combined-state"]');
       await row.waitFor({ state: "visible", timeout: 10_000 });
       const state = row.locator(".session-row-state");
-      await expect
-        .poll(() => state.locator(".session-row-worktree-indicator").isVisible())
-        .toBe(true);
+      await expect.poll(() => state.locator(".session-row-worktree-indicator").count()).toBe(0);
       await expect
         .poll(() => state.locator("[data-session-pr-state='open']").isVisible())
         .toBe(true);

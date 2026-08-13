@@ -5458,18 +5458,6 @@ td.data-table-key-col {
   pointer-events: none;
 }
 
-.session-row-worktree-indicator {
-  display: inline-flex;
-  color: var(--muted);
-}
-
-.session-row-worktree-indicator svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-  stroke: none;
-}
-
 /* Attribute badges (attached automation, approval, cloud placement):
    muted metadata that sits after the title inside the row link, outside the
    trail/action overlap cell, so touch devices (which hide the trail) and

@@ -404,15 +404,6 @@ export function renderRecentSession(params: {
                     variant="session"
                   ></openclaw-viewer-facepile>
                 </span>
-                ${session.worktree
-                  ? html`<span
-                      class="session-row-worktree-indicator"
-                      role="img"
-                      aria-label=${t("newSession.worktree")}
-                      title=${t("newSession.worktree")}
-                      >${icons.worktreeCreated}</span
-                    >`
-                  : nothing}
                 ${renderOperationalPullRequest(pullRequestState)}
                 ${sessionHasBoard(session.key)
                   ? html`<span

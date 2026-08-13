@@ -92,7 +92,7 @@ export function renderSessionRowHoverCard(params: {
   const branch = session.worktree?.branch;
   const contextualDetails: HoverCardDetail[] = [
     ...(project ? [{ icon: icons.folder, label: project }] : []),
-    ...(branch ? [{ icon: icons.gitBranch, label: branch }] : []),
+    ...(branch ? [{ icon: icons.worktreeCreated, label: branch }] : []),
   ];
   const operationalDetails: HoverCardDetail[] = [
     ...(params.owner
