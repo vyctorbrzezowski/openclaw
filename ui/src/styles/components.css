@@ -5635,6 +5635,12 @@ td.data-table-key-col {
 }
 
 /* The clock fills more of its Lucide viewBox than the other descriptors. */
+.sidebar .session-row-badge--automation {
+  width: var(--sidebar-trailing-slot, 20px);
+  height: var(--sidebar-trailing-slot, 20px);
+  justify-content: center;
+}
+
 .sidebar .session-row-badge--automation svg {
   width: 14px;
   height: 14px;
