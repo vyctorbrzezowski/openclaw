@@ -208,10 +208,10 @@ describe("sidebar attention strip", () => {
     provider.append(element);
     document.body.append(provider);
 
-    await waitForFast(() => expect(element.querySelector(".sidebar-status-strip")).not.toBeNull());
-    expect(element.querySelector(".sidebar-status-button")).toBeNull();
+    await waitForFast(() => expect(element.querySelector(".sidebar-status-button")).not.toBeNull());
+    expect(element.querySelector(".sidebar-status-strip")).toBeNull();
 
-    element.querySelector<HTMLButtonElement>(".sidebar-status-strip")?.click();
+    element.querySelector<HTMLButtonElement>(".sidebar-status-button")?.click();
     await waitForFast(() => expect(element.querySelector(".sidebar-status-panel")).not.toBeNull());
   });
 });

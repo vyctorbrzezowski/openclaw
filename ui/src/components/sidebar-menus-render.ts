@@ -135,7 +135,6 @@ export function renderSidebarIdentityMenuForController(controller: SidebarMenusC
     onNavigate: (routeId, options) => host.onNavigate?.(routeId, options),
     onPairMobile: () => host.onPairMobile?.(),
     onRetryConnect: host.onRetryConnect,
-    onOpenSystemStatus: () => host.openSystemStatus(),
   });
 }
 

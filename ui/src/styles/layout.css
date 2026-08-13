@@ -1050,111 +1050,76 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
-/* One persistent condition surface replaces the unbounded alert stack. */
-.sidebar-status-strip {
-  display: flex;
+/* Active system conditions collapse into one footer notification. */
+.sidebar-status-button {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 36px;
-  padding: 0 var(--sidebar-row-inset, 10px);
-  margin-bottom: 2px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  margin-inline-start: auto;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
-  color: var(--text);
+  background: transparent;
+  color: var(--muted);
   font: inherit;
-  text-align: start;
   cursor: var(--cursor-action);
-  animation: sidebar-status-strip-in 140ms var(--ease-out);
   transition:
     background var(--duration-fast) ease,
     color var(--duration-fast) ease;
 }
 
-@keyframes sidebar-status-strip-in {
-  from {
-    transform: translateY(4px);
-    opacity: 0;
-  }
+.sidebar-status-button:hover,
+.sidebar-status-button[aria-expanded="true"] {
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sidebar-status-strip {
-    animation: none;
-  }
+.sidebar-status-button--warning {
+  background: color-mix(in srgb, var(--warn) 7%, transparent);
+  color: var(--warn);
 }
 
-.sidebar-status-strip:hover,
-.sidebar-status-strip[aria-expanded="true"] {
-  background: color-mix(in srgb, var(--warn) 11%, var(--bg-elevated));
+.sidebar-status-button--blocking {
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+  color: var(--danger);
 }
 
-.sidebar-status-strip--warning {
-  background: color-mix(in srgb, var(--warn) 7%, var(--bg-elevated));
-}
-
-.sidebar-status-strip--blocking {
-  background: color-mix(in srgb, var(--danger) 7%, var(--bg-elevated));
-}
-
-.sidebar-status-strip--blocking:hover,
-.sidebar-status-strip--blocking[aria-expanded="true"] {
-  background: color-mix(in srgb, var(--danger) 11%, var(--bg-elevated));
-}
-
-.sidebar-status-strip:focus-visible {
+.sidebar-status-button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 
-.sidebar-status-strip__dot {
-  display: grid;
-  width: 16px;
-  height: 20px;
-  flex: 0 0 16px;
-  place-items: center;
-}
-
-.sidebar-status-strip__dot::after {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--warn);
-  content: "";
-}
-
-.sidebar-status-strip--blocking .sidebar-status-strip__dot::after {
-  background: var(--danger);
-}
-
-.sidebar-status-strip__label {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  color: var(--text);
-  font-size: var(--control-ui-text-sm);
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-status-strip__more {
+.sidebar-status-button__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--sidebar-trailing-slot, 20px);
-  height: var(--sidebar-trailing-slot, 20px);
-  flex: none;
-  color: var(--muted);
+  width: 18px;
+  height: 18px;
 }
 
-.sidebar-status-strip__more svg {
-  width: 13px;
-  height: 13px;
+.sidebar-status-button__icon svg {
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7px;
+}
+
+.sidebar-status-button__dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--warn);
+}
+
+.sidebar-status-button--blocking .sidebar-status-button__dot {
+  background: var(--danger);
 }
 
 .sidebar-status-panel {
@@ -3139,12 +3104,24 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .session-menu__shortcut,
 .chat-controls__model-option-action kbd {
   flex: 0 0 auto;
-  min-width: 12px;
   color: var(--muted);
   font-family: var(--mono);
   font-size: var(--control-ui-text-xs);
   line-height: 1;
   text-align: center;
+}
+
+.session-menu__shortcut {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
+  font-size: calc(12px * var(--control-ui-text-scale));
+  font-weight: 500;
 }
 
 .session-menu__info {
@@ -3503,6 +3480,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .sidebar-footer-bar {
   display: flex;
   align-items: center;
+  gap: 4px;
   padding: 6px 0;
 }
 
@@ -3510,7 +3488,9 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  width: auto;
+  max-width: calc(100% - 44px);
+  flex: 0 1 auto;
   min-width: 0;
   padding: 5px var(--sidebar-row-inset, 10px);
   border: none;
@@ -3543,7 +3523,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .sidebar-identity-card__text {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   flex-direction: column;
   min-width: 0;
   gap: 1px;
@@ -3940,8 +3920,8 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
 }
 
 .sidebar-identity-menu {
-  --menu-item-height: 34px;
-  --menu-padding: 8px;
+  --menu-item-height: 32px;
+  --menu-padding: 6px;
 
   overflow: visible;
 }
@@ -3956,8 +3936,8 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
 }
 
 .sidebar-identity-menu__header {
-  min-height: 46px;
-  padding: 4px 8px;
+  min-height: 42px;
+  padding: 3px 6px;
 }
 
 .sidebar-identity-menu__avatar {
@@ -4007,6 +3987,10 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
   padding-inline: 4px;
 }
 
+.sidebar-identity-menu .sidebar-customize-menu__separator {
+  margin-block: 4px;
+}
+
 .sidebar-identity-menu .nav-item__icon {
   width: 20px;
   height: 20px;
@@ -4015,15 +3999,6 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
 .sidebar-identity-menu .nav-item__icon svg {
   width: 16px;
   height: 16px;
-}
-
-.sidebar-identity-menu .session-menu__shortcut {
-  min-width: 0;
-  padding: 2px 5px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
-  font-size: calc(11px * var(--control-ui-text-scale));
-  font-weight: 500;
 }
 
 .sidebar-agent-menu__filter {
@@ -4056,7 +4031,7 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  padding: 4px;
+  padding: 2px 4px;
 }
 
 /* Host elements are display:contents, so the anchor itself is the flex item;

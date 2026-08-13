@@ -112,7 +112,6 @@ export interface SidebarMenusControllerHost
   readonly themeMode: ThemeMode;
   readonly workboardBoards: readonly SidebarWorkboardBoard[];
   readonly workboardRenderers?: SidebarWorkboardRenderers;
-  openSystemStatus(): void;
   activeChipAgent(): {
     activeId: string;
     agent: SidebarMenuAgent | undefined;

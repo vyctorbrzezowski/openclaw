@@ -93,14 +93,6 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     }
   };
 
-  openSystemStatus() {
-    const status = this.querySelector<HTMLElement & { openPanel(trigger?: HTMLElement): void }>(
-      "openclaw-sidebar-attention",
-    );
-    const trigger = this.querySelector<HTMLElement>(".sidebar-identity-card") ?? undefined;
-    status?.openPanel(trigger);
-  }
-
   // Lazy: the controller pulls core token-suppression modules that must stay
   // out of the startup chunk (QA smoke startup-JS budget). It loads on the
   // first update with the preference enabled; earlier events are safely
@@ -559,7 +551,6 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
             </openclaw-tooltip-provider>
           </div>
           <div class="sidebar-shell__footer">
-            ${renderAppSidebarAttention(this)}
             <openclaw-sidebar-update-card
               .updateAvailable=${this.updateAvailable}
               .updateSchedule=${this.updateSchedule}
