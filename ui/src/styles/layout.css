@@ -1059,7 +1059,6 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   width: 40px;
   height: 40px;
   flex: none;
-  margin-inline-start: auto;
   padding: 0;
   border: 0;
   border-radius: var(--radius-md);
@@ -3480,13 +3479,21 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   padding: 6px 0;
 }
 
+.sidebar-footer-identity {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+}
+
 .sidebar-identity-card {
   display: flex;
   align-items: center;
   gap: 8px;
   width: auto;
-  max-width: calc(100% - 44px);
-  flex: 0 1 auto;
+  max-width: none;
+  flex: 1 1 auto;
   min-width: 0;
   padding: 5px var(--sidebar-row-inset, 10px);
   border: none;
@@ -3506,8 +3513,8 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 }
 
 .sidebar-identity-card:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .sidebar-identity-card .viewer-avatar--footer {
@@ -3590,24 +3597,38 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   border: 0;
 }
 
-.sidebar-identity-card__chevron {
+.sidebar-identity-menu-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--sidebar-trailing-slot, 20px);
-  height: var(--sidebar-trailing-slot, 20px);
+  width: 40px;
+  height: 40px;
   flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--muted);
+  cursor: var(--cursor-action);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 
-.sidebar-identity-card__chevron svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.sidebar-identity-menu-trigger:hover,
+.sidebar-identity-menu-trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
+  color: var(--text);
+}
+
+.sidebar-identity-menu-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar-identity-menu-trigger svg {
+  width: 16px;
+  height: 16px;
 }
 
 openclaw-tooltip.sidebar-hover-tooltip {

@@ -477,22 +477,20 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     return html`
       <span class="sr-only" role="status" aria-live="polite">${this.blockingAnnouncement}</span>
       ${conditions.length > 0
-        ? html`<openclaw-tooltip .content=${t("attention.issuesTitle")}>
-            <button
-              type="button"
-              class="sidebar-status-button"
-              aria-expanded=${String(this.panelOpen)}
-              aria-haspopup="dialog"
-              aria-label=${ariaLabel}
-              @click=${(event: MouseEvent) =>
-                this.panelOpen
-                  ? this.closePanel(true)
-                  : this.openPanel(event.currentTarget as HTMLElement)}
-            >
-              <span class="sidebar-status-button__icon" aria-hidden="true">${icons.bell}</span>
-              <span class="sidebar-status-button__count" aria-hidden="true">${countLabel}</span>
-            </button>
-          </openclaw-tooltip>`
+        ? html`<button
+            type="button"
+            class="sidebar-status-button"
+            aria-expanded=${String(this.panelOpen)}
+            aria-haspopup="dialog"
+            aria-label=${ariaLabel}
+            @click=${(event: MouseEvent) =>
+              this.panelOpen
+                ? this.closePanel(true)
+                : this.openPanel(event.currentTarget as HTMLElement)}
+          >
+            <span class="sidebar-status-button__icon" aria-hidden="true">${icons.bell}</span>
+            <span class="sidebar-status-button__count" aria-hidden="true">${countLabel}</span>
+          </button>`
         : nothing}
       ${this.panelOpen
         ? html`<div

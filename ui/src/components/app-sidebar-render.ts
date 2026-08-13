@@ -335,9 +335,14 @@ export function renderAppSidebarFooterBar(host: AppSidebarRenderHost) {
     : gateway
       ? `${gateway.name}${gatewayPrimaryTag ? `, ${gatewayPrimaryTag}` : ""}`
       : buildSubtitle;
+  const toggleIdentityMenu = (event: MouseEvent) => {
+    const trigger = event.currentTarget as HTMLElement;
+    const anchor = trigger.closest<HTMLElement>(".sidebar-footer-identity") ?? trigger;
+    host.sidebarMenus.toggleIdentityMenu(trigger, anchor);
+  };
   return html`
     <div class="sidebar-footer-bar">
-      <openclaw-tooltip .content=${selfLabel}>
+      <div class="sidebar-footer-identity">
         <button
           type="button"
           class="sidebar-identity-card"
@@ -346,8 +351,7 @@ export function renderAppSidebarFooterBar(host: AppSidebarRenderHost) {
           aria-label=${identityDetail
             ? `${identityMenuLabel}: ${identityDetail}`
             : identityMenuLabel}
-          @click=${(event: MouseEvent) =>
-            host.sidebarMenus.toggleIdentityMenu(event.currentTarget as HTMLElement)}
+          @click=${toggleIdentityMenu}
         >
           <openclaw-viewer-avatar .user=${avatarUser} variant="footer"></openclaw-viewer-avatar>
           <span class="sidebar-identity-card__text">
@@ -378,11 +382,18 @@ export function renderAppSidebarFooterBar(host: AppSidebarRenderHost) {
                     >`
                   : nothing}
           </span>
-          <span class="sidebar-identity-card__chevron" aria-hidden="true"
-            >${icons.chevronDown}</span
-          >
         </button>
-      </openclaw-tooltip>
+        <button
+          type="button"
+          class="sidebar-identity-menu-trigger"
+          aria-haspopup="menu"
+          aria-expanded=${String(host.sidebarMenus.identityMenuPosition !== null)}
+          aria-label=${identityMenuLabel}
+          @click=${toggleIdentityMenu}
+        >
+          ${icons.ellipsis}
+        </button>
+      </div>
       <span class="sidebar-identity-card__status" role="status" aria-live="polite"
         >${host.offline ? t("connection.reconnecting") : ""}</span
       >
