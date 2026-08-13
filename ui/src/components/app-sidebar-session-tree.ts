@@ -129,9 +129,14 @@ export function projectSessionTree(params: {
         ? unloadedChildAttention
         : projected.attention,
     );
+    const attentionFromChild =
+      sidebarSessionAttentionPriority(attention) > 0 &&
+      sidebarSessionAttentionPriority(attention) >
+        sidebarSessionAttentionPriority(projected.attention);
     return {
       ...projected,
       attention,
+      attentionFromChild,
       childSessionKeys,
       children,
       loadingChildren: loadingChildKeys.has(row.key),

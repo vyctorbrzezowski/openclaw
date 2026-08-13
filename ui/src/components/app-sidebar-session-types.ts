@@ -92,6 +92,8 @@ export type SidebarRecentSession = {
   lastMessagePreview?: string;
   lastReadAt?: number;
   attention: SidebarSessionAttention;
+  /** True when the rendered attention was propagated from a descendant. */
+  attentionFromChild?: boolean;
   agentStatusNote?: string;
   observerDigest?: Pick<
     SessionObserverDigest,

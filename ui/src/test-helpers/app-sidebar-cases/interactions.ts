@@ -620,11 +620,12 @@ describe("AppSidebar catalog session rows", () => {
       );
       const row = sidebar.querySelector('[data-session-key*="thread-running"]');
       const link = row?.querySelector("a");
-      const state = row?.querySelector(".session-row-state");
+      const state = row?.querySelector(".session-primary-state");
 
       expect(link?.getAttribute("aria-describedby")).toBe(state?.id);
       expect(link?.getAttribute("title")).toBe("Running catalog · Local Codex · Active run");
-      expect(state?.querySelector('.session-run-spinner[aria-label="Active run"]')).not.toBeNull();
+      expect(state?.getAttribute("aria-label")).toBe("Active run");
+      expect(state?.querySelector(".session-run-spinner")).not.toBeNull();
       expect(state?.querySelector(".session-run-spinner")?.hasAttribute("title")).toBe(false);
     } finally {
       vi.useRealTimers();

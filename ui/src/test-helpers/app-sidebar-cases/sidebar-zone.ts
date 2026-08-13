@@ -127,7 +127,7 @@ describe("AppSidebar interleaved zone", () => {
     expect(sidebar.querySelector('[data-session-key="agent:main:extra"]')).toBeNull();
   });
 
-  it("leads a pinned row like any other session row while activity trails it", async () => {
+  it("keeps pinned and unpinned rows on the same text rail and primary-state model", async () => {
     const keys = ["agent:main:main", "agent:main:page", "agent:main:plain"];
     const sessions = createSessionsHarness("main", keys);
     const result = sessions.sessions.state.result;
@@ -146,17 +146,19 @@ describe("AppSidebar interleaved zone", () => {
     const gateway = createGateway({} as GatewayBrowserClient);
     const { sidebar } = await mountSidebar(gateway, sessions.sessions);
 
-    // Pinning is not a status, so it must not claim the row's one leading slot.
+    // Pinning is an action, so it must not change the operational state model.
     const row = sidebar.querySelector('[data-session-key="agent:main:page"]');
     const plain = sidebar.querySelector('[data-session-key="agent:main:plain"]');
-    expect(row?.querySelector(".sidebar-session-indicator")?.innerHTML).toBe(
-      plain?.querySelector(".sidebar-session-indicator")?.innerHTML,
+    expect(row?.querySelector(".sidebar-session-indicator")).toBeNull();
+    expect(plain?.querySelector(".sidebar-session-indicator")).toBeNull();
+    expect(row?.querySelector(".session-primary-state")?.innerHTML).toBe(
+      plain?.querySelector(".session-primary-state")?.innerHTML,
     );
     expect(row?.querySelector(".nav-item__state")).toBeNull();
-    expect(row?.querySelector(".session-row-state .sidebar-recent-session__state")).not.toBeNull();
+    expect(row?.querySelector(".session-primary-state .session-run-spinner")).not.toBeNull();
   });
 
-  it("keeps pinned attention leading while unread trails the row", async () => {
+  it("composes pinned attention and unread in the persistent primary state", async () => {
     const keys = ["agent:main:main", "agent:main:page"];
     const sessions = createSessionsHarness("main", keys);
     const result = sessions.sessions.state.result;
@@ -179,10 +181,9 @@ describe("AppSidebar interleaved zone", () => {
     const { sidebar } = await mountSidebar(gateway, sessions.sessions);
 
     const row = sidebar.querySelector('[data-session-key="agent:main:page"]');
-    const glyph = row?.querySelector(".sidebar-session-indicator .session-glyph");
+    const glyph = row?.querySelector(".session-primary-state .session-glyph");
     expect(glyph?.querySelector(".sidebar-session-attention__icon")).not.toBeNull();
-    expect(glyph?.querySelector(".session-glyph__badge--unread")).toBeNull();
-    expect(row?.querySelector(".session-row-state .sidebar-recent-session__unread")).not.toBeNull();
+    expect(glyph?.querySelector(".session-glyph__badge--unread")).not.toBeNull();
     expect(row?.querySelector(".nav-item__state")).toBeNull();
   });
 

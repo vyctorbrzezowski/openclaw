@@ -30,6 +30,7 @@ import { sidebarSessionStateId } from "./app-sidebar-session-types.ts";
 import { icons } from "./icons.ts";
 import { hasProviderBrandIcon, renderProviderBrandIcon } from "./provider-icon.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
+import { renderSessionRowEndcap } from "./session-row-endcap.ts";
 
 type SessionCatalogGroupsParams = {
   catalogs: readonly SessionCatalog[];
@@ -460,10 +461,12 @@ function renderCatalogSessionRow(
         ? "session-row-host--running"
         : ""}"
       data-session-key=${key}
+      data-session-depth="0"
       role="listitem"
       @contextmenu=${openMenuFromEvent}
       @keydown=${openMenuFromEvent}
     >
+      <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
       <a
         href=${href}
         class="sidebar-recent-session__link"
@@ -482,26 +485,19 @@ function renderCatalogSessionRow(
           }
         }}
       >
-        <span class="sidebar-session-indicator"></span>
         <span class="sidebar-recent-session__text">
-          <span class="sidebar-recent-session__name hover-marquee">${label}</span>
+          <span class="sidebar-recent-session__title-line">
+            <span class="sidebar-recent-session__name hover-marquee">${label}</span>
+          </span>
         </span>
         ${renderSessionRowBadges({
           hasAutomation: false,
           pullRequest: session.pullRequest,
         })}
       </a>
-      <span class="sidebar-recent-session__aside session-row-aside">
-        ${running
-          ? html`<span
-              class="session-row-state"
-              id=${stateId}
-              role="img"
-              aria-label=${stateDescription}
-              >${renderSessionRunSpinner(false)}</span
-            >`
-          : nothing}
-        <span class="session-row-actions">
+      ${renderSessionRowEndcap({
+        child: false,
+        actions: html`<span class="session-row-actions">
           <button
             class="session-action"
             data-catalog-session-menu="true"
@@ -518,8 +514,19 @@ function renderCatalogSessionRow(
           >
             ${icons.ellipsis}
           </button>
-        </span>
-      </span>
+        </span>`,
+        primary: running
+          ? html`<span
+              class="session-primary-state session-primary-state--running session-primary-state--info"
+              id=${stateId}
+              role="img"
+              aria-label=${stateDescription}
+              title=${stateDescription}
+              data-session-primary-state="running"
+              >${renderSessionRunSpinner(false)}</span
+            >`
+          : nothing,
+      })}
     </div>
   `;
 }

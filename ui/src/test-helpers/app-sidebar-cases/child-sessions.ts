@@ -99,10 +99,10 @@ describe("AppSidebar agent chip", () => {
     ]);
     expect(childRows.every((row) => row.getAttribute("draggable") === "false")).toBe(true);
     expect(childRows.every((row) => row.querySelector(".session-row-actions") === null)).toBe(true);
-    expect(childRows.every((row) => row.querySelector(".session-row-state") === null)).toBe(true);
-    expect(childRows.every((row) => row.querySelector(".sidebar-session-indicator") !== null)).toBe(
+    expect(childRows.every((row) => row.querySelector(".sidebar-session-indicator") === null)).toBe(
       true,
     );
+    expect(childRows.every((row) => row.querySelector(".session-row-endcap") !== null)).toBe(true);
     expect(sidebar.querySelector('[aria-label="Done"]')).not.toBeNull();
     const runtimeStartMs = (
       sidebar.querySelector('[data-session-key="agent:main:child-one"] openclaw-elapsed-time') as
@@ -111,7 +111,9 @@ describe("AppSidebar agent chip", () => {
     )?.startMs;
     const childTrail = childRows[0]?.querySelector<HTMLElement>(".session-row-trail");
     expect(childTrail?.querySelector("openclaw-elapsed-time")).not.toBeNull();
-    expect(childRows[0]?.querySelector("a")?.getAttribute("aria-describedby")).toBe(childTrail?.id);
+    expect(childRows[0]?.querySelector("a")?.getAttribute("aria-describedby")).toBe(
+      `sidebar-session-state-${encodeURIComponent("agent:main:child-one")} ${childTrail?.id}`,
+    );
     expect(runtimeStartMs).toBeGreaterThan(Date.now() - 31_000);
     expect(runtimeStartMs).toBeLessThan(Date.now() - 29_000);
 

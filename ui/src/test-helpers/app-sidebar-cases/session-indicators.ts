@@ -6,14 +6,13 @@ import { SESSION_PULL_REQUESTS_SUBSCRIBE_METHOD } from "../../lib/session-pull-r
 import { createGatewayHarness, createSessionsHarness, mountSidebar } from "../app-sidebar.ts";
 import { waitForFast } from "../wait-for.ts";
 
-function expectEmptyLead(row: Element | null) {
-  const lead = row?.querySelector(".sidebar-session-indicator");
-  expect(lead).not.toBeNull();
-  expect(lead?.childElementCount).toBe(0);
+function expectNoLeadingSlot(row: Element | null) {
+  expect(row?.querySelector(".sidebar-session-indicator")).toBeNull();
+  expect(row?.querySelector(".session-row-endcap")).not.toBeNull();
 }
 
 describe("AppSidebar session indicators", () => {
-  it("preserves child PR indicators and leads a pinned child like any other", async () => {
+  it("preserves child PR indicators in the endcap without a leading slot", async () => {
     const parentKey = "agent:main:parent";
     const pinnedKey = "agent:main:pinned-child";
     const runningKey = "agent:main:running-child";
@@ -110,19 +109,19 @@ describe("AppSidebar session indicators", () => {
         ),
       ).not.toBeNull();
     });
-    // Pinning is not a status: a pinned child must lead exactly like an
-    // unpinned child in the same run/unread state.
+    // Pinning is not a child state: equivalent running children keep the same
+    // primary-state model and never gain parent actions.
     const pinnedRow = sidebar.querySelector(`[data-session-key="${pinnedKey}"]`);
     const runningRow = sidebar.querySelector(`[data-session-key="${runningKey}"]`);
-    const pinnedLead = pinnedRow?.querySelector(".sidebar-session-indicator");
-    const runningLead = runningRow?.querySelector(".sidebar-session-indicator");
-    expect(pinnedLead).not.toBeNull();
-    expect(pinnedLead?.innerHTML).toBe(runningLead?.innerHTML);
-    expect(pinnedLead?.querySelector("[data-session-pr-state]")).toBeNull();
-    expect(pinnedRow?.querySelector(".session-row-state")).toBeNull();
+    expectNoLeadingSlot(pinnedRow);
+    expectNoLeadingSlot(runningRow);
+    expect(pinnedRow?.querySelector(".session-primary-state")?.innerHTML).toBe(
+      runningRow?.querySelector(".session-primary-state")?.innerHTML,
+    );
+    expect(pinnedRow?.querySelector(".session-row-actions")).toBeNull();
   });
 
-  it("trails transient activity while keeping persistent status leading", async () => {
+  it("keeps auxiliary activity and primary state in stable endcap lanes", async () => {
     const keys = {
       plain: "agent:main:plain",
       forked: "agent:main:forked",
@@ -198,33 +197,35 @@ describe("AppSidebar session indicators", () => {
       expect(sidebar.querySelector('[data-session-pr-state="merged"]')).not.toBeNull();
     });
     const plain = sidebar.querySelector(`[data-session-key="${keys.plain}"]`);
-    expectEmptyLead(plain);
-    expect(plain?.querySelector(".session-row-state")).toBeNull();
+    expectNoLeadingSlot(plain);
+    expect(plain?.querySelector(".session-primary-state")).toBeNull();
 
     const forked = sidebar.querySelector(`[data-session-key="${keys.forked}"]`);
-    expectEmptyLead(forked);
+    expectNoLeadingSlot(forked);
     expect(
-      forked?.querySelector(".session-row-aside > .session-row-state .session-row-fork-indicator"),
+      forked?.querySelector(".session-row-endcap__auxiliary .session-row-fork-indicator"),
     ).not.toBeNull();
     expect(forked?.querySelector(".session-row-fork-indicator")?.getAttribute("aria-label")).toBe(
       "Forked session",
     );
-    expect(forked?.querySelector(".session-row-fork-indicator")?.hasAttribute("title")).toBe(false);
+    expect(forked?.querySelector(".session-row-fork-indicator")?.getAttribute("title")).toBe(
+      "Forked session",
+    );
 
     const unread = sidebar.querySelector(`[data-session-key="${keys.unread}"]`);
-    expectEmptyLead(unread);
+    expectNoLeadingSlot(unread);
     expect(
-      unread?.querySelector(".session-row-aside > .session-row-state .session-unread-dot"),
+      unread?.querySelector('.session-primary-state[data-session-primary-state="unread"]'),
     ).not.toBeNull();
 
     const runningUnread = sidebar.querySelector(`[data-session-key="${keys.runningUnread}"]`);
     expect(runningUnread?.classList.contains("session-row-host--running")).toBe(true);
-    expectEmptyLead(runningUnread);
+    expectNoLeadingSlot(runningUnread);
     expect(
-      runningUnread?.querySelector(".session-row-aside > .session-row-state .session-run-spinner"),
+      runningUnread?.querySelector(".session-primary-state .session-run-spinner"),
     ).not.toBeNull();
     expect(
-      runningUnread?.querySelector(".session-row-aside > .session-row-state .session-unread-dot"),
+      runningUnread?.querySelector(".session-primary-state .session-glyph__badge--unread"),
     ).not.toBeNull();
 
     for (const key of [keys.forked, keys.unread, keys.runningUnread]) {
@@ -237,18 +238,20 @@ describe("AppSidebar session indicators", () => {
     expect(unread?.querySelector("a")?.getAttribute("title")).toContain("Unread");
     expect(runningUnread?.querySelector("a")?.getAttribute("title")).toContain("Active run");
     expect(runningUnread?.querySelector("a")?.getAttribute("title")).toContain("Unread");
-    expect(runningUnread?.querySelector(".session-row-state")?.getAttribute("aria-label")).toBe(
+    expect(runningUnread?.querySelector(".session-primary-state")?.getAttribute("aria-label")).toBe(
       "Active run · Unread",
     );
 
     for (const key of [keys.openPullRequest, keys.mergedPullRequest]) {
       const row = sidebar.querySelector(`[data-session-key="${key}"]`);
-      expectEmptyLead(row);
-      expect(row?.querySelector(".session-row-state [data-session-pr-state]")).not.toBeNull();
+      expectNoLeadingSlot(row);
+      expect(
+        row?.querySelector(".session-row-endcap__auxiliary [data-session-pr-state]"),
+      ).not.toBeNull();
       expect(row?.querySelector("a")?.getAttribute("title")).toContain(
         key === keys.openPullRequest ? "Open PR" : "Merged",
       );
-      expect(row?.querySelector("[data-session-pr-state]")?.hasAttribute("title")).toBe(false);
+      expect(row?.querySelector("[data-session-pr-state]")?.hasAttribute("title")).toBe(true);
     }
 
     const openPullRequestRow = result.sessions.find((row) => row.key === keys.openPullRequest);
@@ -259,7 +262,7 @@ describe("AppSidebar session indicators", () => {
     sessions.publishList({ result });
     await waitForFast(() => {
       expect(sidebar.querySelector('[data-session-pr-state="open"]')).toBeNull();
-      expectEmptyLead(sidebar.querySelector(`[data-session-key="${keys.openPullRequest}"]`));
+      expectNoLeadingSlot(sidebar.querySelector(`[data-session-key="${keys.openPullRequest}"]`));
     });
   });
 });

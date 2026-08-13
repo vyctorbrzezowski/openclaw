@@ -3,13 +3,7 @@ import { t } from "../i18n/index.ts";
 
 export type SessionGlyphContent = TemplateResult | typeof nothing;
 
-/**
- * Persistent artwork in the sidebar's leading slot (owner avatar, page icon,
- * attention glyph). Callers can carry run state as a ring when that surface
- * owns activity in the leading slot. Circular content already fits the ring;
- * arbitrary square icons and thumbnails scale down so their corners stay
- * inside it.
- */
+/** Composes a compact state glyph with an optional running ring and corner badge. */
 export function renderSessionGlyph(options: {
   content: SessionGlyphContent;
   running: boolean;

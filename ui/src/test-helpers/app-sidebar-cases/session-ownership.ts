@@ -563,7 +563,7 @@ describe("AppSidebar session ownership", () => {
     expect(sidebar.querySelector(`[data-session-key="${unloadedSessionKey}"]`)).not.toBeNull();
   });
 
-  it("keeps the owner avatar leading while unread trails the row", async () => {
+  it("keeps the owner avatar inline while unread remains the primary state", async () => {
     const key = "agent:main:unread";
     const harness = createSessionsHarness("main", ["agent:main:main", key, "agent:main:other"]);
     const result = harness.sessions.state.result;
@@ -591,9 +591,12 @@ describe("AppSidebar session ownership", () => {
     await sidebar.updateComplete;
 
     const row = sidebar.querySelector(`[data-session-key="${key}"]`);
-    expect(row?.querySelector(".session-glyph openclaw-session-owner-chip")).not.toBeNull();
-    expect(row?.querySelector('.session-glyph__badge[aria-label="Unread"]')).toBeNull();
-    expect(row?.querySelector(".session-row-state .sidebar-recent-session__unread")).not.toBeNull();
+    expect(
+      row?.querySelector(".sidebar-recent-session__title-line openclaw-session-owner-chip"),
+    ).not.toBeNull();
+    expect(
+      row?.querySelector('.session-primary-state[data-session-primary-state="unread"]'),
+    ).not.toBeNull();
   });
 
   it("keeps owner avatars off child rows", async () => {

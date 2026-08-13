@@ -39,7 +39,7 @@ import { buildSkillWorkshopMocks } from "./control-ui-mock-skill-workshop.js";
 
 type CliOptions = {
   allowedHosts: string[];
-  fixture?: "approval" | "board" | "swarm";
+  fixture?: "approval" | "board" | "session-rows" | "swarm";
   host: string;
   port: number;
 };
@@ -160,7 +160,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
   if (!value) {
     return undefined;
   }
-  if (value !== "approval" && value !== "board" && value !== "swarm") {
+  if (value !== "approval" && value !== "board" && value !== "session-rows" && value !== "swarm") {
     throw new Error(`Unknown Control UI mock fixture: ${value}`);
   }
   return value;
@@ -1293,11 +1293,142 @@ async function createChatPickerScenario(
           }),
         ]
       : [];
+  const sessionRowStressChildren =
+    fixture === "session-rows"
+      ? [
+          sessionRow("agent:main:subagent:row-running", "Implement retry fix", baseTime - 8_000, {
+            hasActiveRun: true,
+            parentSessionKey: "agent:main:row-stress",
+            runtimeMs: 204_000,
+            spawnedBy: "agent:main:row-stress",
+            startedAt: baseTime - 204_000,
+            status: "running",
+            unread: true,
+          }),
+          sessionRow(
+            "agent:main:subagent:row-attention",
+            "Run integration tests",
+            baseTime - 7_000,
+            {
+              agentStatus: {
+                attention: "key",
+                expiresAt: ATTENTION_FIXTURE_EXPIRES_AT,
+                note: "Waiting for approval",
+              },
+              hasActiveRun: true,
+              parentSessionKey: "agent:main:row-stress",
+              runtimeMs: 68_000,
+              spawnedBy: "agent:main:row-stress",
+              startedAt: baseTime - 68_000,
+              status: "running",
+              unread: true,
+            },
+          ),
+          sessionRow("agent:main:subagent:row-done", "Package review artifacts", baseTime - 6_000, {
+            endedAt: baseTime - 6_000,
+            parentSessionKey: "agent:main:row-stress",
+            runtimeMs: 51_000,
+            spawnedBy: "agent:main:row-stress",
+            startedAt: baseTime - 57_000,
+            status: "done",
+          }),
+          sessionRow(
+            "agent:main:subagent:row-killed",
+            "Cancelled exploratory run",
+            baseTime - 5_000,
+            {
+              endedAt: baseTime - 5_000,
+              parentSessionKey: "agent:main:row-stress",
+              runtimeMs: 41_000,
+              spawnedBy: "agent:main:row-stress",
+              startedAt: baseTime - 46_000,
+              status: "killed",
+            },
+          ),
+          sessionRow("agent:main:subagent:row-timeout", "Investigate timeout", baseTime - 4_000, {
+            endedAt: baseTime - 4_000,
+            parentSessionKey: "agent:main:row-stress",
+            runtimeMs: 761_000,
+            spawnedBy: "agent:main:row-stress",
+            startedAt: baseTime - 765_000,
+            status: "timeout",
+            unread: true,
+          }),
+          sessionRow(
+            "agent:main:subagent:row-failed",
+            "Publish fallback package",
+            baseTime - 3_000,
+            {
+              endedAt: baseTime - 3_000,
+              lastRunError: "Package verification failed",
+              parentSessionKey: "agent:main:row-stress",
+              runtimeMs: 92_000,
+              spawnedBy: "agent:main:row-stress",
+              startedAt: baseTime - 95_000,
+              status: "failed",
+            },
+          ),
+        ]
+      : [];
   const sessions = [
     sessionRow("agent:main:main", "Molty", baseTime - 1_000, {
       childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
     }),
     ...swarmChildRows,
+    ...(fixture === "session-rows"
+      ? [
+          sessionRow(
+            "agent:main:row-stress",
+            "Release readiness command center",
+            baseTime - 2_000,
+            {
+              childSessions: sessionRowStressChildren.map((row) => row.key),
+              createdActor: MOCK_CREATOR_PETER,
+              forkSource: {
+                sessionId: "mock-fork-source",
+                sessionKey: "agent:main:work-openclaw",
+              },
+              hasActiveRun: true,
+              lastReadAt: baseTime - 120_000,
+              startedAt: baseTime - 180_000,
+              status: "running",
+              unread: true,
+            },
+          ),
+          sessionRow(
+            "agent:main:draft-owner",
+            "Deployment notes for the final review",
+            baseTime - 11_000,
+            {
+              createdActor: MOCK_CREATOR_PETER,
+              sharingRole: "owner",
+              visibility: "draft",
+            },
+          ),
+          sessionRow(
+            "agent:main:draft-other",
+            "Mira's private migration sketch",
+            baseTime - 12_000,
+            {
+              createdActor: MOCK_CREATOR_MIRA,
+              sharingRole: "viewer",
+              visibility: "draft",
+            },
+          ),
+          sessionRow(
+            "agent:main:long-metadata",
+            "A deliberately long session title that must preserve a useful readable title area",
+            baseTime - 13_000,
+            {
+              createdActor: MOCK_CREATOR_MIRA,
+              hasAutomation: true,
+              incognito: true,
+              unread: true,
+            },
+          ),
+        ]
+      : []),
+    ...sessionRowStressChildren,
     sessionRow(OBSERVER_DEMO_SESSION_KEY, "Session observer demo", baseTime - 3_000, {
       activeRunIds: [OBSERVER_DEMO_RUN_ID],
       hasActiveRun: true,

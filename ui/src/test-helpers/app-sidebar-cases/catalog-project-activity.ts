@@ -74,19 +74,12 @@ describe("AppSidebar project session activity", () => {
     expect(idle?.closest('[role="list"]')).toBe(projectList);
     expect(loose?.parentElement).toBe(hostList);
     expect(loose?.getAttribute("role")).toBe("listitem");
-    const activeState = active?.querySelector(".session-row-state");
+    const activeState = active?.querySelector(".session-primary-state");
     expect(activeState?.getAttribute("role")).toBe("img");
     expect(activeState?.getAttribute("aria-label")).toBe("Active run");
     expect(activeState?.querySelector(".session-run-spinner")).not.toBeNull();
-    expect(active?.querySelector(".session-run-spinner")?.getAttribute("aria-label")).toBe(
-      "Active run",
-    );
-    const activeLead = active?.querySelector(".sidebar-session-indicator");
-    const idleLead = idle?.querySelector(".sidebar-session-indicator");
-    expect(activeLead).not.toBeNull();
-    expect(activeLead?.childElementCount).toBe(0);
-    expect(idleLead).not.toBeNull();
-    expect(idleLead?.childElementCount).toBe(0);
-    expect(idle?.querySelector(".session-row-state")).toBeNull();
+    expect(active?.querySelector(".sidebar-session-indicator")).toBeNull();
+    expect(idle?.querySelector(".sidebar-session-indicator")).toBeNull();
+    expect(idle?.querySelector(".session-primary-state")).toBeNull();
   });
 });

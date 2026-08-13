@@ -28,13 +28,15 @@ import {
 } from "./app-sidebar-session-types.ts";
 import { icons } from "./icons.ts";
 import type { SessionDataController } from "./session-data-controller.ts";
-import {
-  describeSessionTrailingState,
-  renderSessionLeadingState,
-} from "./session-leading-indicator.ts";
 import type { SessionPullRequestIndicatorState } from "./session-menu-work.ts";
 import type { SessionOrganizerController } from "./session-organizer-controller.ts";
+import { renderSessionOwnerChip } from "./session-owner-chip.ts";
+import {
+  getSessionPrimaryStateModel,
+  renderSessionPrimaryStateIndicator,
+} from "./session-primary-state.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
+import { renderSessionRowEndcap } from "./session-row-endcap.ts";
 import {
   renderSidebarSessionSubtitle,
   resolveSidebarSessionSubtitle,
@@ -43,6 +45,25 @@ import type { SidebarMenusController } from "./sidebar-menus-controller.ts";
 import "./elapsed-time.ts";
 
 const SIDEBAR_VISIBLE_CHILD_SESSION_LIMIT = 4;
+
+function pullRequestStateLabel(state: Exclude<SessionPullRequestIndicatorState, "none">) {
+  return state === "open" ? t("sessionsView.openPullRequest") : t("chat.pullRequests.merged");
+}
+
+function renderOperationalPullRequest(state: SessionPullRequestIndicatorState) {
+  if (state === "none") {
+    return nothing;
+  }
+  const label = pullRequestStateLabel(state);
+  return html`<span
+    class="sidebar-session-pr-indicator sidebar-session-pr-indicator--${state}"
+    data-session-pr-state=${state}
+    role="img"
+    aria-label=${label}
+    title=${label}
+    >${icons.gitBranch}</span
+  >`;
+}
 
 export interface SessionListHost {
   readonly sessionDataContext:
@@ -180,20 +201,19 @@ export function renderRecentSession(params: {
       ? session.archivedBy
       : session.createdActor
     : undefined;
-  const { running, leadingIndicator, trailingIndicator } = renderSessionLeadingState(
-    session,
-    pullRequestState,
-    ownerActor,
-    ownerAttribution,
-  );
-  const trailingDescription = session.isChild
-    ? ""
-    : describeSessionTrailingState(session, pullRequestState);
+  const primaryState = getSessionPrimaryStateModel(session);
+  const running = session.hasActiveRun;
+  const auxiliaryDescription = [
+    session.forkSource ? t("sessionsView.forkedSession") : "",
+    pullRequestState === "none" ? "" : pullRequestStateLabel(pullRequestState),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const meta = display?.meta ?? formatSidebarTimestamp(session.updatedAt);
   const rowMeta = session.pinned ? "" : meta;
   const hasTrail = session.isChild && (session.runtimeMs != null || session.startedAt != null);
   const metaId = hasTrail ? sidebarSessionMetaId(session.key) : undefined;
-  const stateId = trailingIndicator === nothing ? undefined : sidebarSessionStateId(session.key);
+  const stateId = primaryState.kind ? sidebarSessionStateId(session.key) : undefined;
   const openMenuFromEvent = session.isChild
     ? undefined
     : (event: MouseEvent | KeyboardEvent) =>
@@ -204,7 +224,8 @@ export function renderRecentSession(params: {
         );
   const title = [
     display?.title ?? [label, narration, rowMeta].filter(Boolean).join(" · "),
-    trailingDescription,
+    auxiliaryDescription,
+    primaryState.accessibleLabel,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -246,6 +267,7 @@ export function renderRecentSession(params: {
     <div
       class=${rowClass}
       data-session-key=${session.key}
+      data-session-depth=${session.isChild ? "1" : "0"}
       role=${ifDefined(listItem ? "listitem" : undefined)}
       draggable=${rowDraggable ? "true" : "false"}
       title=${!session.isChild && !groupWriteAccess.allowed ? groupWriteAccess.reason : nothing}
@@ -267,6 +289,7 @@ export function renderRecentSession(params: {
       @mouseenter=${(event: MouseEvent) => startHoverMarquee(event.currentTarget as HTMLElement)}
       @mouseleave=${(event: MouseEvent) => stopHoverMarquee(event.currentTarget as HTMLElement)}
     >
+      <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
       <a
         href=${session.href}
         class="sidebar-recent-session__link"
@@ -276,25 +299,27 @@ export function renderRecentSession(params: {
         aria-describedby=${[stateId, metaId].filter(Boolean).join(" ") || nothing}
         @click=${(event: MouseEvent) => host.handleSessionRowClick(event, session)}
       >
-        <span class="sidebar-session-indicator"
-          >${leadingIndicator}
-          ${session.visibility === "draft"
-            ? html`<span class="session-row-draft-indicator" title=${t("chat.sessionSharing.draft")}
-                >👻</span
-              >`
-            : nothing}</span
-        >
         <span class="sidebar-recent-session__text">
-          <span class="sidebar-recent-session__name hover-marquee"
-            >${session.archived
+          <span class="sidebar-recent-session__title-line">
+            <span class="sidebar-recent-session__name hover-marquee">${label}</span>
+            ${session.archived
               ? html`<span
-                  class="sidebar-session__archive-glyph"
+                  class="session-row-qualifier session-row-qualifier--icon"
+                  role="img"
                   aria-label=${t("sessionsView.archived")}
                   title=${t("sessionsView.archived")}
                   >${icons.archive}</span
                 >`
-              : nothing}${label}</span
-          >
+              : nothing}
+            ${session.visibility === "draft"
+              ? html`<span class="session-row-qualifier" title=${t("chat.sessionSharing.draft")}
+                  >${t("chat.sessionSharing.draft")}</span
+                >`
+              : nothing}
+            ${!session.isChild && ownerActor?.id
+              ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
+              : nothing}
+          </span>
           ${renderSidebarSessionSubtitle({ subtitle, narration })}
         </span>
         ${!session.isChild && sessionHasBoard(session.key)
@@ -318,51 +343,41 @@ export function renderRecentSession(params: {
           ...session,
           hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
           pullRequest: session.pullRequest ?? display?.pullRequest,
-          hasApproval: sessionHasPendingApproval(
-            host.sessionData.approvalBadgeSnapshot(),
-            session.key,
-          ),
+          hasApproval:
+            sessionHasPendingApproval(host.sessionData.approvalBadgeSnapshot(), session.key) &&
+            primaryState.attention?.kind !== "approval",
         })}
       </a>
-      ${session.childSessionKeys.length > 0
-        ? html`<button
-            class="sidebar-child-session-toggle ${session.runningChildCount > 0
-              ? "sidebar-child-session-toggle--running"
-              : session.failedChildCount > 0
-                ? "sidebar-child-session-toggle--failed"
-                : ""}"
-            type="button"
-            data-child-session-toggle=${session.key}
-            aria-expanded=${String(childrenExpanded)}
-            aria-label=${t(
-              childrenExpanded
-                ? "sessionsView.hideChildSessions"
-                : "sessionsView.showChildSessions",
-              { count: String(session.childSessionKeys.length), session: label },
-            )}
-            @click=${() => host.toggleSessionChildren(session)}
-          >
-            <span class="sidebar-child-session-toggle__icon" aria-hidden="true"
-              >${childrenExpanded ? icons.chevronDown : icons.chevronRight}</span
-            >
-            ${childrenExpanded
-              ? nothing
-              : html`<span class="sidebar-child-session-toggle__count"
+      ${renderSessionRowEndcap({
+        child: session.isChild,
+        treeControl:
+          session.childSessionKeys.length > 0
+            ? html`<button
+                class="sidebar-child-session-toggle ${session.runningChildCount > 0
+                  ? "sidebar-child-session-toggle--running"
+                  : session.failedChildCount > 0
+                    ? "sidebar-child-session-toggle--failed"
+                    : ""}"
+                type="button"
+                data-child-session-toggle=${session.key}
+                aria-expanded=${String(childrenExpanded)}
+                aria-label=${t(
+                  childrenExpanded
+                    ? "sessionsView.hideChildSessions"
+                    : "sessionsView.showChildSessions",
+                  { count: String(session.childSessionKeys.length), session: label },
+                )}
+                @click=${() => host.toggleSessionChildren(session)}
+              >
+                <span class="sidebar-child-session-toggle__icon" aria-hidden="true"
+                  >${childrenExpanded ? icons.chevronDown : icons.chevronRight}</span
+                >
+                <span class="sidebar-child-session-toggle__count"
                   >${session.childSessionKeys.length}</span
-                >`}
-          </button>`
-        : nothing}
-      <span class="sidebar-recent-session__aside session-row-aside">
-        ${trailingIndicator === nothing
-          ? nothing
-          : html`<span
-              class="session-row-state"
-              id=${stateId}
-              role="img"
-              aria-label=${trailingDescription}
-              >${trailingIndicator}</span
-            >`}
-        ${hasTrail
+                >
+              </button>`
+            : nothing,
+        duration: hasTrail
           ? html`<span class="session-row-trail" id=${metaId}
               >${session.runtimeMs != null
                 ? session.hasActiveRun
@@ -375,8 +390,17 @@ export function renderRecentSession(params: {
                     .endMs=${session.endedAt ?? null}
                   ></openclaw-elapsed-time>`}</span
             >`
-          : nothing}
-        ${session.isChild
+          : nothing,
+        auxiliary: html`${session.forkSource && !session.isChild
+          ? html`<span
+              class="session-row-fork-indicator"
+              role="img"
+              aria-label=${t("sessionsView.forkedSession")}
+              title=${t("sessionsView.forkedSession")}
+              >${icons.gitFork}</span
+            >`
+          : nothing}${renderOperationalPullRequest(pullRequestState)}`,
+        actions: session.isChild
           ? nothing
           : html`<span class="session-row-actions">
               <button
@@ -406,8 +430,9 @@ export function renderRecentSession(params: {
               >
                 ${icons.moreHorizontal}
               </button>
-            </span>`}
-      </span>
+            </span>`,
+        primary: renderSessionPrimaryStateIndicator(primaryState, stateId),
+      })}
     </div>
   `;
   // Marquee state mutates the row DOM; keying prevents cross-session reuse.

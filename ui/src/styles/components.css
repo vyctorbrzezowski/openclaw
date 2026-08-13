@@ -5418,45 +5418,9 @@ td.data-table-key-col {
   display: inline;
 }
 
-/* ── Session row primitives ──
-   Shared by the sidebar recents list and the chat session picker. Rows read
-   as plain text lines: attribute badges follow the title, and the trailing
-   aside stacks transient state, relative time, and management actions in one
-   grid cell, so hovering swaps state for actions without any layout shift. */
+/* ── Session row primitives ── */
 .session-row-host {
   position: relative;
-}
-
-.session-row-host--draft {
-  --draft-row-opacity: 1;
-  opacity: var(--draft-row-opacity);
-}
-
-.session-row-host--draft-owner .session-row-draft-indicator {
-  opacity: 0.55;
-}
-
-.session-row-host--draft-other {
-  --draft-row-opacity: 0.58;
-  background: color-mix(in srgb, var(--bg-muted) 44%, transparent);
-}
-
-.session-row-host--draft-other:hover,
-.session-row-host--draft-other:focus-within,
-.session-row-host--draft-other.sidebar-recent-session--selected {
-  --draft-row-opacity: 0.88;
-}
-
-.session-row-draft-indicator {
-  display: inline-grid;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--bg-elevated) 72%, transparent);
-  font-size: 12px;
 }
 
 /* Unread indicator shared by the sidebar recents list, the chat session
@@ -5471,17 +5435,6 @@ td.data-table-key-col {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-.session-row-aside {
-  display: grid;
-  align-items: center;
-  justify-items: end;
-  flex: 0 0 auto;
-}
-
-.session-row-aside > * {
-  grid-area: 1 / 1;
-}
-
 .session-row-trail {
   display: inline-flex;
   align-items: center;
@@ -5493,17 +5446,6 @@ td.data-table-key-col {
   transition: opacity var(--duration-fast) ease;
   /* Display-only, and its opacity transition forms a stacking context that
      would otherwise sit above the action buttons and swallow their clicks. */
-  pointer-events: none;
-}
-
-.session-row-state {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 24px;
-  min-height: 24px;
-  transition: opacity var(--duration-fast) ease;
   pointer-events: none;
 }
 
@@ -5653,10 +5595,6 @@ td.data-table-key-col {
   pointer-events: auto;
 }
 
-.session-row-host:is(:hover, :focus-within) :is(.session-row-trail, .session-row-state) {
-  opacity: 0;
-}
-
 /* Sidebar rows are now the direct management surface after removing the
    duplicate picker; touch users need pin/menu controls without hover. */
 @media (hover: none), (pointer: coarse) {
@@ -5667,22 +5605,6 @@ td.data-table-key-col {
 
   .sidebar-recent-session .session-action:disabled {
     opacity: 0.35;
-  }
-
-  .sidebar-recent-session .session-row-trail {
-    opacity: 0;
-  }
-
-  .sidebar-recent-session .session-row-aside:has(> .session-row-state) {
-    column-gap: 1px;
-  }
-
-  .sidebar-recent-session .session-row-state {
-    grid-area: 1 / 1;
-  }
-
-  .sidebar-recent-session .session-row-actions {
-    grid-area: 1 / 2;
   }
 }
 
@@ -5717,6 +5639,411 @@ td.data-table-key-col {
   .session-glyph__ring {
     animation: none;
     border-color: var(--run);
+  }
+}
+
+/* Text-first sidebar session rows. The hit target remains full-width while the
+   visual surface, text rail, and operational endcap have independent geometry. */
+.sidebar-recent-sessions__head {
+  padding-inline: 8px;
+}
+
+.sidebar-session-group-toggle {
+  padding-inline-start: 10px;
+}
+
+.sidebar-nav__head {
+  padding-inline: 8px;
+}
+
+.sidebar-nav__head--pinned .sidebar-session-group-toggle {
+  padding-inline-start: 10px;
+}
+
+.sidebar-session-group-drag-handle {
+  inset-inline-start: auto;
+  inset-inline-end: 34px;
+}
+
+.sidebar-recent-session {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar-recent-session__surface {
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: calc(var(--sidebar-session-content-start, 18px) - 8px);
+  inset-inline-end: 8px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+  transition:
+    background var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    opacity var(--duration-fast) ease;
+}
+
+.sidebar-recent-session:hover,
+.sidebar-recent-session.sidebar-recent-session--active,
+.sidebar-recent-session.sidebar-recent-session--selected,
+.sidebar-zone-entry .sidebar-recent-session,
+.sidebar-zone-entry .sidebar-recent-session:hover,
+.sidebar-zone-entry .sidebar-recent-session.sidebar-recent-session--active {
+  border: 0;
+  background: transparent;
+}
+
+.sidebar-recent-session:hover > .sidebar-recent-session__surface {
+  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
+}
+
+.sidebar-recent-session.sidebar-recent-session--active > .sidebar-recent-session__surface {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.sidebar-recent-session.sidebar-recent-session--selected > .sidebar-recent-session__surface {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.sidebar-recent-session:focus-within > .sidebar-recent-session__surface {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 56%, transparent);
+}
+
+.sidebar-recent-session--attention-amber:not(.sidebar-recent-session--active)
+  > .sidebar-recent-session__surface {
+  background: color-mix(in srgb, var(--warn) 5%, transparent);
+}
+
+.sidebar-recent-session--attention-danger:not(.sidebar-recent-session--active)
+  > .sidebar-recent-session__surface {
+  background: color-mix(in srgb, var(--danger) 5%, transparent);
+}
+
+.sidebar-recent-session__link {
+  z-index: 0;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  margin-inline-start: var(--sidebar-session-content-start, 18px);
+  padding: 0;
+  mask-image: none;
+}
+
+.sidebar-recent-session[data-session-depth="1"] {
+  min-height: 32px;
+}
+
+.sidebar-recent-session[data-session-depth="1"] .sidebar-recent-session__link {
+  min-height: 32px;
+  margin-inline-start: calc(var(--sidebar-session-content-start, 18px) + 16px);
+  padding-block: 0;
+}
+
+.sidebar-recent-session:has(.sidebar-recent-session__subtitle) {
+  min-height: 48px;
+}
+
+.sidebar-recent-session[data-session-depth="1"]:has(.sidebar-recent-session__subtitle) {
+  min-height: 42px;
+}
+
+.sidebar-recent-session__text {
+  min-width: 0;
+}
+
+.sidebar-recent-session__title-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 18px;
+}
+
+.sidebar-recent-session__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  line-height: 18px;
+}
+
+.sidebar-recent-session:has(.session-primary-state--unread) .sidebar-recent-session__name,
+.sidebar-recent-session:has(.session-primary-state .session-glyph__badge--unread)
+  .sidebar-recent-session__name {
+  font-weight: 600;
+}
+
+.sidebar-recent-session__subtitle {
+  line-height: 16px;
+  margin-block-start: 1px;
+}
+
+.session-row-qualifier {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  padding-inline: 4px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-muted) 74%, transparent);
+  color: var(--muted);
+  font-size: calc(10px * var(--control-ui-text-scale));
+  line-height: 14px;
+}
+
+.session-row-qualifier--icon {
+  padding-inline: 2px;
+}
+
+.session-row-qualifier--icon svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.session-owner-chip--row {
+  width: 14px;
+  height: 14px;
+  border-color: color-mix(in srgb, var(--border-strong) 58%, transparent);
+  background: color-mix(in srgb, var(--bg-muted) 88%, var(--bg));
+  box-shadow: none;
+  color: var(--text);
+  font-size: 7px;
+}
+
+.session-row-host--draft-other {
+  background: transparent;
+}
+
+.session-row-host--draft-other .sidebar-recent-session__text {
+  opacity: 0.72;
+}
+
+.session-row-host--draft-other:hover .sidebar-recent-session__text,
+.session-row-host--draft-other:focus-within .sidebar-recent-session__text {
+  opacity: 0.82;
+}
+
+.sidebar-session--archived,
+.sidebar-session--archived:hover,
+.sidebar-session--archived.sidebar-recent-session--active,
+.sidebar-session--archived.sidebar-recent-session--selected {
+  opacity: 1;
+}
+
+.sidebar-session--archived .sidebar-recent-session__text {
+  opacity: 0.62;
+}
+
+.sidebar-session--archived:is(:hover, :focus-within, .sidebar-recent-session--active)
+  .sidebar-recent-session__text {
+  opacity: 0.82;
+}
+
+.session-row-endcap {
+  z-index: 1;
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  min-height: 24px;
+  margin-inline-end: 16px;
+  padding-block-start: 8px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sidebar-recent-session[data-session-depth="1"] .session-row-endcap {
+  padding-block-start: 6px;
+}
+
+.sidebar-recent-session:has(.sidebar-recent-session__subtitle) .session-row-endcap {
+  padding-block-start: 6px;
+}
+
+.sidebar-recent-session[data-session-depth="1"]:has(.sidebar-recent-session__subtitle)
+  .session-row-endcap {
+  padding-block-start: 4px;
+}
+
+.session-row-endcap__duration,
+.session-row-endcap__resting,
+.session-row-endcap__actions,
+.session-row-endcap__primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.session-row-endcap__duration {
+  min-width: 34px;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-row-endcap__auxiliary {
+  position: relative;
+  display: inline-grid;
+  width: 50px;
+  min-height: 24px;
+  place-items: center end;
+}
+
+.session-row-endcap__auxiliary > * {
+  grid-area: 1 / 1;
+  gap: 6px;
+  transition: opacity 120ms ease-out;
+}
+
+.session-row-endcap__actions {
+  opacity: 0;
+}
+
+.session-row-host:is(:hover, :focus-within) .session-row-endcap__resting {
+  opacity: 0;
+}
+
+.session-row-host:is(:hover, :focus-within) .session-row-endcap__actions {
+  opacity: 1;
+}
+
+.session-row-host:is(:hover, :focus-within) .session-row-endcap__primary,
+.session-row-host:is(:hover, :focus-within) .session-row-endcap__duration {
+  opacity: 1;
+}
+
+.session-row-host:is(:hover, :focus-within) .session-row-endcap .session-row-trail {
+  opacity: 1;
+}
+
+.session-row-endcap__primary {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.session-row-endcap__primary:empty {
+  display: none;
+}
+
+.session-primary-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+}
+
+.session-primary-state--info {
+  color: var(--run);
+}
+
+.session-primary-state--warning {
+  color: var(--warn);
+}
+
+.session-primary-state--danger {
+  color: var(--danger);
+}
+
+.session-primary-state--success {
+  color: var(--ok);
+}
+
+.session-primary-state__terminal,
+.session-primary-state__terminal svg {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+
+.session-primary-state .session-glyph,
+.session-primary-state .session-glyph__content {
+  width: 16px;
+  height: 16px;
+}
+
+.session-primary-state .session-glyph__badge {
+  top: -1px;
+  right: -1px;
+  width: 5px;
+  height: 5px;
+}
+
+.session-primary-state .sidebar-session-attention__icon,
+.session-primary-state .sidebar-session-attention__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sidebar-child-session-toggle {
+  width: auto;
+  min-width: 32px;
+  height: 24px;
+  padding-inline: 3px;
+  flex: none;
+  opacity: 0.62;
+  pointer-events: auto;
+}
+
+.sidebar-child-session-toggle[aria-expanded="true"] {
+  opacity: 0.62;
+  pointer-events: auto;
+}
+
+.session-row-host:hover .sidebar-child-session-toggle,
+.session-row-host:focus-within .sidebar-child-session-toggle {
+  opacity: 1;
+}
+
+.sidebar-session-tree__children {
+  margin-inline-start: 0;
+  box-shadow: none;
+}
+
+.sidebar-session-tree__loading,
+.sidebar-session-tree__show-more {
+  padding-inline-start: calc(var(--sidebar-session-content-start, 18px) + 16px);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .session-row-endcap__auxiliary {
+    width: auto;
+    column-gap: 6px;
+  }
+
+  .session-row-endcap__resting,
+  .session-row-endcap__actions {
+    position: static;
+    grid-area: auto;
+    opacity: 1;
+  }
+
+  .sidebar-recent-session:not(.sidebar-recent-session--child) > .sidebar-recent-session__link {
+    mask-image: none;
+    padding-inline-end: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-row-endcap__auxiliary > * {
+    transition: none;
   }
 }
 
