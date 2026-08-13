@@ -2605,8 +2605,6 @@ body.update-dialog-open .sidebar-update-card__status {
   overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
-  font-size: var(--sidebar-session-title-size);
-  font-weight: 500;
   color: var(--text);
 }
 
@@ -2623,10 +2621,6 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-recent-session--child .sidebar-recent-session__link {
   padding-top: 3px;
   padding-bottom: 3px;
-}
-
-.sidebar-recent-session--child .sidebar-recent-session__name {
-  font-size: var(--sidebar-session-title-size);
 }
 
 .sidebar-recent-session--child .session-row-trail {
@@ -2659,7 +2653,6 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-recent-session--active .sidebar-recent-session__name {
-  font-weight: 500;
   color: var(--text-strong);
 }
 
@@ -3245,8 +3238,6 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .sidebar-zone-entry .sidebar-recent-session__name {
   color: inherit;
-  font-size: calc(13px * var(--control-ui-text-scale));
-  font-weight: 500;
 }
 
 .sidebar-zone-entry .sidebar-recent-session:hover {

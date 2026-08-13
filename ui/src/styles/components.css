@@ -5803,12 +5803,12 @@ td.data-table-key-col {
 .sidebar-recent-session__name {
   flex: 1 1 auto;
   min-width: 0;
+  font-family: inherit;
   font-size: var(--sidebar-session-title-size, calc(13px * var(--control-ui-text-scale)));
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: normal;
   line-height: var(--sidebar-session-title-line-height, 20px);
-}
-
-.sidebar-recent-session[data-session-unread="true"] .sidebar-recent-session__name {
-  font-weight: 600;
 }
 
 .sidebar-recent-session__subtitle {
