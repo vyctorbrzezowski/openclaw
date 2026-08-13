@@ -1483,6 +1483,7 @@ async function createChatPickerScenario(
       status: "running",
     }),
     sessionRow("agent:main:tax-research", "Tax filing research", baseTime - 60_000, {
+      execCwd: "/Users/peter/Projects/openclaw",
       hasActiveRun: true,
       status: "running",
       childSessions: ["agent:main:subagent:tax-receipts"],
@@ -1513,6 +1514,7 @@ async function createChatPickerScenario(
     }),
     mainChildRow,
     sessionRow("agent:main:home-server", "Home server migration", baseTime - 240_000, {
+      execCwd: "/Users/peter/Projects/openclaw",
       lastMessagePreview: "Reviewing the migration plan",
       pinned: true,
     }),
