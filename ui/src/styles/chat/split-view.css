@@ -579,6 +579,13 @@ openclaw-chat-pane {
   box-shadow: none;
 }
 
+.chat-pane__header .viewer-avatar {
+  box-sizing: border-box;
+  width: var(--chat-pane-header-icon-size);
+  height: var(--chat-pane-header-icon-size);
+  border-width: 1px;
+}
+
 .chat-pane__actions {
   display: flex;
   align-items: center;
