@@ -1474,7 +1474,6 @@ async function createChatPickerScenario(
       status: "running",
     }),
     sessionRow(NARRATION_DEMO_SESSION_KEY, "Sidebar narration demo", baseTime - 15_000, {
-      createdActor: MOCK_CREATOR_MIRA,
       hasActiveRun: true,
       startedAt: baseTime - 45_000,
       status: "running",
@@ -1497,7 +1496,6 @@ async function createChatPickerScenario(
       lastRunError: "Model out of credits: openai/gpt-5.6",
     }),
     sessionRow("agent:main:work-openclaw", "OpenClaw work checkout", baseTime - 85_000, {
-      createdActor: MOCK_CREATOR_PETER,
       execCwd: "/Users/peter/Work/openclaw",
       lastReadAt: baseTime - 120_000,
       observerDigest: {
