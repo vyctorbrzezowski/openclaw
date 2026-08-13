@@ -1458,6 +1458,7 @@ async function createChatPickerScenario(
           ),
           sessionRow(MULTI_USER_DEMO_SESSION_KEY, "Team release review", baseTime - 12_500, {
             createdActor: MOCK_CREATOR_MIRA,
+            execCwd: "/Users/peter/Projects/openclaw",
             lastMessagePreview: "Coordinating final launch checks with the release team",
           }),
           sessionRow(
@@ -1688,10 +1689,31 @@ async function createChatPickerScenario(
       "sessions.catalog.read",
       "system.info",
       "terminal.open",
+      "update.run",
     ],
+    sessionSectionOrder:
+      fixture === "session-rows"
+        ? [
+            "ungrouped",
+            "work",
+            "catalog:codex",
+            "catalog:claude-code",
+            "category:Research",
+            "groups",
+          ]
+        : [],
+    sessionGroups: ["Research"],
     // Terminal has a second gate beyond the advertised method (see
     // ui/src/lib/terminal-availability.ts).
     terminalEnabled: true,
+    updateAvailable:
+      fixture === "session-rows"
+        ? {
+            channel: "stable",
+            currentVersion: "2026.8.12",
+            latestVersion: "2026.8.13",
+          }
+        : null,
     historyMessages: buildScrollableChatHistory(baseTime),
     // Lights up the footer facepile and who's-online roster; the email-only
     // entry keeps the roster's no-display-name row exercised.
@@ -1785,9 +1807,6 @@ async function createChatPickerScenario(
           ],
         },
       },
-      // Custom session group catalog so the sidebar's category zone (and its
-      // drag-reordering against built-in sections) is exercised in the mock.
-      "sessions.groups.list": { groups: [{ name: "Research", position: 0 }] },
       // Coding session catalogs so the sidebar's catalog sections (header
       // right-click menu, hide/restore preference) are exercised in the mock.
       "sessions.catalog.list": {

@@ -422,7 +422,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const count = group.count > 99 ? "99+" : String(group.count);
     const meta =
       group.eventType === "run_failed"
-        ? `${group.count === 1 ? t("attention.failure") : t("attention.failures", { count })} - ${relative}`
+        ? `${group.count === 1 ? t("attention.failure") : t("attention.failures", { count })} · ${relative}`
         : relative;
     return html`
       <div class="sidebar-status-event">
@@ -464,10 +464,11 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const status = this.currentStatus();
     const conditions = status.conditions;
     const blocking = conditions.filter((condition) => condition.severity === "blocking").length;
-    const issueLabel = t(conditions.length === 1 ? "attention.issue" : "attention.issues", {
-      count: String(conditions.length),
+    const visibleIssueCount = conditions.length + this.recentGroups.length;
+    const issueLabel = t(visibleIssueCount === 1 ? "attention.issue" : "attention.issues", {
+      count: String(visibleIssueCount),
     });
-    const countLabel = conditions.length > 9 ? "9+" : String(conditions.length);
+    const countLabel = visibleIssueCount > 9 ? "9+" : String(visibleIssueCount);
     const ariaLabel = t("attention.systemStatusAria", {
       issues: issueLabel,
       blocking: String(blocking),

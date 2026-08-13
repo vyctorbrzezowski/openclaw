@@ -392,6 +392,7 @@ export const en: TranslationMap = {
       commitsBehind: "{count} commits behind",
     },
     sidebar: {
+      available: "Update available",
       campaignTarget: "{status} · {target}",
       updating: "Updating Gateway…",
     },

@@ -15,48 +15,7 @@ import {
 import { t } from "../i18n/index.ts";
 import { OpenClawLightDomContentsElement } from "../lit/openclaw-element.ts";
 import { PollController } from "../lit/poll-controller.ts";
-import { getSafeLocalStorage } from "../local-storage.ts";
 import { icons } from "./icons.ts";
-
-const UPDATE_BANNER_DISMISS_KEY = "openclaw:control-ui:update-banner-dismissed:v1";
-
-type DismissedUpdate = {
-  latestVersion: string;
-  channel: string | null;
-  dismissedAtMs: number;
-};
-
-function updateKey(update: UpdateAvailable): string {
-  return `${update.latestVersion}\u0000${update.channel}`;
-}
-
-function isDismissed(update: UpdateAvailable): boolean {
-  try {
-    const raw = getSafeLocalStorage()?.getItem(UPDATE_BANNER_DISMISS_KEY);
-    if (!raw) {
-      return false;
-    }
-    const dismissed = JSON.parse(raw) as Partial<DismissedUpdate>;
-    return dismissed.latestVersion === update.latestVersion && dismissed.channel === update.channel;
-  } catch {
-    return false;
-  }
-}
-
-function dismiss(update: UpdateAvailable): void {
-  try {
-    getSafeLocalStorage()?.setItem(
-      UPDATE_BANNER_DISMISS_KEY,
-      JSON.stringify({
-        latestVersion: update.latestVersion,
-        channel: update.channel,
-        dismissedAtMs: Date.now(),
-      } satisfies DismissedUpdate),
-    );
-  } catch {
-    // Dismissal persistence is best effort.
-  }
-}
 
 class SidebarUpdateCard extends OpenClawLightDomContentsElement {
   @property({ attribute: false }) updateAvailable: UpdateAvailable | null = null;
@@ -73,7 +32,6 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
   @property({ attribute: false }) refreshRequired = false;
   @property({ attribute: false }) onRefresh: () => void = () => undefined;
   @property({ attribute: false }) onHoldUpdate: () => Promise<boolean> = async () => false;
-  @state() private dismissedUpdateKey: string | null = null;
   @state() private holdingCampaignId: string | null = null;
   @state() private nativeUpdateAvailable = hasNativeUpdateBridge();
   private nativeUpdateDeclined = false;
@@ -180,15 +138,7 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
     // metadata while it restarts, and the card must not vanish or fall back to
     // the stale "update available" call to action mid-install.
     const statusBanner = this.statusBanner;
-    if (
-      !campaign &&
-      !busy &&
-      !statusBanner &&
-      (!update ||
-        (!hasVersionUpdate && !hasGitUpdate) ||
-        this.dismissedUpdateKey === updateKey(update) ||
-        isDismissed(update))
-    ) {
+    if (!campaign && !busy && !statusBanner && (!update || (!hasVersionUpdate && !hasGitUpdate))) {
       return nothing;
     }
     const title = this.nativeUpdateAvailable
@@ -197,15 +147,18 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
     const betaChannelSuffix = update?.channel === "beta" ? " (beta)" : "";
     const campaignLabel = formatUpdateCampaignLabel(this.updateSchedule);
     const targetLabel = formatUpdateTargetLabel(this.updateSchedule, update);
+    const availabilityOnly = !campaign && !busy && !statusBanner;
     const text = campaignLabel
       ? targetLabel
         ? t("updates.sidebar.campaignTarget", { status: campaignLabel, target: targetLabel })
         : campaignLabel
       : busy
         ? t("updates.sidebar.updating")
-        : targetLabel
-          ? `${title} · ${targetLabel}${betaChannelSuffix}`
-          : title;
+        : availabilityOnly
+          ? t("updates.sidebar.available")
+          : targetLabel
+            ? `${title} · ${targetLabel}${betaChannelSuffix}`
+            : title;
     const countdownActive =
       campaign?.state === "countdown" || campaign?.state === "waiting-for-idle";
     const holdActive = campaign?.holdUntilMs !== undefined && campaign.holdUntilMs > Date.now();
@@ -231,9 +184,9 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
         ${actionable
           ? html`<div class="sidebar-update-card__actions">
               <button
-                class="sidebar-update-card__action ${campaign
-                  ? "sidebar-update-card__action--undismissable"
-                  : ""} ${busy ? "sidebar-update-card__action--busy" : ""}"
+                class="sidebar-update-card__action sidebar-update-card__action--undismissable ${busy
+                  ? "sidebar-update-card__action--busy"
+                  : ""}"
                 type="button"
                 title=${this.canUpdate ? nothing : t("updates.adminRequired")}
                 ?disabled=${busy || !this.canUpdate}
@@ -255,7 +208,7 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
                 }}
               >
                 <span class="sidebar-update-card__icon" aria-hidden="true"
-                  >${busy ? icons.refresh : icons.download}</span
+                  >${busy || availabilityOnly ? icons.refresh : icons.download}</span
                 >
                 <span
                   class="sidebar-update-card__text"
@@ -282,21 +235,6 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
                 : nothing}
             </div>`
           : nothing}
-        ${campaign || busy || !update || statusBanner
-          ? nothing
-          : html`
-              <button
-                class="sidebar-update-card__dismiss"
-                type="button"
-                aria-label=${t("chat.dismissUpdateBanner")}
-                @click=${() => {
-                  this.dismissedUpdateKey = updateKey(update);
-                  dismiss(update);
-                }}
-              >
-                ${icons.x}
-              </button>
-            `}
       </div>
     `;
   }

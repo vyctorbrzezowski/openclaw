@@ -507,13 +507,13 @@ export class SidebarMenusController implements ReactiveController, SidebarMenusC
     this.updateState("agentMenuFilter", next);
   }
 
-  toggleIdentityMenu(trigger: HTMLElement, anchor: HTMLElement = trigger) {
+  toggleIdentityMenu(trigger: HTMLElement) {
     if (this.identityMenuPosition) {
       this.closeIdentityMenu();
       return;
     }
     this.loadMenuRenderer();
-    const rect = anchor.getBoundingClientRect();
+    const rect = trigger.getBoundingClientRect();
     const menuWidth = Math.max(240, rect.width);
     this.dismissTransientMenus();
     this.identityMenuTrigger = trigger;

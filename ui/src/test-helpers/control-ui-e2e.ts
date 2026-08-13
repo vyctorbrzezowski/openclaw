@@ -10,7 +10,7 @@ import type { Locator, Page } from "playwright";
 import type { InlineConfig, Plugin, PreviewServer, ViteDevServer } from "vite";
 import { PROTOCOL_VERSION } from "../../../packages/gateway-protocol/src/version.js";
 import { CONTROL_UI_BOOTSTRAP_CONFIG_PATH } from "../../../src/gateway/control-ui-contract.js";
-import type { ModelCatalogEntry } from "../api/types.ts";
+import type { ModelCatalogEntry, UpdateAvailable } from "../api/types.ts";
 import { normalizeControlUiBuildInfo } from "../build-info-normalizers.ts";
 import type { ControlUiBuildInfo } from "../build-info.ts";
 
@@ -300,8 +300,11 @@ export type ControlUiMockGatewayScenario = {
   sessionKey?: string;
   /** Initial gateway-owned custom group catalog (sessions.groups.*), in order. */
   sessionGroups?: string[];
+  /** Deterministic initial order for built-in, catalog, and custom sidebar sections. */
+  sessionSectionOrder?: string[];
   terminalEnabled?: boolean;
   cliAgentsEnabled?: boolean;
+  updateAvailable?: UpdateAvailable | null;
   workspace?: string;
   workspaceGit?: boolean;
 };
@@ -701,8 +704,10 @@ function normalizeScenario(
     sessionArchiveFiltering: scenario.sessionArchiveFiltering ?? false,
     sessionKey,
     sessionGroups: scenario.sessionGroups ?? [],
+    sessionSectionOrder: scenario.sessionSectionOrder ?? [],
     terminalEnabled: scenario.terminalEnabled ?? false,
     cliAgentsEnabled: scenario.cliAgentsEnabled ?? false,
+    updateAvailable: scenario.updateAvailable ?? null,
     workspace: scenario.workspace ?? "",
     workspaceGit: scenario.workspaceGit ?? false,
   };
@@ -837,7 +842,7 @@ function installControlUiMockGateway(
     renames: Array<{ from: string; to: string | null }>;
   } = {
     names: [...input.scenario.sessionGroups],
-    sectionOrder: [],
+    sectionOrder: [...input.scenario.sessionSectionOrder],
     renames: [],
   };
   let online = true;
@@ -851,6 +856,9 @@ function installControlUiMockGateway(
     if (rawGroups) {
       groupsState = JSON.parse(rawGroups) as typeof groupsState;
       groupsState.sectionOrder ??= [];
+      if (input.scenario.sessionSectionOrder.length > 0) {
+        groupsState.sectionOrder = [...input.scenario.sessionSectionOrder];
+      }
     }
   } catch {
     // Storage-disabled browser contexts still get the scenario catalog.
@@ -1471,6 +1479,7 @@ function installControlUiMockGateway(
           },
           snapshot: {
             ...presenceSnapshot(params),
+            ...(scenario.updateAvailable ? { updateAvailable: scenario.updateAvailable } : {}),
             sessionDefaults: {
               defaultAgentId: scenario.defaultAgentId,
               mainKey: "main",
