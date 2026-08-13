@@ -210,6 +210,7 @@ describe("sidebar attention strip", () => {
 
     await waitForFast(() => expect(element.querySelector(".sidebar-status-button")).not.toBeNull());
     expect(element.querySelector(".sidebar-status-strip")).toBeNull();
+    expect(element.querySelector(".sidebar-status-button__count")?.textContent).toBe("1");
 
     element.querySelector<HTMLButtonElement>(".sidebar-status-button")?.click();
     await waitForFast(() => expect(element.querySelector(".sidebar-status-panel")).not.toBeNull());

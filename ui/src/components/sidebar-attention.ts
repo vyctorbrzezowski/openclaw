@@ -467,7 +467,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const issueLabel = t(conditions.length === 1 ? "attention.issue" : "attention.issues", {
       count: String(conditions.length),
     });
-    const maxSeverity = blocking > 0 ? "blocking" : "warning";
+    const countLabel = conditions.length > 9 ? "9+" : String(conditions.length);
     const ariaLabel = t("attention.systemStatusAria", {
       issues: issueLabel,
       blocking: String(blocking),
@@ -480,7 +480,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
         ? html`<openclaw-tooltip .content=${t("attention.issuesTitle")}>
             <button
               type="button"
-              class="sidebar-status-button sidebar-status-button--${maxSeverity}"
+              class="sidebar-status-button"
               aria-expanded=${String(this.panelOpen)}
               aria-haspopup="dialog"
               aria-label=${ariaLabel}
@@ -490,7 +490,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
                   : this.openPanel(event.currentTarget as HTMLElement)}
             >
               <span class="sidebar-status-button__icon" aria-hidden="true">${icons.bell}</span>
-              <span class="sidebar-status-button__dot" aria-hidden="true"></span>
+              <span class="sidebar-status-button__count" aria-hidden="true">${countLabel}</span>
             </button>
           </openclaw-tooltip>`
         : nothing}

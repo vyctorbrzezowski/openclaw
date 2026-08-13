@@ -1074,17 +1074,8 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-status-button:hover,
 .sidebar-status-button[aria-expanded="true"] {
-  background: color-mix(in srgb, currentColor 12%, transparent);
-}
-
-.sidebar-status-button--warning {
-  background: color-mix(in srgb, var(--warn) 7%, transparent);
-  color: var(--warn);
-}
-
-.sidebar-status-button--blocking {
-  background: color-mix(in srgb, var(--danger) 7%, transparent);
-  color: var(--danger);
+  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
+  color: var(--text);
 }
 
 .sidebar-status-button:focus-visible {
@@ -1108,18 +1099,23 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   stroke-width: 1.7px;
 }
 
-.sidebar-status-button__dot {
+.sidebar-status-button__count {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 7px;
-  height: 7px;
+  top: 3px;
+  right: 2px;
+  display: inline-flex;
+  min-width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
   border-radius: var(--radius-full);
-  background: var(--warn);
-}
-
-.sidebar-status-button--blocking .sidebar-status-button__dot {
   background: var(--danger);
+  color: var(--bg);
+  font-size: calc(10px * var(--control-ui-text-scale));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .sidebar-status-panel {
