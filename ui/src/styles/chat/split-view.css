@@ -324,19 +324,6 @@ openclaw-chat-pane {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  color: var(--muted);
-}
-
-.chat-pane__incognito svg {
-  width: var(--chat-pane-header-icon-size);
-  height: var(--chat-pane-header-icon-size);
-  /* Lucide outline icons: without this the paths render browser-default
-     black fill, which reads as a solid dark blob on the chip. */
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .chat-pane__workspace-chip svg {

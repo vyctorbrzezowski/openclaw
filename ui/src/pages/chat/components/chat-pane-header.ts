@@ -177,6 +177,15 @@ function renderIdentityCrumbs(
       "header",
       "created",
     )}
+    ${props.session?.incognito
+      ? html`<span
+          class="session-row-qualifier session-row-qualifier--icon chat-pane__incognito"
+          role="img"
+          aria-label=${t("chat.sessionHeader.incognito")}
+          title=${t("chat.sessionHeader.incognito")}
+          >${icons.hatGlasses}</span
+        >`
+      : nothing}
     ${renderSessionCrumb(props)}
   </span>`);
   return html`
@@ -451,15 +460,6 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               ${icons.menu}
             </button>
           </openclaw-tooltip>`
-        : nothing}
-      ${props.session?.incognito
-        ? html`<span
-            class="chat-pane__incognito"
-            role="img"
-            aria-label=${t("chat.sessionHeader.incognito")}
-            title=${t("chat.sessionHeader.incognito")}
-            >${icons.hatGlasses}</span
-          >`
         : nothing}
       ${renderIdentityCrumbs(props, copied, copyPathLabel, copyBranchLabel)}
       ${renderChatPanePlacement(props)} ${props.faceControl ?? nothing}
