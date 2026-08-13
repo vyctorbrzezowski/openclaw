@@ -5704,7 +5704,7 @@ td.data-table-key-col {
 
 .sidebar-recent-session:has(> .session-row-endcap__tree) {
   grid-template-columns: minmax(0, max-content) auto minmax(0, 1fr) auto;
-  column-gap: 4px;
+  column-gap: 1px;
 }
 
 .sidebar-recent-session:has(> .session-row-endcap__tree) > .sidebar-recent-session__link {
@@ -6163,9 +6163,10 @@ td.data-table-key-col {
 
 .sidebar-child-session-toggle {
   width: auto;
-  min-width: 32px;
+  min-width: 24px;
   height: 24px;
-  padding-inline: 3px;
+  gap: 0;
+  padding-inline: 0;
   flex: none;
   opacity: 0.62;
   pointer-events: auto;
