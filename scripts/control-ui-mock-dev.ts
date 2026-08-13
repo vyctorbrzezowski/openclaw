@@ -244,6 +244,7 @@ function pagedSessionsListResponse(
 function buildSessionRows(params: {
   baseTime: number;
   count: number;
+  execCwd?: string;
   keyPrefix: string;
   labelPrefix: string;
   model?: string;
@@ -256,7 +257,11 @@ function buildSessionRows(params: {
       `agent:${params.keyPrefix}-${padded}`,
       `${params.labelPrefix} ${padded}`,
       params.baseTime - ordinal * 60_000,
-      { model: params.model, modelProvider: params.modelProvider },
+      {
+        execCwd: params.execCwd,
+        model: params.model,
+        modelProvider: params.modelProvider,
+      },
     );
   });
 }
@@ -1238,6 +1243,7 @@ async function createChatPickerScenario(
     "Lisbon trip planning",
     baseTime - 120_000,
     {
+      execCwd: "/Users/peter/Projects/openclaw",
       spawnedBy: "agent:main:main",
       unread: true,
     },
@@ -1539,6 +1545,7 @@ async function createChatPickerScenario(
     ...buildSessionRows({
       baseTime: baseTime - 400_000,
       count: 3,
+      execCwd: "/Users/peter/Projects/openclaw",
       keyPrefix: "main:history",
       labelPrefix: "Long running session",
     }),
