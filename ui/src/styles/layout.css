@@ -901,7 +901,7 @@ openclaw-settings-save-indicator {
   --sidebar-bg: color-mix(in srgb, var(--bg) 96%, var(--bg-elevated) 4%);
   /* One rhythm for every group boundary in the sidebar (Pages, Pinned, and each
      session section) so the column reads as separate shelves, not one list. */
-  --sidebar-group-gap: var(--space-2);
+  --sidebar-group-gap: var(--space-3);
   --scrollbar-size: 6px;
   position: relative;
   display: flex;
