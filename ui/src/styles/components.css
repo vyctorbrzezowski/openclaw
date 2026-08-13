@@ -40,9 +40,9 @@ openclaw-session-owner-chip {
 }
 
 .session-owner-chip--header {
-  width: 20px;
-  height: 20px;
-  font-size: 10px;
+  width: var(--chat-pane-header-icon-size, 18px);
+  height: var(--chat-pane-header-icon-size, 18px);
+  font-size: 8px;
 }
 
 .session-owner-chip .viewer-avatar {

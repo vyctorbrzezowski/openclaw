@@ -54,10 +54,6 @@ function sameEventGroups(
   );
 }
 
-function shortDate(timestamp: number): string {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(timestamp);
-}
-
 class SidebarAttention extends OpenClawLightDomContentsElement {
   @consume({ context: applicationContext, subscribe: true })
   private context?: ApplicationContext;
@@ -363,13 +359,6 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     this.recentGroups = this.recentGroups.filter((candidate) => candidate !== group);
   }
 
-  private clearAllEvents() {
-    for (const group of this.recentGroups) {
-      this.clearedEvents.set(eventGroupKey(group), group.lastAt);
-    }
-    this.recentGroups = [];
-  }
-
   private handlePanelKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -424,23 +413,25 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
 
   private renderEvent(group: SidebarStatusEventGroup, autofocus: boolean) {
     const relative = formatRelativeTimestamp(Math.min(group.lastAt, Date.now()));
-    const count = group.count > 99 ? "99+×" : `${group.count}×`;
+    const count = group.count > 99 ? "99+" : String(group.count);
     const meta =
       group.count > 1
-        ? `${count} · ${t("attention.first", { date: shortDate(group.firstAt) })} · ${t(
-            "attention.latest",
-            { time: relative },
-          )}`
+        ? `${t("attention.failCount", { count })} · ${t("attention.latest", { time: relative })}`
         : relative;
     return html`
       <div class="sidebar-status-event">
+        <span class="sidebar-status-event__icon" aria-hidden="true">
+          ${group.source.kind === "provider" ? icons.plug : icons.calendarClock}
+        </span>
         <button
           type="button"
           class="sidebar-status-event__open"
           data-autofocus=${autofocus ? "true" : nothing}
           @click=${() => this.runAction(group.action)}
         >
-          <span class="sidebar-status-event__title" title=${group.title}>${group.title}</span>
+          <span class="sidebar-status-event__title" title=${group.source.label}
+            >${group.eventType === "run_failed" ? group.source.label : group.title}</span
+          >
           <span class="sidebar-status-event__meta">${meta}</span>
         </button>
         <button
@@ -499,39 +490,22 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
         ? html`<div
             class="sidebar-status-panel"
             role="dialog"
-            aria-label=${t("attention.systemStatus")}
+            aria-label=${t("attention.issuesTitle")}
             style=${`left:${this.panelPosition.left}px;bottom:${this.panelPosition.bottom}px`}
             @keydown=${this.handlePanelKeydown}
           >
-            ${conditions.length > 0
-              ? html`<section class="sidebar-status-panel__section">
-                  <h2 class="sidebar-status-panel__heading">${t("attention.needsAttention")}</h2>
-                  <div class="sidebar-status-panel__conditions">
-                    ${conditions.map((condition, index) =>
-                      this.renderCondition(condition, index === 0),
-                    )}
-                  </div>
-                </section>`
-              : nothing}
-            ${this.recentGroups.length > 0
-              ? html`<section class="sidebar-status-panel__section sidebar-status-panel__section--recent">
-                  <div class="sidebar-status-panel__section-head">
-                    <h2 class="sidebar-status-panel__heading">${t("attention.recent")}</h2>
-                    <button
-                      type="button"
-                      class="sidebar-status-panel__clear-all"
-                      data-autofocus=${conditions.length === 0 ? "true" : nothing}
-                      @click=${this.clearAllEvents}
-                    >
-                      ${t("attention.clearAll")}
-                    </button>
-                  </div>
-                  <div class="sidebar-status-panel__events">
-                    ${this.recentGroups.map((group, index) =>
-                      this.renderEvent(group, conditions.length === 0 && index === 0),
-                    )}
-                  </div>
-                </section>`
+            <div class="sidebar-status-panel__header">
+              <h2 class="sidebar-status-panel__heading">${t("attention.issuesTitle")}</h2>
+            </div>
+            ${conditions.length > 0 || this.recentGroups.length > 0
+              ? html`<div class="sidebar-status-panel__list">
+                  ${conditions.map((condition, index) =>
+                    this.renderCondition(condition, index === 0),
+                  )}
+                  ${this.recentGroups.map((group, index) =>
+                    this.renderEvent(group, conditions.length === 0 && index === 0),
+                  )}
+                </div>`
               : nothing}
             ${showEmptyPanel
               ? html`<p class="sidebar-status-panel__empty" tabindex="0" data-autofocus="true">

@@ -484,6 +484,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     // their own group, so navigation entries stay a contiguous Pages list.
     const pinnedEntries = sidebarZone.entries.filter((entry) => entry.type === "session");
     const navEntries = sidebarZone.entries.filter((entry) => entry.type !== "session");
+    const pinnedCollapsed = this.collapsedSessionSections.has("pinned");
     return html`
       <aside
         class="sidebar"
@@ -523,18 +524,20 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
                 `,
               )}
               ${pinnedEntries.length > 0
-                ? html`${renderAppSidebarPinnedHead()}
-                  ${renderAppSidebarZoneGroup(
-                    this,
-                    pinnedEntries.map((entry) =>
-                      renderAppSidebarZoneEntry(
+                ? html`${renderAppSidebarPinnedHead(this)}
+                  ${pinnedCollapsed
+                    ? nothing
+                    : renderAppSidebarZoneGroup(
                         this,
-                        entry,
-                        sidebarZone.sessionRows,
-                        sidebarZone.workboardRows,
-                      ),
-                    ),
-                  )}`
+                        pinnedEntries.map((entry) =>
+                          renderAppSidebarZoneEntry(
+                            this,
+                            entry,
+                            sidebarZone.sessionRows,
+                            sidebarZone.workboardRows,
+                          ),
+                        ),
+                      )}`
                 : nothing}
             </nav>
             ${this.renderSessions()}

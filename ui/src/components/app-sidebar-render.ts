@@ -273,10 +273,24 @@ export function renderAppSidebarZoneGroup(host: AppSidebarRenderHost, content: u
 
 /** Pinned sessions are elevated content, not navigation, so they carry their own
     section label instead of trailing the page list. */
-export function renderAppSidebarPinnedHead() {
+export function renderAppSidebarPinnedHead(host: AppSidebarRenderHost) {
+  const collapsed = host.collapsedSessionSections.has("pinned");
   return html`
     <div class="sidebar-nav__head sidebar-nav__head--pinned">
-      <span class="sidebar-recent-sessions__label-text">${t("nav.pinned")}</span>
+      <button
+        type="button"
+        class="sidebar-session-group-toggle"
+        aria-expanded=${String(!collapsed)}
+        aria-label=${t("nav.pinned")}
+        @click=${() => host.toggleSection("pinned")}
+      >
+        <span class="sidebar-recent-sessions__label-text">${t("nav.pinned")}</span>
+        <span class="sidebar-session-group-toggle__lead" aria-hidden="true">
+          <span class="sidebar-session-group-toggle__icon"
+            >${collapsed ? icons.chevronRight : icons.chevronDown}</span
+          >
+        </span>
+      </button>
     </div>
   `;
 }

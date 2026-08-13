@@ -146,6 +146,8 @@ openclaw-chat-pane {
 }
 
 .chat-pane__header {
+  --chat-pane-header-icon-size: 18px;
+
   display: flex;
   flex: 0 0 auto;
   align-items: center;
@@ -183,10 +185,38 @@ openclaw-chat-pane {
   flex: 1 1 auto;
 }
 
+.chat-pane__session-menu-anchor,
+.chat-pane__session-menu-anchor > openclaw-chat-header-session-menu,
+.chat-pane__sharing-anchor {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.chat-pane__session-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: -2px;
+}
+
+.chat-pane__session-controls .chat-pane__presence {
+  margin-inline-start: 4px;
+}
+
+.chat-pane__session-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
 /* House separator treatment: an aria-hidden glyph tinted with --muted, spacing
    from the row gap, no size or color of its own beyond matching the title. */
 .chat-pane__crumb-sep {
   flex: 0 0 auto;
+  margin-inline: 2px;
   color: var(--muted);
   font-size: var(--control-ui-text-md);
 }
@@ -263,14 +293,19 @@ openclaw-chat-pane {
   flex: 1 1 auto;
   min-width: 60px;
   height: 28px;
-  padding: 0 7px;
-  border: 1px solid var(--accent);
+  box-sizing: border-box;
+  margin-inline: -5px;
+  padding: 2px 4px;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 68%, transparent);
   border-radius: var(--radius-sm);
-  background: var(--panel);
+  background: color-mix(in srgb, var(--bg-hover) 54%, var(--chat-surface));
   color: var(--text);
   font: inherit;
   font-size: var(--control-ui-text-md);
+  font-weight: 500;
   outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
+  caret-color: var(--text);
   user-select: text;
   -webkit-user-select: text;
 }
@@ -292,12 +327,21 @@ openclaw-chat-pane {
   color: var(--muted);
 }
 
-.chat-pane__incognito svg,
-.chat-pane__workspace-chip svg {
-  width: 14px;
-  height: 14px;
+.chat-pane__incognito svg {
+  width: var(--chat-pane-header-icon-size);
+  height: var(--chat-pane-header-icon-size);
   /* Lucide outline icons: without this the paths render browser-default
      black fill, which reads as a solid dark blob on the chip. */
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chat-pane__workspace-chip svg {
+  width: var(--chat-pane-header-icon-size);
+  height: var(--chat-pane-header-icon-size);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5px;
@@ -313,8 +357,8 @@ openclaw-chat-pane {
    matters in practice the escape hatch is a plate applied conditionally, not a
    blanket effect here. */
 .chat-pane__workspace-chip .workspace-icon {
-  width: 14px;
-  height: 14px;
+  width: var(--chat-pane-header-icon-size);
+  height: var(--chat-pane-header-icon-size);
   flex: 0 0 auto;
   border-radius: 2px;
   object-fit: contain;
@@ -516,7 +560,7 @@ openclaw-chat-pane {
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
   font-size: var(--control-ui-text-md);
   font-weight: 500;
   cursor: var(--cursor-action);
@@ -542,14 +586,20 @@ openclaw-chat-pane {
   align-items: center;
 }
 
+.chat-pane__header .session-owner-chip,
+.chat-pane__header .viewer-avatar,
+.chat-pane__header .chat-icon-btn.btn--icon {
+  box-shadow: none;
+}
+
 .chat-pane__actions {
   display: flex;
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
-  /* With the title text-hugging, this claims the leftover width so the
-     action cluster stays pinned to the right edge (and doubles as the
-     native window-drag surface between chip and actions). */
+  /* With the identity trail text-hugging, this claims the leftover width so
+     global actions stay pinned right while the session-owned menu remains
+     beside the session title. */
   margin-left: auto;
 }
 

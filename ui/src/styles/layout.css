@@ -1159,31 +1159,16 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
     var(--shadow-lg);
 }
 
-.sidebar-status-panel__section {
-  min-width: 0;
-  padding: 10px 12px;
-}
-
-.sidebar-status-panel__section + .sidebar-status-panel__section {
-  border-top: 1px solid var(--border);
-}
-
-.sidebar-status-panel__section--recent {
-  display: flex;
-  min-height: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-}
-
-.sidebar-status-panel__section-head {
+.sidebar-status-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 10px 12px 6px;
 }
 
 .sidebar-status-panel__heading {
-  margin: 0 0 6px;
+  margin: 0;
   color: var(--muted);
   font-size: var(--control-ui-text-xs);
   font-weight: 600;
@@ -1191,25 +1176,13 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   text-transform: uppercase;
 }
 
-.sidebar-status-panel__section-head .sidebar-status-panel__heading {
-  margin-bottom: 0;
-}
-
-.sidebar-status-panel__conditions,
-.sidebar-status-panel__events {
+.sidebar-status-panel__list {
   display: flex;
-  flex-direction: column;
-}
-
-.sidebar-status-panel__conditions {
-  width: calc(100% + 16px);
-  margin-inline: -8px;
-}
-
-.sidebar-status-panel__events {
-  width: 100%;
+  min-width: 0;
   min-height: 0;
-  margin-top: 4px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 0 4px 8px;
   overflow-y: auto;
 }
 
@@ -1244,13 +1217,8 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   height: 24px;
   flex: 0 0 auto;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--warn) 14%, transparent);
-  color: var(--warn);
-}
-
-.sidebar-status-condition--blocking .sidebar-status-condition__icon {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  color: var(--muted);
 }
 
 .sidebar-status-condition__icon svg {
@@ -1320,6 +1288,10 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-status-condition__chevron {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
 .sidebar-status-condition:hover .sidebar-status-condition__chevron {
@@ -1367,10 +1339,37 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 .sidebar-status-event {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 0;
   width: 100%;
-  padding: 0;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
+}
+
+.sidebar-status-event:hover {
+  background: color-mix(in srgb, var(--bg-hover) 56%, transparent);
+}
+
+.sidebar-status-event__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  color: var(--muted);
+}
+
+.sidebar-status-event__icon svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8px;
 }
 
 .sidebar-status-event__open {
@@ -1379,7 +1378,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 0;
+  padding: 0;
   border: 0;
   background: transparent;
   text-align: start;
@@ -1815,9 +1814,9 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-group-toggle__lead {
   position: relative;
   display: inline-grid;
-  width: var(--sidebar-lead);
+  width: 14px;
   height: 16px;
-  flex: 0 0 var(--sidebar-lead);
+  flex: 0 0 14px;
   place-items: center;
 }
 
@@ -1829,6 +1828,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-group-toggle__icon {
   display: inline-flex;
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
   opacity: 0;
 }
 
@@ -1869,13 +1869,22 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-session-group-attention {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   flex: none;
   margin-left: 0;
-  border-radius: 50%;
-  background: var(--warn);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--warn) 48%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--danger);
+  box-shadow: none;
+}
+
+/* Sidebar attention uses one canonical solid danger dot. The shared unread
+   component keeps its default accent treatment outside this surface. */
+.sidebar .session-unread-dot,
+.sidebar .session-glyph__badge--unread {
+  background: var(--danger);
+  color: var(--danger);
+  box-shadow: none;
 }
 
 .sidebar-session-group-status {
@@ -1913,19 +1922,23 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-group-drag-handle {
   position: absolute;
   top: 50%;
-  left: 1px;
+  left: 0;
   z-index: 1;
-  width: 4px;
-  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
   transform: translateY(-50%);
-  border-radius: 3px;
-  background-image: radial-gradient(circle, currentColor 1px, transparent 1.2px);
-  background-position: 0 0;
-  background-size: 4px 4px;
   color: var(--muted);
   opacity: 0;
   cursor: grab;
   transition: opacity var(--duration-fast) ease;
+}
+
+.sidebar-session-group-drag-handle svg {
+  width: 16px;
+  height: 16px;
 }
 
 .sidebar-recent-sessions__head--draggable:hover .sidebar-session-group-drag-handle,
@@ -2043,9 +2056,9 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-catalog-host__label {
   font-size: var(--control-ui-text-xs);
   font-weight: 650;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
 }
 
 .sidebar-session-group-toggle
@@ -3397,6 +3410,11 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
    rhythm instead of butting against the Pages list. */
 .sidebar-nav__head--pinned {
   margin-top: var(--sidebar-group-gap);
+}
+
+.sidebar-nav__head--pinned .sidebar-session-group-toggle {
+  padding: 2px 0;
+  cursor: var(--cursor-action);
 }
 
 .sidebar-nav__more {

@@ -164,12 +164,21 @@ function renderIdentityCrumbs(
   copyBranchLabel: string,
 ) {
   const projectCrumb = renderProjectCrumb(props, copied, copyPathLabel, copyBranchLabel);
+  const sharingControl = props.sharingControl ?? nothing;
+  const presence = props.presence ?? nothing;
   const segments: TemplateResult[] = projectCrumb ? [projectCrumb] : [];
   const parentCrumb = renderParentSessionCrumb(props);
   if (parentCrumb) {
     segments.push(parentCrumb);
   }
-  segments.push(renderSessionCrumb(props));
+  segments.push(html`<span class="chat-pane__session-identity">
+    ${renderSessionOwnerChip(
+      props.showOwnerChip ? props.session?.createdActor : undefined,
+      "header",
+      "created",
+    )}
+    ${renderSessionCrumb(props)}
+  </span>`);
   return html`
     <div class="chat-pane__crumbs">
       ${segments.map(
@@ -178,6 +187,17 @@ function renderIdentityCrumbs(
             ? html`<span class="chat-pane__crumb-sep" aria-hidden="true">/</span>`
             : nothing}${segment}`,
       )}
+      ${props.sessionMenuAction !== nothing || sharingControl !== nothing || presence !== nothing
+        ? html`<span class="chat-pane__session-controls">
+            ${props.sessionMenuAction !== nothing
+              ? html`<span class="chat-pane__session-menu-anchor">${props.sessionMenuAction}</span>`
+              : nothing}
+            ${sharingControl !== nothing
+              ? html`<span class="chat-pane__sharing-anchor">${sharingControl}</span>`
+              : nothing}
+            ${presence}
+          </span>`
+        : nothing}
     </div>
   `;
 }
@@ -442,13 +462,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
           >`
         : nothing}
       ${renderIdentityCrumbs(props, copied, copyPathLabel, copyBranchLabel)}
-      ${renderSessionOwnerChip(
-        props.showOwnerChip ? props.session?.createdActor : undefined,
-        "header",
-        "created",
-      )}
-      ${renderChatPanePlacement(props)} ${props.presence ?? nothing} ${props.faceControl ?? nothing}
-      ${props.sharingControl ?? nothing}
+      ${renderChatPanePlacement(props)} ${props.faceControl ?? nothing}
       ${!props.catalog && props.branches.length > 1
         ? html`
             <openclaw-tooltip
@@ -584,7 +598,6 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               </button>
             </openclaw-tooltip>`
           : nothing}
-        ${props.sessionMenuAction}
       </div>
     </div>
   `;

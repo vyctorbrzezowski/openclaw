@@ -209,7 +209,7 @@ class ChatHeaderSessionMenu extends OpenClawLightDomElement {
           aria-label=${menuLabel}
           aria-haspopup="menu"
         >
-          ${icons.moreHorizontal}
+          ${icons.ellipsis}
         </button>
         ${this.worktreePath
           ? html`
