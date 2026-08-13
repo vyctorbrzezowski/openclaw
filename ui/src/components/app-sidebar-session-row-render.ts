@@ -341,7 +341,8 @@ export function renderRecentSession(params: {
   const row = html`
     <openclaw-tooltip
       class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
-      delay="500"
+      delay="400"
+      always-delay
       placement="right"
     >
       <div
@@ -483,6 +484,7 @@ export function renderRecentSession(params: {
                 <button
                   class="session-action session-action--pin"
                   data-sidebar-session-pin="true"
+                  data-tooltip-suppress
                   type="button"
                   title=${pinAccess.allowed ? pinLabel : pinAccess.reason}
                   aria-label=${pinLabel}
@@ -494,6 +496,7 @@ export function renderRecentSession(params: {
                 <button
                   class="session-action"
                   data-session-menu="true"
+                  data-tooltip-suppress
                   type="button"
                   title=${menuLabel}
                   aria-label=${menuLabel}

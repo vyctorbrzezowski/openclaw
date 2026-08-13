@@ -50,7 +50,7 @@ class CatalogSessionMenu extends OpenClawLightDomElement {
   };
 
   override render() {
-    const menuWidth = 240;
+    const menuWidth = 228;
     const menuMaxHeight = 140;
     const x = Math.max(8, Math.min(this.x, window.innerWidth - menuWidth - 8));
     const y = Math.max(8, Math.min(this.y, window.innerHeight - menuMaxHeight - 8));

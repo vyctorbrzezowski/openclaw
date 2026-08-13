@@ -104,6 +104,7 @@ export interface SidebarMenusControllerHost
   readonly catalogProjectGrouping: CatalogProjectGrouping;
   setCatalogProjectGrouping(grouping: CatalogProjectGrouping): void;
   hideSessionCatalog(catalogId: string): void;
+  openSidebarCustomizer(trigger?: HTMLElement | null): void;
   sessionSortMode: SidebarSessionSortMode;
   effectiveSessionSortMode(): SidebarSessionSortMode;
   sessionPeopleSortAvailable(): boolean;
@@ -257,7 +258,7 @@ export class SidebarMenusController implements ReactiveController, SidebarMenusC
 
   readonly openCustomizeMenuFromContext = (event: MouseEvent) => {
     event.preventDefault();
-    this.openCustomizeMenu(event.clientX, event.clientY);
+    this.host.openSidebarCustomizer(event.currentTarget as HTMLElement | null);
   };
 
   openCustomizeMenu(x: number, y: number, trigger: HTMLElement | null = null) {

@@ -472,7 +472,8 @@ function renderCatalogSessionRow(
   return html`
     <openclaw-tooltip
       class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
-      delay="500"
+      delay="400"
+      always-delay
       placement="right"
     >
       <div
@@ -549,6 +550,7 @@ function renderCatalogSessionRow(
             <button
               class="session-action"
               data-catalog-session-menu="true"
+              data-tooltip-suppress
               type="button"
               title=${t("chat.sidebar.openSessionMenu")}
               aria-label=${t("chat.sidebar.openSessionMenu")}

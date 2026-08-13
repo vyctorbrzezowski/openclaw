@@ -11,8 +11,9 @@ const TOUCH_DELAY = 450;
 const TOUCH_VISIBLE = 900;
 const SKIP_DELAY = 300;
 const MOVE_LIMIT = 10;
-const RICH_CONTENT_CLOSE_DELAY = 100;
+const RICH_CONTENT_CLOSE_DELAY = 120;
 const SUPPRESS_NEXT_FOCUS_ATTRIBUTE = "data-tooltip-suppress-next-focus";
+const SUPPRESS_WITHIN_SELECTOR = "[data-tooltip-suppress]";
 
 let nextTooltipId = 0;
 
@@ -121,6 +122,7 @@ class Tooltip extends OpenClawLitElement {
   @property() content = "";
   @property({ type: Number }) delay?: number;
   @property() placement = "top";
+  @property({ type: Boolean, attribute: "always-delay" }) alwaysDelay = false;
 
   /** Let a reveal-only trigger open on click instead of dismissing. */
   @property({ type: Boolean, attribute: "open-on-click" }) openOnClick = false;
@@ -263,6 +265,7 @@ class Tooltip extends OpenClawLitElement {
     trigger.removeEventListener("click", this.handleClick, true);
     trigger.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("pointerup", this.handleDocumentPointerUp);
+    trigger.removeAttribute("data-tooltip-open");
     this.suppressPointerFocus = false;
     this.restoreDescription();
     this.triggerElement = null;
@@ -332,8 +335,16 @@ class Tooltip extends OpenClawLitElement {
   };
 
   private readonly handlePointerMove = (event: PointerEvent) => {
+    if (event.pointerType !== "touch") {
+      const target = event.target;
+      if (target instanceof Element && target.closest(SUPPRESS_WITHIN_SELECTOR)) {
+        this.suppressForPointerTarget();
+      } else if (this.triggerHovered) {
+        this.scheduleOpen();
+      }
+      return;
+    }
     if (
-      event.pointerType === "touch" &&
       this.touchStart &&
       Math.hypot(event.clientX - this.touchStart.x, event.clientY - this.touchStart.y) > MOVE_LIMIT
     ) {
@@ -401,11 +412,22 @@ class Tooltip extends OpenClawLitElement {
     if (this.webAwesomeTooltip?.open || this.openTimer !== null || this.isRedundant()) {
       return;
     }
-    const delay = this.provider?.shouldDelayOpen() === false ? 0 : this.hoverDelay;
+    const delay =
+      !this.alwaysDelay && this.provider?.shouldDelayOpen() === false ? 0 : this.hoverDelay;
     this.openTimer = window.setTimeout(() => {
       this.openTimer = null;
       this.show();
     }, delay);
+  }
+
+  private suppressForPointerTarget() {
+    this.clearTimers(false);
+    this.contentHovered = false;
+    if (this.webAwesomeTooltip?.open) {
+      this.webAwesomeTooltip.open = false;
+    }
+    this.triggerElement?.removeAttribute("data-tooltip-open");
+    this.provider?.closeTooltip(this);
   }
 
   private show() {
@@ -416,6 +438,7 @@ class Tooltip extends OpenClawLitElement {
     this.clearTimers(false);
     this.provider?.openTooltip(this);
     this.syncDescription();
+    this.triggerElement.setAttribute("data-tooltip-open", "true");
     tooltip.open = true;
   }
 
@@ -427,6 +450,7 @@ class Tooltip extends OpenClawLitElement {
     if (this.webAwesomeTooltip?.open) {
       this.webAwesomeTooltip.open = false;
     }
+    this.triggerElement?.removeAttribute("data-tooltip-open");
     this.provider?.closeTooltip(this);
   }
 
@@ -435,6 +459,7 @@ class Tooltip extends OpenClawLitElement {
     if (this.webAwesomeTooltip?.open) {
       this.webAwesomeTooltip.open = false;
     }
+    this.triggerElement?.removeAttribute("data-tooltip-open");
   }
 
   private isRedundant() {

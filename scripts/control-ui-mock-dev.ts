@@ -1420,7 +1420,6 @@ async function createChatPickerScenario(
             baseTime - 2_000,
             {
               childSessions: sessionRowStressChildren.map((row) => row.key),
-              createdActor: MOCK_CREATOR_PETER,
               forkSource: {
                 sessionId: "mock-fork-source",
                 sessionKey: "agent:main:work-openclaw",
@@ -1522,6 +1521,7 @@ async function createChatPickerScenario(
       category: "Research",
       createdActor: MOCK_CREATOR_MIRA,
       execCwd: "/Users/peter/Projects/clawdbot",
+      lastMessagePreview: "Preparing the final export package",
     }),
     sessionRow("agent:main:model-budget", "Model budget review", baseTime - 80_000, {
       category: "Research",

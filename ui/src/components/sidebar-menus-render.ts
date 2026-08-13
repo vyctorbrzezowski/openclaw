@@ -415,12 +415,10 @@ export function renderSidebarMoreMenuForController(controller: SidebarMenusContr
     },
     onPreloadRoute: (routeId, event) => controller.preloadRoute(routeId, event),
     onCancelPreload: (event) => controller.cancelPreload(event),
-    onEditPinnedItems: () => {
-      const customizePosition = controller.moreMenuPosition;
+    onCustomizeSidebar: () => {
       const customizeTrigger = controller.moreMenuTrigger;
-      if (customizePosition) {
-        controller.openCustomizeMenu(customizePosition.x, customizePosition.y, customizeTrigger);
-      }
+      controller.closeMoreMenu();
+      host.openSidebarCustomizer(customizeTrigger);
     },
   });
 }

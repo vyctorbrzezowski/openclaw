@@ -1906,8 +1906,11 @@ export const en: TranslationMap = {
     home: "Home",
     pages: "Pages",
     pinned: "Pinned",
-    customize: "Edit pinned items",
-    customizeReset: "Reset pinned items",
+    customize: "Customize sidebar",
+    customizeReset: "Reset sidebar",
+    customizeDone: "Done",
+    customizeShow: "Show {item} in sidebar",
+    customizeHide: "Hide {item} from sidebar",
     workboardGroup: "WorkBoard",
   },
   terminal: {

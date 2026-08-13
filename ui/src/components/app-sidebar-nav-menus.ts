@@ -155,7 +155,7 @@ type SidebarMoreMenuParams = SidebarMenuNavigationHandlers & {
   sidebarEntries: readonly string[];
   automationAttention: SidebarAutomationAttention;
   isRouteEnabled: (routeId: NavigationRouteId) => boolean;
-  onEditPinnedItems: () => void;
+  onCustomizeSidebar: () => void;
   onTabAway: () => void;
   onClose: (restoreFocus: boolean) => void;
 };
@@ -218,7 +218,7 @@ export function renderSidebarMoreMenu(params: SidebarMoreMenuParams) {
           }
           const value = item.value;
           if (value === "customize") {
-            params.onEditPinnedItems();
+            params.onCustomizeSidebar();
             return;
           }
           if (value && moreRoutes.includes(value as SidebarNavRoute)) {
@@ -240,7 +240,9 @@ export function renderSidebarMoreMenu(params: SidebarMoreMenuParams) {
         ${moreRoutes.map((routeId) => renderMoreMenuRoute(params, routeId))}
         <div class="sidebar-customize-menu__separator" role="separator"></div>
         <wa-dropdown-item class="sidebar-customize-menu__item" value="customize">
-          <span slot="icon" class="nav-item__icon" aria-hidden="true">${icons.penLine}</span>
+          <span slot="icon" class="nav-item__icon" aria-hidden="true"
+            >${icons.slidersHorizontal}</span
+          >
           <span class="sidebar-customize-menu__text">${t("nav.customize")}</span>
         </wa-dropdown-item>
       </wa-dropdown>

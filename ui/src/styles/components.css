@@ -5487,7 +5487,7 @@ td.data-table-key-col {
 }
 
 .session-row-badge--pull-request[data-pull-request-state="merged"] {
-  color: var(--accent);
+  color: var(--ok);
 }
 
 .session-row-badge--approval,
@@ -5517,15 +5517,15 @@ td.data-table-key-col {
 .session-row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
 }
 
 .session-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--sidebar-trailing-slot, 20px);
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -5540,11 +5540,11 @@ td.data-table-key-col {
 }
 
 .session-action svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.6px;
+  stroke-width: 1.5px;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -5555,16 +5555,22 @@ td.data-table-key-col {
   fill: currentColor;
 }
 
-.session-action:hover:not(:disabled) {
+.session-action:hover:not(:disabled),
+.session-action:focus-visible:not(:disabled) {
   background: color-mix(in srgb, var(--bg-hover) 92%, transparent);
   color: var(--text);
+}
+
+.session-action:focus-visible {
+  outline: none;
+  box-shadow: var(--sidebar-focus-ring);
 }
 
 .session-action:disabled {
   cursor: not-allowed;
 }
 
-.session-row-host:hover .session-action,
+.session-row-host:is(:hover, [data-tooltip-open="true"]) .session-action,
 .session-row-host:focus-within .session-action {
   opacity: 1;
   pointer-events: auto;
@@ -5572,7 +5578,7 @@ td.data-table-key-col {
 
 /* Disabled actions still surface on hover (dimmed) so the tooltip can
    explain why archiving is unavailable instead of the button vanishing. */
-.session-row-host:hover .session-action:disabled,
+.session-row-host:is(:hover, [data-tooltip-open="true"]) .session-action:disabled,
 .session-row-host:focus-within .session-action:disabled {
   opacity: 0.35;
   pointer-events: auto;
@@ -5630,6 +5636,17 @@ td.data-table-key-col {
   height: var(--sidebar-operational-icon-size, 16px);
 }
 
+.sidebar .viewer-facepile--session .viewer-avatar {
+  border-color: var(--session-avatar-ring, var(--sidebar-bg));
+  filter: saturate(0.88);
+}
+
+.sidebar .session-owner-chip--row {
+  border: 1.5px solid var(--session-avatar-ring, var(--sidebar-bg));
+  box-shadow: none;
+  filter: saturate(0.88);
+}
+
 /* The clock fills more of its Lucide viewBox than the other descriptors. */
 .sidebar .session-row-badge--automation {
   width: var(--sidebar-trailing-slot, 20px);
@@ -5665,6 +5682,7 @@ td.data-table-key-col {
 
 .sidebar-recent-session {
   --session-row-content-start: var(--sidebar-session-content-start, 18px);
+  --session-avatar-ring: var(--sidebar-bg);
 
   position: relative;
   isolation: isolate;
@@ -5741,20 +5759,59 @@ td.data-table-key-col {
 }
 
 .sidebar-recent-session:hover > .sidebar-recent-session__surface {
-  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
+  background: var(--sidebar-row-surface-hover);
+}
+
+.sidebar-recent-session:is(:hover, :focus-within, [data-tooltip-open="true"]) {
+  --session-avatar-ring: var(--sidebar-row-surface-hover);
 }
 
 .sidebar-recent-session.sidebar-recent-session--active > .sidebar-recent-session__surface {
-  background: color-mix(in srgb, var(--text) 10%, transparent);
+  background: var(--sidebar-row-surface-selected);
+}
+
+.sidebar-recent-session:is(
+    .sidebar-recent-session--active,
+    .sidebar-recent-session--selected
+  ) {
+  --session-avatar-ring: var(--sidebar-row-surface-selected);
 }
 
 .sidebar-recent-session.sidebar-recent-session--selected > .sidebar-recent-session__surface {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent);
+  background: var(--sidebar-row-surface-selected);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 72%, transparent);
+}
+
+.sidebar-recent-session:is(
+    .sidebar-recent-session--active,
+    .sidebar-recent-session--selected
+  ):is(:hover, :focus-within, [data-tooltip-open="true"])
+  > .sidebar-recent-session__surface {
+  background: var(--sidebar-row-surface-selected-hover);
+}
+
+.sidebar-recent-session:is(
+    .sidebar-recent-session--active,
+    .sidebar-recent-session--selected
+  ):is(:hover, :focus-within, [data-tooltip-open="true"]) {
+  --session-avatar-ring: var(--sidebar-row-surface-selected-hover);
+}
+
+.sidebar-recent-session[data-tooltip-open="true"]:not(
+    .sidebar-recent-session--active,
+    .sidebar-recent-session--selected
+  )
+  > .sidebar-recent-session__surface,
+.sidebar-recent-session:focus-within:not(
+    .sidebar-recent-session--active,
+    .sidebar-recent-session--selected
+  )
+  > .sidebar-recent-session__surface {
+  background: var(--sidebar-row-surface-hover);
 }
 
 .sidebar-recent-session:has(:focus-visible) > .sidebar-recent-session__surface {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 56%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info) 68%, transparent);
 }
 
 .sidebar-recent-session--attention-amber:not(.sidebar-recent-session--active)
@@ -6086,17 +6143,17 @@ td.data-table-key-col {
   z-index: 1;
   inset-inline-end: 0;
   padding-inline-start: 6px;
-  background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
+  background: var(--sidebar-row-surface-hover);
 }
 
 .session-row-host[data-session-action-only="true"].sidebar-recent-session--active
   .session-row-endcap__management {
-  background: color-mix(in srgb, var(--text) 10%, var(--sidebar-bg, var(--bg)));
+  background: var(--sidebar-row-surface-selected-hover);
 }
 
 .session-row-host[data-session-action-only="true"].sidebar-recent-session--selected
   .session-row-endcap__management {
-  background: color-mix(in srgb, var(--accent) 10%, var(--sidebar-bg, var(--bg)));
+  background: var(--sidebar-row-surface-selected-hover);
 }
 
 .session-row-host[data-session-manageable="true"]:is(:hover, :focus-within)
@@ -6108,13 +6165,15 @@ td.data-table-key-col {
 }
 
 @media (hover: hover) {
-  .session-row-host[data-session-manageable="true"]:hover .session-row-endcap__rest-summary {
+  .session-row-host[data-session-manageable="true"]:is(:hover, [data-tooltip-open="true"])
+    .session-row-endcap__rest-summary {
     opacity: 0;
     pointer-events: none;
     transition-delay: 60ms;
   }
 
-  .session-row-host[data-session-manageable="true"]:hover .session-row-endcap__management {
+  .session-row-host[data-session-manageable="true"]:is(:hover, [data-tooltip-open="true"])
+    .session-row-endcap__management {
     opacity: 1;
     pointer-events: auto;
     transition-delay: 60ms;
@@ -6204,6 +6263,7 @@ td.data-table-key-col {
   border-color: color-mix(in srgb, var(--muted-strong) 24%, transparent);
   border-top-color: var(--muted-strong);
   border-right-color: var(--muted-strong);
+  border-bottom-color: var(--muted-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {
