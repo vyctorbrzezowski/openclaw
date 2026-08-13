@@ -119,7 +119,7 @@ suite.define(() => {
     }
   });
 
-  it("keeps long sidebar labels clipped and stationary while management actions appear", async () => {
+  it("keeps long sidebar labels softly clipped and stationary while actions appear", async () => {
     const context = await suite.newBrowserContext({
       locale: "en-US",
       serviceWorkers: "block",
@@ -158,10 +158,15 @@ suite.define(() => {
       expect(restingGeometry).not.toBeNull();
       expect(
         await recentLabel.evaluate((label) => ({
+          maskImage: getComputedStyle(label).maskImage,
           textIndent: getComputedStyle(label).textIndent,
           textOverflow: getComputedStyle(label).textOverflow,
         })),
-      ).toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
+      ).toEqual({
+        maskImage: expect.stringContaining("linear-gradient"),
+        textIndent: "0px",
+        textOverflow: "clip",
+      });
 
       await recentRow.hover();
       const management = recentRow.locator(".session-row-endcap__management");
@@ -174,10 +179,15 @@ suite.define(() => {
       expect(hoveredGeometry?.width).toBe(restingGeometry?.width);
       expect(
         await recentLabel.evaluate((label) => ({
+          maskImage: getComputedStyle(label).maskImage,
           textIndent: getComputedStyle(label).textIndent,
           textOverflow: getComputedStyle(label).textOverflow,
         })),
-      ).toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
+      ).toEqual({
+        maskImage: expect.stringContaining("linear-gradient"),
+        textIndent: "0px",
+        textOverflow: "clip",
+      });
 
       await recentRow.locator("a.sidebar-recent-session__link").dispatchEvent("click", {
         button: 0,
@@ -191,10 +201,15 @@ suite.define(() => {
       );
       expect(
         await activeRow.locator(".sidebar-recent-session__name").evaluate((label) => ({
+          maskImage: getComputedStyle(label).maskImage,
           textIndent: getComputedStyle(label).textIndent,
           textOverflow: getComputedStyle(label).textOverflow,
         })),
-      ).toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
+      ).toEqual({
+        maskImage: expect.stringContaining("linear-gradient"),
+        textIndent: "0px",
+        textOverflow: "clip",
+      });
     } finally {
       await suite.closeBrowserContext(context);
     }

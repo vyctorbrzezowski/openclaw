@@ -2592,11 +2592,20 @@ body.update-dialog-open .sidebar-update-card__status {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
+  -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, black 0, black calc(100% - 18px), transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
   font-size: calc(13px * var(--control-ui-text-scale));
   font-weight: 500;
   color: var(--text);
+}
+
+.sidebar-recent-session__name:dir(rtl) {
+  -webkit-mask-image: linear-gradient(to left, black 0, black calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to left, black 0, black calc(100% - 18px), transparent 100%);
 }
 
 .sidebar-recent-session--child {
