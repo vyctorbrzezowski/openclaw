@@ -415,10 +415,13 @@ export function renderRecentSession(params: {
                     >`
                   : nothing}
                 ${renderSessionRowBadges({
-                  ...session,
+                  hasAutomation: session.hasAutomation,
                   incognito: false,
-                  hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
+                  isChild: session.isChild,
+                  outboxCount: session.outboxCount,
+                  placementState: session.placementState,
                   pullRequest: session.pullRequest ?? display?.pullRequest,
+                  workspaceConflictCount: session.workspaceConflictCount,
                   hasApproval:
                     sessionHasPendingApproval(
                       host.sessionData.approvalBadgeSnapshot(),
