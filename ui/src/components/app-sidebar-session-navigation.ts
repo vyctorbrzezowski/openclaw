@@ -37,7 +37,6 @@ import {
   latestVisibleAgentSessionRow,
   partitionSidebarVisibleSections,
   promoteSidebarSessionCreatedOrder,
-  resolveSidebarAgentChipSubtitle,
   resolveSidebarAgentResumeKey,
   resolveSidebarMainSessionKey,
   toggleSidebarSessionSelection,
@@ -533,10 +532,6 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
       return;
     }
     this.selectSession(this.agentResumeKey(agentId));
-  }
-
-  agentChipSubtitle(agentId: string): string {
-    return resolveSidebarAgentChipSubtitle(this.latestAgentSessionRow(agentId));
   }
 
   switchChipAgent(agentId: string) {

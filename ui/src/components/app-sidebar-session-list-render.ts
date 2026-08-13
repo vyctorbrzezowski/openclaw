@@ -131,12 +131,12 @@ function renderSessionSection(params: {
             aria-label=${label}
             @click=${() => host.toggleSection(section.id)}
           >
+            <span class="sidebar-recent-sessions__label-text">${label}</span>
             <span class="sidebar-session-group-toggle__lead" aria-hidden="true">
               <span class="sidebar-session-group-toggle__icon"
                 >${collapsed ? icons.chevronRight : icons.chevronDown}</span
               >
             </span>
-            <span class="sidebar-recent-sessions__label-text">${label}</span>
             ${collapsed && totalRowCount > 0
               ? html`<span class="sidebar-session-group-count">${totalRowCount}</span>`
               : nothing}

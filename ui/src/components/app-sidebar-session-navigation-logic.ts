@@ -427,13 +427,6 @@ export function resolveSidebarAgentResumeKey(
   return latest?.key ?? buildAgentMainSessionKey({ agentId, mainKey });
 }
 
-export function resolveSidebarAgentChipSubtitle(latest: SessionRow | null): string {
-  if (latest?.hasActiveRun) {
-    return t("agentChip.working");
-  }
-  return latest ? resolveSessionDisplayName(latest.key, latest) : t("agentChip.ready");
-}
-
 export function collectKnownSidebarSessionCatalogIds(input: {
   loadedCatalogIds: readonly string[];
   hasLoaded: boolean;

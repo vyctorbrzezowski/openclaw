@@ -118,7 +118,6 @@ export function renderAppSidebarBrand(host: AppSidebarRenderHost) {
         .authToken=${avatarAuthToken}
         .avatarAuthReady=${avatarAuthReady}
         .avatarText=${cardAvatarText}
-        .subtitle=${host.agentChipSubtitle(cardAgentId)}
         .menuOpen=${host.sidebarMenus.agentMenuPosition !== null}
         .menuUnread=${menuUnread}
         .approvalCount=${approvalCount}
@@ -273,8 +272,7 @@ export function renderAppSidebarZoneGroup(host: AppSidebarRenderHost, content: u
 }
 
 /** Pinned sessions are elevated content, not navigation, so they carry their own
-    section label instead of trailing the Pages list. No customize affordance:
-    the Pages head owns the pin editor, and pinning is a per-session action. */
+    section label instead of trailing the page list. */
 export function renderAppSidebarPinnedHead() {
   return html`
     <div class="sidebar-nav__head sidebar-nav__head--pinned">
@@ -283,22 +281,19 @@ export function renderAppSidebarPinnedHead() {
   `;
 }
 
-export function renderAppSidebarPagesHead(host: AppSidebarRenderHost) {
+export function renderAppSidebarMoreRow(host: AppSidebarRenderHost) {
   return html`
-    <div class="sidebar-nav__head">
-      <span class="sidebar-recent-sessions__label-text">${t("nav.pages")}</span>
-      <button
-        type="button"
-        class="sidebar-nav__head-action"
-        aria-haspopup="menu"
-        aria-expanded=${String(host.sidebarMenus.moreMenuPosition !== null)}
-        aria-label=${t("nav.customize")}
-        @click=${(event: MouseEvent) =>
-          host.sidebarMenus.toggleMoreMenu(event.currentTarget as HTMLElement)}
-      >
-        ${icons.penLine}
-      </button>
-    </div>
+    <button
+      type="button"
+      class="nav-item sidebar-nav__more"
+      aria-haspopup="menu"
+      aria-expanded=${String(host.sidebarMenus.moreMenuPosition !== null)}
+      @click=${(event: MouseEvent) =>
+        host.sidebarMenus.toggleMoreMenu(event.currentTarget as HTMLElement)}
+    >
+      <span class="nav-item__icon" aria-hidden="true">${icons.moreHorizontal}</span>
+      <span class="nav-item__text">${t("nav.more")}</span>
+    </button>
   `;
 }
 

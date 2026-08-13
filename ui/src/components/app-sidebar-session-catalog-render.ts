@@ -201,6 +201,7 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
               title=${hasError ? errorHelp : nothing}
               @click=${() => params.onToggleSection(sectionId)}
             >
+              <span class="sidebar-recent-sessions__label-text">${catalog.label}</span>
               <span
                 class="sidebar-session-group-toggle__lead ${hasBrandIcon
                   ? "sidebar-session-group-toggle__lead--branded"
@@ -216,7 +217,6 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
                   >${collapsed ? icons.chevronRight : icons.chevronDown}</span
                 >
               </span>
-              <span class="sidebar-recent-sessions__label-text">${catalog.label}</span>
               ${renderCatalogHeaderStatus(hasActiveRun, hasUnread)}
               ${hasError || (collapsed && rows.length > 0)
                 ? html`<span

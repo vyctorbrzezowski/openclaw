@@ -25,7 +25,7 @@ import {
   renderAppSidebarBrand,
   renderAppSidebarFooterBar,
   renderAppSidebarHomeRow,
-  renderAppSidebarPagesHead,
+  renderAppSidebarMoreRow,
   renderAppSidebarPinnedHead,
   renderAppSidebarPluginTabEntry,
   renderAppSidebarZoneEntry,
@@ -480,7 +480,6 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
               this.sessionData.updateSessionsScrollState(event.currentTarget as HTMLElement)}
           >
             <nav class="sidebar-nav" @contextmenu=${this.sidebarMenus.openCustomizeMenuFromContext}>
-              ${renderAppSidebarPagesHead(this)}
               ${renderAppSidebarZoneGroup(
                 this,
                 html`
@@ -496,6 +495,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
                   ${sidebarPluginTabs(this.context?.gateway.snapshot.hello?.controlUiTabs).map(
                     (tab) => renderAppSidebarPluginTabEntry(this, tab),
                   )}
+                  ${renderAppSidebarMoreRow(this)}
                 `,
               )}
               ${pinnedEntries.length > 0

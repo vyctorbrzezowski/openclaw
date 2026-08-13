@@ -164,17 +164,14 @@ openclaw-chat-pane {
 }
 
 /* Identity trail: project, then session. One flex row owns the alignment of
-   every segment, so the 26px project chip and the 12px text segments centre on
+   every segment, so the 26px project chip and the 14px text segments centre on
    a single line and a future parent-session segment inherits it for free. */
 .chat-pane__crumbs {
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
-  /* Inter's visible glyph mass sits slightly below the 28px action glyphs even
-     when their CSS boxes share a center. Lift the whole trail as one optical
-     unit so project icon, labels, and separator meet the chrome centerline. */
-  transform: translateY(-1px);
+  font-weight: 500;
   /* Both interactive segments pull their 5px hover padding back out of flow, so
      this gap is the separator's actual optical air on each side. */
   gap: 6px;
@@ -191,7 +188,7 @@ openclaw-chat-pane {
 .chat-pane__crumb-sep {
   flex: 0 0 auto;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--control-ui-text-md);
 }
 
 /* The title hugs its text so the segments after it stay adjacent (the trail's
@@ -202,7 +199,8 @@ openclaw-chat-pane {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--control-ui-text-md);
+  font-weight: 500;
 }
 
 .chat-pane__session-title-button,
@@ -236,7 +234,8 @@ openclaw-chat-pane {
   min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--control-ui-text-md);
+  font-weight: 500;
   cursor: var(--cursor-action);
 }
 
@@ -270,7 +269,7 @@ openclaw-chat-pane {
   background: var(--panel);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--control-ui-text-md);
   outline: none;
   user-select: text;
   -webkit-user-select: text;
@@ -518,7 +517,8 @@ openclaw-chat-pane {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--control-ui-text-md);
+  font-weight: 500;
   cursor: var(--cursor-action);
 }
 

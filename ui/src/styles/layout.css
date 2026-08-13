@@ -80,7 +80,7 @@
    hosts without the full strip, they sit below the AppKit drag region. */
 .shell-chrome-controls {
   position: fixed;
-  top: 10px;
+  top: 8px;
   left: calc(var(--shell-nav-width) + var(--shell-chrome-controls-inset));
   z-index: 45;
   display: flex;
@@ -916,10 +916,8 @@ openclaw-settings-save-indicator {
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  /* 9px top pad centers the brand row's 30px icons on the app's shared
-     24px chrome centerline (pane-header actions, floating toggles). The
-     macOS app overrides this with its 50px titlebar clearance. */
-  padding: 9px var(--sidebar-pad-x) 12px;
+  /* The 40px agent control shares the pane header's 24px chrome centerline. */
+  padding: 4px var(--sidebar-pad-x) 12px;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -931,14 +929,14 @@ openclaw-settings-save-indicator {
   align-items: center;
   gap: 8px;
   min-height: 34px;
-  padding: 0 8px 12px;
+  padding: 0 0 12px;
   flex-shrink: 0;
 }
 
 .sidebar-brand__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   flex: 0 0 auto;
 }
 
@@ -1040,7 +1038,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 0 8px 10px;
+  margin: 0 0 10px;
 }
 
 .sidebar-attention__item {
@@ -1061,8 +1059,8 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   flex: 1 1 auto;
   min-width: 0;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0 6px 8px;
+  gap: 9px;
+  padding: 6px 0 6px 10px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1492,7 +1490,7 @@ body.update-dialog-open .sidebar-update-card__status {
   align-items: center;
   gap: 8px;
   min-height: 24px;
-  padding: 0 10px 0 0;
+  padding: 0 10px 0 8px;
   color: color-mix(in srgb, var(--muted) 72%, var(--text) 28%);
 }
 
@@ -1507,10 +1505,10 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-group-toggle {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 4px;
   min-width: 0;
   flex: 1 1 auto;
-  padding: 2px 0;
+  padding: 2px 0 2px 26px;
   border: none;
   background: transparent;
   color: inherit;
@@ -2011,7 +2009,7 @@ body.update-dialog-open .sidebar-update-card__status {
   align-items: center;
   min-width: 0;
   min-height: 30px;
-  padding-right: 4px;
+  padding: 0 4px 0 8px;
   border-radius: var(--radius-md);
   color: var(--muted);
   cursor: var(--cursor-action);
@@ -2045,7 +2043,7 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-recent-session__link {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 6px;
   flex: 1 1 auto;
   min-width: 0;
   padding: 3px 4px 3px 0;
@@ -2905,7 +2903,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .nav-item:hover {
   color: var(--text);
   background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
-  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  border-color: transparent;
   text-decoration: none;
 }
 
@@ -2916,14 +2914,14 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .nav-item.active,
 .nav-item--active {
   color: var(--text-strong);
-  background: color-mix(in srgb, var(--accent-subtle) 88%, var(--bg-elevated) 12%);
-  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: color-mix(in srgb, var(--bg-hover) 88%, var(--bg-elevated) 12%);
+  border-color: transparent;
 }
 
 .nav-item.active .nav-item__icon,
 .nav-item--active .nav-item__icon {
   opacity: 1;
-  color: var(--accent);
+  color: var(--text-strong);
 }
 
 /* Pinned sessions share the page-nav visual contract while retaining session actions. */
@@ -2984,7 +2982,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 4px 9px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -3009,11 +3007,11 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   flex: none;
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--accent-subtle) 80%, transparent);
+  background: color-mix(in srgb, var(--muted) 16%, var(--bg-elevated));
   color: var(--text-strong);
   font-size: 15px;
   font-weight: 600;
@@ -3062,15 +3060,6 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   stroke-linejoin: round;
 }
 
-.sidebar-agent-card__subtitle {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--control-ui-text-xs);
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .sidebar-agent-card__menu-unread {
   flex: none;
   margin-left: auto;
@@ -3098,11 +3087,11 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   margin-left: auto;
 }
 
-/* "Pages" section head: zone-style label plus the pin-editor affordance. */
+/* Section labels used by content groups such as Pinned. */
 .sidebar-nav__head {
   display: flex;
   align-items: center;
-  padding: 2px 8px 2px 12px;
+  padding: 2px 8px 2px 34px;
 }
 
 .sidebar-nav__head .sidebar-recent-sessions__label-text {
@@ -3115,37 +3104,10 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   margin-top: var(--sidebar-group-gap);
 }
 
-.sidebar-nav__head-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--muted);
-  cursor: var(--cursor-action);
-  transition:
-    color var(--duration-fast) ease,
-    background var(--duration-fast) ease;
-}
-
-.sidebar-nav__head-action:hover,
-.sidebar-nav__head-action:focus-visible {
-  color: var(--text);
-  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
-}
-
-.sidebar-nav__head-action svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.sidebar-nav__more {
+  width: 100%;
+  font: inherit;
+  text-align: left;
 }
 
 /* Home carries approval and outbox counts at the row's edge; run/unread state
@@ -3166,7 +3128,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .sidebar-footer-bar {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 6px 0;
 }
 
 .sidebar-identity-card {
@@ -3175,7 +3137,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   gap: 8px;
   width: 100%;
   min-width: 0;
-  padding: 5px 6px;
+  padding: 5px 9px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;

@@ -179,8 +179,8 @@ export function renderSidebarMoreMenu(params: SidebarMoreMenuParams) {
       <wa-dropdown
         class="sidebar-customize-menu sidebar-more-menu"
         .open=${true}
-        placement="bottom-start"
-        .distance=${0}
+        placement="right-start"
+        .distance=${4}
         aria-label=${t("nav.more")}
         @wa-select=${(event: CustomEvent<{ item: HTMLElement & { value?: string } }>) => {
           event.preventDefault();
@@ -208,7 +208,7 @@ export function renderSidebarMoreMenu(params: SidebarMoreMenuParams) {
           tabindex="-1"
           aria-hidden="true"
           aria-label=${t("nav.more")}
-          style="position: fixed; left: ${position.x}px; top: ${position.y}px; width: 1px; height: 1px; opacity: 0; pointer-events: none;"
+          style="position: fixed; left: ${position.x}px; top: ${position.y}px; width: 1px; min-width: 0; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; pointer-events: none;"
         ></button>
         ${moreRoutes.map((routeId) => renderMoreMenuRoute(params, routeId))}
         <div class="sidebar-customize-menu__separator" role="separator"></div>
