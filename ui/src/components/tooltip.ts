@@ -12,6 +12,7 @@ const TOUCH_VISIBLE = 900;
 const SKIP_DELAY = 300;
 const MOVE_LIMIT = 10;
 const RICH_CONTENT_CLOSE_DELAY = 100;
+const SUPPRESS_NEXT_FOCUS_ATTRIBUTE = "data-tooltip-suppress-next-focus";
 
 let nextTooltipId = 0;
 
@@ -357,6 +358,10 @@ class Tooltip extends OpenClawLitElement {
     this.close();
   };
   private readonly handleFocusIn = () => {
+    if (this.triggerElement?.hasAttribute(SUPPRESS_NEXT_FOCUS_ATTRIBUTE)) {
+      this.triggerElement.removeAttribute(SUPPRESS_NEXT_FOCUS_ATTRIBUTE);
+      return;
+    }
     if (!this.suppressPointerFocus) {
       this.show();
     }

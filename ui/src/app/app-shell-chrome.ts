@@ -165,7 +165,9 @@ export class ShellChromeOwner {
     context.navigation.update({ navCollapsed: nextNavCollapsed });
     if (nextNavCollapsed) {
       void host.updateComplete.then(() => {
-        this.restoreFocusTo(host.querySelector<HTMLElement>(".shell-chrome-controls__nav-toggle"));
+        const navToggle = host.querySelector<HTMLElement>(".shell-chrome-controls__nav-toggle");
+        navToggle?.setAttribute("data-tooltip-suppress-next-focus", "");
+        this.restoreFocusTo(navToggle);
       });
     }
   }
