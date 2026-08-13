@@ -74,13 +74,16 @@ export function renderSidebarSessionSubtitle(
   if (!value.subtitle) {
     return nothing;
   }
+  const content = options.approval
+    ? html`<span class="sidebar-recent-session__subtitle-shimmer-text">${value.subtitle}</span>`
+    : value.subtitle;
   return value.narration
     ? keyed(
         value.narration,
         html`<span
           class="sidebar-recent-session__subtitle sidebar-recent-session__subtitle--narration"
           ${ref(createOverflowFadeRef())}
-          >${value.subtitle}</span
+          >${content}</span
         >`,
       )
     : html`<span
@@ -92,6 +95,6 @@ export function renderSidebarSessionSubtitle(
           ? html`<span class="sidebar-recent-session__subtitle-icon" aria-hidden="true"
               >${options.leadingIcon}</span
             >`
-          : nothing}${value.subtitle}</span
+          : nothing}${content}</span
       >`;
 }
