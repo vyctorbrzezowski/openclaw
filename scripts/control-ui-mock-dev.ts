@@ -1664,8 +1664,9 @@ async function createChatPickerScenario(
         watchedSessions: fixture === "session-rows" ? [MULTI_USER_DEMO_SESSION_KEY] : [],
       },
       {
-        id: "presence-patricia",
-        email: "patricia.erichsen@example.com",
+        id: "presence-patrick",
+        name: "Patrick",
+        email: "patrick@example.com",
         watchedSessions: fixture === "session-rows" ? [MULTI_USER_DEMO_SESSION_KEY] : [],
       },
       ...(fixture === "session-rows"
