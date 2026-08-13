@@ -51,9 +51,11 @@ describe("AppSidebar footer identity menu", () => {
       "command:apps",
       "command:help",
     ]);
-    expect(menu?.querySelector(".sidebar-identity-menu__header")?.textContent?.trim()).toBe(
+    expect(menu?.querySelector(".sidebar-identity-menu__name")?.textContent?.trim()).toBe("Ada");
+    expect(menu?.querySelector(".sidebar-identity-menu__email")?.textContent?.trim()).toBe(
       "ada@example.test",
     );
+    expect(menu?.querySelector(".sidebar-identity-menu__avatar")).not.toBeNull();
     expect(
       menu
         ?.querySelector('wa-dropdown-item[value="command:settings"] .session-menu__shortcut')
