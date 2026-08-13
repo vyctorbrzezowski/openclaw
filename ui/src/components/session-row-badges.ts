@@ -63,15 +63,11 @@ function renderSessionRowBadge(
   modifier = "",
   count = 0,
   pullRequestState?: SessionCatalogPullRequestSummary["state"],
-  placementState?: SessionPlacementState,
-  workspaceConflictCount = 0,
 ) {
   return html`<openclaw-tooltip .content=${label}>
     <span
       class=${`session-row-badge${modifier ? ` ${modifier}` : ""}`}
       data-pull-request-state=${pullRequestState ?? nothing}
-      data-placement-state=${placementState ?? nothing}
-      data-workspace-conflicts=${workspaceConflictCount ? String(workspaceConflictCount) : nothing}
       role="img"
       aria-label=${label}
       >${icon}${count ? html`<span aria-hidden="true">${count}</span>` : nothing}</span
@@ -87,8 +83,6 @@ export function renderSessionRowBadges(params: {
   hasApproval?: boolean;
   outboxCount?: number;
   hasComposerDraft?: boolean;
-  placementState?: SessionPlacementState;
-  workspaceConflictCount?: number;
   maxVisible?: number;
 }) {
   const hasAutomation = !params.isChild && params.hasAutomation;
@@ -96,12 +90,6 @@ export function renderSessionRowBadges(params: {
     ? formatSessionPullRequestSummary(params.pullRequest)
     : undefined;
   const pullRequestState = params.pullRequest?.state;
-  const workspaceConflictCount = Math.max(0, Math.floor(params.workspaceConflictCount ?? 0));
-  // Placement is contextual detail for the hover card. Only a retained
-  // workspace conflict earns persistent space in the session row.
-  const conflictPlacementState = workspaceConflictCount > 0 ? params.placementState : undefined;
-  const displayedPlacementState = conflictPlacementState;
-  const hasWorkspaceConflict = workspaceConflictCount > 0;
   const outboxCount = Math.max(0, Math.floor(params.outboxCount ?? 0));
   const outboxLabel =
     outboxCount > 0
@@ -115,46 +103,11 @@ export function renderSessionRowBadges(params: {
     !pullRequestLabel &&
     !params.hasApproval &&
     outboxCount === 0 &&
-    !params.hasComposerDraft &&
-    !displayedPlacementState &&
-    !hasWorkspaceConflict
+    !params.hasComposerDraft
   ) {
     return nothing;
   }
-  const cloudLabel = hasWorkspaceConflict
-    ? displayedPlacementState
-      ? t(
-          workspaceConflictCount === 1
-            ? "sessionsView.cloudWorkerPlacementConflict"
-            : "sessionsView.cloudWorkerPlacementConflicts",
-          {
-            state: displayedPlacementState,
-            count: String(workspaceConflictCount),
-          },
-        )
-      : t(
-          workspaceConflictCount === 1
-            ? "sessionsView.cloudWorkerDescendantConflict"
-            : "sessionsView.cloudWorkerDescendantConflicts",
-          { count: String(workspaceConflictCount) },
-        )
-    : displayedPlacementState
-      ? t("sessionsView.cloudWorkerPlacement", { state: displayedPlacementState })
-      : "";
-  const placementBadge = {
-    label: cloudLabel,
-    content: renderSessionRowBadge(
-      cloudLabel,
-      resolveCloudPlacementIcon(displayedPlacementState, hasWorkspaceConflict),
-      "session-row-badge--cloud",
-      0,
-      undefined,
-      displayedPlacementState,
-      hasWorkspaceConflict ? workspaceConflictCount : 0,
-    ),
-  };
   const badges = [
-    hasWorkspaceConflict ? placementBadge : null,
     outboxCount > 0
       ? {
           label: outboxLabel,

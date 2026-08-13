@@ -169,7 +169,7 @@ describeControlUiE2e("Control UI cloud workspace conflict recovery", () => {
       const notice = page.locator(".chat-workspace-conflict-notice");
       const sessionRow = page.locator(`[data-session-key="${sessionKey}"]`);
       await notice.waitFor({ timeout: 10_000 });
-      await sessionRow.locator('.session-row-badge--cloud[data-workspace-conflicts="2"]').waitFor();
+      expect(await sessionRow.locator(".session-row-badge--cloud").count()).toBe(0);
       const historyCard = page.locator(".chat-workspace-conflict-event");
       await historyCard.waitFor();
       expect(await notice.textContent()).toContain("2 cloud workspace conflicts");

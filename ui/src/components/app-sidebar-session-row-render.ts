@@ -419,9 +419,7 @@ export function renderRecentSession(params: {
                   incognito: false,
                   isChild: session.isChild,
                   outboxCount: session.outboxCount,
-                  placementState: session.placementState,
                   pullRequest: session.pullRequest ?? display?.pullRequest,
-                  workspaceConflictCount: session.workspaceConflictCount,
                   hasApproval:
                     sessionHasPendingApproval(
                       host.sessionData.approvalBadgeSnapshot(),
@@ -442,7 +440,7 @@ export function renderRecentSession(params: {
                   ?disabled=${!pinAccess.allowed}
                   @click=${() => host.toggleSessionPin(session)}
                 >
-                  ${session.pinned ? icons.pinOff : icons.pin}
+                  ${session.pinned ? icons.sessionUnpin : icons.sessionPin}
                 </button>
                 <button
                   class="session-action"

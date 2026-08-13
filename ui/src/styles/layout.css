@@ -1741,7 +1741,7 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-recent-sessions__group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   min-height: 28px;
   border-radius: var(--radius-md);
   transition:
@@ -1771,7 +1771,7 @@ body.update-dialog-open .sidebar-update-card__status {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: 24px;
   padding: 0 var(--sidebar-row-inset, 10px);
   border-radius: var(--radius-md);
   color: color-mix(in srgb, var(--muted) 72%, var(--text) 28%);
@@ -3371,6 +3371,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 /* Pinned sessions are their own group, so they take the sidebar's inter-group
    rhythm instead of butting against the Pages list. */
 .sidebar-nav__head--pinned {
+  min-height: 24px;
   margin-top: var(--sidebar-group-gap);
 }
 

@@ -172,7 +172,7 @@ describe("AppSidebar agent chip", () => {
     );
   });
 
-  it("propagates loaded child workspace conflicts to a collapsed parent", async () => {
+  it("keeps loaded child workspace conflicts out of collapsed parent chrome", async () => {
     const gateway = createGateway({} as GatewayBrowserClient);
     const harness = createSessionsHarness("main", ["agent:main:parent"]);
     harness.list.mockResolvedValue({
@@ -231,16 +231,10 @@ describe("AppSidebar agent chip", () => {
     toggle?.click();
     await sidebar.updateComplete;
     expect(sidebar.querySelector('[data-session-key="agent:worker:child"]')).toBeNull();
-    const parentBadge = sidebar.querySelector<HTMLElement>(
+    const parentBadge = sidebar.querySelector(
       '[data-session-key="agent:main:parent"] .session-row-badge--cloud',
     );
-    expect(parentBadge?.dataset.workspaceConflicts).toBe("2");
-    expect(parentBadge?.dataset.placementState).toBeUndefined();
-    expect(parentBadge?.hasAttribute("title")).toBe(false);
-    expect(
-      (parentBadge?.closest("openclaw-tooltip") as (HTMLElement & { content?: string }) | null)
-        ?.content,
-    ).toBe("Cloud worker children: 2 workspace conflicts");
+    expect(parentBadge).toBeNull();
   });
 
   it("loads every child-session page before marking a parent complete", async () => {

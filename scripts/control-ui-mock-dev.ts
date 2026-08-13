@@ -1801,6 +1801,7 @@ async function createChatPickerScenario(
                     name: "Sidebar context-menu proof",
                     cwd: "/Users/demo/projects/openclaw",
                     gitBranch: "codex/sidebar-context-menu",
+                    source: "worktree",
                     status: "idle",
                     updatedAt: baseTime - 45 * 60_000,
                     archived: false,

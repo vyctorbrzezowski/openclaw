@@ -5458,7 +5458,7 @@ td.data-table-key-col {
   pointer-events: none;
 }
 
-/* Attribute badges (attached automation, approval, cloud placement):
+/* Attribute badges (attached automation and approval):
    muted metadata that sits after the title inside the row link, outside the
    trail/action overlap cell, so touch devices (which hide the trail) and
    hovered rows keep them. */
@@ -5481,8 +5481,7 @@ td.data-table-key-col {
   font-variant-numeric: tabular-nums;
 }
 
-.session-row-badge--pull-request[data-pull-request-state="open"],
-.session-row-badge--cloud[data-placement-state="active"] {
+.session-row-badge--pull-request[data-pull-request-state="open"] {
   color: var(--ok);
 }
 
@@ -5502,25 +5501,6 @@ td.data-table-key-col {
   height: 13px;
   stroke: currentColor;
   fill: none;
-}
-
-.session-row-badge--cloud[data-placement-state="failed"] {
-  color: var(--danger);
-}
-
-.session-row-badge--cloud:is(
-  [data-placement-state="requested"],
-  [data-placement-state="provisioning"],
-  [data-placement-state="syncing"],
-  [data-placement-state="starting"],
-  [data-placement-state="draining"],
-  [data-placement-state="reconciling"]
-) {
-  color: var(--accent);
-}
-
-.session-row-badge--cloud[data-workspace-conflicts] {
-  color: var(--warn);
 }
 
 .session-row-badge svg {
@@ -5566,6 +5546,12 @@ td.data-table-key-col {
   stroke-width: 1.6px;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.session-action .session-pin-glyph,
+.session-menu__icon .session-pin-glyph {
+  stroke: none;
+  fill: currentColor;
 }
 
 .session-action:hover:not(:disabled) {
@@ -5879,6 +5865,15 @@ td.data-table-key-col {
   flex: 0 0 11px;
 }
 
+.sidebar-catalog-session__git-icon--worktree,
+.sidebar-catalog-session__git-icon--worktree svg {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+  stroke: none;
+  fill: currentColor;
+}
+
 .session-row-qualifier {
   display: inline-flex;
   align-items: center;
@@ -5924,8 +5919,8 @@ td.data-table-key-col {
 }
 
 .session-row-identity-stack .session-owner-chip--row {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .session-row-identity-stack .viewer-facepile--session {

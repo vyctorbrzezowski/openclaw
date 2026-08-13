@@ -439,6 +439,10 @@ function renderCatalogSessionRow(
   const { href, options: navigation } = target;
   const active = params.routeSessionKey !== "" && key === params.routeSessionKey;
   const running = session.status === "active" || session.status === "running";
+  // Catalog owners can identify a worktree-backed thread explicitly. Keep the
+  // ordinary branch glyph for all other Git contexts; never infer worktrees
+  // from branch names or cwd shapes.
+  const usesWorktree = session.source === "worktree";
   const stateDescription = running ? t("sessionsView.activeRun") : "";
   const stateId = running ? sidebarSessionStateId(key) : undefined;
   const canOpenTerminal = session.canOpenTerminal === true && params.terminalAvailable;
@@ -511,10 +515,15 @@ function renderCatalogSessionRow(
             ${session.gitBranch
               ? html`<span
                   class="sidebar-recent-session__subtitle sidebar-catalog-session__git-context"
+                  data-worktree-context=${usesWorktree ? "true" : nothing}
                   ${ref(createOverflowFadeRef())}
                 >
-                  <span class="sidebar-catalog-session__git-icon" aria-hidden="true"
-                    >${icons.gitBranch}</span
+                  <span
+                    class="sidebar-catalog-session__git-icon ${usesWorktree
+                      ? "sidebar-catalog-session__git-icon--worktree"
+                      : ""}"
+                    aria-hidden="true"
+                    >${usesWorktree ? icons.worktreeCreated : icons.gitBranch}</span
                   >
                   <span>${session.gitBranch}</span>
                 </span>`

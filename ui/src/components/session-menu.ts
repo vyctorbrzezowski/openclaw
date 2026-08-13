@@ -300,7 +300,7 @@ class SessionMenu extends OpenClawLightDomElement {
                 title=${this.actionTitle("toggle-pin")}
               >
                 <span slot="icon" class="session-menu__icon" aria-hidden="true"
-                  >${session.pinned ? icons.pinOff : icons.pin}</span
+                  >${session.pinned ? icons.sessionUnpin : icons.sessionPin}</span
                 >
                 <span class="session-menu__text"
                   >${session.pinned
