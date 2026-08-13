@@ -6032,16 +6032,15 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__swap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
+  display: inline-grid;
   min-width: 0;
   min-height: 24px;
+  place-items: center end;
 }
 
 .session-row-endcap__rest-summary,
 .session-row-endcap__management {
+  grid-area: 1 / 1;
   gap: 6px;
   white-space: nowrap;
   transition: opacity 100ms ease-out;
@@ -6055,10 +6054,6 @@ td.data-table-key-col {
 }
 
 .session-row-endcap__management {
-  position: absolute;
-  inset-inline-end: 0;
-  padding-inline-start: 6px;
-  background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
   opacity: 0;
   pointer-events: none;
 }
@@ -6229,8 +6224,6 @@ td.data-table-key-col {
   .session-row-endcap__management {
     position: static;
     grid-area: auto;
-    padding-inline-start: 0;
-    background: transparent;
     opacity: 1;
     pointer-events: auto;
   }
