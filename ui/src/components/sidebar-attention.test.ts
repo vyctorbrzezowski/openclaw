@@ -163,6 +163,59 @@ describe("pending approval attention", () => {
   });
 });
 
+describe("sidebar attention footer trigger", () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("collapses active issues into one notification button that opens the shared panel", async () => {
+    const request = vi.fn((method: string) =>
+      Promise.resolve(
+        method === "cron.list"
+          ? cronListResponse([])
+          : ({ ts: 1, providers: [] } as ModelAuthStatusResult),
+      ),
+    );
+    const gateway = {
+      snapshot: {
+        client: { request } as unknown as GatewayBrowserClient,
+        phase: "connected",
+        hello: null,
+        assistantAgentId: "main",
+        sessionKey: "agent:main:main",
+        lastError: null,
+        lastErrorCode: null,
+      },
+      connection: {
+        gatewayUrl: "ws://gateway.test",
+        token: "",
+        bootstrapToken: "",
+        password: "",
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+    } as unknown as ApplicationGateway;
+    const overlays = {
+      snapshot: { approvalQueue: [approval("exec:one")] },
+      subscribe: () => () => undefined,
+    } as unknown as ApplicationContext["overlays"];
+    vi.stubGlobal("localStorage", createTestStorageMock());
+
+    const provider = createApplicationContextProvider({ gateway, overlays } as ApplicationContext);
+    const element = document.createElement("openclaw-sidebar-attention") as SidebarAttentionElement;
+    provider.append(element);
+    document.body.append(provider);
+
+    await waitForFast(() => expect(element.querySelector(".sidebar-status-button")).not.toBeNull());
+    expect(element.querySelector(".sidebar-status-strip")).toBeNull();
+
+    element.querySelector<HTMLButtonElement>(".sidebar-status-button")?.click();
+    await waitForFast(() => expect(element.querySelector(".sidebar-status-panel")).not.toBeNull());
+  });
+});
+
 describe("sidebar attention refresh ownership", () => {
   afterEach(() => {
     document.body.replaceChildren();

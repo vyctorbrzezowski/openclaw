@@ -22,7 +22,6 @@ import { SubscriptionsController } from "../lit/subscriptions-controller.ts";
 import { SETTINGS_SEARCH_TARGETS } from "../pages/config/settings-targets.ts";
 import { sidebarPluginTabs } from "./app-sidebar-nav-menus.ts";
 import {
-  renderAppSidebarAttention,
   renderAppSidebarBrand,
   renderAppSidebarFooterBar,
   renderAppSidebarHomeRow,
@@ -559,7 +558,6 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
             </openclaw-tooltip-provider>
           </div>
           <div class="sidebar-shell__footer">
-            ${renderAppSidebarAttention(this)}
             <openclaw-sidebar-update-card
               .updateAvailable=${this.updateAvailable}
               .updateSchedule=${this.updateSchedule}
