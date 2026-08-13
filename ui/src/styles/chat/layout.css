@@ -319,10 +319,10 @@ openclaw-chat-page {
   background: transparent;
 }
 
-/* The oversized clipped transcript owns its focus ring, so it stays inward to keep every edge visible. */
+/* Keep the scrollable transcript keyboard-accessible without framing the
+   entire reading surface when browser input modality changes. */
 .chat-thread:focus-visible {
-  outline: 2px solid var(--muted-strong);
-  outline-offset: -2px;
+  outline: none;
 }
 
 :root .chat-thread::-webkit-scrollbar-thumb {

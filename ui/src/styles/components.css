@@ -6042,12 +6042,20 @@ td.data-table-key-col {
   height: var(--sidebar-run-indicator-size, 14px);
 }
 
-/* Sidebar state changes should read at a glance without looking restless.
-   Keep the leading edge crisp and add a softer trailing quadrant. */
+/* Sidebar progress stays quiet and uses one consistent active arc. */
 .sidebar .session-run-spinner,
 .sidebar .session-glyph__ring {
-  animation-duration: 1.2s;
-  border-right-color: color-mix(in srgb, var(--run) 62%, transparent);
+  animation-duration: 1.45s;
+  border-color: color-mix(in srgb, var(--muted-strong) 24%, transparent);
+  border-top-color: var(--muted-strong);
+  border-right-color: var(--muted-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .session-run-spinner,
+  .sidebar .session-glyph__ring {
+    border-color: var(--muted-strong);
+  }
 }
 
 .sidebar .session-primary-state .sidebar-session-attention__icon,
