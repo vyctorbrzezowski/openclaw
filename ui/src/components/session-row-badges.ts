@@ -211,7 +211,11 @@ export function renderSessionRowBadges(params: {
     hasAutomation
       ? {
           label: t("sessionsView.automationAttached"),
-          content: renderSessionRowBadge(t("sessionsView.automationAttached"), icons.clock),
+          content: renderSessionRowBadge(
+            t("sessionsView.automationAttached"),
+            icons.clock,
+            "session-row-badge--automation",
+          ),
         }
       : null,
   ].filter((badge): badge is { label: string; content: TemplateResult } => badge !== null);
