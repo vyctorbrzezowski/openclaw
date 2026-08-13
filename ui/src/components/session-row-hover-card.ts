@@ -48,6 +48,30 @@ function renderOwnerLabel(owner: SessionHoverCardOwner) {
   </span>`;
 }
 
+function renderDetailsBody(
+  contextualDetails: readonly HoverCardDetail[],
+  operationalDetails: readonly HoverCardDetail[] = [],
+) {
+  if (contextualDetails.length === 0 && operationalDetails.length === 0) {
+    return nothing;
+  }
+  return html`<div class="session-row-hover-card__body">
+    ${contextualDetails.length > 0
+      ? html`<div class="session-row-hover-card__details">
+          ${contextualDetails.map(renderDetail)}
+        </div>`
+      : nothing}
+    ${contextualDetails.length > 0 && operationalDetails.length > 0
+      ? html`<div class="sidebar-hover-card__divider" role="separator"></div>`
+      : nothing}
+    ${operationalDetails.length > 0
+      ? html`<div class="session-row-hover-card__details">
+          ${operationalDetails.map(renderDetail)}
+        </div>`
+      : nothing}
+  </div>`;
+}
+
 export function renderSessionRowHoverCard(params: {
   session: SidebarRecentSession;
   label: string;
@@ -139,19 +163,7 @@ export function renderSessionRowHoverCard(params: {
         ? html`<span class="session-row-hover-card__meta">${params.meta}</span>`
         : nothing}
     </div>
-    ${contextualDetails.length > 0
-      ? html`<div class="session-row-hover-card__details">
-          ${contextualDetails.map(renderDetail)}
-        </div>`
-      : nothing}
-    ${operationalDetails.length > 0
-      ? html`${contextualDetails.length > 0
-            ? html`<div class="sidebar-hover-card__divider" role="separator"></div>`
-            : nothing}
-          <div class="session-row-hover-card__details session-row-hover-card__details--secondary">
-            ${operationalDetails.map(renderDetail)}
-          </div>`
-      : nothing}
+    ${renderDetailsBody(contextualDetails, operationalDetails)}
   </div>`;
 }
 
@@ -161,13 +173,11 @@ export function renderCatalogSessionHoverCard(params: {
   project?: string;
   cwd?: string;
   branch?: string;
-  stateLabel?: string;
 }) {
   const project = params.project ?? basename(params.cwd);
   const details: HoverCardDetail[] = [
     ...(project ? [{ icon: icons.folder, label: project }] : []),
     ...(params.branch ? [{ icon: icons.gitFork, label: params.branch }] : []),
-    ...(params.stateLabel ? [{ icon: icons.activity, label: params.stateLabel }] : []),
   ];
   return html`<div slot="content" class="sidebar-hover-card session-row-hover-card">
     <div class="session-row-hover-card__header">
@@ -176,8 +186,6 @@ export function renderCatalogSessionHoverCard(params: {
         ? html`<span class="session-row-hover-card__meta">${params.meta}</span>`
         : nothing}
     </div>
-    ${details.length > 0
-      ? html`<div class="session-row-hover-card__details">${details.map(renderDetail)}</div>`
-      : nothing}
+    ${renderDetailsBody(details)}
   </div>`;
 }

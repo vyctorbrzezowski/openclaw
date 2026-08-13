@@ -553,7 +553,6 @@ function renderCatalogSessionRow(
         project,
         cwd: session.cwd,
         branch: session.gitBranch,
-        stateLabel: stateDescription,
       })}
     </openclaw-tooltip>
   `;

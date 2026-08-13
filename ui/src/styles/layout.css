@@ -3741,15 +3741,14 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   white-space: nowrap;
 }
 
+.session-row-hover-card__body {
+  margin-block-start: 12px;
+}
+
 .session-row-hover-card__details {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-block-start: 16px;
-}
-
-.session-row-hover-card__details--secondary {
-  margin-block-start: 0;
 }
 
 .session-row-hover-card__detail {
@@ -3807,7 +3806,7 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
 }
 
 .session-row-hover-card .sidebar-hover-card__divider {
-  margin: 7px 0;
+  margin: 6px 0;
 }
 
 .sidebar-footer-bar__status {
