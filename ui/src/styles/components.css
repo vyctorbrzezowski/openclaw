@@ -5644,25 +5644,32 @@ td.data-table-key-col {
 
 /* Text-first sidebar session rows. The hit target remains full-width while the
    visual surface, text rail, and operational endcap have independent geometry. */
+.sidebar .session-owner-chip--row,
+.sidebar .session-row-badge svg,
+.sidebar .session-action svg {
+  width: var(--sidebar-operational-icon-size, 16px);
+  height: var(--sidebar-operational-icon-size, 16px);
+}
+
 .sidebar-recent-sessions__head {
   padding-inline: var(--sidebar-row-inset, 10px);
 }
 
 .sidebar-session-group-toggle {
-  padding-inline-start: calc(var(--sidebar-page-label-start, 10px) - 8px);
+  padding-inline-start: 0;
 }
 
 .sidebar-nav__head {
-  padding-inline: 8px;
+  padding-inline: var(--sidebar-row-inset, 10px);
 }
 
 .sidebar-nav__head--pinned .sidebar-session-group-toggle {
-  padding-inline-start: calc(var(--sidebar-page-label-start, 10px) - 8px);
+  padding-inline-start: 0;
 }
 
 .sidebar-session-group-drag-handle {
-  inset-inline-start: auto;
-  inset-inline-end: calc(var(--sidebar-row-inset, 10px) + var(--sidebar-trailing-slot, 20px) + 4px);
+  inset-inline-start: calc(2px - var(--sidebar-row-inset, 10px));
+  inset-inline-end: auto;
 }
 
 .sidebar-recent-session {
@@ -6006,17 +6013,17 @@ td.data-table-key-col {
   color: var(--ok);
 }
 
-.session-primary-state__terminal,
-.session-primary-state__terminal svg {
+.sidebar .session-primary-state__terminal,
+.sidebar .session-primary-state__terminal svg {
   display: inline-flex;
-  width: 14px;
-  height: 14px;
+  width: var(--sidebar-operational-icon-size, 16px);
+  height: var(--sidebar-operational-icon-size, 16px);
 }
 
-.session-primary-state .session-glyph,
-.session-primary-state .session-glyph__content {
-  width: 16px;
-  height: 16px;
+.sidebar .session-primary-state .session-glyph,
+.sidebar .session-primary-state .session-glyph__content {
+  width: var(--sidebar-operational-icon-size, 16px);
+  height: var(--sidebar-operational-icon-size, 16px);
 }
 
 .session-primary-state .session-glyph__badge {
@@ -6030,15 +6037,15 @@ td.data-table-key-col {
   inset: 0;
 }
 
-.session-primary-state .session-run-spinner {
-  width: 16px;
-  height: 16px;
+.sidebar .session-primary-state .session-run-spinner {
+  width: var(--sidebar-operational-icon-size, 16px);
+  height: var(--sidebar-operational-icon-size, 16px);
 }
 
-.session-primary-state .sidebar-session-attention__icon,
-.session-primary-state .sidebar-session-attention__icon svg {
-  width: 14px;
-  height: 14px;
+.sidebar .session-primary-state .sidebar-session-attention__icon,
+.sidebar .session-primary-state .sidebar-session-attention__icon svg {
+  width: var(--sidebar-operational-icon-size, 16px);
+  height: var(--sidebar-operational-icon-size, 16px);
 }
 
 .session-primary-state--killed .session-primary-state__terminal svg rect {
