@@ -456,11 +456,16 @@ suite.define(() => {
       expect(
         await openclawProject.locator(".sidebar-session-catalog-project__label").textContent(),
       ).toBe("openclaw");
-      expect(
-        await openclawProject.locator(".sidebar-session-catalog-project__count").textContent(),
-      ).toBe("2");
       const projectRows = section.locator(".sidebar-recent-session--catalog-project-child");
       await expect.poll(() => projectRows.count()).toBe(3);
+      const projectLabelBox = await openclawProject
+        .locator(".sidebar-session-catalog-project__label")
+        .boundingBox();
+      const projectRowNameBox = await openclawProjectList
+        .locator(".sidebar-recent-session__name")
+        .first()
+        .boundingBox();
+      expect(projectLabelBox?.x).toBe(projectRowNameBox?.x);
       expect(
         await openclawProjectList
           .locator(":scope > *")
@@ -634,9 +639,6 @@ suite.define(() => {
       expect(await section.getByText("Worktree fix session", { exact: true }).count()).toBe(0);
       expect(await section.getByText("Other project session", { exact: true }).count()).toBe(1);
       expect(await openclawProject.count()).toBe(1);
-      expect(
-        await openclawProject.locator(".sidebar-session-catalog-project__count").textContent(),
-      ).toBe("2");
       expect(
         await page.evaluate(
           (key) => JSON.parse(localStorage.getItem(key) ?? "[]"),

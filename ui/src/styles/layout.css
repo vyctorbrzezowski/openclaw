@@ -922,7 +922,7 @@ openclaw-settings-save-indicator {
   /* Operational glyphs and avatars share one footprint. Circular run artwork
      is optically smaller; tiny dots and disclosure chevrons keep their scale. */
   --sidebar-operational-icon-size: 16px;
-  --sidebar-run-indicator-size: 14px;
+  --sidebar-run-indicator-size: 12px;
   --sidebar-session-title-size: calc(13px * var(--control-ui-text-scale));
   --sidebar-session-title-line-height: 20px;
   --sidebar-trailing-slot: 20px;
@@ -1944,8 +1944,8 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-session-group-status .session-run-spinner {
-  width: var(--sidebar-run-indicator-size, 14px);
-  height: var(--sidebar-run-indicator-size, 14px);
+  width: var(--sidebar-run-indicator-size, 12px);
+  height: var(--sidebar-run-indicator-size, 12px);
 }
 
 .sidebar-session-catalog-load-more {
@@ -2225,7 +2225,7 @@ body.update-dialog-open .sidebar-update-card__status {
   gap: 4px;
   width: 100%;
   min-height: 18px;
-  padding: 2px 12px 0 0;
+  padding: 2px 12px 0 var(--sidebar-session-content-start);
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -2450,6 +2450,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-child-session-toggle__count {
   min-width: 9px;
+  color: var(--muted);
   font-size: calc(9px * var(--control-ui-text-scale));
   font-variant-numeric: tabular-nums;
   line-height: 1;
