@@ -5517,7 +5517,7 @@ td.data-table-key-col {
 .session-row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 1px;
+  gap: 6px;
 }
 
 .session-action {
