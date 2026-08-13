@@ -61,6 +61,7 @@ type SidebarNavRouteParams = {
   onNavigate: () => void;
   onPreload: (event: Event, immediate?: boolean) => void;
   onCancelPreload: (event: Event) => void;
+  attention?: { count: number; severity: "danger" | "warning" | null };
 };
 
 export function renderSidebarNavRoute(params: SidebarNavRouteParams) {
@@ -85,6 +86,29 @@ export function renderSidebarNavRoute(params: SidebarNavRouteParams) {
         >${icons[navigationIconForRoute(params.routeId)]}</span
       >
       <span class="nav-item__text">${titleForRoute(params.routeId)}</span>
+      ${params.attention && params.attention.count > 0
+        ? html`<openclaw-tooltip
+            .content=${t(
+              params.attention.count === 1
+                ? "attention.automationNeedsAttention"
+                : "attention.automationsNeedAttention",
+              { count: String(params.attention.count) },
+            )}
+          >
+            <span
+              class="sidebar-nav-health-badge sidebar-nav-health-badge--${params.attention
+                .severity ?? "warning"}"
+              role="status"
+              aria-label=${t(
+                params.attention.count === 1
+                  ? "attention.automationNeedsAttention"
+                  : "attention.automationsNeedAttention",
+                { count: String(params.attention.count) },
+              )}
+              >${params.attention.count > 9 ? "9+" : params.attention.count}</span
+            >
+          </openclaw-tooltip>`
+        : nothing}
     </a>
   `;
 }

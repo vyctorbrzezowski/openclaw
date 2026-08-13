@@ -71,6 +71,7 @@ export interface SidebarMenusControllerHost
   extends ReactiveControllerHost, SessionOrganizerControllerHost {
   readonly activeRouteId?: NavigationRouteId;
   readonly activeWorkboardBoardId: string;
+  readonly automationAttention: { count: number; severity: "danger" | "warning" | null };
   readonly basePath: string;
   readonly canPairDevice: boolean;
   readonly connected: boolean;
@@ -111,6 +112,7 @@ export interface SidebarMenusControllerHost
   readonly themeMode: ThemeMode;
   readonly workboardBoards: readonly SidebarWorkboardBoard[];
   readonly workboardRenderers?: SidebarWorkboardRenderers;
+  openSystemStatus(): void;
   activeChipAgent(): {
     activeId: string;
     agent: SidebarMenuAgent | undefined;
@@ -576,6 +578,7 @@ export class SidebarMenusController implements ReactiveController, SidebarMenusC
       active:
         isSidebarRouteActive(this.host.activeRouteId, routeId) &&
         !(routeId === "workboard" && this.activeWorkboardBoardIsPinned()),
+      attention: routeId === "cron" ? this.host.automationAttention : undefined,
       onNavigate: () => {
         this.host.onNavigate?.(routeId, sessionTarget?.options);
       },

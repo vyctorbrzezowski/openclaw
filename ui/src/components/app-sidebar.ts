@@ -9,6 +9,7 @@ import { isGatewayMethodAdvertised } from "../lib/gateway-methods.ts";
 import "./menu-surface.ts";
 import "./session-menu.ts";
 import "./sidebar-agent-card.ts";
+import type { SidebarSystemStatusChangeDetail } from "./sidebar-attention.ts";
 import "./sidebar-attention.ts";
 import "./sidebar-update-card.ts";
 import "./theme-mode-toggle.ts";
@@ -73,9 +74,31 @@ const sidebarChromeImport = createIdleImport(() =>
 class AppSidebar extends AppSidebarSessionNavigationElement implements SessionListHost {
   @state() sidebarNarrationLines: ReadonlyMap<string, string> = new Map();
   @state() sidebarObserverDigests: ReadonlyMap<string, SessionObserverDigest> = new Map();
+  @state() automationAttention = { count: 0, severity: null as "danger" | "warning" | null };
 
   override readonly sessionOrganizer = new SessionOrganizerController(this);
   override readonly sidebarMenus = new SidebarMenusController(this);
+
+  private readonly handleSystemStatusChange = (
+    event: CustomEvent<SidebarSystemStatusChangeDetail>,
+  ) => {
+    event.stopPropagation();
+    const next = event.detail.automationAttention;
+    if (
+      next.count !== this.automationAttention.count ||
+      next.severity !== this.automationAttention.severity
+    ) {
+      this.automationAttention = next;
+    }
+  };
+
+  openSystemStatus() {
+    const status = this.querySelector<HTMLElement & { openPanel(trigger?: HTMLElement): void }>(
+      "openclaw-sidebar-attention",
+    );
+    const trigger = this.querySelector<HTMLElement>(".sidebar-identity-card") ?? undefined;
+    status?.openPanel(trigger);
+  }
 
   // Lazy: the controller pulls core token-suppression modules that must stay
   // out of the startup chunk (QA smoke startup-JS budget). It loads on the
@@ -464,6 +487,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     return html`
       <aside
         class="sidebar"
+        @sidebar-system-status-change=${this.handleSystemStatusChange}
         @contextmenu=${(event: MouseEvent) => {
           // Editable controls keep the platform editing menu; all other sidebar chrome is owned here.
           if (!(event.target as Element).closest("input, textarea, [contenteditable]")) {

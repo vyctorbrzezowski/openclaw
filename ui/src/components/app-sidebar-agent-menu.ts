@@ -98,6 +98,7 @@ type SidebarIdentityMenuParams = {
   onNavigate: (routeId: NavigationRouteId, options?: ApplicationNavigationOptions) => void;
   onPairMobile: () => void;
   onRetryConnect?: () => void;
+  onOpenSystemStatus: () => void;
 };
 
 function isApplePlatform(): boolean {
@@ -425,6 +426,9 @@ export function renderSidebarIdentityMenu(params: SidebarIdentityMenuParams) {
             case `${COMMAND_VALUE_PREFIX}apps`:
               params.onNavigate("apps");
               break;
+            case `${COMMAND_VALUE_PREFIX}recent-activity`:
+              params.onOpenSystemStatus();
+              break;
             case `${COMMAND_VALUE_PREFIX}retry-connect`:
               params.onRetryConnect?.();
               break;
@@ -471,6 +475,13 @@ export function renderSidebarIdentityMenu(params: SidebarIdentityMenuParams) {
         <wa-dropdown-item class="sidebar-customize-menu__item" value="command:apps">
           <span slot="icon" class="nav-item__icon" aria-hidden="true">${icons.layoutGrid}</span>
           <span class="sidebar-customize-menu__text">${t("agentChip.getApps")}</span>
+        </wa-dropdown-item>
+        <wa-dropdown-item
+          class="sidebar-customize-menu__item"
+          value="command:recent-activity"
+        >
+          <span slot="icon" class="nav-item__icon" aria-hidden="true">${icons.activity}</span>
+          <span class="sidebar-customize-menu__text">${t("attention.recentActivity")}</span>
         </wa-dropdown-item>
         <wa-dropdown-item
           class="sidebar-customize-menu__item sidebar-identity-menu__help"

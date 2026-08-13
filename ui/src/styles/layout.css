@@ -884,6 +884,12 @@ openclaw-settings-save-indicator {
   width: 1px;
 }
 
+/* The fixed status panel remains inside the nav stacking context. Raise that
+   context only while it is open so the resize handle cannot paint over it. */
+.shell:has(.sidebar-status-panel) .shell-nav {
+  z-index: 30;
+}
+
 .shell:has(.sidebar-resizer.dragging) {
   transition: grid-template-rows var(--shell-focus-duration) var(--shell-focus-ease);
 }
@@ -1033,111 +1039,312 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
-/* Ambient health chips (failed cron, expiring model auth) above the footer bar. */
-.sidebar-attention {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 0 10px;
-}
-
-.sidebar-attention__item {
+/* One persistent condition surface replaces the unbounded alert stack. */
+.sidebar-status-strip {
   display: flex;
   align-items: center;
+  gap: 8px;
   width: 100%;
-  border: 1px solid var(--border);
+  min-height: 36px;
+  padding: 0 9px;
+  margin-bottom: var(--space-1);
+  border: 0;
   border-radius: var(--radius-md);
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: var(--cursor-action);
+  animation: sidebar-status-strip-in 140ms var(--ease-out);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+@keyframes sidebar-status-strip-in {
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-status-strip {
+    animation: none;
+  }
+}
+
+.sidebar-status-strip:hover,
+.sidebar-status-strip[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--warn) 11%, var(--bg-elevated));
+}
+
+.sidebar-status-strip--warning {
+  background: color-mix(in srgb, var(--warn) 7%, var(--bg-elevated));
+}
+
+.sidebar-status-strip--blocking {
+  background: color-mix(in srgb, var(--danger) 7%, var(--bg-elevated));
+}
+
+.sidebar-status-strip--blocking:hover,
+.sidebar-status-strip--blocking[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--danger) 11%, var(--bg-elevated));
+}
+
+.sidebar-status-strip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar-status-strip__dot {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+}
+
+.sidebar-status-strip__dot::after {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--warn);
+  content: "";
+}
+
+.sidebar-status-strip--blocking .sidebar-status-strip__dot::after {
+  background: var(--danger);
+}
+
+.sidebar-status-strip__label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
   color: var(--text);
   font-size: var(--control-ui-text-sm);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Navigate + dismiss are sibling buttons inside the pill (buttons can't nest);
-   the open button carries the click padding so the whole pill stays a target. */
-.sidebar-attention__open {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 0 6px 10px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: var(--cursor-action);
-}
-
-.sidebar-attention__dismiss {
+.sidebar-status-strip__more {
   display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 8px 6px 6px;
-  border: 0;
-  background: transparent;
+  flex: none;
   color: var(--muted);
-  cursor: var(--cursor-action);
-  opacity: 0.6;
 }
 
-.sidebar-attention__dismiss:hover {
-  color: var(--text);
-  opacity: 1;
-}
-
-.sidebar-attention__dismiss svg {
-  width: 12px;
-  height: 12px;
+.sidebar-status-strip__more svg {
+  width: 13px;
+  height: 13px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 1.7px;
 }
 
-.sidebar-attention__item--warning {
-  border-color: var(--warn-subtle);
-  background: rgba(234, 179, 8, 0.06);
+.sidebar-status-panel {
+  position: fixed;
+  z-index: 120;
+  display: flex;
+  width: min(304px, calc(100vw - 16px));
+  max-height: 60vh;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--border-strong) 72%, transparent),
+    var(--shadow-lg);
 }
 
-.sidebar-attention__item--error {
-  border-color: var(--danger-subtle);
-  background: rgba(239, 68, 68, 0.06);
+.sidebar-status-panel__section {
+  min-width: 0;
+  padding: 10px 12px;
 }
 
-.sidebar-attention__item:hover {
-  border-color: var(--border-strong);
+.sidebar-status-panel__section + .sidebar-status-panel__section {
+  border-top: 1px solid var(--border);
 }
 
-.sidebar-attention__icon {
+.sidebar-status-panel__section--recent {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.sidebar-status-panel__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-status-panel__heading {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: var(--control-ui-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sidebar-status-panel__section-head .sidebar-status-panel__heading {
+  margin-bottom: 0;
+}
+
+.sidebar-status-panel__conditions,
+.sidebar-status-panel__events {
+  display: flex;
+  width: calc(100% + 16px);
+  margin-inline: -8px;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-status-panel__events {
+  min-height: 0;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+
+.sidebar-status-condition,
+.sidebar-status-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-hover) 42%, transparent);
+  transition: background var(--duration-fast) ease;
+}
+
+.sidebar-status-condition {
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: var(--cursor-action);
+}
+
+.sidebar-status-condition:hover,
+.sidebar-status-event:hover {
+  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
+}
+
+.sidebar-status-condition__icon {
   display: inline-flex;
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  color: var(--warn, #b7791f);
+  align-self: center;
+  flex: 0 0 auto;
+  color: var(--warn);
 }
 
-.sidebar-attention__item--error .sidebar-attention__icon {
+.sidebar-status-condition--blocking .sidebar-status-condition__icon {
   color: var(--danger);
 }
 
-.sidebar-attention__icon svg {
-  width: 14px;
-  height: 14px;
+.sidebar-status-condition__icon svg {
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 1.8px;
 }
 
-.sidebar-attention__label {
-  min-width: 0;
+.sidebar-status-condition__title,
+.sidebar-status-event__title {
   overflow: hidden;
+  color: var(--text);
+  font-size: var(--control-ui-text-sm);
+  font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar-status-panel__clear-all,
+.sidebar-status-event__clear {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: var(--cursor-action);
+}
+
+.sidebar-status-condition:focus-visible,
+.sidebar-status-panel__clear-all:hover,
+.sidebar-status-panel__clear-all:focus-visible,
+.sidebar-status-event__clear:hover,
+.sidebar-status-event__clear:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text);
+  outline: none;
+}
+
+.sidebar-status-condition:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar-status-panel__clear-all {
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--control-ui-text-xs);
+}
+
+.sidebar-status-event {
+  padding: 0;
+}
+
+.sidebar-status-event__open {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 8px 8px 32px;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  cursor: var(--cursor-action);
+}
+
+.sidebar-status-event__meta {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--control-ui-text-xs);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-status-event__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 0;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-status-event__clear svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8px;
+}
+
+.sidebar-status-panel__empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+  font-size: var(--control-ui-text-sm);
 }
 
 .sidebar-update-card {
@@ -2898,6 +3105,28 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   font-size: calc(13px * var(--control-ui-text-scale));
   font-weight: 500;
   white-space: nowrap;
+}
+
+.sidebar-nav-health-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: auto;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  font-size: calc(10px * var(--control-ui-text-scale));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sidebar-nav-health-badge--danger {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
 }
 
 .nav-item:hover {
