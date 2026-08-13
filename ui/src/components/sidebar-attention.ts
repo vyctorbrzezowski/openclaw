@@ -316,7 +316,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
   openPanel(trigger?: HTMLElement) {
     const anchor =
       trigger ??
-      this.querySelector<HTMLElement>(".sidebar-status-button") ??
+      this.querySelector<HTMLElement>(".sidebar-status-strip") ??
       this.closest(".sidebar")?.querySelector<HTMLElement>(".sidebar-identity-card") ??
       null;
     const rect = anchor?.getBoundingClientRect();
@@ -463,6 +463,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const issueLabel = t(conditions.length === 1 ? "attention.issue" : "attention.issues", {
       count: String(conditions.length),
     });
+    const stripLabel = conditions.length === 1 ? conditions[0]?.title : issueLabel;
     const maxSeverity = blocking > 0 ? "blocking" : "warning";
     const ariaLabel = t("attention.systemStatusAria", {
       issues: issueLabel,
@@ -473,22 +474,23 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     return html`
       <span class="sr-only" role="status" aria-live="polite">${this.blockingAnnouncement}</span>
       ${conditions.length > 0
-        ? html`<openclaw-tooltip .content=${t("attention.issuesTitle")}>
-            <button
-              type="button"
-              class="sidebar-status-button sidebar-status-button--${maxSeverity}"
-              aria-expanded=${String(this.panelOpen)}
-              aria-haspopup="dialog"
-              aria-label=${ariaLabel}
-              @click=${(event: MouseEvent) =>
-                this.panelOpen
-                  ? this.closePanel(true)
-                  : this.openPanel(event.currentTarget as HTMLElement)}
+        ? html`<button
+            type="button"
+            class="sidebar-status-strip sidebar-status-strip--${maxSeverity}"
+            aria-expanded=${String(this.panelOpen)}
+            aria-haspopup="dialog"
+            aria-label=${ariaLabel}
+            @click=${(event: MouseEvent) =>
+              this.panelOpen
+                ? this.closePanel(true)
+                : this.openPanel(event.currentTarget as HTMLElement)}
+          >
+            <span class="sidebar-status-strip__dot" aria-hidden="true"></span>
+            <span class="sidebar-status-strip__label" title=${stripLabel ?? ""}>${stripLabel}</span>
+            <span class="sidebar-status-strip__more" aria-hidden="true"
+              >${icons.moreHorizontal}</span
             >
-              <span class="sidebar-status-button__icon" aria-hidden="true">${icons.bell}</span>
-              <span class="sidebar-status-button__dot" aria-hidden="true"></span>
-            </button>
-          </openclaw-tooltip>`
+          </button>`
         : nothing}
       ${this.panelOpen
         ? html`<div

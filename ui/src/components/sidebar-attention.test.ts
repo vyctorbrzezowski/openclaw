@@ -163,14 +163,14 @@ describe("pending approval attention", () => {
   });
 });
 
-describe("sidebar attention footer trigger", () => {
+describe("sidebar attention strip", () => {
   afterEach(() => {
     document.body.replaceChildren();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it("collapses active issues into one notification button that opens the shared panel", async () => {
+  it("groups active issues into one strip that opens the shared panel", async () => {
     const request = vi.fn((method: string) =>
       Promise.resolve(
         method === "cron.list"
@@ -208,10 +208,10 @@ describe("sidebar attention footer trigger", () => {
     provider.append(element);
     document.body.append(provider);
 
-    await waitForFast(() => expect(element.querySelector(".sidebar-status-button")).not.toBeNull());
-    expect(element.querySelector(".sidebar-status-strip")).toBeNull();
+    await waitForFast(() => expect(element.querySelector(".sidebar-status-strip")).not.toBeNull());
+    expect(element.querySelector(".sidebar-status-button")).toBeNull();
 
-    element.querySelector<HTMLButtonElement>(".sidebar-status-button")?.click();
+    element.querySelector<HTMLButtonElement>(".sidebar-status-strip")?.click();
     await waitForFast(() => expect(element.querySelector(".sidebar-status-panel")).not.toBeNull());
   });
 });

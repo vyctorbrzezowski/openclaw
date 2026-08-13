@@ -17,7 +17,7 @@ export type SessionPrimaryStateKind =
 
 export type SessionPrimaryStateModel = {
   kind: SessionPrimaryStateKind;
-  tone: "neutral" | "info" | "warning" | "danger" | "success";
+  tone: "neutral" | "info" | "warning" | "danger";
   attention?: Exclude<SidebarSessionAttention, { kind: "none" }>;
   runningRing: boolean;
   unreadBadge: boolean;
@@ -101,7 +101,7 @@ export function getSessionPrimaryStateModel(
         terminalKind === "failed" || terminalKind === "timeout"
           ? "danger"
           : terminalKind === "done"
-            ? "success"
+            ? "info"
             : "neutral",
       runningRing: false,
       unreadBadge: session.unread,

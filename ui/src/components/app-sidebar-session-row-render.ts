@@ -334,6 +334,9 @@ export function renderRecentSession(params: {
                     >${t("chat.sessionSharing.draft")}</span
                   >`
                 : nothing}
+              ${ownerActor?.id
+                ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
+                : nothing}
               <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
                 >${label}</span
               >
@@ -391,19 +394,14 @@ export function renderRecentSession(params: {
           duration: nothing,
           restSummary: session.isChild
             ? nothing
-            : html`<span class="session-row-identity-stack">
-                  ${ownerActor?.id
-                    ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
-                    : nothing}
-                  <openclaw-viewer-facepile
-                    .presencePayload=${host.sessionData.presencePayload}
-                    .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
-                    .selfInstanceId=${host.sessionData.presenceInstanceId}
-                    .sessionKey=${session.key}
-                    .maxVisible=${2}
-                    variant="session"
-                  ></openclaw-viewer-facepile>
-                </span>
+            : html`<openclaw-viewer-facepile
+                  .presencePayload=${host.sessionData.presencePayload}
+                  .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
+                  .selfInstanceId=${host.sessionData.presenceInstanceId}
+                  .sessionKey=${session.key}
+                  .maxVisible=${2}
+                  variant="session"
+                ></openclaw-viewer-facepile>
                 ${renderOperationalPullRequest(pullRequestState)}
                 ${sessionHasBoard(session.key)
                   ? html`<span

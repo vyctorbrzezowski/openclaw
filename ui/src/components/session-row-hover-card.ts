@@ -80,7 +80,7 @@ export function renderSessionRowHoverCard(params: {
   participantLabels: readonly string[];
   pullRequestState: SessionPullRequestIndicatorState;
   primaryStateLabel: string;
-  primaryStateTone: "neutral" | "info" | "warning" | "danger" | "success";
+  primaryStateTone: "neutral" | "info" | "warning" | "danger";
   hasBoard: boolean;
 }) {
   const { session } = params;

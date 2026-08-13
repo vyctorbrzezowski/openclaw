@@ -36,6 +36,7 @@ openclaw-session-owner-chip {
 .session-owner-chip--row {
   width: 16px;
   height: 16px;
+  flex: none;
   font-size: 8px;
 }
 
@@ -5908,30 +5909,6 @@ td.data-table-key-col {
   font-size: 9px;
 }
 
-.session-row-identity-stack {
-  display: inline-flex;
-  align-items: center;
-  isolation: isolate;
-}
-
-.session-row-identity-stack > openclaw-session-owner-chip {
-  z-index: 2;
-}
-
-.session-row-identity-stack .session-owner-chip--row {
-  width: 16px;
-  height: 16px;
-}
-
-.session-row-identity-stack .viewer-facepile--session {
-  margin-inline-start: -4px;
-}
-
-.session-row-identity-stack .viewer-avatar {
-  width: 16px;
-  height: 16px;
-}
-
 .session-row-host--draft-other {
   background: transparent;
 }
@@ -6091,8 +6068,8 @@ td.data-table-key-col {
   color: var(--danger);
 }
 
-.session-primary-state--success {
-  color: var(--ok);
+.sidebar .session-primary-state--done {
+  color: var(--session-unread-indicator);
 }
 
 .sidebar .session-primary-state__terminal,
