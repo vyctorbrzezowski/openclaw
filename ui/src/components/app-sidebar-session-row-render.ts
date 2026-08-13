@@ -9,7 +9,6 @@ import type { AuthenticatedUser } from "../app/user-profile.ts";
 import { t } from "../i18n/index.ts";
 import { sessionHasBoard } from "../lib/board/provider.ts";
 import { formatDurationCompact } from "../lib/format.ts";
-import { startHoverMarquee, stopHoverMarquee } from "../lib/hover-marquee.ts";
 import { handleContextMenuEvent } from "../lib/keyboard-shortcuts.ts";
 import { writeSessionDragData } from "../lib/sessions/drag.ts";
 import type { SidebarSessionsGrouping } from "../lib/sessions/grouping.ts";
@@ -224,6 +223,11 @@ export function renderRecentSession(params: {
         );
   const title = [
     display?.title ?? [label, narration, rowMeta].filter(Boolean).join(" · "),
+    ownerActor?.id
+      ? t(ownerAttribution === "archived" ? "sessionsView.archivedBy" : "sessionsView.createdBy", {
+          name: ownerActor.label || ownerActor.id,
+        })
+      : "",
     auxiliaryDescription,
     primaryState.accessibleLabel,
   ]
@@ -268,6 +272,8 @@ export function renderRecentSession(params: {
       class=${rowClass}
       data-session-key=${session.key}
       data-session-depth=${session.isChild ? "1" : "0"}
+      data-session-unread=${session.unread ? "true" : "false"}
+      data-session-manageable=${session.isChild ? "false" : "true"}
       role=${ifDefined(listItem ? "listitem" : undefined)}
       draggable=${rowDraggable ? "true" : "false"}
       title=${!session.isChild && !groupWriteAccess.allowed ? groupWriteAccess.reason : nothing}
@@ -286,8 +292,6 @@ export function renderRecentSession(params: {
           }}
       @contextmenu=${openMenuFromEvent ?? nothing}
       @keydown=${openMenuFromEvent ?? nothing}
-      @mouseenter=${(event: MouseEvent) => startHoverMarquee(event.currentTarget as HTMLElement)}
-      @mouseleave=${(event: MouseEvent) => stopHoverMarquee(event.currentTarget as HTMLElement)}
     >
       <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
       <a
@@ -301,7 +305,7 @@ export function renderRecentSession(params: {
       >
         <span class="sidebar-recent-session__text">
           <span class="sidebar-recent-session__title-line">
-            <span class="sidebar-recent-session__name hover-marquee">${label}</span>
+            <span class="sidebar-recent-session__name">${label}</span>
             ${session.archived
               ? html`<span
                   class="session-row-qualifier session-row-qualifier--icon"
@@ -316,37 +320,9 @@ export function renderRecentSession(params: {
                   >${t("chat.sessionSharing.draft")}</span
                 >`
               : nothing}
-            ${!session.isChild && ownerActor?.id
-              ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
-              : nothing}
           </span>
           ${renderSidebarSessionSubtitle({ subtitle, narration })}
         </span>
-        ${!session.isChild && sessionHasBoard(session.key)
-          ? html`<span
-              class="sidebar-board-glyph"
-              role="img"
-              aria-label=${t("sessionsView.dashboardAvailable")}
-              title=${t("sessionsView.dashboardAvailable")}
-              >${icons.layoutDashboard}</span
-            >`
-          : nothing}
-        <openclaw-viewer-facepile
-          .presencePayload=${host.sessionData.presencePayload}
-          .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
-          .selfInstanceId=${host.sessionData.presenceInstanceId}
-          .sessionKey=${session.key}
-          .maxVisible=${3}
-          variant="session"
-        ></openclaw-viewer-facepile>
-        ${renderSessionRowBadges({
-          ...session,
-          hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
-          pullRequest: session.pullRequest ?? display?.pullRequest,
-          hasApproval:
-            sessionHasPendingApproval(host.sessionData.approvalBadgeSnapshot(), session.key) &&
-            primaryState.attention?.kind !== "approval",
-        })}
       </a>
       ${renderSessionRowEndcap({
         child: session.isChild,
@@ -391,16 +367,51 @@ export function renderRecentSession(params: {
                   ></openclaw-elapsed-time>`}</span
             >`
           : nothing,
-        auxiliary: html`${session.forkSource && !session.isChild
-          ? html`<span
-              class="session-row-fork-indicator"
-              role="img"
-              aria-label=${t("sessionsView.forkedSession")}
-              title=${t("sessionsView.forkedSession")}
-              >${icons.gitFork}</span
-            >`
-          : nothing}${renderOperationalPullRequest(pullRequestState)}`,
-        actions: session.isChild
+        restSummary: session.isChild
+          ? nothing
+          : html`${ownerActor?.id
+                ? renderSessionOwnerChip(ownerActor, "row", ownerAttribution)
+                : nothing}
+              ${session.forkSource
+                ? html`<span
+                    class="session-row-fork-indicator"
+                    role="img"
+                    aria-label=${t("sessionsView.forkedSession")}
+                    title=${t("sessionsView.forkedSession")}
+                    >${icons.gitFork}</span
+                  >`
+                : nothing}
+              ${renderOperationalPullRequest(pullRequestState)}
+              ${sessionHasBoard(session.key)
+                ? html`<span
+                    class="sidebar-board-glyph"
+                    role="img"
+                    aria-label=${t("sessionsView.dashboardAvailable")}
+                    title=${t("sessionsView.dashboardAvailable")}
+                    >${icons.layoutDashboard}</span
+                  >`
+                : nothing}
+              <openclaw-viewer-facepile
+                .presencePayload=${host.sessionData.presencePayload}
+                .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
+                .selfInstanceId=${host.sessionData.presenceInstanceId}
+                .sessionKey=${session.key}
+                .maxVisible=${2}
+                variant="session"
+              ></openclaw-viewer-facepile>
+              ${renderSessionRowBadges({
+                ...session,
+                hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
+                pullRequest: session.pullRequest ?? display?.pullRequest,
+                hasApproval:
+                  sessionHasPendingApproval(
+                    host.sessionData.approvalBadgeSnapshot(),
+                    session.key,
+                  ) && primaryState.attention?.kind !== "approval",
+                maxVisible: 2,
+              })}`,
+        auxiliary: session.isChild ? renderOperationalPullRequest(pullRequestState) : nothing,
+        management: session.isChild
           ? nothing
           : html`<span class="session-row-actions">
               <button
@@ -435,7 +446,6 @@ export function renderRecentSession(params: {
       })}
     </div>
   `;
-  // Marquee state mutates the row DOM; keying prevents cross-session reuse.
   return keyed(session.key, row);
 }
 

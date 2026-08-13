@@ -63,6 +63,7 @@ export function renderSessionRowBadges(params: {
   hasComposerDraft?: boolean;
   placementState?: SessionPlacementState;
   workspaceConflictCount?: number;
+  maxVisible?: number;
 }) {
   const hasAutomation = !params.isChild && params.hasAutomation;
   const pullRequestLabel = params.pullRequest
@@ -117,53 +118,95 @@ export function renderSessionRowBadges(params: {
     : displayedPlacementState
       ? t("sessionsView.cloudWorkerPlacement", { state: displayedPlacementState })
       : "";
+  const placementBadge = {
+    label: cloudLabel,
+    content: renderSessionRowBadge(
+      cloudLabel,
+      icons.globe,
+      "session-row-badge--cloud",
+      0,
+      undefined,
+      displayedPlacementState,
+      hasWorkspaceConflict ? workspaceConflictCount : 0,
+    ),
+  };
+  const badges = [
+    hasWorkspaceConflict ? placementBadge : null,
+    outboxCount > 0
+      ? {
+          label: outboxLabel,
+          content: renderSessionRowBadge(
+            outboxLabel,
+            icons.clock,
+            "session-row-badge--queued",
+            outboxCount,
+          ),
+        }
+      : null,
+    params.hasApproval
+      ? {
+          label: t("sessionsView.approvalNeeded"),
+          content: renderSessionRowBadge(
+            t("sessionsView.approvalNeeded"),
+            icons.alertTriangle,
+            "session-row-badge--approval",
+          ),
+        }
+      : null,
+    params.hasComposerDraft
+      ? {
+          label: t("sessionsView.unsentDraft"),
+          content: renderSessionRowBadge(
+            t("sessionsView.unsentDraft"),
+            icons.pencil,
+            "session-row-badge--draft",
+          ),
+        }
+      : null,
+    pullRequestLabel
+      ? {
+          label: pullRequestLabel,
+          content: renderSessionRowBadge(
+            pullRequestLabel,
+            icons.gitPullRequest,
+            "session-row-badge--pull-request",
+            0,
+            pullRequestState,
+          ),
+        }
+      : null,
+    params.incognito
+      ? {
+          label: t("sessionsView.incognito"),
+          content: renderSessionRowBadge(
+            t("sessionsView.incognito"),
+            icons.lock,
+            "session-row-badge--incognito",
+          ),
+        }
+      : null,
+    hasAutomation
+      ? {
+          label: t("sessionsView.automationAttached"),
+          content: renderSessionRowBadge(t("sessionsView.automationAttached"), icons.clock),
+        }
+      : null,
+    displayedPlacementState && !hasWorkspaceConflict ? placementBadge : null,
+  ].filter((badge): badge is { label: string; content: TemplateResult } => badge !== null);
+  const maxVisible = Math.max(0, params.maxVisible ?? badges.length);
+  const visible = badges.slice(0, maxVisible);
+  const hidden = badges.slice(maxVisible);
   return html`<span class="session-row-badges">
-    ${params.incognito
-      ? renderSessionRowBadge(
-          t("sessionsView.incognito"),
-          icons.lock,
-          "session-row-badge--incognito",
-        )
-      : nothing}
-    ${hasAutomation
-      ? renderSessionRowBadge(t("sessionsView.automationAttached"), icons.clock)
-      : nothing}
-    ${pullRequestLabel
-      ? renderSessionRowBadge(
-          pullRequestLabel,
-          icons.gitPullRequest,
-          "session-row-badge--pull-request",
-          0,
-          pullRequestState,
-        )
-      : nothing}
-    ${params.hasApproval
-      ? renderSessionRowBadge(
-          t("sessionsView.approvalNeeded"),
-          icons.alertTriangle,
-          "session-row-badge--approval",
-        )
-      : nothing}
-    ${outboxCount > 0
-      ? renderSessionRowBadge(outboxLabel, icons.clock, "session-row-badge--queued", outboxCount)
-      : nothing}
-    ${params.hasComposerDraft
-      ? renderSessionRowBadge(
-          t("sessionsView.unsentDraft"),
-          icons.pencil,
-          "session-row-badge--draft",
-        )
-      : nothing}
-    ${displayedPlacementState || hasWorkspaceConflict
-      ? renderSessionRowBadge(
-          cloudLabel,
-          icons.globe,
-          "session-row-badge--cloud",
-          0,
-          undefined,
-          displayedPlacementState,
-          hasWorkspaceConflict ? workspaceConflictCount : 0,
-        )
+    ${visible.map((badge) => badge.content)}
+    ${hidden.length > 0
+      ? html`<openclaw-tooltip .content=${hidden.map((badge) => badge.label).join("\n")}>
+          <span
+            class="session-row-badge session-row-badge--overflow"
+            role="img"
+            aria-label=${hidden.map((badge) => badge.label).join(", ")}
+            >+${hidden.length}</span
+          >
+        </openclaw-tooltip>`
       : nothing}
   </span>`;
 }

@@ -462,6 +462,7 @@ function renderCatalogSessionRow(
         : ""}"
       data-session-key=${key}
       data-session-depth="0"
+      data-session-manageable="true"
       role="listitem"
       @contextmenu=${openMenuFromEvent}
       @keydown=${openMenuFromEvent}
@@ -487,17 +488,18 @@ function renderCatalogSessionRow(
       >
         <span class="sidebar-recent-session__text">
           <span class="sidebar-recent-session__title-line">
-            <span class="sidebar-recent-session__name hover-marquee">${label}</span>
+            <span class="sidebar-recent-session__name">${label}</span>
           </span>
         </span>
-        ${renderSessionRowBadges({
-          hasAutomation: false,
-          pullRequest: session.pullRequest,
-        })}
       </a>
       ${renderSessionRowEndcap({
         child: false,
-        actions: html`<span class="session-row-actions">
+        restSummary: renderSessionRowBadges({
+          hasAutomation: false,
+          pullRequest: session.pullRequest,
+          maxVisible: 2,
+        }),
+        management: html`<span class="session-row-actions">
           <button
             class="session-action"
             data-catalog-session-menu="true"

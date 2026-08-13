@@ -7,7 +7,6 @@ import {
   createChatFlowE2eSuite,
   expectDefined,
   installMockGateway,
-  pauseVirtualClock,
 } from "./chat-flow.test-support.ts";
 
 const suite = createChatFlowE2eSuite();
@@ -120,14 +119,13 @@ suite.define(() => {
     }
   });
 
-  it("keeps long sidebar labels clipped after a session switch", async () => {
+  it("keeps long sidebar labels clipped and stationary while management actions appear", async () => {
     const context = await suite.newBrowserContext({
       locale: "en-US",
       serviceWorkers: "block",
       viewport: { height: 900, width: 1280 },
     });
     const page = await context.newPage();
-    await page.clock.install();
     const sessions = chatSessionListResponse();
     const firstSession = expectDefined(sessions.sessions[0], "first chat session fixture");
     const secondSession = expectDefined(sessions.sessions[1], "second chat session fixture");
@@ -156,41 +154,30 @@ suite.define(() => {
         text: label.textContent,
       }));
       expect(layout.scrollWidth, JSON.stringify(layout)).toBeGreaterThan(layout.clientWidth);
+      const restingGeometry = await recentLabel.boundingBox();
+      expect(restingGeometry).not.toBeNull();
+      expect(
+        await recentLabel.evaluate((label) => ({
+          textIndent: getComputedStyle(label).textIndent,
+          textOverflow: getComputedStyle(label).textOverflow,
+        })),
+      ).toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
 
-      // Freeze the clock so the 500ms hover-intent delay elapses only via
-      // runFor; a ticking clock let slow runners start the marquee before the
-      // "not yet scrolling" asserts below.
-      await pauseVirtualClock(page);
-      await recentRow.dispatchEvent("mouseenter");
-      await page.clock.runFor(250);
-      expect(await recentLabel.evaluate((label) => label.classList.value)).not.toContain(
-        "hover-marquee--scrolling",
-      );
-      await recentRow.dispatchEvent("mouseleave");
-      // 250 + 300 exceeds the hover delay: only the leave-cancel keeps it off.
-      await page.clock.runFor(300);
-      expect(await recentLabel.evaluate((label) => label.classList.value)).not.toContain(
-        "hover-marquee--scrolling",
-      );
-      await recentRow.dispatchEvent("mouseenter");
-      await page.clock.runFor(500);
+      await recentRow.hover();
+      const management = recentRow.locator(".session-row-endcap__management");
       await expect
-        .poll(() => recentLabel.evaluate((label) => label.classList.value), { timeout: 1_500 })
-        .toContain("hover-marquee--scrolling");
-      // Resume real time: the snap-back below is a compositor-driven CSS
-      // transition, not a fake-timer callback.
-      await page.clock.resume();
-      await recentRow.dispatchEvent("mouseleave");
-      await expect
-        .poll(
-          () =>
-            recentLabel.evaluate((label) => ({
-              textIndent: getComputedStyle(label).textIndent,
-              textOverflow: getComputedStyle(label).textOverflow,
-            })),
-          { timeout: 1_500 },
-        )
-        .toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
+        .poll(() => management.evaluate((element) => getComputedStyle(element).opacity))
+        .toBe("1");
+      const hoveredGeometry = await recentLabel.boundingBox();
+      expect(hoveredGeometry).not.toBeNull();
+      expect(hoveredGeometry?.x).toBe(restingGeometry?.x);
+      expect(hoveredGeometry?.width).toBe(restingGeometry?.width);
+      expect(
+        await recentLabel.evaluate((label) => ({
+          textIndent: getComputedStyle(label).textIndent,
+          textOverflow: getComputedStyle(label).textOverflow,
+        })),
+      ).toEqual({ textIndent: "0px", textOverflow: "ellipsis" });
 
       await recentRow.locator("a.sidebar-recent-session__link").dispatchEvent("click", {
         button: 0,

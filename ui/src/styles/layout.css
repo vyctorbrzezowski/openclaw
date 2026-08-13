@@ -900,7 +900,7 @@ openclaw-settings-save-indicator {
   --sidebar-bg: color-mix(in srgb, var(--bg) 96%, var(--bg-elevated) 4%);
   /* One rhythm for every group boundary in the sidebar (Pages, Pinned, and each
      session section) so the column reads as separate shelves, not one list. */
-  --sidebar-group-gap: var(--space-4);
+  --sidebar-group-gap: var(--space-2);
   --scrollbar-size: 6px;
   position: relative;
   display: flex;
@@ -1026,6 +1026,8 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
      both values share --sidebar-pad-x so they cannot drift. */
   margin-right: calc(-1 * var(--sidebar-pad-x));
   padding-right: var(--sidebar-pad-x);
+  padding-block-end: 16px;
+  scroll-padding-block-end: 16px;
 }
 
 .sidebar-shell__body::-webkit-scrollbar,

@@ -5,16 +5,18 @@ type EndcapContent = TemplateResult | typeof nothing;
 export function renderSessionRowEndcap(params: {
   treeControl?: EndcapContent;
   duration?: EndcapContent;
+  restSummary?: EndcapContent;
+  management?: EndcapContent;
   auxiliary?: EndcapContent;
-  actions?: EndcapContent;
   primary?: EndcapContent;
   child: boolean;
 }) {
   const {
     treeControl = nothing,
     duration = nothing,
+    restSummary = nothing,
+    management = nothing,
     auxiliary = nothing,
-    actions = nothing,
     primary = nothing,
     child,
   } = params;
@@ -24,11 +26,10 @@ export function renderSessionRowEndcap(params: {
       ? nothing
       : html`<span class="session-row-endcap__duration">${duration}</span>`}
     ${child
-      ? auxiliary
-      : html`<span class="session-row-endcap__auxiliary">
-          <span class="session-row-endcap__resting">${auxiliary}</span>
-          <span class="session-row-endcap__actions">${actions}</span>
+      ? html`${auxiliary}<span class="session-row-endcap__primary">${primary}</span>`
+      : html`<span class="session-row-endcap__swap">
+          <span class="session-row-endcap__rest-summary">${restSummary}${primary}</span>
+          <span class="session-row-endcap__management">${management}</span>
         </span>`}
-    <span class="session-row-endcap__primary">${primary}</span>
   </span>`;
 }
