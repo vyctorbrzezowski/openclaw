@@ -6089,6 +6089,16 @@ td.data-table-key-col {
   background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
 }
 
+.session-row-host[data-session-action-only="true"].sidebar-recent-session--active
+  .session-row-endcap__management {
+  background: color-mix(in srgb, var(--text) 10%, var(--sidebar-bg, var(--bg)));
+}
+
+.session-row-host[data-session-action-only="true"].sidebar-recent-session--selected
+  .session-row-endcap__management {
+  background: color-mix(in srgb, var(--accent) 10%, var(--sidebar-bg, var(--bg)));
+}
+
 .session-row-host[data-session-manageable="true"]:is(:hover, :focus-within)
   .sidebar-recent-session__name[data-overflow-reveal]
   .sidebar-recent-session__name-content {
