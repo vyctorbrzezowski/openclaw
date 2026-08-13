@@ -400,9 +400,8 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
         <span class="sidebar-status-condition__icon" aria-hidden="true"
           >${icons[condition.icon]}</span
         >
-        <span class="sidebar-status-condition__title" title=${condition.title}>
+        <span class="sidebar-status-condition__content" title=${condition.title}>
           <span class="sidebar-status-condition__entity">${condition.entityLabel}</span>
-          <span class="sidebar-status-condition__separator" aria-hidden="true">·</span>
           <span class="sidebar-status-condition__state">${condition.stateLabel}</span>
         </span>
         ${condition.action
@@ -422,8 +421,8 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const relative = formatRelativeTimestamp(Math.min(group.lastAt, Date.now()));
     const count = group.count > 99 ? "99+" : String(group.count);
     const meta =
-      group.count > 1
-        ? `${t("attention.failCount", { count })} · ${t("attention.latest", { time: relative })}`
+      group.eventType === "run_failed"
+        ? `${group.count === 1 ? t("attention.failed") : group.count === 2 ? t("attention.failedTwice") : t("attention.failedRepeatedly", { count })} · ${relative}`
         : relative;
     return html`
       <div class="sidebar-status-event">
@@ -436,10 +435,15 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
           data-autofocus=${autofocus ? "true" : nothing}
           @click=${() => this.runAction(group.action)}
         >
-          <span class="sidebar-status-event__title" title=${group.source.label}
-            >${group.eventType === "run_failed" ? group.source.label : group.title}</span
+          <span class="sidebar-status-event__content">
+            <span class="sidebar-status-event__title" title=${group.source.label}
+              >${group.eventType === "run_failed" ? group.source.label : group.title}</span
+            >
+            <span class="sidebar-status-event__meta">${meta}</span>
+          </span>
+          <span class="sidebar-status-event__chevron" aria-hidden="true"
+            >${icons.chevronRight}</span
           >
-          <span class="sidebar-status-event__meta">${meta}</span>
         </button>
         <button
           type="button"

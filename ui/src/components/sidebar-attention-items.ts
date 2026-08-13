@@ -143,9 +143,9 @@ export function buildSidebarSystemStatus(params: {
       source: { kind: "automation", id: job.id, label: name },
       severity: "warning",
       icon: "calendarClock",
-      title: t("attention.automationOverdueNamed", { name }),
+      title: t("attention.automationMissedScheduleNamed", { name }),
       entityLabel: name,
-      stateLabel: t("attention.overdue"),
+      stateLabel: t("attention.missedSchedule"),
       action: { kind: "navigate", routeId: "cron" },
       raisedAt: Math.min(job.state?.nextRunAtMs ?? params.now, params.now),
     });
@@ -180,16 +180,20 @@ export function buildSidebarSystemStatus(params: {
         count: String(count),
       }),
       entityLabel: t("attention.approvals"),
-      stateLabel: t(count === 1 ? "attention.pendingApprovalState" : "attention.pendingApprovalsState", {
-        count: String(count),
-      }),
+      stateLabel: t(
+        count === 1 ? "attention.pendingApprovalState" : "attention.pendingApprovalsState",
+        {
+          count: String(count),
+        },
+      ),
       action: { kind: "openApprovals" },
       raisedAt: params.now,
     });
   }
 
   conditions.sort((first, second) => {
-    const severity = first.severity === second.severity ? 0 : first.severity === "blocking" ? -1 : 1;
+    const severity =
+      first.severity === second.severity ? 0 : first.severity === "blocking" ? -1 : 1;
     return severity || second.raisedAt - first.raisedAt;
   });
 

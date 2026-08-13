@@ -1207,7 +1207,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   gap: 8px;
   min-width: 0;
   width: 100%;
-  min-height: 40px;
+  min-height: 48px;
   padding: 6px 8px;
   border: 0;
   border-radius: var(--radius-sm);
@@ -1244,7 +1244,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   stroke-width: 1.8px;
 }
 
-.sidebar-status-condition__title,
+.sidebar-status-condition__entity,
 .sidebar-status-event__title {
   overflow: hidden;
   color: var(--text);
@@ -1254,12 +1254,12 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   white-space: nowrap;
 }
 
-.sidebar-status-condition__title {
+.sidebar-status-condition__content {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
   min-width: 0;
   flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .sidebar-status-condition__entity {
@@ -1271,11 +1271,14 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   white-space: nowrap;
 }
 
-.sidebar-status-condition__separator,
 .sidebar-status-condition__state {
-  flex: none;
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
+  font-size: var(--control-ui-text-xs);
   font-weight: 450;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-status-condition__action,
@@ -1290,15 +1293,15 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 .sidebar-status-condition__action {
   padding: 4px 7px;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  color: var(--text);
   font-size: var(--control-ui-text-xs);
   font-weight: 600;
 }
 
 .sidebar-status-condition:hover .sidebar-status-condition__action {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--text-strong);
 }
 
 .sidebar-status-condition__chevron {
@@ -1352,12 +1355,13 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 }
 
 .sidebar-status-event {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1388,16 +1392,24 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 }
 
 .sidebar-status-event__open {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
   min-width: 0;
   flex: 1 1 auto;
-  flex-direction: column;
-  gap: 2px;
+  gap: 8px;
   padding: 0;
   border: 0;
   background: transparent;
   text-align: start;
   cursor: var(--cursor-action);
+}
+
+.sidebar-status-event__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .sidebar-status-event__meta {
@@ -1410,28 +1422,59 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 }
 
 .sidebar-status-event__clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  margin-right: 0;
+  transform: translateY(-50%);
   border-radius: var(--radius-sm);
   opacity: 0;
+  pointer-events: none;
   transition:
     background var(--duration-fast) ease,
     color var(--duration-fast) ease,
     opacity var(--duration-fast) ease;
 }
 
+.sidebar-status-event__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 1;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.sidebar-status-event__chevron svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7px;
+}
+
 .sidebar-status-event:hover .sidebar-status-event__clear,
 .sidebar-status-event:focus-within .sidebar-status-event__clear {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-status-event:hover .sidebar-status-event__chevron,
+.sidebar-status-event:focus-within .sidebar-status-event__chevron {
+  opacity: 0;
 }
 
 @media (hover: none) {
   .sidebar-status-event__clear {
     opacity: 1;
+  }
+
+  .sidebar-status-event__chevron {
+    opacity: 0;
   }
 }
 
@@ -1992,8 +2035,8 @@ body.update-dialog-open .sidebar-update-card__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--sidebar-trailing-slot, 20px);
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   border: none;
   border-radius: var(--radius-md);
@@ -2024,8 +2067,8 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-session-sort svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.7px;
