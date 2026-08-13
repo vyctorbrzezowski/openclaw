@@ -65,7 +65,10 @@ export function resolveSidebarSessionSubtitle(params: {
   return { subtitle, narration };
 }
 
-export function renderSidebarSessionSubtitle(value: SidebarSessionSubtitle) {
+export function renderSidebarSessionSubtitle(
+  value: SidebarSessionSubtitle,
+  options: { approval?: boolean } = {},
+) {
   if (!value.subtitle) {
     return nothing;
   }
@@ -77,5 +80,10 @@ export function renderSidebarSessionSubtitle(value: SidebarSessionSubtitle) {
           >${value.subtitle}</span
         >`,
       )
-    : html`<span class="sidebar-recent-session__subtitle">${value.subtitle}</span>`;
+    : html`<span
+        class="sidebar-recent-session__subtitle ${options.approval
+          ? "sidebar-recent-session__subtitle--approval"
+          : ""}"
+        >${value.subtitle}</span
+      >`;
 }

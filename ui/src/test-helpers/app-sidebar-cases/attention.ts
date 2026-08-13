@@ -166,7 +166,13 @@ describe("AppSidebar session attention", () => {
       expiresAtMs: Date.now() + 60_000,
     } satisfies ExecApprovalRequest;
     const sessionsHarness = createSessionsHarness("main", [sessionKey]);
-    setRows(sessionsHarness, [failedRow()]);
+    setRows(sessionsHarness, [
+      failedRow(sessionKey, {
+        activeRunIds: ["run-awaiting-approval"],
+        hasActiveRun: true,
+        unread: true,
+      }),
+    ]);
     const { sidebar } = await mountSidebar(
       createGateway({} as GatewayBrowserClient),
       sessionsHarness.sessions,
@@ -175,8 +181,14 @@ describe("AppSidebar session attention", () => {
       [approval],
     );
 
-    expect(sidebar.querySelector('[data-session-attention="approval"]')).not.toBeNull();
-    expect(sidebar.textContent).toContain("Waiting for approval");
+    expect(sidebar.querySelector('[data-session-attention="approval"]')).toBeNull();
+    expect(sidebar.querySelector(".sidebar-recent-session__subtitle--approval")?.textContent).toBe(
+      "Waiting for approval",
+    );
+    expect(sidebar.querySelector(".session-primary-state .session-run-spinner")).not.toBeNull();
+    expect(
+      sidebar.querySelector(".session-primary-state .session-glyph__badge--unread"),
+    ).not.toBeNull();
     expect(sidebar.textContent).not.toContain("Run failed:");
   });
 

@@ -128,8 +128,29 @@ export function getSessionPrimaryStateModel(
   };
 }
 
-function renderPrimaryContent(model: SessionPrimaryStateModel): TemplateResult | typeof nothing {
+export function sessionPrimaryStateHasVisibleIndicator(
+  model: SessionPrimaryStateModel,
+  suppressAttentionIcon = false,
+): boolean {
+  if (model.kind === "attention" && suppressAttentionIcon) {
+    return model.runningRing || model.unreadBadge;
+  }
+  return model.kind !== null;
+}
+
+function renderPrimaryContent(
+  model: SessionPrimaryStateModel,
+  suppressAttentionIcon: boolean,
+): TemplateResult | typeof nothing {
   if (model.kind === "attention" && model.attention) {
+    if (suppressAttentionIcon) {
+      if (model.runningRing) {
+        return html`<span class="session-run-spinner" aria-hidden="true"></span>`;
+      }
+      return model.unreadBadge
+        ? html`<span class="session-unread-dot" aria-hidden="true"></span>`
+        : nothing;
+    }
     return renderSessionAttentionIcon(model.attention);
   }
   if (model.kind === "running") {
@@ -159,12 +180,16 @@ function renderPrimaryContent(model: SessionPrimaryStateModel): TemplateResult |
 export function renderSessionPrimaryStateIndicator(
   model: SessionPrimaryStateModel,
   stateId?: string,
+  options: { suppressAttentionIcon?: boolean } = {},
 ) {
-  const content = renderPrimaryContent(model);
+  const suppressAttentionIcon = options.suppressAttentionIcon === true;
+  const content = renderPrimaryContent(model, suppressAttentionIcon);
   if (content === nothing) {
     return nothing;
   }
-  const composite = model.runningRing || model.unreadBadge;
+  const composite = suppressAttentionIcon
+    ? model.runningRing && model.unreadBadge
+    : model.runningRing || model.unreadBadge;
   return html`<span
     class="session-primary-state session-primary-state--${model.kind} session-primary-state--${model.tone}"
     id=${stateId ?? nothing}
@@ -176,7 +201,7 @@ export function renderSessionPrimaryStateIndicator(
     >${composite
       ? renderSessionGlyph({
           content,
-          running: model.runningRing,
+          running: suppressAttentionIcon ? false : model.runningRing,
           badge: model.unreadBadge ? renderSessionUnreadBadge() : nothing,
         })
       : content}</span

@@ -33,6 +33,7 @@ import { renderSessionOwnerChip } from "./session-owner-chip.ts";
 import {
   getSessionPrimaryStateModel,
   renderSessionPrimaryStateIndicator,
+  sessionPrimaryStateHasVisibleIndicator,
 } from "./session-primary-state.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
 import { renderSessionRowEndcap } from "./session-row-endcap.ts";
@@ -201,6 +202,7 @@ export function renderRecentSession(params: {
       : session.createdActor
     : undefined;
   const primaryState = getSessionPrimaryStateModel(session);
+  const approvalIsExplicitInSubtitle = subtitle === t("sessionsView.waitingForApproval");
   const running = session.hasActiveRun;
   const auxiliaryDescription = [
     session.forkSource ? t("sessionsView.forkedSession") : "",
@@ -212,7 +214,9 @@ export function renderRecentSession(params: {
   const rowMeta = session.pinned ? "" : meta;
   const hasTrail = session.isChild && (session.runtimeMs != null || session.startedAt != null);
   const metaId = hasTrail ? sidebarSessionMetaId(session.key) : undefined;
-  const stateId = primaryState.kind ? sidebarSessionStateId(session.key) : undefined;
+  const stateId = sessionPrimaryStateHasVisibleIndicator(primaryState, approvalIsExplicitInSubtitle)
+    ? sidebarSessionStateId(session.key)
+    : undefined;
   const openMenuFromEvent = session.isChild
     ? undefined
     : (event: MouseEvent | KeyboardEvent) =>
@@ -321,7 +325,10 @@ export function renderRecentSession(params: {
                 >`
               : nothing}
           </span>
-          ${renderSidebarSessionSubtitle({ subtitle, narration })}
+          ${renderSidebarSessionSubtitle(
+            { subtitle, narration },
+            { approval: approvalIsExplicitInSubtitle },
+          )}
         </span>
       </a>
       ${renderSessionRowEndcap({
@@ -442,7 +449,9 @@ export function renderRecentSession(params: {
                 ${icons.moreHorizontal}
               </button>
             </span>`,
-        primary: renderSessionPrimaryStateIndicator(primaryState, stateId),
+        primary: renderSessionPrimaryStateIndicator(primaryState, stateId, {
+          suppressAttentionIcon: approvalIsExplicitInSubtitle,
+        }),
       })}
     </div>
   `;
