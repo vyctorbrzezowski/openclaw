@@ -106,9 +106,6 @@ export function renderSessionRowHoverCard(params: {
     ...(params.participantLabels.length > 0
       ? [{ icon: icons.users, label: params.participantLabels.join(", ") }]
       : []),
-    ...(session.forkSource
-      ? [{ icon: icons.gitFork, label: t("sessionsView.forkedSession") }]
-      : []),
     ...(params.pullRequestState !== "none"
       ? [
           {

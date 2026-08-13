@@ -208,12 +208,8 @@ export function renderRecentSession(params: {
   const visibleSubtitle = session.isChild ? null : subtitle;
   const approvalIsExplicitInSubtitle = visibleSubtitle === t("sessionsView.waitingForApproval");
   const running = session.hasActiveRun;
-  const auxiliaryDescription = [
-    session.forkSource ? t("sessionsView.forkedSession") : "",
-    pullRequestState === "none" ? "" : pullRequestStateLabel(pullRequestState),
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const auxiliaryDescription =
+    pullRequestState === "none" ? "" : pullRequestStateLabel(pullRequestState);
   const meta = display?.meta ?? formatSidebarTimestamp(session.updatedAt);
   const rowMeta = session.pinned ? "" : meta;
   const presenceViewers = sessionPresenceViewers(
@@ -408,13 +404,13 @@ export function renderRecentSession(params: {
                     variant="session"
                   ></openclaw-viewer-facepile>
                 </span>
-                ${session.forkSource
+                ${session.worktree
                   ? html`<span
-                      class="session-row-fork-indicator"
+                      class="session-row-worktree-indicator"
                       role="img"
-                      aria-label=${t("sessionsView.forkedSession")}
-                      title=${t("sessionsView.forkedSession")}
-                      >${icons.gitFork}</span
+                      aria-label=${t("newSession.worktree")}
+                      title=${t("newSession.worktree")}
+                      >${icons.worktreeCreated}</span
                     >`
                   : nothing}
                 ${renderOperationalPullRequest(pullRequestState)}

@@ -1390,7 +1390,7 @@ async function createChatPickerScenario(
       ? [
           sessionRow(
             "agent:main:row-stress",
-            "Release readiness command center",
+            "Release readiness command center (2)",
             baseTime - 2_000,
             {
               childSessions: sessionRowStressChildren.map((row) => row.key),

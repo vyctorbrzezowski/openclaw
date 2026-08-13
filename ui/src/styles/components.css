@@ -5458,17 +5458,16 @@ td.data-table-key-col {
   pointer-events: none;
 }
 
-.session-row-fork-indicator {
+.session-row-worktree-indicator {
   display: inline-flex;
   color: var(--muted);
 }
 
-.session-row-fork-indicator svg {
+.session-row-worktree-indicator svg {
   width: 14px;
   height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6px;
+  fill: currentColor;
+  stroke: none;
 }
 
 /* Attribute badges (attached automation, approval, cloud placement):
