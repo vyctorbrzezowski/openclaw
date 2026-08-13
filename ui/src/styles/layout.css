@@ -3761,7 +3761,7 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   justify-content: center;
   width: 18px;
   height: 18px;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
 }
 
 .session-row-hover-card__detail-icon svg {
@@ -3775,7 +3775,7 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
 .session-row-hover-card__detail-label {
   min-width: 0;
   overflow: hidden;
-  color: color-mix(in srgb, var(--text) 86%, var(--muted));
+  color: color-mix(in srgb, var(--text) 78%, var(--muted));
   font-size: var(--control-ui-text-sm);
   font-weight: 450;
   line-height: 1.3;
@@ -3793,6 +3793,14 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   align-items: center;
   gap: 5px;
   min-width: 0;
+}
+
+.session-row-hover-card__owner-label > span:first-child {
+  color: var(--muted);
+}
+
+.session-row-hover-card__owner-label > span:last-child {
+  color: var(--text);
 }
 
 .session-row-hover-card__owner-label .session-owner-chip--row {

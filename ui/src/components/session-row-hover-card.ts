@@ -90,7 +90,7 @@ export function renderSessionRowHoverCard(params: {
   const branch = session.worktree?.branch;
   const contextualDetails: HoverCardDetail[] = [
     ...(project ? [{ icon: icons.folder, label: project }] : []),
-    ...(branch ? [{ icon: icons.gitFork, label: branch }] : []),
+    ...(branch ? [{ icon: icons.gitBranch, label: branch }] : []),
   ];
   const operationalDetails: HoverCardDetail[] = [
     ...(params.owner
@@ -177,7 +177,7 @@ export function renderCatalogSessionHoverCard(params: {
   const project = params.project ?? basename(params.cwd);
   const details: HoverCardDetail[] = [
     ...(project ? [{ icon: icons.folder, label: project }] : []),
-    ...(params.branch ? [{ icon: icons.gitFork, label: params.branch }] : []),
+    ...(params.branch ? [{ icon: icons.gitBranch, label: params.branch }] : []),
   ];
   return html`<div slot="content" class="sidebar-hover-card session-row-hover-card">
     <div class="session-row-hover-card__header">
