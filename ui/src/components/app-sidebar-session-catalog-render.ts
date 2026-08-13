@@ -468,6 +468,7 @@ function renderCatalogSessionRow(
         : null,
       (trigger, x, y) => openMenu(x, y, trigger ?? undefined),
     );
+  const actionOnly = !session.pullRequest && !running;
   return html`
     <openclaw-tooltip
       class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
@@ -483,6 +484,7 @@ function renderCatalogSessionRow(
         data-session-key=${key}
         data-session-depth="0"
         data-session-manageable="true"
+        data-session-action-only=${actionOnly ? "true" : "false"}
         role="listitem"
         @contextmenu=${openMenuFromEvent}
         @keydown=${openMenuFromEvent}
@@ -508,8 +510,10 @@ function renderCatalogSessionRow(
         >
           <span class="sidebar-recent-session__text">
             <span class="sidebar-recent-session__title-line">
-              <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
-                >${label}</span
+              <span
+                class="sidebar-recent-session__name"
+                ${ref(createOverflowFadeRef({ revealTrailingActions: actionOnly }))}
+                ><span class="sidebar-recent-session__name-content">${label}</span></span
               >
             </span>
             ${session.gitBranch

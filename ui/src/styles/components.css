@@ -5591,10 +5591,6 @@ td.data-table-key-col {
   }
 }
 
-.session-row-host--pinned .session-action--pin {
-  color: var(--accent);
-}
-
 .session-run-spinner {
   box-sizing: border-box;
   display: inline-block;
@@ -5838,6 +5834,13 @@ td.data-table-key-col {
   line-height: var(--sidebar-session-title-line-height, 20px);
 }
 
+.sidebar-recent-session__name-content {
+  display: inline-block;
+  min-width: max-content;
+  transform: translateX(0);
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
 .sidebar-recent-session__subtitle {
   line-height: 16px;
   margin-block-start: 1px;
@@ -6064,6 +6067,29 @@ td.data-table-key-col {
   pointer-events: none;
 }
 
+/* Rows without operational state use the full resting width. Management
+   actions overlay only on demand; the measured title reveal keeps them clear. */
+.session-row-host[data-session-action-only="true"] .session-row-endcap__swap {
+  position: relative;
+  inline-size: 0;
+}
+
+.session-row-host[data-session-action-only="true"] .session-row-endcap__management {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: 0;
+  padding-inline-start: 6px;
+  background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
+}
+
+.session-row-host[data-session-action-only="true"]:is(:hover, :focus-within)
+  .sidebar-recent-session__name[data-overflow-reveal]
+  .sidebar-recent-session__name-content {
+  transform: translateX(var(--overflow-reveal-translate, 0));
+  transition-duration: 720ms;
+  transition-delay: 180ms;
+}
+
 @media (hover: hover) {
   .session-row-host[data-session-manageable="true"]:hover .session-row-endcap__rest-summary {
     opacity: 0;
@@ -6226,6 +6252,11 @@ td.data-table-key-col {
     column-gap: 6px;
   }
 
+  .session-row-host[data-session-action-only="true"] .session-row-endcap__swap {
+    position: static;
+    inline-size: auto;
+  }
+
   .session-row-endcap__rest-summary,
   .session-row-endcap__management {
     position: static;
@@ -6245,6 +6276,10 @@ td.data-table-key-col {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sidebar-recent-session__name-content {
+    transition: none;
+  }
+
   .session-row-endcap__rest-summary,
   .session-row-endcap__management {
     transition: none;

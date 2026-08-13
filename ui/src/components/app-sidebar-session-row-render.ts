@@ -254,9 +254,29 @@ export function renderRecentSession(params: {
     host.sessionData.presenceInstanceId,
     session.key,
   );
-  const stateId = sessionPrimaryStateHasVisibleIndicator(primaryState, approvalIsExplicitInSubtitle)
-    ? sidebarSessionStateId(session.key)
-    : undefined;
+  const primaryStateVisible = sessionPrimaryStateHasVisibleIndicator(
+    primaryState,
+    approvalIsExplicitInSubtitle,
+  );
+  const stateId = primaryStateVisible ? sidebarSessionStateId(session.key) : undefined;
+  const hasPendingApprovalBadge =
+    sessionHasPendingApproval(host.sessionData.approvalBadgeSnapshot(), session.key) &&
+    primaryState.attention?.kind !== "approval";
+  const hasBoard = sessionHasBoard(session.key);
+  const hasRowBadges = Boolean(
+    session.hasAutomation ||
+    (session.outboxCount ?? 0) > 0 ||
+    session.pullRequest ||
+    display?.pullRequest ||
+    hasPendingApprovalBadge,
+  );
+  const actionOnly =
+    !session.isChild &&
+    presenceViewers.length === 0 &&
+    pullRequestState === "none" &&
+    !hasBoard &&
+    !hasRowBadges &&
+    !primaryStateVisible;
   const openMenuFromEvent = session.isChild
     ? undefined
     : (event: MouseEvent | KeyboardEvent) =>
@@ -325,6 +345,7 @@ export function renderRecentSession(params: {
         data-session-depth=${session.isChild ? "1" : "0"}
         data-session-unread=${session.unread && !running ? "true" : "false"}
         data-session-manageable=${session.isChild ? "false" : "true"}
+        data-session-action-only=${actionOnly ? "true" : "false"}
         role=${ifDefined(listItem ? "listitem" : undefined)}
         draggable=${rowDraggable ? "true" : "false"}
         title=${!session.isChild && !groupWriteAccess.allowed ? groupWriteAccess.reason : nothing}
@@ -362,8 +383,10 @@ export function renderRecentSession(params: {
                 draft: session.visibility === "draft",
                 incognito: session.incognito,
               })}
-              <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
-                >${label}</span
+              <span
+                class="sidebar-recent-session__name"
+                ${ref(createOverflowFadeRef({ revealTrailingActions: actionOnly }))}
+                ><span class="sidebar-recent-session__name-content">${label}</span></span
               >
               ${session.archived
                 ? html`<span
@@ -419,37 +442,35 @@ export function renderRecentSession(params: {
           duration: nothing,
           restSummary: session.isChild
             ? nothing
-            : html`<openclaw-viewer-facepile
-                  .presencePayload=${host.sessionData.presencePayload}
-                  .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
-                  .selfInstanceId=${host.sessionData.presenceInstanceId}
-                  .sessionKey=${session.key}
-                  .maxVisible=${2}
-                  variant="session"
-                ></openclaw-viewer-facepile>
-                ${renderOperationalPullRequest(pullRequestState)}
-                ${sessionHasBoard(session.key)
-                  ? html`<span
-                      class="sidebar-board-glyph"
-                      role="img"
-                      aria-label=${t("sessionsView.dashboardAvailable")}
-                      title=${t("sessionsView.dashboardAvailable")}
-                      >${icons.layoutDashboard}</span
-                    >`
-                  : nothing}
-                ${renderSessionRowBadges({
-                  hasAutomation: session.hasAutomation,
-                  incognito: false,
-                  isChild: session.isChild,
-                  outboxCount: session.outboxCount,
-                  pullRequest: session.pullRequest ?? display?.pullRequest,
-                  hasApproval:
-                    sessionHasPendingApproval(
-                      host.sessionData.approvalBadgeSnapshot(),
-                      session.key,
-                    ) && primaryState.attention?.kind !== "approval",
-                  maxVisible: 2,
-                })}`,
+            : html`${presenceViewers.length > 0
+                ? html`<openclaw-viewer-facepile
+                    .presencePayload=${host.sessionData.presencePayload}
+                    .selfUserId=${host.sessionDataContext?.gateway.snapshot.selfUser?.id}
+                    .selfInstanceId=${host.sessionData.presenceInstanceId}
+                    .sessionKey=${session.key}
+                    .maxVisible=${2}
+                    variant="session"
+                  ></openclaw-viewer-facepile>`
+                : nothing}
+              ${renderOperationalPullRequest(pullRequestState)}
+              ${hasBoard
+                ? html`<span
+                    class="sidebar-board-glyph"
+                    role="img"
+                    aria-label=${t("sessionsView.dashboardAvailable")}
+                    title=${t("sessionsView.dashboardAvailable")}
+                    >${icons.layoutDashboard}</span
+                  >`
+                : nothing}
+              ${renderSessionRowBadges({
+                hasAutomation: session.hasAutomation,
+                incognito: false,
+                isChild: session.isChild,
+                outboxCount: session.outboxCount,
+                pullRequest: session.pullRequest ?? display?.pullRequest,
+                hasApproval: hasPendingApprovalBadge,
+                maxVisible: 2,
+              })}`,
           auxiliary: session.isChild ? renderOperationalPullRequest(pullRequestState) : nothing,
           management: session.isChild
             ? nothing
@@ -511,7 +532,7 @@ export function renderRecentSession(params: {
         pullRequestState,
         primaryStateLabel: primaryState.accessibleLabel,
         primaryStateTone: primaryState.tone,
-        hasBoard: sessionHasBoard(session.key),
+        hasBoard,
       })}
     </openclaw-tooltip>
   `;

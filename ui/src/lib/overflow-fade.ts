@@ -1,10 +1,25 @@
 /** Ref callback that marks single-line text only while it is genuinely clipped. */
-export function createOverflowFadeRef() {
+export function createOverflowFadeRef(options: { revealTrailingActions?: boolean } = {}) {
   let target: HTMLElement | null = null;
   let observer: ResizeObserver | null = null;
 
   const sync = () => {
-    target?.toggleAttribute("data-overflow-fade", target.scrollWidth > target.clientWidth + 1);
+    if (!target) {
+      return;
+    }
+    const contentWidth = target.scrollWidth;
+    const restingWidth = target.clientWidth;
+    target.toggleAttribute("data-overflow-fade", contentWidth > restingWidth + 1);
+    const management = options.revealTrailingActions
+      ? target
+          .closest<HTMLElement>(".session-row-host")
+          ?.querySelector<HTMLElement>(".session-row-endcap__management")
+      : null;
+    const managementReserve = management?.offsetWidth ?? 0;
+    const revealDistance = Math.max(0, contentWidth - (restingWidth - managementReserve));
+    target.toggleAttribute("data-overflow-reveal", revealDistance > 1);
+    const direction = getComputedStyle(target).direction === "rtl" ? 1 : -1;
+    target.style.setProperty("--overflow-reveal-translate", `${direction * revealDistance}px`);
   };
 
   return (element?: Element) => {
@@ -24,5 +39,6 @@ export function createOverflowFadeRef() {
       observer = new ResizeObserver(sync);
       observer.observe(target);
     }
+    queueMicrotask(sync);
   };
 }
