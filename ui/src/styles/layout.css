@@ -3329,6 +3329,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   flex: 0 1 auto;
   width: fit-content;
   max-width: 100%;
+  min-height: 40px;
   min-width: 0;
   padding: 4px var(--sidebar-row-inset, 10px);
   border: none;
@@ -3940,12 +3941,15 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
 
 .sidebar-identity-menu__header {
   min-height: 42px;
-  padding: 3px 6px;
+  padding: 3px 4px;
 }
 
 .sidebar-identity-menu__avatar {
-  width: 26px;
+  display: inline-grid;
+  width: 20px;
   height: 26px;
+  place-items: center;
+  overflow: visible;
 }
 
 .sidebar-identity-menu__avatar .viewer-avatar--footer {
@@ -4000,6 +4004,12 @@ wa-dropdown.sidebar-identity-menu::part(menu) {
 }
 
 .sidebar-identity-menu .nav-item__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-identity-menu__help::part(submenu-icon) {
+  inset-inline-end: 4px;
   width: 16px;
   height: 16px;
 }
