@@ -1604,27 +1604,31 @@ button.chat-reply-preview--message:disabled {
   position: fixed;
   z-index: 9999;
   display: flex;
-  gap: 2px;
-  padding: var(--menu-padding);
+  gap: 0;
+  padding: 0;
   border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
+  border-radius: 10px;
   background: var(--bg-elevated);
   box-shadow: var(--overlay-shadow);
+  overflow: hidden;
   animation: fade-in 0.12s var(--ease-out);
 }
 
 .chat-selection-popup button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   border: none;
   background: none;
   color: var(--text);
-  min-height: var(--menu-item-height);
-  border-radius: var(--menu-item-radius);
+  min-height: 32px;
+  border-radius: 0;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.chat-selection-popup button + button {
+  border-inline-start: 1px solid var(--overlay-border);
 }
 
 .chat-selection-popup button:hover,
@@ -1633,12 +1637,6 @@ button.chat-reply-preview--message:disabled {
   outline: none;
 }
 
-.chat-selection-popup button svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: var(--muted);
-}
 .agent-chat__composer-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
