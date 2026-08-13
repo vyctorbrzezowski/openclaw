@@ -188,7 +188,7 @@ describe("AppSidebar session attention", () => {
     expect(sidebar.querySelector(".session-primary-state .session-run-spinner")).not.toBeNull();
     expect(
       sidebar.querySelector(".session-primary-state .session-glyph__badge--unread"),
-    ).not.toBeNull();
+    ).toBeNull();
     expect(sidebar.textContent).not.toContain("Run failed:");
   });
 

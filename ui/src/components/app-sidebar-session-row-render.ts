@@ -276,7 +276,7 @@ export function renderRecentSession(params: {
       class=${rowClass}
       data-session-key=${session.key}
       data-session-depth=${session.isChild ? "1" : "0"}
-      data-session-unread=${session.unread ? "true" : "false"}
+      data-session-unread=${session.unread && !running ? "true" : "false"}
       data-session-manageable=${session.isChild ? "false" : "true"}
       role=${ifDefined(listItem ? "listitem" : undefined)}
       draggable=${rowDraggable ? "true" : "false"}

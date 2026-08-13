@@ -226,7 +226,7 @@ describe("AppSidebar session indicators", () => {
     ).not.toBeNull();
     expect(
       runningUnread?.querySelector(".session-primary-state .session-glyph__badge--unread"),
-    ).not.toBeNull();
+    ).toBeNull();
 
     for (const key of [keys.forked, keys.unread, keys.runningUnread]) {
       const link = sidebar.querySelector(`[data-session-key="${key}"] a`);
@@ -237,9 +237,9 @@ describe("AppSidebar session indicators", () => {
     expect(forked?.querySelector("a")?.getAttribute("title")).toContain("Forked session");
     expect(unread?.querySelector("a")?.getAttribute("title")).toContain("Unread");
     expect(runningUnread?.querySelector("a")?.getAttribute("title")).toContain("Active run");
-    expect(runningUnread?.querySelector("a")?.getAttribute("title")).toContain("Unread");
+    expect(runningUnread?.querySelector("a")?.getAttribute("title")).not.toContain("Unread");
     expect(runningUnread?.querySelector(".session-primary-state")?.getAttribute("aria-label")).toBe(
-      "Active run · Unread",
+      "Active run",
     );
 
     for (const key of [keys.openPullRequest, keys.mergedPullRequest]) {

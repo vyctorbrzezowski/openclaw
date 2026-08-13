@@ -50,18 +50,19 @@ export function getSessionPrimaryStateModel(
   session: SidebarRecentSession,
 ): SessionPrimaryStateModel {
   const source = session.attentionFromChild ? "descendant" : "session";
+  const unread = session.unread && !session.hasActiveRun;
   if (session.attention.kind !== "none") {
     const label = withConcurrentState(
       attentionLabel(session.attention),
       session.hasActiveRun,
-      session.unread,
+      unread,
     );
     return {
       kind: "attention",
       tone: session.attention.kind === "error" ? "danger" : "warning",
       attention: session.attention,
       runningRing: session.hasActiveRun,
-      unreadBadge: session.unread,
+      unreadBadge: unread,
       source,
       accessibleLabel:
         source === "descendant" ? `${label} · ${t("sessionsView.childSessions")}` : label,
@@ -72,9 +73,9 @@ export function getSessionPrimaryStateModel(
       kind: "running",
       tone: "info",
       runningRing: false,
-      unreadBadge: session.unread,
+      unreadBadge: false,
       source: "session",
-      accessibleLabel: withConcurrentState(t("sessionsView.activeRun"), false, session.unread),
+      accessibleLabel: t("sessionsView.activeRun"),
     };
   }
   const terminalKind = session.isChild
@@ -108,7 +109,7 @@ export function getSessionPrimaryStateModel(
       accessibleLabel: withConcurrentState(terminalLabel, false, session.unread),
     };
   }
-  if (session.unread) {
+  if (unread) {
     return {
       kind: "unread",
       tone: "info",
