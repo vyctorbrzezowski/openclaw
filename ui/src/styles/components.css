@@ -6295,17 +6295,17 @@ td.data-table-key-col {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: session-approval-text-shimmer 6.4s linear infinite;
+    animation: session-approval-text-shimmer 4.8s linear infinite;
   }
 }
 
 @keyframes session-approval-text-shimmer {
   0%,
-  22% {
+  12.5% {
     background-position: 100% 0;
   }
 
-  78%,
+  87.5%,
   100% {
     background-position: 0 0;
   }
