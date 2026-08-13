@@ -3127,7 +3127,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   padding: 0 7px;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
-  font-size: calc(12px * var(--control-ui-text-scale));
+  font-size: calc(11px * var(--control-ui-text-scale));
   font-weight: 500;
 }
 
