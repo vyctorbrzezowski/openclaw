@@ -141,6 +141,12 @@
   --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 24px var(--accent-glow);
 
+  /* Transient surfaces share a quieter outline and a two-stage shadow. Keep
+     this separate from card elevation: menus, popovers, and tooltips need a
+     crisp local edge without reading like floating dialogs. */
+  --overlay-border: color-mix(in srgb, var(--border-strong) 64%, transparent);
+  --overlay-shadow: 0 1px 2px rgb(0 0 0 / 0.18), 0 8px 24px rgb(0 0 0 / 0.24);
+
   /* Spacing scale. Settings surfaces use these (see
      ui/docs/design-system/settings-design.md); elsewhere raw px padding/gap is
      grandfathered — adopt the scale when rewriting a rule, don't mass-migrate. */
@@ -310,6 +316,8 @@
   --shadow-lg: 0 12px 28px rgba(60, 42, 24, 0.09);
   --shadow-xl: 0 24px 48px rgba(60, 42, 24, 0.11);
   --shadow-glow: 0 0 20px var(--accent-glow);
+  --overlay-border: color-mix(in srgb, var(--border-strong) 64%, transparent);
+  --overlay-shadow: 0 1px 2px rgb(60 42 24 / 0.035), 0 8px 24px rgb(60 42 24 / 0.065);
 
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23444' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
@@ -838,6 +846,16 @@ wa-dropdown-item[type="checkbox"]::part(checkmark) {
 wa-dropdown-item[type="checkbox"] {
   display: flex;
   align-items: center;
+}
+
+/* Web Awesome owns the internal panels, so establish the product-wide
+   transient-surface contract at the exported parts. Feature styles can still
+   own geometry, scrolling, and content density without redefining elevation. */
+wa-dropdown::part(menu),
+wa-popover::part(body),
+wa-select::part(listbox) {
+  border-color: var(--overlay-border);
+  box-shadow: var(--overlay-shadow);
 }
 
 button,
