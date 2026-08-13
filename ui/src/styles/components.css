@@ -6288,11 +6288,12 @@ td.data-table-key-col {
     background-image: linear-gradient(
       90deg,
       color-mix(in srgb, var(--warn) 82%, var(--text)) 0%,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 40%,
-      color-mix(in srgb, var(--warn) 42%, var(--text)) 50%,
-      color-mix(in srgb, var(--warn) 82%, var(--text)) 60%,
+      color-mix(in srgb, var(--warn) 82%, var(--text)) 42%,
+      color-mix(in srgb, var(--warn) 28%, white) 50%,
+      color-mix(in srgb, var(--warn) 82%, var(--text)) 58%,
       color-mix(in srgb, var(--warn) 82%, var(--text)) 100%
     );
+    background-position: 100% 0;
     background-size: 240% 100%;
     background-repeat: no-repeat;
     -webkit-background-clip: text;
@@ -6306,12 +6307,12 @@ td.data-table-key-col {
 @keyframes session-approval-text-shimmer {
   0%,
   22% {
-    background-position: 180% 0;
+    background-position: 100% 0;
   }
 
   78%,
   100% {
-    background-position: -180% 0;
+    background-position: 0 0;
   }
 }
 
