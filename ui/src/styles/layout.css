@@ -2222,7 +2222,7 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-catalog-project__head {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 4px;
   width: 100%;
   min-height: 18px;
   padding: 2px 12px 0 0;
@@ -2264,23 +2264,15 @@ body.update-dialog-open .sidebar-update-card__status {
    just another session. Type carries the whole split because the head color
    stays near `--text` for readability; case stays as authored (project names). */
 .sidebar-session-catalog-project__label {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: calc(12px * var(--control-ui-text-scale));
-  font-weight: 650;
-  letter-spacing: 0.03em;
-}
-
-.sidebar-session-catalog-project__count {
-  width: calc(20px * var(--control-ui-text-scale));
-  flex: 0 0 calc(20px * var(--control-ui-text-scale));
-  color: color-mix(in srgb, var(--muted) 55%, var(--text) 45%);
-  font-size: calc(10px * var(--control-ui-text-scale));
-  font-variant-numeric: tabular-nums;
-  text-align: center;
+  font-size: var(--sidebar-session-title-size, calc(13px * var(--control-ui-text-scale)));
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: var(--sidebar-session-title-line-height, 20px);
 }
 
 .sidebar-session-pagination {

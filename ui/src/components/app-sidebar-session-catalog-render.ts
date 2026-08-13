@@ -140,7 +140,7 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
     });
     const hasActiveRun = liveRows.some((row) => row.hasActiveRun === true);
     const hasUnread = liveRows.some((row) => row.unread === true);
-    const hasBrandIcon = hasProviderBrandIcon(catalog.id);
+    const hasBrandIcon = catalog.id !== "codex" && hasProviderBrandIcon(catalog.id);
     const loadingMore = params.loadingMoreCatalogIds.has(catalog.id);
     const hasMore = hosts.some((host) => Boolean(host.nextCursor));
     const canCreateSession = catalog.capabilities.createSession !== undefined;
@@ -346,12 +346,9 @@ function renderCatalogHostGroup(
                     title=${group.title}
                     @click=${() => params.onToggleSection(sectionId)}
                   >
+                    <span class="sidebar-session-catalog-project__label">${group.label}</span>
                     <span class="sidebar-session-catalog-project__icon" aria-hidden="true"
                       >${collapsed ? icons.chevronRight : icons.chevronDown}</span
-                    >
-                    <span class="sidebar-session-catalog-project__label">${group.label}</span>
-                    <span class="sidebar-session-catalog-project__count" aria-hidden="true"
-                      >${group.sessions.length}</span
                     >
                   </button>
                   ${collapsed

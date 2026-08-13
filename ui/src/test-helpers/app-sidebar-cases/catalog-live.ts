@@ -165,7 +165,7 @@ describe("AppSidebar session catalog pagination", () => {
 
   it.each([
     { id: "claude", label: "Claude Code", branded: true },
-    { id: "codex", label: "Codex", branded: true },
+    { id: "codex", label: "Codex", branded: false },
     { id: "opencode", label: "OpenCode", branded: true },
     { id: "pi", label: "Pi", branded: true },
     { id: "custom", label: "Custom", branded: false },

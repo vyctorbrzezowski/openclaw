@@ -201,12 +201,8 @@ suite.define(() => {
       await catalog.waitFor({ state: "visible" });
       await claudeCatalog.waitFor({ state: "visible" });
       await expect
-        .poll(() =>
-          catalog
-            .locator(".sidebar-session-catalog-provider-icon")
-            .getAttribute("data-provider-icon"),
-        )
-        .toBe("codex");
+        .poll(() => catalog.locator(".sidebar-session-catalog-provider-icon").count())
+        .toBe(0);
       await expect
         .poll(() =>
           claudeCatalog
