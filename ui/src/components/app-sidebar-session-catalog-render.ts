@@ -464,25 +464,25 @@ function renderCatalogSessionRow(
       (trigger, x, y) => openMenu(x, y, trigger ?? undefined),
     );
   return html`
-    <div
-      class="sidebar-recent-session session-row-host ${active
-        ? "sidebar-recent-session--active"
-        : ""} ${project ? "sidebar-recent-session--catalog-project-child" : ""} ${running
-        ? "session-row-host--running"
-        : ""}"
-      data-session-key=${key}
-      data-session-depth="0"
-      data-session-manageable="true"
-      role="listitem"
-      @contextmenu=${openMenuFromEvent}
-      @keydown=${openMenuFromEvent}
+    <openclaw-tooltip
+      class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
+      delay="500"
+      placement="right"
     >
-      <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
-      <openclaw-tooltip
-        class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
-        delay="500"
-        placement="right"
+      <div
+        class="sidebar-recent-session session-row-host ${active
+          ? "sidebar-recent-session--active"
+          : ""} ${project ? "sidebar-recent-session--catalog-project-child" : ""} ${running
+          ? "session-row-host--running"
+          : ""}"
+        data-session-key=${key}
+        data-session-depth="0"
+        data-session-manageable="true"
+        role="listitem"
+        @contextmenu=${openMenuFromEvent}
+        @keydown=${openMenuFromEvent}
       >
+        <span class="sidebar-recent-session__surface" aria-hidden="true"></span>
         <a
           href=${href}
           class="sidebar-recent-session__link"
@@ -509,52 +509,52 @@ function renderCatalogSessionRow(
             </span>
           </span>
         </a>
-        ${renderCatalogSessionHoverCard({
-          label,
-          meta,
-          project,
-          cwd: session.cwd,
-          branch: session.gitBranch,
-          stateLabel: stateDescription,
+        ${renderSessionRowEndcap({
+          child: false,
+          restSummary: renderSessionRowBadges({
+            hasAutomation: false,
+            pullRequest: session.pullRequest,
+            maxVisible: 2,
+          }),
+          management: html`<span class="session-row-actions">
+            <button
+              class="session-action"
+              data-catalog-session-menu="true"
+              type="button"
+              title=${t("chat.sidebar.openSessionMenu")}
+              aria-label=${t("chat.sidebar.openSessionMenu")}
+              aria-haspopup="menu"
+              @click=${(event: MouseEvent) => {
+                event.stopPropagation();
+                const trigger = event.currentTarget as HTMLElement;
+                const rect = trigger.getBoundingClientRect();
+                openMenu(rect.right, rect.bottom + 4, trigger);
+              }}
+            >
+              ${icons.ellipsis}
+            </button>
+          </span>`,
+          primary: running
+            ? html`<span
+                class="session-primary-state session-primary-state--running session-primary-state--info"
+                id=${stateId}
+                role="img"
+                aria-label=${stateDescription}
+                title=${stateDescription}
+                data-session-primary-state="running"
+                >${renderSessionRunSpinner(false)}</span
+              >`
+            : nothing,
         })}
-      </openclaw-tooltip>
-      ${renderSessionRowEndcap({
-        child: false,
-        restSummary: renderSessionRowBadges({
-          hasAutomation: false,
-          pullRequest: session.pullRequest,
-          maxVisible: 2,
-        }),
-        management: html`<span class="session-row-actions">
-          <button
-            class="session-action"
-            data-catalog-session-menu="true"
-            type="button"
-            title=${t("chat.sidebar.openSessionMenu")}
-            aria-label=${t("chat.sidebar.openSessionMenu")}
-            aria-haspopup="menu"
-            @click=${(event: MouseEvent) => {
-              event.stopPropagation();
-              const trigger = event.currentTarget as HTMLElement;
-              const rect = trigger.getBoundingClientRect();
-              openMenu(rect.right, rect.bottom + 4, trigger);
-            }}
-          >
-            ${icons.ellipsis}
-          </button>
-        </span>`,
-        primary: running
-          ? html`<span
-              class="session-primary-state session-primary-state--running session-primary-state--info"
-              id=${stateId}
-              role="img"
-              aria-label=${stateDescription}
-              title=${stateDescription}
-              data-session-primary-state="running"
-              >${renderSessionRunSpinner(false)}</span
-            >`
-          : nothing,
+      </div>
+      ${renderCatalogSessionHoverCard({
+        label,
+        meta,
+        project,
+        cwd: session.cwd,
+        branch: session.gitBranch,
+        stateLabel: stateDescription,
       })}
-    </div>
+    </openclaw-tooltip>
   `;
 }

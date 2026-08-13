@@ -3584,6 +3584,7 @@ openclaw-tooltip.sidebar-hover-tooltip {
 }
 
 openclaw-tooltip.sidebar-session-hover-tooltip {
+  --openclaw-tooltip-arrow-size: 0px;
   --openclaw-tooltip-border-radius: var(--radius-lg);
   --openclaw-tooltip-max-width: min(300px, calc(100vw - 24px));
   --openclaw-tooltip-padding: 0;
