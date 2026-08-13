@@ -3168,25 +3168,25 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   white-space: nowrap;
 }
 
-.sidebar-nav-health-badge {
+.sidebar-nav-health-indicator {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--sidebar-trailing-slot, 20px);
+  width: var(--sidebar-trailing-slot, 20px);
   height: var(--sidebar-trailing-slot, 20px);
-  padding: 0 4px;
-  margin-left: auto;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  margin-inline-start: auto;
   color: var(--warn);
-  font-size: calc(10px * var(--control-ui-text-scale));
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
 
-.sidebar-nav-health-badge--danger {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
+.sidebar-nav-health-indicator::before {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  content: "";
+}
+
+.sidebar-nav-health-indicator--danger {
   color: var(--danger);
 }
 

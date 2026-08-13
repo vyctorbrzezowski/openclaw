@@ -25,7 +25,7 @@ import { consumeDropdownKeyboardDismissal, trackDropdownKeyboardDismissal } from
 type SidebarMenuPosition = { x: number; y: number };
 type SidebarAutomationAttention = { count: number; severity: "danger" | "warning" | null };
 
-function renderAutomationAttentionBadge(attention: SidebarAutomationAttention | undefined) {
+function renderAutomationAttentionIndicator(attention: SidebarAutomationAttention | undefined) {
   if (!attention || attention.count <= 0) {
     return nothing;
   }
@@ -37,11 +37,11 @@ function renderAutomationAttentionBadge(attention: SidebarAutomationAttention | 
   );
   return html`<openclaw-tooltip .content=${label}>
     <span
-      class="sidebar-nav-health-badge sidebar-nav-health-badge--${attention.severity ?? "warning"}"
+      class="sidebar-nav-health-indicator sidebar-nav-health-indicator--${attention.severity ??
+      "warning"}"
       role="status"
       aria-label=${label}
-      >${attention.count > 9 ? "9+" : attention.count}</span
-    >
+    ></span>
   </openclaw-tooltip>`;
 }
 
@@ -107,7 +107,7 @@ export function renderSidebarNavRoute(params: SidebarNavRouteParams) {
         >${icons[navigationIconForRoute(params.routeId)]}</span
       >
       <span class="nav-item__text">${titleForRoute(params.routeId)}</span>
-      ${renderAutomationAttentionBadge(params.attention)}
+      ${renderAutomationAttentionIndicator(params.attention)}
     </a>
   `;
 }
@@ -186,7 +186,7 @@ function renderMoreMenuRoute(params: SidebarMoreMenuParams, routeId: SidebarNavR
         >
         <span class="sidebar-customize-menu__text">${titleForRoute(routeId)}</span>
         ${routeId === "cron"
-          ? renderAutomationAttentionBadge(params.automationAttention)
+          ? renderAutomationAttentionIndicator(params.automationAttention)
           : nothing}
       </a>
     </wa-dropdown-item>
