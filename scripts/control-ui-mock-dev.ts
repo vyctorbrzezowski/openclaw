@@ -64,6 +64,10 @@ type SessionCreatorFixture = {
 };
 
 const MOCK_MIRA_AVATAR_PATH = "/api/users/profile-mira/avatar";
+const MOCK_CLAWHUB_ICON = Buffer.from(
+  "AAABAAEAEBAAAAAAIAACAwAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAslJREFUeJw1k81uHEUUhb9bVT094+7xeDKeWIkNG0R+MLAKygILhTwAz8BL8Aq8AetsEQvYsGFBkFAkNkQmCgQISUTiME5sD/Z4PD/d01UXVY/pVfetc869t08dAQwQrl2+3Ds8LXYmVchWW4ZWAiWW+DSAmYfJ3NNMmPRX0nt/DAbDyJUI6GTZ7TJwp9GQN3uNwKh0LEjIkvqYSQWpqegkFcOFUBS8aDnz6XA0+kEu5fn6sFw8ykT7n28H/2cQ6WWW714a7h+6WuBmP/DxZsXhWcUHCfrZb9aOMAcXnN12J2W5E4L23wvez58G+86NBlfWVynGRwx9BirczAt2tjo8e3XK8W7Ju2XwP1p3cRz8h2ammuaiehCCfF/C9uMFR48nfLmnvH9hwfVuyVeDivHTGdeeVHxbwl4I0iboVE3T4VFNEHL05zO4M4InfkqymrJRKkGV39eafLE/ZWusPCxgrQXeIyjqmhbGC7jUsXQLj3XQbQty4vnkzCABfk0WrHSFMFO6CWhuORsKDetx/tzHZ8eWG5vKYBjw+8rwNNAHog+vgWQGswCdi4bdA4uNytbVXEQUVNl95civGkIL5hZ+2hDubhhmDmwKa28ZHgxdjV0avGwev+uFZoVw/6XlyhtCp7FcpduGXgJvbwm/HFjmhdTY+G986amN1roQdwrs/St8XUp9/f6eKYWF/UT45oVwNBFSGwh63v58AokKGsfQKASDY8NHDaHdgm4DbjVhcGLQECE1uKaAFyciRRRRNESyCYGrxlOeKnYqpLGbV64bz1+BevSarBgxbi55nq/PptNHKH0R8SLIZlBsEuoekW+NUC2Ef0RqqqpahNcrWbZd75Fae9sZ+9wZo85YxVhtJU77udX1fPkea/HsHPM8temt2sH/49xut3tFUexUVZXF+JaxGJZxNsbXkY53RsRN0pX03ng8ruP8H3/hX1PKZvDwAAAAAElFTkSuQmCC",
+  "base64",
+);
 const MOCK_MIRA_AVATAR_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAFaklEQVRYhaXWe0xTVxwH8Pufmqj/LXFZopnQWyhQKKUUBFrKq1WzDZf4itkUhkMRlKn4mA9QAV1FHiKP8lYUEJhb3JYsW2JcTCzD/bFkWaJzj0RGRm8fFHrb3tvb8ltu29v2tre04kl+/97POfec7/kdBIlywLBqvfO+ci81WtTrvFc4Td3NxxzDBQ7HnXwHOZSHkYOKaaI/t4fUyPdA35Z10X434oAHW1HXuLLfOVZkdY4VgXOkEJz3CoAaLgDqdj44hvLAMZAHZL8CyN5cIHrkYO+SW4lOWR/RJeOtHB7fucY1oWpyjisp1/0iYHDqbjCu8OMaORDdciA6ZWDvyAHbzWyHtTVLDYPy1a+HT27nuSZUv7kmlODGR5fB+wJxGdhp/FYO2NuzwdaWDbbWLMCbM7V4c87b0eETKpFrUom5xjnwO/kefJAD7+LAW7LA2rwFrE2ZYLmeOWNRS4URVl7AY+P0fvtxBwvPBbInFLfdpPEsFo5fzwT8iwxYbJTO4GrJBm58UL7aOaH61Y2PceBDXpze734FUF+VA/W4AahH9UBOHgR7h5wbV2e4cctVKVga02GxXvIL3MhYEzIB14SyKQQfZvA8N07DjrFdsPTPIwDzn6xy/fUj2Pt3gJXGb3DgDTSeDouXJbBQJ77EXv3oVtR5X0mFxCwYH34Plv57FoIztTQ7DbaOIj9+LRCXePE0WLgotuC1AVvhGnPnPGLGnc+6wuJMOZ60e3GpH78SgNeKYeFCKsyfF3V6Vj+sWk+NFlqjyfjS7M8RJ7A0o/XgjRz4RTGYL6SC+VwqmD8X4foa/jrEOVKwN9qMg+l5xAmA8Tkbv5TGhcP8mRQw1wh3I9RIYW+0GV+anYo4AdcrLVjqw+EimD/rwedPJYPppFCDUHcLpqPNOKXtjHwGHrf58Vovfp4LTwbTCaEWcdzO17MyHox35PguGLtG5T7pYVf/7xRY1AovLg7FT6eAybNyGgdjdaIOIQcVJBMzH94ditN3Op1xW28xuF7+EII7X3wPeNv2UJze77MpbPy4EIyfJYHhWCKBkAMKkjnpZI+cjbcH4lsCLphMsN/eD8R3dUB8WwvWgY9g8XJ6QMw48BoPbvTixmOJYKhMIBCiX6Fn+nhgK+XC3Xd6FBn34WeC8SQwVnvxqgQwVAp0CNGbOx3cxwNbqftOD8YjZ5yNn/DjBj8OWIVAixDdsp5wfdyD+7uZ5ZoUXp4QwTcf8kEj2wzNkk3u0uS8Cw+LUXheIfTj9H4H40e9+BEB6CsEgB2K60bIzuw9y/VxBjfVS+DL9/mgTt24bE1u4wF2XOjH6f2uTvThei+uPxQP2Kf8nQjckq+13crGl+vjpvp0GMqPiYgzNZC7GfQ0HIhXevHDPhzXVQjWuvuBtS27b7k+/nBH5JUH19fbYjyHjYXHe/E40H3C7/F1Q6JVxsObsxxcffzvkyJQi18PZ+pFaTwLx8q9eBlKzpXwNrPeBNamTDVXH3/wAboinK4HyhjPfgfgWBkf5kp5V0OfZLXy1RZ1hjYw46a6NGhJ37TiCbRINsIc/cvL4wA7SK+cD7oS9OkfVbGrON+FuFqyYbFR+orJ+ItjKSvGmfp9H+rD50p4s4aPee8s+zK2NEiFC1fSZug7/ekBwRtP4ElxLH3gQFeKvpo7wE9CohmLDSlvmevEP4Xt41FlnP7tfA9egj7V7d/E/RwPN6AqdtX8edEl8zkRztHHI2ScwenTjjaG3XMkiqE7Kdkwfzq503QqGff1caabhck4VobiulJUExK1Nxn0rWU8LtxtqE7qNh5NnDIcFej0RxJIrCKe1B+O02HlcVPYwbgurAzd5bvhohj/A/cIwOnj29YoAAAAAElFTkSuQmCC",
   "base64",
@@ -1554,7 +1558,7 @@ async function createChatPickerScenario(
       worktree: {
         id: "wt-sidebar-zones",
         branch: "claude/sidebar-agent-zones",
-        repoRoot: "~/Projects/openclaw",
+        repoRoot: "~/Projects/clawhub",
       },
     }),
     ...buildSessionRows({
@@ -2655,16 +2659,22 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
         res.setHeader("content-type", "application/json");
         res.end(bootstrapBody);
       });
-      for (const sessionKey of [MOCK_OPENCLAW_PROJECT_SESSION_KEY, MOCK_CODING_SESSION_KEY]) {
-        server.middlewares.use(
-          `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(sessionKey)}`,
-          (_req, res) => {
-            res.statusCode = 200;
-            res.setHeader("content-type", "image/svg+xml");
-            res.end(mockOpenClawProjectIcon);
-          },
-        );
-      }
+      server.middlewares.use(
+        `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(MOCK_OPENCLAW_PROJECT_SESSION_KEY)}`,
+        (_req, res) => {
+          res.statusCode = 200;
+          res.setHeader("content-type", "image/svg+xml");
+          res.end(mockOpenClawProjectIcon);
+        },
+      );
+      server.middlewares.use(
+        `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(MOCK_CODING_SESSION_KEY)}`,
+        (_req, res) => {
+          res.statusCode = 200;
+          res.setHeader("content-type", "image/x-icon");
+          res.end(MOCK_CLAWHUB_ICON);
+        },
+      );
       server.middlewares.use(MOCK_MIRA_AVATAR_PATH, (_req, res) => {
         res.statusCode = 200;
         res.setHeader("content-type", "image/png");

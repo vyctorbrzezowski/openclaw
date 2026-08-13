@@ -243,6 +243,11 @@ export function renderRecentSession(params: {
   const primaryState = getSessionPrimaryStateModel(session);
   const visibleSubtitle = session.isChild ? null : subtitle;
   const approvalIsExplicitInSubtitle = visibleSubtitle === t("sessionsView.waitingForApproval");
+  const activeErrorIsExplicitInSubtitle = Boolean(
+    session.visuallyActive && visibleSubtitle && primaryState.attention?.kind === "error",
+  );
+  const suppressPrimaryAttentionIcon =
+    approvalIsExplicitInSubtitle || activeErrorIsExplicitInSubtitle;
   const running = session.hasActiveRun;
   const auxiliaryDescription =
     pullRequestState === "none" ? "" : pullRequestStateLabel(pullRequestState);
@@ -256,7 +261,7 @@ export function renderRecentSession(params: {
   );
   const primaryStateVisible = sessionPrimaryStateHasVisibleIndicator(
     primaryState,
-    approvalIsExplicitInSubtitle,
+    suppressPrimaryAttentionIcon,
   );
   const stateId = primaryStateVisible ? sidebarSessionStateId(session.key) : undefined;
   const hasPendingApprovalBadge =
@@ -385,7 +390,7 @@ export function renderRecentSession(params: {
               })}
               <span
                 class="sidebar-recent-session__name"
-                ${ref(createOverflowFadeRef({ revealTrailingActions: actionOnly }))}
+                ${ref(createOverflowFadeRef({ revealTrailingActions: !session.isChild }))}
                 ><span class="sidebar-recent-session__name-content">${label}</span></span
               >
               ${session.archived
@@ -506,7 +511,7 @@ export function renderRecentSession(params: {
                 </button>
               </span>`,
           primary: renderSessionPrimaryStateIndicator(primaryState, stateId, {
-            suppressAttentionIcon: approvalIsExplicitInSubtitle,
+            suppressAttentionIcon: suppressPrimaryAttentionIcon,
             compact: session.isChild,
           }),
         })}

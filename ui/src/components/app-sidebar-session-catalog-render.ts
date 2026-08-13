@@ -512,7 +512,7 @@ function renderCatalogSessionRow(
             <span class="sidebar-recent-session__title-line">
               <span
                 class="sidebar-recent-session__name"
-                ${ref(createOverflowFadeRef({ revealTrailingActions: actionOnly }))}
+                ${ref(createOverflowFadeRef({ revealTrailingActions: true }))}
                 ><span class="sidebar-recent-session__name-content">${label}</span></span
               >
             </span>
@@ -520,16 +520,20 @@ function renderCatalogSessionRow(
               ? html`<span
                   class="sidebar-recent-session__subtitle sidebar-catalog-session__git-context"
                   data-worktree-context=${usesWorktree ? "true" : nothing}
-                  ${ref(createOverflowFadeRef())}
                 >
-                  <span
-                    class="sidebar-catalog-session__git-icon ${usesWorktree
-                      ? "sidebar-catalog-session__git-icon--worktree"
-                      : ""}"
-                    aria-hidden="true"
-                    >${usesWorktree ? icons.worktreeCreated : icons.gitBranch}</span
-                  >
-                  <span>${session.gitBranch}</span>
+                  <span class="sidebar-catalog-session__git-main" ${ref(createOverflowFadeRef())}>
+                    <span class="sidebar-catalog-session__git-icon" aria-hidden="true"
+                      >${icons.gitBranch}</span
+                    >
+                    <span>${session.gitBranch}</span>
+                  </span>
+                  ${usesWorktree
+                    ? html`<span
+                        class="sidebar-catalog-session__git-icon sidebar-catalog-session__git-icon--worktree"
+                        aria-hidden="true"
+                        >${icons.worktreeCreated}</span
+                      >`
+                    : nothing}
                 </span>`
               : nothing}
           </span>

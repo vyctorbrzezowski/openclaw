@@ -5862,24 +5862,31 @@ td.data-table-key-col {
 }
 
 .sidebar-catalog-session__git-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-catalog-session__git-main {
   display: flex;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .sidebar-catalog-session__git-icon,
 .sidebar-catalog-session__git-icon svg {
   display: inline-flex;
-  width: 11px;
-  height: 11px;
-  flex: 0 0 11px;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
 }
 
 .sidebar-catalog-session__git-icon--worktree,
 .sidebar-catalog-session__git-icon--worktree svg {
-  width: 14px;
-  height: 14px;
-  flex-basis: 14px;
   stroke: none;
   fill: currentColor;
 }
@@ -6082,7 +6089,7 @@ td.data-table-key-col {
   background: color-mix(in srgb, var(--bg-hover) 78%, var(--sidebar-bg, var(--bg)));
 }
 
-.session-row-host[data-session-action-only="true"]:is(:hover, :focus-within)
+.session-row-host[data-session-manageable="true"]:is(:hover, :focus-within)
   .sidebar-recent-session__name[data-overflow-reveal]
   .sidebar-recent-session__name-content {
   transform: translateX(var(--overflow-reveal-translate, 0));
@@ -6386,7 +6393,7 @@ td.data-table-key-col {
   height: 7px;
   background: var(--session-unread-indicator);
   color: var(--session-unread-indicator);
-  box-shadow: 0 0 0 1.5px var(--sidebar-bg, var(--bg));
+  box-shadow: none;
 }
 
 .sidebar .session-unread-dot--danger {

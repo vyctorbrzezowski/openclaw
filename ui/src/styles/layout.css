@@ -2648,7 +2648,8 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-recent-session__name[data-overflow-fade],
-.sidebar-recent-session__subtitle[data-overflow-fade] {
+.sidebar-recent-session__subtitle[data-overflow-fade],
+.sidebar-catalog-session__git-main[data-overflow-fade] {
   -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 10px), transparent 100%);
   mask-image: linear-gradient(to right, black 0, black calc(100% - 10px), transparent 100%);
   -webkit-mask-repeat: no-repeat;
@@ -2665,18 +2666,19 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-recent-session__name[data-overflow-fade]:dir(rtl),
-.sidebar-recent-session__subtitle[data-overflow-fade]:dir(rtl) {
+.sidebar-recent-session__subtitle[data-overflow-fade]:dir(rtl),
+.sidebar-catalog-session__git-main[data-overflow-fade]:dir(rtl) {
   -webkit-mask-image: linear-gradient(to left, black 0, black calc(100% - 10px), transparent 100%);
   mask-image: linear-gradient(to left, black 0, black calc(100% - 10px), transparent 100%);
 }
 
-.session-row-host[data-session-action-only="true"]:is(:hover, :focus-within)
+.session-row-host[data-session-manageable="true"]:is(:hover, :focus-within)
   .sidebar-recent-session__name[data-overflow-reveal] {
   -webkit-mask-image: linear-gradient(to right, transparent 0, black 10px, black 100%);
   mask-image: linear-gradient(to right, transparent 0, black 10px, black 100%);
 }
 
-.session-row-host[data-session-action-only="true"]:is(:hover, :focus-within)
+.session-row-host[data-session-manageable="true"]:is(:hover, :focus-within)
   .sidebar-recent-session__name[data-overflow-reveal]:dir(rtl) {
   -webkit-mask-image: linear-gradient(to left, transparent 0, black 10px, black 100%);
   mask-image: linear-gradient(to left, transparent 0, black 10px, black 100%);

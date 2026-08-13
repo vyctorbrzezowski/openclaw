@@ -16,7 +16,8 @@ export function createOverflowFadeRef(options: { revealTrailingActions?: boolean
           .closest<HTMLElement>(".session-row-host")
           ?.querySelector<HTMLElement>(".session-row-endcap__management")
       : null;
-    const managementReserve = management?.offsetWidth ?? 0;
+    const actionOnly = target.closest<HTMLElement>(".session-row-host")?.dataset.sessionActionOnly;
+    const managementReserve = actionOnly === "true" ? (management?.offsetWidth ?? 0) : 0;
     const revealDistance = Math.max(0, contentWidth - (restingWidth - managementReserve));
     target.toggleAttribute("data-overflow-reveal", revealDistance > 1);
     const direction = getComputedStyle(target).direction === "rtl" ? 1 : -1;
