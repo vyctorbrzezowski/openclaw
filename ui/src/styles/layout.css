@@ -2306,7 +2306,7 @@ body.update-dialog-open .sidebar-update-card__status {
   display: flex;
   justify-content: flex-start;
   gap: 14px;
-  padding: 0 var(--sidebar-row-inset, 10px) 10px var(--sidebar-session-content-start);
+  padding: 8px var(--sidebar-row-inset, 10px) 10px var(--sidebar-session-content-start);
 }
 
 .sidebar-session-pagination__button {
