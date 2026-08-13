@@ -84,6 +84,8 @@ export function renderSessionRowHoverCard(params: {
   hasBoard: boolean;
 }) {
   const { session } = params;
+  const workspaceConflictCount = Math.max(0, Math.floor(session.workspaceConflictCount ?? 0));
+  const hasCloudError = session.placementState === "failed" || workspaceConflictCount > 0;
   const project = session.worktree?.repoRoot
     ? repoName(session.worktree.repoRoot)
     : basename(session.execCwd);
@@ -136,9 +138,20 @@ export function renderSessionRowHoverCard(params: {
               (session.workspaceConflictCount ?? 0) > 0,
             ),
             label:
-              session.placementState === "reclaimed"
-                ? t("sessionsView.cloudWorkerReclaimed")
-                : t("sessionsView.cloudWorkerPlacement", { state: session.placementState }),
+              workspaceConflictCount > 0
+                ? t(
+                    workspaceConflictCount === 1
+                      ? "sessionsView.cloudWorkerPlacementConflict"
+                      : "sessionsView.cloudWorkerPlacementConflicts",
+                    {
+                      state: session.placementState,
+                      count: String(workspaceConflictCount),
+                    },
+                  )
+                : session.placementState === "reclaimed"
+                  ? t("sessionsView.cloudWorkerReclaimed")
+                  : t("sessionsView.cloudWorkerPlacement", { state: session.placementState }),
+            tone: hasCloudError ? ("danger" as const) : undefined,
           },
         ]
       : []),

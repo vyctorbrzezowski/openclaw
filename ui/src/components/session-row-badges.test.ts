@@ -96,16 +96,8 @@ describe("session row placement badges", () => {
     expect(container.querySelector(".session-row-badges")).toBeNull();
   });
 
-  it.each(["local", "reclaimed"] satisfies SessionPlacementState[])(
-    "keeps %s placement visually quiet",
-    (placementState) => {
-      renderBadges(placementState);
-
-      expect(container.querySelector(".session-row-badges")).toBeNull();
-    },
-  );
-
   it.each([
+    "local",
     "requested",
     "provisioning",
     "syncing",
@@ -113,15 +105,12 @@ describe("session row placement badges", () => {
     "active",
     "draining",
     "reconciling",
+    "reclaimed",
     "failed",
-  ] satisfies SessionPlacementState[])("renders %s with a cloud-state icon", (placementState) => {
+  ] satisfies SessionPlacementState[])("keeps %s placement visually quiet", (placementState) => {
     renderBadges(placementState);
 
-    const badge = container.querySelector<HTMLElement>(".session-row-badge--cloud");
-    expect(badge?.dataset.placementState).toBe(placementState);
-    expect(badge?.getAttribute("aria-label")).toBe(`Cloud worker: ${placementState}`);
-    expectTooltipText(badge, `Cloud worker: ${placementState}`);
-    expect(badge?.querySelector("svg")).not.toBeNull();
+    expect(container.querySelector(".session-row-badges")).toBeNull();
   });
 
   it("keeps unrelated badges while omitting local placement", () => {

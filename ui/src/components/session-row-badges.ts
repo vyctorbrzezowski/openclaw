@@ -1,7 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 // Deep import on purpose: the protocol barrel carries typebox and every
 // schema, which must stay out of the Control UI startup bundle.
-import { isCloudWorkerPlacementState } from "../../../packages/gateway-protocol/src/schema/session-placement-state.js";
 import type { SessionCatalogPullRequestSummary } from "../../../packages/gateway-protocol/src/schema/sessions-catalog.js";
 import type { GatewaySessionRow } from "../api/types.ts";
 import { t } from "../i18n/index.ts";
@@ -97,14 +96,11 @@ export function renderSessionRowBadges(params: {
     ? formatSessionPullRequestSummary(params.pullRequest)
     : undefined;
   const pullRequestState = params.pullRequest?.state;
-  const placementState = params.isChild ? undefined : params.placementState;
-  const cloudPlacementState = isCloudWorkerPlacementState(placementState)
-    ? placementState
-    : undefined;
   const workspaceConflictCount = Math.max(0, Math.floor(params.workspaceConflictCount ?? 0));
-  // Child rows suppress ordinary placement chrome, but a retained conflict must stay discoverable.
+  // Placement is contextual detail for the hover card. Only a retained
+  // workspace conflict earns persistent space in the session row.
   const conflictPlacementState = workspaceConflictCount > 0 ? params.placementState : undefined;
-  const displayedPlacementState = cloudPlacementState ?? conflictPlacementState;
+  const displayedPlacementState = conflictPlacementState;
   const hasWorkspaceConflict = workspaceConflictCount > 0;
   const outboxCount = Math.max(0, Math.floor(params.outboxCount ?? 0));
   const outboxLabel =
@@ -218,7 +214,6 @@ export function renderSessionRowBadges(params: {
           content: renderSessionRowBadge(t("sessionsView.automationAttached"), icons.clock),
         }
       : null,
-    displayedPlacementState && !hasWorkspaceConflict ? placementBadge : null,
   ].filter((badge): badge is { label: string; content: TemplateResult } => badge !== null);
   const maxVisible = Math.max(0, params.maxVisible ?? badges.length);
   const visible = badges.slice(0, maxVisible);
