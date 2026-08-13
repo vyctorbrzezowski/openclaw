@@ -89,6 +89,30 @@ function groupCodingSessionsByProject(sessions: readonly SidebarRecentSession[])
   return { groups: [...groups.values()], ungrouped };
 }
 
+function codingProjectSession(session: SidebarRecentSession, projectLabel: string) {
+  const subtitle = session.subtitle;
+  if (!subtitle) {
+    return session;
+  }
+  const branchPrefix = `${projectLabel} ⎇ `;
+  const nodePrefix = `${projectLabel} · `;
+  const contextualSubtitle = subtitle.startsWith(branchPrefix)
+    ? subtitle.slice(branchPrefix.length)
+    : subtitle.startsWith(nodePrefix)
+      ? subtitle.slice(nodePrefix.length)
+      : subtitle === projectLabel
+        ? undefined
+        : subtitle;
+  if (contextualSubtitle === subtitle) {
+    return session;
+  }
+  if (contextualSubtitle === undefined) {
+    const { subtitle: _subtitle, ...sessionWithoutSubtitle } = session;
+    return sessionWithoutSubtitle;
+  }
+  return { ...session, subtitle: contextualSubtitle };
+}
+
 function renderSessionSectionRows(params: {
   host: SidebarSessionListHost;
   section: RenderableSessionSection;
@@ -133,7 +157,11 @@ function renderSessionSectionRows(params: {
             aria-label=${group.label}
           >
             ${group.sessions.map((session) =>
-              renderSessionTree({ host, session, projectChild: true }),
+              renderSessionTree({
+                host,
+                session: codingProjectSession(session, group.label),
+                projectChild: true,
+              }),
             )}
           </div>`}
     </div>`;
