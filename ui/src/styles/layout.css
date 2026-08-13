@@ -923,6 +923,8 @@ openclaw-settings-save-indicator {
      is optically smaller; tiny dots and disclosure chevrons keep their scale. */
   --sidebar-operational-icon-size: 16px;
   --sidebar-run-indicator-size: 14px;
+  --sidebar-session-title-size: calc(13px * var(--control-ui-text-scale));
+  --sidebar-session-title-line-height: 20px;
   --sidebar-trailing-slot: 20px;
   display: flex;
   flex-direction: column;
@@ -2129,7 +2131,7 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-session-catalog-project__sessions {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   min-width: 0;
 }
 
@@ -2603,7 +2605,7 @@ body.update-dialog-open .sidebar-update-card__status {
   overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
-  font-size: calc(13px * var(--control-ui-text-scale));
+  font-size: var(--sidebar-session-title-size);
   font-weight: 500;
   color: var(--text);
 }
@@ -2624,7 +2626,7 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-recent-session--child .sidebar-recent-session__name {
-  font-size: var(--control-ui-text-sm);
+  font-size: var(--sidebar-session-title-size);
 }
 
 .sidebar-recent-session--child .session-row-trail {
