@@ -5771,7 +5771,7 @@ td.data-table-key-col {
   background: color-mix(in srgb, var(--warn) 3%, transparent);
 }
 
-.sidebar-recent-session--attention-danger:not(.sidebar-recent-session--active)
+.sidebar-recent-session--attention-danger:not(.sidebar-recent-session--active):not(:hover)
   > .sidebar-recent-session__surface {
   background: transparent;
 }
