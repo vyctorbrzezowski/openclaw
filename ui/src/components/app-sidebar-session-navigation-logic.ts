@@ -209,10 +209,16 @@ export function buildSidebarSessionNavigationState(input: {
           : undefined,
       cloudWorkerStopAction: resolveCloudWorkerStopAction(row.placement),
       hasAutomation: row.hasAutomation === true,
+      automationNames: row.automationNames?.map((name) => name.trim()).filter(Boolean),
       pullRequest: context?.sessions.pullRequestSummary(row.key),
       outboxCount: input.outboxCountForSessionKey(row.key),
       hasComposerDraft: input.hasSessionDraft(row.key),
-      unread: row.archived !== true && row.unread === true,
+      // The active route acknowledges the row immediately; the chat owner still
+      // persists unread=false through the canonical sessions.patch flow.
+      unread:
+        row.archived !== true &&
+        row.unread === true &&
+        !(input.highlightCurrentSession && row.key === navigation.currentSessionKey),
       lastMessagePreview: normalizeOptionalString(row.lastMessagePreview),
       lastReadAt: row.lastReadAt,
       attention: row.archived === true ? SIDEBAR_SESSION_NO_ATTENTION : input.resolveAttention(row),

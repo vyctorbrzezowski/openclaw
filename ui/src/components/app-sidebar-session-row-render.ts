@@ -479,7 +479,7 @@ export function renderRecentSession(params: {
                     host.toggleSessionMenu(session, trigger);
                   }}
                 >
-                  ${icons.moreHorizontal}
+                  ${icons.ellipsis}
                 </button>
               </span>`,
           primary: renderSessionPrimaryStateIndicator(primaryState, stateId, {
@@ -495,6 +495,7 @@ export function renderRecentSession(params: {
           ? {
               actor: ownerActor,
               attribution: ownerAttribution,
+              name: ownerActor.label || ownerActor.id,
               label: t(
                 ownerAttribution === "archived"
                   ? "sessionsView.archivedBy"
@@ -506,6 +507,7 @@ export function renderRecentSession(params: {
         participantLabels: presenceViewers.map(presenceViewerLabel),
         pullRequestState,
         primaryStateLabel: primaryState.accessibleLabel,
+        primaryStateTone: primaryState.tone,
         hasBoard: sessionHasBoard(session.key),
       })}
     </openclaw-tooltip>

@@ -459,6 +459,8 @@ export type GatewaySessionRow = SessionRow & {
   activeRunIds?: string[];
   /** An enabled cron job is bound to this session (runs in it or delivers to it). */
   hasAutomation?: boolean;
+  /** Names of enabled automations bound to this session, when projected by the gateway. */
+  automationNames?: string[];
   subagentRunState?: SubagentRunState;
   hasActiveSubagentRun?: boolean;
   startedAt?: number;

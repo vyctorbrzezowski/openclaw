@@ -1440,6 +1440,8 @@ async function createChatPickerScenario(
             {
               createdActor: MOCK_CREATOR_MIRA,
               hasAutomation: true,
+              automationNames: ["Nightly workspace audit"],
+              execCwd: "/Users/peter/Projects/openclaw",
               incognito: true,
               lastMessagePreview: "Reviewing shared workspace changes before publishing",
               placement: {
@@ -1461,6 +1463,7 @@ async function createChatPickerScenario(
     ...sessionRowStressChildren,
     sessionRow(OBSERVER_DEMO_SESSION_KEY, "Session observer demo", baseTime - 3_000, {
       activeRunIds: [OBSERVER_DEMO_RUN_ID],
+      execCwd: "/Users/peter/Projects/openclaw",
       hasActiveRun: true,
       lastReadAt: baseTime + 2_000,
       observerDigest: {
@@ -1474,6 +1477,7 @@ async function createChatPickerScenario(
       status: "running",
     }),
     sessionRow(NARRATION_DEMO_SESSION_KEY, "Sidebar narration demo", baseTime - 15_000, {
+      execCwd: "/Users/peter/Projects/openclaw",
       hasActiveRun: true,
       startedAt: baseTime - 45_000,
       status: "running",

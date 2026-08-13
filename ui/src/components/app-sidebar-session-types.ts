@@ -88,6 +88,7 @@ export type SidebarRecentSession = {
   workspaceConflictCount?: number;
   cloudWorkerStopAction: CloudWorkerStopAction | null;
   hasAutomation: boolean;
+  automationNames?: readonly string[];
   pullRequest?: SessionCatalogPullRequestSummary;
   outboxCount?: number;
   hasComposerDraft?: boolean;

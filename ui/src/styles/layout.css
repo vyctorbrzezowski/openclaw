@@ -3745,7 +3745,7 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-block-start: 12px;
+  margin-block-start: 16px;
 }
 
 .session-row-hover-card__details--secondary {
@@ -3777,11 +3777,6 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   stroke-width: 1.6px;
 }
 
-.session-row-hover-card__detail-icon--avatar .session-owner-chip--row {
-  width: 18px;
-  height: 18px;
-}
-
 .session-row-hover-card__detail-label {
   min-width: 0;
   overflow: hidden;
@@ -3791,6 +3786,24 @@ openclaw-tooltip.sidebar-session-hover-tooltip {
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.session-row-hover-card__detail--danger .session-row-hover-card__detail-icon,
+.session-row-hover-card__detail--danger .session-row-hover-card__detail-label {
+  color: color-mix(in srgb, var(--danger) 82%, var(--text));
+}
+
+.session-row-hover-card__owner-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.session-row-hover-card__owner-label .session-owner-chip--row {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 
 .session-row-hover-card .sidebar-hover-card__divider {

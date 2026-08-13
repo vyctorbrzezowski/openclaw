@@ -9,8 +9,15 @@ import { resolveCloudPlacementIcon } from "./session-row-badges.ts";
 
 type HoverCardDetail = {
   icon: TemplateResult | ReturnType<typeof renderSessionOwnerChip>;
+  label: string | TemplateResult;
+  tone?: "danger";
+};
+
+type SessionHoverCardOwner = {
+  actor: SessionCreatedActor;
+  attribution: "created" | "archived";
   label: string;
-  avatar?: boolean;
+  name: string;
 };
 
 function basename(path: string | undefined): string | undefined {
@@ -19,30 +26,37 @@ function basename(path: string | undefined): string | undefined {
 }
 
 function renderDetail(detail: HoverCardDetail) {
-  return html`<div class="session-row-hover-card__detail">
-    <span
-      class="session-row-hover-card__detail-icon ${detail.avatar
-        ? "session-row-hover-card__detail-icon--avatar"
-        : ""}"
-      aria-hidden="true"
-      >${detail.icon}</span
-    >
+  return html`<div
+    class="session-row-hover-card__detail ${detail.tone === "danger"
+      ? "session-row-hover-card__detail--danger"
+      : ""}"
+  >
+    <span class="session-row-hover-card__detail-icon" aria-hidden="true">${detail.icon}</span>
     <span class="session-row-hover-card__detail-label">${detail.label}</span>
   </div>`;
+}
+
+function renderOwnerLabel(owner: SessionHoverCardOwner) {
+  const nameOffset = owner.label.lastIndexOf(owner.name);
+  const prefix = nameOffset >= 0 ? owner.label.slice(0, nameOffset).trimEnd() : owner.label;
+  const suffix =
+    nameOffset >= 0 ? owner.label.slice(nameOffset + owner.name.length).trimStart() : "";
+  return html`<span class="session-row-hover-card__owner-label">
+    <span>${prefix}</span>
+    ${renderSessionOwnerChip(owner.actor, "row", owner.attribution)}
+    <span>${owner.name}${suffix ? ` ${suffix}` : ""}</span>
+  </span>`;
 }
 
 export function renderSessionRowHoverCard(params: {
   session: SidebarRecentSession;
   label: string;
   meta: string;
-  owner?: {
-    actor: SessionCreatedActor;
-    attribution: "created" | "archived";
-    label: string;
-  };
+  owner?: SessionHoverCardOwner;
   participantLabels: readonly string[];
   pullRequestState: SessionPullRequestIndicatorState;
   primaryStateLabel: string;
+  primaryStateTone: "neutral" | "info" | "warning" | "danger" | "success";
   hasBoard: boolean;
 }) {
   const { session } = params;
@@ -58,9 +72,8 @@ export function renderSessionRowHoverCard(params: {
     ...(params.owner
       ? [
           {
-            icon: renderSessionOwnerChip(params.owner.actor, "row", params.owner.attribution),
-            label: params.owner.label,
-            avatar: true,
+            icon: icons.user,
+            label: renderOwnerLabel(params.owner),
           },
         ]
       : []),
@@ -81,8 +94,15 @@ export function renderSessionRowHoverCard(params: {
           },
         ]
       : []),
-    ...(session.hasAutomation
-      ? [{ icon: icons.clock, label: t("sessionsView.automationAttached") }]
+    ...(session.automationNames && session.automationNames.length > 0
+      ? [
+          {
+            icon: icons.clock,
+            label: t("sessionsView.automationNamed", {
+              name: session.automationNames.join(", "),
+            }),
+          },
+        ]
       : []),
     ...(session.placementState
       ? [
@@ -91,15 +111,24 @@ export function renderSessionRowHoverCard(params: {
               session.placementState,
               (session.workspaceConflictCount ?? 0) > 0,
             ),
-            label: t("sessionsView.cloudWorkerPlacement", { state: session.placementState }),
+            label:
+              session.placementState === "reclaimed"
+                ? t("sessionsView.cloudWorkerReclaimed")
+                : t("sessionsView.cloudWorkerPlacement", { state: session.placementState }),
           },
         ]
       : []),
     ...(params.hasBoard
       ? [{ icon: icons.layoutDashboard, label: t("sessionsView.dashboardAvailable") }]
       : []),
-    ...(params.primaryStateLabel
-      ? [{ icon: icons.activity, label: params.primaryStateLabel }]
+    ...(params.primaryStateLabel && params.primaryStateTone === "danger"
+      ? [
+          {
+            icon: icons.alertTriangle,
+            label: params.primaryStateLabel,
+            tone: "danger" as const,
+          },
+        ]
       : []),
   ];
 
