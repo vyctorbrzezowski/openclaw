@@ -73,6 +73,7 @@ const NARRATION_DEMO_SESSION_KEY = "agent:main:sidebar-narration-demo";
 const NARRATION_DEMO_RUN_ID = "mock-sidebar-narration-run";
 const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
 const OBSERVER_DEMO_RUN_ID = "mock-session-observer-run";
+const MULTI_USER_DEMO_SESSION_KEY = "agent:main:team-release-review";
 const CUSTODIAN_CHAT_REPLY_DELAY_MS = 600;
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -1415,6 +1416,9 @@ async function createChatPickerScenario(
               visibility: "draft",
             },
           ),
+          sessionRow(MULTI_USER_DEMO_SESSION_KEY, "Team release review", baseTime - 12_500, {
+            createdActor: MOCK_CREATOR_MIRA,
+          }),
           sessionRow(
             "agent:main:long-metadata",
             "A deliberately long session title that must preserve a useful readable title area",
@@ -1651,9 +1655,29 @@ async function createChatPickerScenario(
         id: selfProfile.id,
         name: selfProfile.displayName ?? undefined,
         email: selfProfile.emails[0],
+        watchedSessions: fixture === "session-rows" ? [MULTI_USER_DEMO_SESSION_KEY] : [],
       },
-      { id: "presence-colin", name: "Colin", email: "colin@example.com" },
-      { id: "presence-patricia", email: "patricia.erichsen@example.com" },
+      {
+        id: "presence-colin",
+        name: "Colin",
+        email: "colin@example.com",
+        watchedSessions: fixture === "session-rows" ? [MULTI_USER_DEMO_SESSION_KEY] : [],
+      },
+      {
+        id: "presence-patricia",
+        email: "patricia.erichsen@example.com",
+        watchedSessions: fixture === "session-rows" ? [MULTI_USER_DEMO_SESSION_KEY] : [],
+      },
+      ...(fixture === "session-rows"
+        ? [
+            {
+              id: "presence-avery",
+              name: "Avery",
+              email: "avery@example.com",
+              watchedSessions: [MULTI_USER_DEMO_SESSION_KEY],
+            },
+          ]
+        : []),
     ],
     methodResponses: {
       ...buildBackgroundTasksMock(baseTime),
