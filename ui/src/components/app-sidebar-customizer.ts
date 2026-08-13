@@ -70,6 +70,9 @@ export function buildSidebarCustomizerEntries(params: {
     });
   }
   return items.toSorted((a, b) => {
+    if (a.id === "fixed:home" || b.id === "fixed:home") {
+      return a.id === "fixed:home" ? -1 : 1;
+    }
     const aIndex = order.get(a.entry!);
     const bIndex = order.get(b.entry!);
     if (aIndex !== undefined && bIndex !== undefined) {
@@ -155,7 +158,9 @@ function renderCustomizerItem(item: SidebarCustomizerItem, params: SidebarCustom
         ? ""
         : "sidebar-customizer__row--hidden"} ${!draggable
         ? "sidebar-customizer__row--fixed"
-        : ""} ${!toggleable ? "sidebar-customizer__row--disabled" : ""}"
+        : ""} ${!toggleable ? "sidebar-customizer__row--disabled" : ""} ${item.kind === "section"
+        ? "sidebar-customizer__row--section"
+        : ""}"
       data-iconless=${item.icon ? "false" : "true"}
       role="listitem"
       draggable=${draggable ? "true" : "false"}
@@ -196,11 +201,21 @@ function renderCustomizerItem(item: SidebarCustomizerItem, params: SidebarCustom
       }}
       @dragend=${() => params.onDragEnd(item.kind)}
     >
-      <span class="sidebar-customizer__grip" aria-hidden="true">${icons.gripVertical}</span>
+      ${draggable
+        ? html`<span class="sidebar-customizer__grip" aria-hidden="true"
+            >${icons.gripVertical}</span
+          >`
+        : nothing}
       ${item.icon
         ? html`<span class="sidebar-customizer__item-icon" aria-hidden="true">${item.icon}</span>`
         : nothing}
-      <span class="sidebar-customizer__label">${item.label}</span>
+      <span
+        class=${classMap({
+          "sidebar-customizer__label": true,
+          "sidebar-customizer__label--section": item.kind === "section",
+        })}
+        >${item.label}</span
+      >
       <button
         type="button"
         class="sidebar-customizer__visibility"
