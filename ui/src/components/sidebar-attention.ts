@@ -406,9 +406,18 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
         @click=${() => condition.action && this.runAction(condition.action)}
       >
         <span class="sidebar-status-condition__icon" aria-hidden="true">${icons[condition.icon]}</span>
-        <span class="sidebar-status-condition__title" title=${condition.title}
-          >${condition.title}</span
-        >
+        <span class="sidebar-status-condition__title" title=${condition.title}>
+          <span class="sidebar-status-condition__entity">${condition.entityLabel}</span>
+          <span class="sidebar-status-condition__separator" aria-hidden="true">·</span>
+          <span class="sidebar-status-condition__state">${condition.stateLabel}</span>
+        </span>
+        ${condition.action
+          ? condition.source.kind === "provider"
+            ? html`<span class="sidebar-status-condition__action">${t("attention.reconnect")}</span>`
+            : html`<span class="sidebar-status-condition__chevron" aria-hidden="true"
+                >${icons.chevronRight}</span
+              >`
+          : nothing}
       </button>
     `;
   }

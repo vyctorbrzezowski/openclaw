@@ -29,6 +29,8 @@ export type SidebarStatusCondition = {
   severity: SidebarStatusSeverity;
   icon: IconName;
   title: string;
+  entityLabel: string;
+  stateLabel: string;
   action?: SidebarStatusAction;
   raisedAt: number;
 };
@@ -119,42 +121,33 @@ export function buildSidebarSystemStatus(params: {
   );
   const automationIds = new Set([...failedCron, ...overdueCron].map((job) => job.id));
 
-  if (repeatedlyFailingCron.length > 0) {
-    const count = repeatedlyFailingCron.length;
+  for (const job of repeatedlyFailingCron) {
+    const name = cronJobName(job);
     conditions.push({
-      id: "automation.failing-repeatedly",
-      source: { kind: "automation", id: "failing-repeatedly", label: t("attention.automations") },
+      id: `automation.failing-repeatedly.${job.id}`,
+      source: { kind: "automation", id: job.id, label: name },
       severity: "warning",
       icon: "calendarClock",
-      title: t(
-        count === 1
-          ? "attention.automationFailedRepeatedly"
-          : "attention.automationsFailedRepeatedly",
-        { count: String(count) },
-      ),
+      title: t("attention.automationFailingRepeatedlyNamed", { name }),
+      entityLabel: name,
+      stateLabel: t("attention.failingRepeatedly"),
       action: { kind: "navigate", routeId: "cron" },
-      raisedAt: Math.max(
-        ...repeatedlyFailingCron.map((job) =>
-          Math.min(job.state?.lastRunAtMs ?? params.now, params.now),
-        ),
-      ),
+      raisedAt: Math.min(job.state?.lastRunAtMs ?? params.now, params.now),
     });
   }
 
-  if (overdueCron.length > 0) {
-    const count = overdueCron.length;
+  for (const job of overdueCron) {
+    const name = cronJobName(job);
     conditions.push({
-      id: "automation.overdue",
-      source: { kind: "automation", id: "overdue", label: t("attention.automations") },
+      id: `automation.overdue.${job.id}`,
+      source: { kind: "automation", id: job.id, label: name },
       severity: "warning",
       icon: "calendarClock",
-      title: t(count === 1 ? "attention.automationOverdue" : "attention.automationsOverdue", {
-        count: String(count),
-      }),
+      title: t("attention.automationOverdueNamed", { name }),
+      entityLabel: name,
+      stateLabel: t("attention.overdue"),
       action: { kind: "navigate", routeId: "cron" },
-      raisedAt: Math.max(
-        ...overdueCron.map((job) => Math.min(job.state?.nextRunAtMs ?? params.now, params.now)),
-      ),
+      raisedAt: Math.min(job.state?.nextRunAtMs ?? params.now, params.now),
     });
   }
 
@@ -168,7 +161,9 @@ export function buildSidebarSystemStatus(params: {
       source: { kind: "provider", id: "expired", label: providerNames },
       severity: "blocking",
       icon: "plug",
-      title: t("attention.modelAuthExpired", { providers: providerNames }),
+      title: t("attention.providerAuthExpired", { providers: providerNames }),
+      entityLabel: providerNames,
+      stateLabel: t("attention.authExpired"),
       action: { kind: "navigate", routeId: "model-providers" },
       raisedAt: params.now,
     });
@@ -182,6 +177,10 @@ export function buildSidebarSystemStatus(params: {
       severity: "warning",
       icon: "shieldCheck",
       title: t(count === 1 ? "attention.pendingApproval" : "attention.pendingApprovals", {
+        count: String(count),
+      }),
+      entityLabel: t("attention.approvals"),
+      stateLabel: t(count === 1 ? "attention.pendingApprovalState" : "attention.pendingApprovalsState", {
         count: String(count),
       }),
       action: { kind: "openApprovals" },

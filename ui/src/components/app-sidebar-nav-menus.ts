@@ -23,6 +23,27 @@ import { icons, type IconName } from "./icons.ts";
 import { consumeDropdownKeyboardDismissal, trackDropdownKeyboardDismissal } from "./web-awesome.ts";
 
 type SidebarMenuPosition = { x: number; y: number };
+type SidebarAutomationAttention = { count: number; severity: "danger" | "warning" | null };
+
+function renderAutomationAttentionBadge(attention: SidebarAutomationAttention | undefined) {
+  if (!attention || attention.count <= 0) {
+    return nothing;
+  }
+  const label = t(
+    attention.count === 1
+      ? "attention.automationNeedsAttention"
+      : "attention.automationsNeedAttention",
+    { count: String(attention.count) },
+  );
+  return html`<openclaw-tooltip .content=${label}>
+    <span
+      class="sidebar-nav-health-badge sidebar-nav-health-badge--${attention.severity ?? "warning"}"
+      role="status"
+      aria-label=${label}
+      >${attention.count > 9 ? "9+" : attention.count}</span
+    >
+  </openclaw-tooltip>`;
+}
 
 /** Settings routes highlight Settings; hub tabs highlight their hub entry. */
 export function isSidebarRouteActive(
@@ -61,7 +82,7 @@ type SidebarNavRouteParams = {
   onNavigate: () => void;
   onPreload: (event: Event, immediate?: boolean) => void;
   onCancelPreload: (event: Event) => void;
-  attention?: { count: number; severity: "danger" | "warning" | null };
+  attention?: SidebarAutomationAttention;
 };
 
 export function renderSidebarNavRoute(params: SidebarNavRouteParams) {
@@ -86,29 +107,7 @@ export function renderSidebarNavRoute(params: SidebarNavRouteParams) {
         >${icons[navigationIconForRoute(params.routeId)]}</span
       >
       <span class="nav-item__text">${titleForRoute(params.routeId)}</span>
-      ${params.attention && params.attention.count > 0
-        ? html`<openclaw-tooltip
-            .content=${t(
-              params.attention.count === 1
-                ? "attention.automationNeedsAttention"
-                : "attention.automationsNeedAttention",
-              { count: String(params.attention.count) },
-            )}
-          >
-            <span
-              class="sidebar-nav-health-badge sidebar-nav-health-badge--${params.attention
-                .severity ?? "warning"}"
-              role="status"
-              aria-label=${t(
-                params.attention.count === 1
-                  ? "attention.automationNeedsAttention"
-                  : "attention.automationsNeedAttention",
-                { count: String(params.attention.count) },
-              )}
-              >${params.attention.count > 9 ? "9+" : params.attention.count}</span
-            >
-          </openclaw-tooltip>`
-        : nothing}
+      ${renderAutomationAttentionBadge(params.attention)}
     </a>
   `;
 }
@@ -154,6 +153,7 @@ type SidebarMoreMenuParams = SidebarMenuNavigationHandlers & {
   activeRouteId: NavigationRouteId | undefined;
   activeWorkboardBoardId: string;
   sidebarEntries: readonly string[];
+  automationAttention: SidebarAutomationAttention;
   isRouteEnabled: (routeId: NavigationRouteId) => boolean;
   onEditPinnedItems: () => void;
   onTabAway: () => void;
@@ -185,6 +185,9 @@ function renderMoreMenuRoute(params: SidebarMoreMenuParams, routeId: SidebarNavR
           >${icons[navigationIconForRoute(routeId)]}</span
         >
         <span class="sidebar-customize-menu__text">${titleForRoute(routeId)}</span>
+        ${routeId === "cron"
+          ? renderAutomationAttentionBadge(params.automationAttention)
+          : nothing}
       </a>
     </wa-dropdown-item>
   `;

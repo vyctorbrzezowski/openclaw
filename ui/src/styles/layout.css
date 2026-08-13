@@ -1035,7 +1035,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-shell__footer {
   flex-shrink: 0;
-  padding: 4px 0 0;
+  padding: 6px 0 0;
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
@@ -1047,7 +1047,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   width: 100%;
   min-height: 36px;
   padding: 0 9px;
-  margin-bottom: var(--space-1);
+  margin-bottom: 2px;
   border: 0;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
@@ -1198,59 +1198,64 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 .sidebar-status-panel__conditions,
 .sidebar-status-panel__events {
   display: flex;
+  flex-direction: column;
+}
+
+.sidebar-status-panel__conditions {
   width: calc(100% + 16px);
   margin-inline: -8px;
-  flex-direction: column;
-  gap: 3px;
 }
 
 .sidebar-status-panel__events {
+  width: 100%;
   min-height: 0;
-  margin-top: 6px;
+  margin-top: 4px;
   overflow-y: auto;
 }
 
-.sidebar-status-condition,
-.sidebar-status-event {
+.sidebar-status-condition {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
   width: 100%;
   min-height: 40px;
-  padding: 8px;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-hover) 42%, transparent);
-  transition: background var(--duration-fast) ease;
-}
-
-.sidebar-status-condition {
+  padding: 6px 8px;
   border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: inherit;
   font: inherit;
   text-align: start;
   cursor: var(--cursor-action);
+  transition: background var(--duration-fast) ease;
 }
 
-.sidebar-status-condition:hover,
-.sidebar-status-event:hover {
-  background: color-mix(in srgb, var(--bg-hover) 78%, transparent);
+.sidebar-status-condition:hover {
+  background: color-mix(in srgb, var(--bg-hover) 56%, transparent);
 }
 
 .sidebar-status-condition__icon {
   display: inline-flex;
+  align-items: center;
   align-self: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
   color: var(--warn);
 }
 
 .sidebar-status-condition--blocking .sidebar-status-condition__icon {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
 
 .sidebar-status-condition__icon svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8px;
@@ -1264,6 +1269,69 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar-status-condition__title {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sidebar-status-condition__entity {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-status-condition__separator,
+.sidebar-status-condition__state {
+  flex: none;
+  color: var(--muted);
+  font-weight: 450;
+}
+
+.sidebar-status-condition__action,
+.sidebar-status-condition__chevron {
+  flex: none;
+  color: var(--muted);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.sidebar-status-condition__action {
+  padding: 4px 7px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: var(--control-ui-text-xs);
+  font-weight: 600;
+}
+
+.sidebar-status-condition:hover .sidebar-status-condition__action {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.sidebar-status-condition__chevron {
+  display: inline-flex;
+}
+
+.sidebar-status-condition:hover .sidebar-status-condition__chevron {
+  color: var(--text);
+}
+
+.sidebar-status-condition__chevron svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7px;
 }
 
 .sidebar-status-panel__clear-all,
@@ -1297,7 +1365,12 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 }
 
 .sidebar-status-event {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
   padding: 0;
+  background: transparent;
 }
 
 .sidebar-status-event__open {
@@ -1306,7 +1379,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 8px 8px 32px;
+  padding: 6px 0;
   border: 0;
   background: transparent;
   text-align: start;
@@ -1330,6 +1403,22 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   height: 28px;
   margin-right: 0;
   border-radius: var(--radius-sm);
+  opacity: 0;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease;
+}
+
+.sidebar-status-event:hover .sidebar-status-event__clear,
+.sidebar-status-event:focus-within .sidebar-status-event__clear {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .sidebar-status-event__clear {
+    opacity: 1;
+  }
 }
 
 .sidebar-status-event__clear svg {
@@ -1696,8 +1785,9 @@ body.update-dialog-open .sidebar-update-card__status {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 24px;
+  min-height: 32px;
   padding: 0 10px 0 8px;
+  border-radius: var(--radius-md);
   color: color-mix(in srgb, var(--muted) 72%, var(--text) 28%);
 }
 
@@ -1739,29 +1829,21 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-session-group-toggle__icon {
   display: inline-flex;
-  opacity: 0.75;
-}
-
-.sidebar-session-group-toggle__lead--branded .sidebar-session-group-toggle__icon {
   opacity: 0;
 }
 
-.sidebar-recent-sessions__head:hover
-  .sidebar-session-group-toggle__lead--branded
-  .sidebar-session-catalog-provider-icon,
-.sidebar-recent-sessions__head:has(:focus-visible)
+.sidebar-session-group-toggle[aria-expanded="false"] .sidebar-session-group-toggle__icon {
+  opacity: 0.75;
+}
+
+.sidebar-session-group-toggle__lead--branded .sidebar-session-catalog-provider-icon {
+  opacity: 1;
+}
+
+.sidebar-session-group-toggle[aria-expanded="false"]
   .sidebar-session-group-toggle__lead--branded
   .sidebar-session-catalog-provider-icon {
   opacity: 0;
-}
-
-.sidebar-recent-sessions__head:hover
-  .sidebar-session-group-toggle__lead--branded
-  .sidebar-session-group-toggle__icon,
-.sidebar-recent-sessions__head:has(:focus-visible)
-  .sidebar-session-group-toggle__lead--branded
-  .sidebar-session-group-toggle__icon {
-  opacity: 0.75;
 }
 
 .sidebar-session-group-toggle__icon svg {
@@ -1786,29 +1868,22 @@ body.update-dialog-open .sidebar-update-card__status {
   opacity: 0.7;
 }
 
-.sidebar-session-group-count--error {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--warn);
-}
-
-.sidebar-session-group-count--error svg {
-  width: 12px;
-  height: 12px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.8px;
-}
-
 .sidebar-session-group-attention {
   width: 6px;
   height: 6px;
   flex: none;
-  margin-left: 4px;
+  margin-left: 0;
   border-radius: 50%;
   background: var(--warn);
   box-shadow: 0 0 6px color-mix(in srgb, var(--warn) 48%, transparent);
+}
+
+.sidebar-session-group-status {
+  display: inline-grid;
+  width: 16px;
+  height: 26px;
+  flex: 0 0 16px;
+  place-items: center;
 }
 
 .sidebar-session-catalog-load-more {
@@ -1914,8 +1989,9 @@ body.update-dialog-open .sidebar-update-card__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
   flex: 0 0 auto;
   border: none;
   border-radius: var(--radius-sm);
@@ -1944,8 +2020,8 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-session-group-actions svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.7px;
@@ -1954,16 +2030,6 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 @media (hover: none), (pointer: coarse) {
-  /* Touch has no hover, so the chevron must be the resting state or
-     catalog collapsibility becomes undiscoverable. */
-  .sidebar-session-group-toggle__lead--branded .sidebar-session-catalog-provider-icon {
-    opacity: 0;
-  }
-
-  .sidebar-session-group-toggle__lead--branded .sidebar-session-group-toggle__icon {
-    opacity: 0.75;
-  }
-
   .sidebar-session-group-actions {
     opacity: 1;
     pointer-events: auto;

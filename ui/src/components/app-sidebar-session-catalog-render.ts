@@ -217,15 +217,9 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
                   >${collapsed ? icons.chevronRight : icons.chevronDown}</span
                 >
               </span>
-              ${renderCatalogHeaderStatus(hasActiveRun, hasUnread)}
-              ${hasError || (collapsed && rows.length > 0)
-                ? html`<span
-                    class="sidebar-session-group-count ${hasError
-                      ? "sidebar-session-group-count--error"
-                      : ""}"
-                    data-session-catalog-error=${hasError ? catalog.id : nothing}
-                    aria-hidden="true"
-                    >${hasError ? icons.alertTriangle : rows.length}</span
+              ${collapsed && rows.length > 0 && !hasError && !hasActiveRun && !hasUnread
+                ? html`<span class="sidebar-session-group-count" aria-hidden="true"
+                    >${rows.length}</span
                   >`
                 : nothing}
             </button>
@@ -261,6 +255,19 @@ export function renderSessionCatalogGroups(params: SessionCatalogGroupsParams) {
                 >
                   ${icons.plus}
                 </button>`
+              : nothing}
+            ${hasError || hasActiveRun || hasUnread
+              ? html`<span class="sidebar-session-group-status">
+                  ${hasError
+                    ? html`<span
+                        class="sidebar-session-group-attention"
+                        role="img"
+                        aria-label=${errorHelp}
+                        title=${errorHelp}
+                        data-session-catalog-error=${catalog.id}
+                      ></span>`
+                    : renderCatalogHeaderStatus(hasActiveRun, hasUnread)}
+                </span>`
               : nothing}
           `,
         })}

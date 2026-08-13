@@ -403,6 +403,7 @@ export function renderSidebarMoreMenuForController(controller: SidebarMenusContr
     activeRouteId: host.activeRouteId,
     activeWorkboardBoardId: activeWorkboardBoardIsPinned(host) ? host.activeWorkboardBoardId : "",
     sidebarEntries: host.sidebarEntries,
+    automationAttention: host.automationAttention,
     isRouteEnabled: (routeId) => controller.isRouteEnabled(routeId),
     onTabAway: () => trigger?.focus(),
     onClose: (restoreFocus) => {
