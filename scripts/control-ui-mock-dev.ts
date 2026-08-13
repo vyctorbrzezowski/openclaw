@@ -681,7 +681,7 @@ function buildProfileUsageMocks(baseTime: number) {
  */
 function buildConfigMocks(options: { swarmEnabled?: boolean } = {}) {
   const config = {
-    ui: { prefs: { locale: "en" } },
+    ui: { prefs: { locale: "en", theme: "knot" } },
     logging: { level: "info", consoleTimestamps: true },
     messages: { queueLimit: 5, responsePrefix: "" },
     gateway: { port: 18789, bind: "127.0.0.1" },
