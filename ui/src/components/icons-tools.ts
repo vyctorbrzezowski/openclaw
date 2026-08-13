@@ -9,6 +9,7 @@ import { html, svg, type SVGTemplateResult, type TemplateResult } from "lit";
 export function strokeIcon(body: SVGTemplateResult): TemplateResult {
   return html`
     <svg
+      data-lucide-icon=""
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

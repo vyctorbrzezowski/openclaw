@@ -1513,6 +1513,7 @@ async function createChatPickerScenario(
     sessionRow("agent:main:tax-research", "Tax filing research", baseTime - 60_000, {
       execCwd: "/Users/peter/Projects/openclaw",
       hasActiveRun: true,
+      hasActiveSubagentRun: true,
       status: "running",
       childSessions: ["agent:main:subagent:tax-receipts"],
       pinned: true,

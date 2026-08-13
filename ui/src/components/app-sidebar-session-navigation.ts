@@ -738,9 +738,10 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
   };
 
   isSessionChildrenExpanded(session: SidebarRecentSession): boolean {
+    const hasActiveChildren = session.containsActiveDescendant || session.runningChildCount > 0;
     return (
       this.expandedChildSessionKeys.has(session.key) ||
-      (session.containsActiveDescendant && !this.collapsedActiveChildSessionKeys.has(session.key))
+      (hasActiveChildren && !this.collapsedActiveChildSessionKeys.has(session.key))
     );
   }
 
@@ -751,7 +752,7 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
     if (this.isSessionChildrenExpanded(session)) {
       next.delete(session.key);
       fullyShown.delete(session.key);
-      if (session.containsActiveDescendant) {
+      if (session.containsActiveDescendant || session.runningChildCount > 0) {
         collapsedActive.add(session.key);
       }
       this.sessionData.discardEmptyChildSessionSnapshot(session.key);

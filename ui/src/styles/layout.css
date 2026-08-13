@@ -920,6 +920,8 @@ openclaw-settings-save-indicator {
 .sidebar-shell {
   --sidebar-pad-x: 10px;
   --sidebar-row-inset: var(--sidebar-pad-x);
+  --sidebar-lucide-icon-size: 16px;
+  --sidebar-lucide-stroke-width: 1.5px;
   /* Operational glyphs and avatars share one footprint. Circular run artwork
      is optically smaller; tiny dots and disclosure chevrons keep their scale. */
   --sidebar-operational-icon-size: 16px;
@@ -937,6 +939,29 @@ openclaw-settings-save-indicator {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+
+/* Sidebar Lucide experiment: keep one optical weight across the shell and
+   every overlay it owns without rewriting brand marks, avatars, status dots,
+   spinners, or imported product glyphs. Overlay roots are named explicitly
+   because top-layer menus are not reliably scoped by sidebar ancestry. */
+:is(
+    .sidebar-shell,
+    .settings-sidebar,
+    .sidebar-customize-menu,
+    .sidebar-status-panel,
+    .session-menu,
+    .sidebar-session-sort-menu,
+    .sidebar-hover-card,
+    .session-row-hover-card,
+    .shell-chrome-controls__nav-toggle,
+    .topbar-nav-toggle,
+    .chat-pane__nav-toggle
+  )
+  svg[data-lucide-icon] {
+  max-width: var(--sidebar-lucide-icon-size, 16px);
+  max-height: var(--sidebar-lucide-icon-size, 16px);
+  stroke-width: var(--sidebar-lucide-stroke-width, 1.5px);
 }
 
 .sidebar-brand {
@@ -1688,12 +1713,13 @@ body.update-dialog-open .sidebar-update-card__status {
 .sidebar-shell__footer .sidebar-update-card__action:hover:not(:disabled),
 .sidebar-shell__footer .sidebar-update-card__action:focus-visible {
   border-color: transparent;
-  background: color-mix(in srgb, var(--accent-subtle) 88%, var(--bg-elevated));
+  background: color-mix(in srgb, var(--accent-subtle) 72%, var(--bg-hover));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .sidebar-shell__footer .sidebar-update-card__icon {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   background: transparent;
   color: var(--accent);
 }
