@@ -4,11 +4,13 @@ import { repoName } from "../lib/session-display.ts";
 import type { SidebarRecentSession } from "./app-sidebar-session-types.ts";
 import { icons } from "./icons.ts";
 import type { SessionPullRequestIndicatorState } from "./session-menu-work.ts";
+import { renderSessionOwnerChip, type SessionCreatedActor } from "./session-owner-chip.ts";
 import { resolveCloudPlacementIcon } from "./session-row-badges.ts";
 
 type HoverCardDetail = {
-  icon: TemplateResult;
+  icon: TemplateResult | ReturnType<typeof renderSessionOwnerChip>;
   label: string;
+  avatar?: boolean;
 };
 
 function basename(path: string | undefined): string | undefined {
@@ -18,7 +20,13 @@ function basename(path: string | undefined): string | undefined {
 
 function renderDetail(detail: HoverCardDetail) {
   return html`<div class="session-row-hover-card__detail">
-    <span class="session-row-hover-card__detail-icon" aria-hidden="true">${detail.icon}</span>
+    <span
+      class="session-row-hover-card__detail-icon ${detail.avatar
+        ? "session-row-hover-card__detail-icon--avatar"
+        : ""}"
+      aria-hidden="true"
+      >${detail.icon}</span
+    >
     <span class="session-row-hover-card__detail-label">${detail.label}</span>
   </div>`;
 }
@@ -27,7 +35,11 @@ export function renderSessionRowHoverCard(params: {
   session: SidebarRecentSession;
   label: string;
   meta: string;
-  ownerLabel?: string;
+  owner?: {
+    actor: SessionCreatedActor;
+    attribution: "created" | "archived";
+    label: string;
+  };
   participantLabels: readonly string[];
   pullRequestState: SessionPullRequestIndicatorState;
   primaryStateLabel: string;
@@ -43,7 +55,15 @@ export function renderSessionRowHoverCard(params: {
     ...(branch ? [{ icon: icons.gitFork, label: branch }] : []),
   ];
   const operationalDetails: HoverCardDetail[] = [
-    ...(params.ownerLabel ? [{ icon: icons.users, label: params.ownerLabel }] : []),
+    ...(params.owner
+      ? [
+          {
+            icon: renderSessionOwnerChip(params.owner.actor, "row", params.owner.attribution),
+            label: params.owner.label,
+            avatar: true,
+          },
+        ]
+      : []),
     ...(params.participantLabels.length > 0
       ? [{ icon: icons.users, label: params.participantLabels.join(", ") }]
       : []),

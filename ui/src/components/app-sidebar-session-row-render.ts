@@ -491,13 +491,17 @@ export function renderRecentSession(params: {
         session,
         label,
         meta,
-        ownerLabel: ownerActor?.id
-          ? t(
-              ownerAttribution === "archived"
-                ? "sessionsView.archivedBy"
-                : "sessionsView.createdBy",
-              { name: ownerActor.label || ownerActor.id },
-            )
+        owner: ownerActor?.id
+          ? {
+              actor: ownerActor,
+              attribution: ownerAttribution,
+              label: t(
+                ownerAttribution === "archived"
+                  ? "sessionsView.archivedBy"
+                  : "sessionsView.createdBy",
+                { name: ownerActor.label || ownerActor.id },
+              ),
+            }
           : undefined,
         participantLabels: presenceViewers.map(presenceViewerLabel),
         pullRequestState,
