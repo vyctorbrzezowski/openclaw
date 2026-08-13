@@ -1,4 +1,4 @@
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { ref } from "lit/directives/ref.js";
 import type { SessionObserverDigest } from "../../../packages/gateway-protocol/src/schema/sessions.js";
@@ -69,7 +69,7 @@ export function resolveSidebarSessionSubtitle(params: {
 
 export function renderSidebarSessionSubtitle(
   value: SidebarSessionSubtitle,
-  options: { approval?: boolean } = {},
+  options: { approval?: boolean; leadingIcon?: TemplateResult } = {},
 ) {
   if (!value.subtitle) {
     return nothing;
@@ -86,8 +86,12 @@ export function renderSidebarSessionSubtitle(
     : html`<span
         class="sidebar-recent-session__subtitle ${options.approval
           ? "sidebar-recent-session__subtitle--approval"
-          : ""}"
+          : ""} ${options.leadingIcon ? "sidebar-recent-session__subtitle--with-icon" : ""}"
         ${ref(createOverflowFadeRef())}
-        >${value.subtitle}</span
+        >${options.leadingIcon
+          ? html`<span class="sidebar-recent-session__subtitle-icon" aria-hidden="true"
+              >${options.leadingIcon}</span
+            >`
+          : nothing}${value.subtitle}</span
       >`;
 }

@@ -5863,6 +5863,21 @@ td.data-table-key-col {
   margin-block-start: 1px;
 }
 
+.sidebar-recent-session__subtitle--with-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sidebar-recent-session__subtitle-icon,
+.sidebar-recent-session__subtitle-icon svg {
+  display: inline-flex;
+  width: 11px;
+  height: 11px;
+  flex: 0 0 11px;
+  color: var(--muted);
+}
+
 .sidebar-catalog-session__git-context {
   display: flex;
   align-items: center;

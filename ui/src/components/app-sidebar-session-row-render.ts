@@ -353,7 +353,13 @@ export function renderRecentSession(params: {
             </span>
             ${renderSidebarSessionSubtitle(
               { subtitle: visibleSubtitle, narration: session.isChild ? null : narration },
-              { approval: approvalIsExplicitInSubtitle },
+              {
+                approval: approvalIsExplicitInSubtitle,
+                leadingIcon:
+                  session.worktree?.branch && visibleSubtitle === session.worktree.branch
+                    ? icons.gitBranch
+                    : undefined,
+              },
             )}
           </span>
         </a>
