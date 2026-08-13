@@ -422,7 +422,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
     const count = group.count > 99 ? "99+" : String(group.count);
     const meta =
       group.eventType === "run_failed"
-        ? `${group.count === 1 ? t("attention.fail") : t("attention.fails", { count })} · ${relative}`
+        ? `${group.count === 1 ? t("attention.failure") : t("attention.failures", { count })} - ${relative}`
         : relative;
     return html`
       <div class="sidebar-status-event">
