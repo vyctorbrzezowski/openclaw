@@ -3703,9 +3703,8 @@ export const en: TranslationMap = {
     recentActivity: "Recent activity",
     clear: "Clear",
     clearAll: "Clear all",
-    failed: "Failed",
-    failedTwice: "Failed twice in a row",
-    failedRepeatedly: "Failed {count} times in a row",
+    fail: "1 fail",
+    fails: "{count} fails",
     noRecentActivity: "No recent activity",
   },
   approvalHistory: {
