@@ -6185,6 +6185,7 @@ td.data-table-key-col {
   flex: none;
   opacity: 0.62;
   pointer-events: auto;
+  transform: translateY(1px);
 }
 
 .sidebar-child-session-toggle[aria-expanded="true"] {
