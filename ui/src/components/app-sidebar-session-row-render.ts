@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { keyed } from "lit/directives/keyed.js";
+import { ref } from "lit/directives/ref.js";
 import type { SessionObserverDigest } from "../../../packages/gateway-protocol/src/schema/sessions.js";
 import type { NavigationRouteId } from "../app-navigation.ts";
 import { sessionHasPendingApproval } from "../app/approval-presentation.ts";
@@ -10,6 +11,7 @@ import { t } from "../i18n/index.ts";
 import { sessionHasBoard } from "../lib/board/provider.ts";
 import { formatDurationCompact } from "../lib/format.ts";
 import { handleContextMenuEvent } from "../lib/keyboard-shortcuts.ts";
+import { createOverflowFadeRef } from "../lib/overflow-fade.ts";
 import { writeSessionDragData } from "../lib/sessions/drag.ts";
 import type { SidebarSessionsGrouping } from "../lib/sessions/grouping.ts";
 import type { NewSessionTarget } from "../pages/new-session/location.ts";
@@ -314,7 +316,9 @@ export function renderRecentSession(params: {
                   >${t("chat.sessionSharing.draft")}</span
                 >`
               : nothing}
-            <span class="sidebar-recent-session__name">${label}</span>
+            <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
+              >${label}</span
+            >
             ${session.archived
               ? html`<span
                   class="session-row-qualifier session-row-qualifier--icon"

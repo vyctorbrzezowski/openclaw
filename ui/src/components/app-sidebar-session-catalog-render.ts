@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { ref } from "lit/directives/ref.js";
 import type {
   SessionCatalog,
   SessionCatalogHost,
@@ -10,6 +11,7 @@ import type { ApplicationNavigationOptions } from "../app/context.ts";
 import { t } from "../i18n/index.ts";
 import { handleContextMenuEvent } from "../lib/keyboard-shortcuts.ts";
 import { shouldHandleNavigationClick } from "../lib/navigation-click.ts";
+import { createOverflowFadeRef } from "../lib/overflow-fade.ts";
 import type { CatalogSessionKey } from "../lib/sessions/catalog-key.ts";
 import { buildCatalogSessionKey } from "../lib/sessions/catalog-key.ts";
 import {
@@ -31,11 +33,14 @@ import { icons } from "./icons.ts";
 import { hasProviderBrandIcon, renderProviderBrandIcon } from "./provider-icon.ts";
 import { renderSessionRowBadges } from "./session-row-badges.ts";
 import { renderSessionRowEndcap } from "./session-row-endcap.ts";
+import { workspaceIconRouteUrl } from "./workspace-icon.ts";
 
 type SessionCatalogGroupsParams = {
   catalogs: readonly SessionCatalog[];
   connected: boolean;
   basePath: string;
+  workspaceIconAuthTokens: readonly string[];
+  workspaceIconAuthReady: boolean;
   routeSessionKey: string;
   newSessionAgentId: string;
   mainKey: string;
@@ -331,6 +336,9 @@ function renderCatalogHostGroup(
           ? html`${projectGroups.groups.map((group) => {
               const sectionId = `catalog-project:${catalog.id}:${host.hostId}:${group.key}`;
               const collapsed = params.collapsedSections.has(sectionId);
+              const projectSessionKey = group.sessions.find(
+                (session) => session.sessionKey,
+              )?.sessionKey;
               return html`
                 <div class="sidebar-session-catalog-project" role="listitem">
                   <button
@@ -341,6 +349,14 @@ function renderCatalogHostGroup(
                     title=${group.title}
                     @click=${() => params.onToggleSection(sectionId)}
                   >
+                    <openclaw-workspace-icon
+                      class="sidebar-session-catalog-project__mark"
+                      .routeUrl=${projectSessionKey
+                        ? workspaceIconRouteUrl(params.basePath, projectSessionKey)
+                        : null}
+                      .authTokens=${params.workspaceIconAuthTokens}
+                      .authReady=${params.workspaceIconAuthReady}
+                    ></openclaw-workspace-icon>
                     <span class="sidebar-session-catalog-project__label">${group.label}</span>
                     <span class="sidebar-session-catalog-project__icon" aria-hidden="true"
                       >${collapsed ? icons.chevronRight : icons.chevronDown}</span
@@ -480,7 +496,9 @@ function renderCatalogSessionRow(
       >
         <span class="sidebar-recent-session__text">
           <span class="sidebar-recent-session__title-line">
-            <span class="sidebar-recent-session__name">${label}</span>
+            <span class="sidebar-recent-session__name" ${ref(createOverflowFadeRef())}
+              >${label}</span
+            >
           </span>
         </span>
       </a>

@@ -2,6 +2,7 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
 import type { SessionObserverDigest } from "../../../packages/gateway-protocol/src/schema/sessions.js";
 import { isSessionRouteId, pathForRoute } from "../app-route-paths.ts";
+import { resolveControlUiAuthCandidates } from "../app/control-ui-auth.ts";
 import { beginNativeWindowDragFromTopInset } from "../app/native-window-drag.ts";
 import { t } from "../i18n/index.ts";
 import { BoardAvailabilityController } from "../lib/board/availability-controller.ts";
@@ -9,12 +10,11 @@ import { isGatewayMethodAdvertised } from "../lib/gateway-methods.ts";
 import "./menu-surface.ts";
 import "./session-menu.ts";
 import "./sidebar-agent-card.ts";
-import type { SidebarSystemStatusChangeDetail } from "./sidebar-attention.ts";
+import { createIdleImport } from "../lib/idle-import.ts";
 import "./sidebar-attention.ts";
 import "./sidebar-update-card.ts";
 import "./theme-mode-toggle.ts";
 import "./tooltip.ts";
-import { createIdleImport } from "../lib/idle-import.ts";
 import { shouldHandleNavigationClick } from "../lib/navigation-click.ts";
 import type { CatalogProjectGrouping } from "../lib/sessions/catalog-project-grouping.ts";
 import { showToast } from "../lib/toast.ts";
@@ -61,6 +61,7 @@ import {
   resolveLobsterRunOutcome,
 } from "./lobster-pet-contract.ts";
 import { SessionOrganizerController } from "./session-organizer-controller.ts";
+import type { SidebarSystemStatusChangeDetail } from "./sidebar-attention.ts";
 import { SidebarMenusController } from "./sidebar-menus-controller.ts";
 // The shared loader retries transient chunk failures online; a deploy-pruned
 // chunk still stays off until reload when that retry fails, by design.
@@ -454,6 +455,14 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     ) {
       void this.preloadCatalogRenderer().catch(() => undefined);
     }
+    const gateway = this.context?.gateway;
+    const workspaceIconAuthTokens = gateway
+      ? resolveControlUiAuthCandidates({
+          hello: gateway.snapshot.hello,
+          settings: { token: gateway.connection.token },
+          password: gateway.connection.password,
+        })
+      : [];
     return renderSessionList({
       host: this,
       empty: visibleSessions.length === 0,
@@ -464,6 +473,8 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
         catalogs,
         refreshStatus: this.sessionData.sessionCatalogRefreshStatus,
         basePath: this.basePath,
+        workspaceIconAuthTokens,
+        workspaceIconAuthReady: Boolean(gateway?.snapshot.hello || workspaceIconAuthTokens.length),
         routeSessionKey: isSessionRouteId(this.activeRouteId) ? this.getRouteSessionKey() : "",
         newSessionAgentId: expandedAgentId,
         mainKey: this.sessionMainKey(),

@@ -1,7 +1,9 @@
 import { html, nothing } from "lit";
 import { keyed } from "lit/directives/keyed.js";
+import { ref } from "lit/directives/ref.js";
 import type { SessionObserverDigest } from "../../../packages/gateway-protocol/src/schema/sessions.js";
 import { pickFreshestObserverDigest } from "../lib/observer-digest.ts";
+import { createOverflowFadeRef } from "../lib/overflow-fade.ts";
 import type { SidebarRecentSession } from "./app-sidebar-session-types.ts";
 import { sessionAttentionSubtitle } from "./session-attention-presentation.ts";
 
@@ -77,6 +79,7 @@ export function renderSidebarSessionSubtitle(
         value.narration,
         html`<span
           class="sidebar-recent-session__subtitle sidebar-recent-session__subtitle--narration"
+          ${ref(createOverflowFadeRef())}
           >${value.subtitle}</span
         >`,
       )
@@ -84,6 +87,7 @@ export function renderSidebarSessionSubtitle(
         class="sidebar-recent-session__subtitle ${options.approval
           ? "sidebar-recent-session__subtitle--approval"
           : ""}"
+        ${ref(createOverflowFadeRef())}
         >${value.subtitle}</span
       >`;
 }

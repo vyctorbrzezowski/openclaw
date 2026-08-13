@@ -38,6 +38,8 @@ type SessionCatalogRenderSnapshot = {
   catalogs: readonly SessionCatalog[];
   refreshStatus: PanelRefreshStatus;
   basePath: string;
+  workspaceIconAuthTokens: readonly string[];
+  workspaceIconAuthReady: boolean;
   routeSessionKey: string;
   newSessionAgentId: string;
   mainKey: string;
@@ -306,6 +308,8 @@ function renderSessionCatalog(params: {
       catalogs: [catalog],
       connected: host.connected,
       basePath: snapshot.basePath,
+      workspaceIconAuthTokens: snapshot.workspaceIconAuthTokens,
+      workspaceIconAuthReady: snapshot.workspaceIconAuthReady,
       routeSessionKey: snapshot.routeSessionKey,
       newSessionAgentId: snapshot.newSessionAgentId,
       mainKey: snapshot.mainKey,

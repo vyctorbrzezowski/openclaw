@@ -2236,6 +2236,33 @@ body.update-dialog-open .sidebar-update-card__status {
   color: var(--text);
 }
 
+.sidebar-session-catalog-project__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: var(--muted);
+}
+
+.sidebar-session-catalog-project__mark svg,
+.sidebar-session-catalog-project__mark .workspace-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.sidebar-session-catalog-project__mark svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6px;
+}
+
+.sidebar-session-catalog-project__mark .workspace-icon {
+  border-radius: 2px;
+}
+
 .sidebar-session-catalog-project__icon {
   display: inline-grid;
   width: 14px;
@@ -2577,8 +2604,8 @@ body.update-dialog-open .sidebar-update-card__status {
   background: color-mix(in srgb, var(--text) 8%, transparent);
 }
 
-.sidebar-recent-session__name,
-.sidebar-recent-session__subtitle {
+.sidebar-recent-session__name[data-overflow-fade],
+.sidebar-recent-session__subtitle[data-overflow-fade] {
   -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 18px), transparent 100%);
   mask-image: linear-gradient(to right, black 0, black calc(100% - 18px), transparent 100%);
   -webkit-mask-repeat: no-repeat;
@@ -2594,8 +2621,8 @@ body.update-dialog-open .sidebar-update-card__status {
   color: var(--text);
 }
 
-.sidebar-recent-session__name:dir(rtl),
-.sidebar-recent-session__subtitle:dir(rtl) {
+.sidebar-recent-session__name[data-overflow-fade]:dir(rtl),
+.sidebar-recent-session__subtitle[data-overflow-fade]:dir(rtl) {
   -webkit-mask-image: linear-gradient(to left, black 0, black calc(100% - 18px), transparent 100%);
   mask-image: linear-gradient(to left, black 0, black calc(100% - 18px), transparent 100%);
 }

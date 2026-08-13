@@ -1,5 +1,6 @@
 // Control Ui Mock Dev script supports OpenClaw repository automation.
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import qrcode from "qrcode";
@@ -16,7 +17,10 @@ import { expectDefined } from "../packages/normalization-core/src/expect.js";
 import { applySharedChannelFieldHelp } from "../src/config/schema.channel-field-help.js";
 import { buildBaseHints } from "../src/config/schema.hints.js";
 import { applyConfigTierHints, applyResolvedConfigTierHints } from "../src/config/schema.tiers.js";
-import { CONTROL_UI_BOOTSTRAP_CONFIG_PATH } from "../src/gateway/control-ui-contract.js";
+import {
+  CONTROL_UI_BOOTSTRAP_CONFIG_PATH,
+  CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX,
+} from "../src/gateway/control-ui-contract.js";
 import {
   createControlUiMockBootstrapConfig,
   createControlUiMockGatewayInitScript,
@@ -74,10 +78,14 @@ const NARRATION_DEMO_RUN_ID = "mock-sidebar-narration-run";
 const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
 const OBSERVER_DEMO_RUN_ID = "mock-session-observer-run";
 const MULTI_USER_DEMO_SESSION_KEY = "agent:main:team-release-review";
+const MOCK_OPENCLAW_PROJECT_SESSION_KEY = "agent:main:catalog-openclaw-project";
 const CUSTODIAN_CHAT_REPLY_DELAY_MS = 600;
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const uiRoot = path.join(repoRoot, "ui");
+const mockOpenClawProjectIcon = readFileSync(
+  path.join(repoRoot, "apps/linux/src-tauri/icons/icon.svg"),
+);
 const boardFixturePath = "/__fixtures/board/";
 const boardFixtureHtml = `<!doctype html>
 <html lang="en">
@@ -1761,6 +1769,7 @@ async function createChatPickerScenario(
                 sessions: [
                   {
                     threadId: "codex-thread-1",
+                    sessionKey: MOCK_OPENCLAW_PROJECT_SESSION_KEY,
                     name: "Release checklist sweep",
                     cwd: "/Users/demo/projects/openclaw",
                     status: fixture === "session-rows" ? "running" : "idle",
@@ -2610,6 +2619,14 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
         res.setHeader("content-type", "application/json");
         res.end(bootstrapBody);
       });
+      server.middlewares.use(
+        `${CONTROL_UI_WORKSPACE_ICON_PATH_PREFIX}/${encodeURIComponent(MOCK_OPENCLAW_PROJECT_SESSION_KEY)}`,
+        (_req, res) => {
+          res.statusCode = 200;
+          res.setHeader("content-type", "image/svg+xml");
+          res.end(mockOpenClawProjectIcon);
+        },
+      );
     },
     // ui/vite.config.ts registers a placeholder bootstrap-config middleware and
     // config-file plugins load first, so without "pre" its stub answers every
