@@ -472,8 +472,7 @@ function renderCatalogSessionRow(
   return html`
     <openclaw-tooltip
       class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
-      delay="400"
-      always-delay
+      delay="500"
       placement="right"
     >
       <div

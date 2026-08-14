@@ -151,11 +151,14 @@ describe("SidebarUpdateCard", () => {
     const onUpdate = vi.fn();
     element.onUpdate = onUpdate;
 
-    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__action");
+    const availability = element.querySelector<HTMLElement>(".sidebar-update-card__availability");
+    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta");
     expect(element.querySelector(".sidebar-update-card")?.getAttribute("role")).toBe("status");
+    expect(availability?.tagName).toBe("DIV");
     expect(element.querySelector(".sidebar-update-card__text")?.textContent).toBe(
-      "Update Gateway · v2.0.0",
+      "New version available",
     );
+    expect(action?.textContent?.trim()).toBe("Update");
     expect(element.querySelector(".sidebar-update-card__copy")).toBeNull();
     expect(element.querySelector(".sidebar-update-card__subtitle")).toBeNull();
     expect(element.querySelector(".sidebar-update-card__arrow")).toBeNull();
@@ -176,7 +179,7 @@ describe("SidebarUpdateCard", () => {
     const onUpdate = vi.fn();
     element.onUpdate = onUpdate;
 
-    element.querySelector<HTMLButtonElement>(".sidebar-update-card__action")?.click();
+    element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta")?.click();
     await resolveUpdateConfirmation("Cancel");
 
     expect(onUpdate).not.toHaveBeenCalled();
@@ -192,7 +195,7 @@ describe("SidebarUpdateCard", () => {
       });
 
       expect(element.querySelector(".sidebar-update-card__text")?.textContent).toBe(
-        `Update Gateway · v${latestVersion} (beta)`,
+        "New version available",
       );
     },
   );
@@ -232,9 +235,10 @@ describe("SidebarUpdateCard", () => {
     const onUpdate = vi.fn();
     element.onUpdate = onUpdate;
 
-    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__action");
-    expect(action?.textContent).toContain("Update Mac app + Gateway");
-    expect(action?.textContent).toContain("v2.0.0");
+    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta");
+    expect(element.querySelector(".sidebar-update-card__text")?.textContent).toBe(
+      "New version available",
+    );
     action?.click();
     await waitForConfirmDialogActions();
 
@@ -250,7 +254,7 @@ describe("SidebarUpdateCard", () => {
       latestVersion: "2.0.0",
       channel: "stable",
     });
-    expect(element.textContent).toContain("Update Gateway");
+    expect(element.textContent).toContain("New version available");
 
     Object.defineProperty(window, "webkit", {
       configurable: true,
@@ -258,12 +262,12 @@ describe("SidebarUpdateCard", () => {
     });
     window.dispatchEvent(new CustomEvent(NATIVE_UPDATE_AVAILABILITY_CHANGED_EVENT));
     await element.updateComplete;
-    expect(element.textContent).toContain("Update Mac app + Gateway");
+    expect(element.textContent).toContain("New version available");
 
     Reflect.deleteProperty(window, "webkit");
     window.dispatchEvent(new CustomEvent(NATIVE_UPDATE_AVAILABILITY_CHANGED_EVENT));
     await element.updateComplete;
-    expect(element.textContent).toContain("Update Gateway");
+    expect(element.textContent).toContain("New version available");
   });
 
   it("uses a newly installed native bridge before its availability event arrives", async () => {
@@ -275,13 +279,13 @@ describe("SidebarUpdateCard", () => {
     const onUpdate = vi.fn();
     const postMessage = vi.fn();
     element.onUpdate = onUpdate;
-    expect(element.textContent).toContain("Update Gateway");
+    expect(element.textContent).toContain("New version available");
 
     Object.defineProperty(window, "webkit", {
       configurable: true,
       value: { messageHandlers: { openclawUpdate: { postMessage } } },
     });
-    element.querySelector<HTMLButtonElement>(".sidebar-update-card__action")?.click();
+    element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta")?.click();
     await resolveUpdateConfirmation("Update Mac app and restart");
 
     expect(postMessage).toHaveBeenCalledExactlyOnceWith({ type: "start-update" });
@@ -330,17 +334,17 @@ describe("SidebarUpdateCard", () => {
 
     window.dispatchEvent(new CustomEvent(NATIVE_UPDATE_DECLINED_EVENT));
     await element.updateComplete;
-    expect(element.textContent).toContain("Update Gateway");
+    expect(element.textContent).toContain("New version available");
 
-    element.querySelector<HTMLButtonElement>(".sidebar-update-card__action")?.click();
+    element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta")?.click();
     await resolveUpdateConfirmation("Update and restart");
     expect(onUpdate).toHaveBeenCalledTimes(2);
     expect(postMessage).not.toHaveBeenCalled();
 
     window.dispatchEvent(new CustomEvent(NATIVE_UPDATE_AVAILABILITY_CHANGED_EVENT));
     await element.updateComplete;
-    expect(element.textContent).toContain("Update Mac app + Gateway");
-    element.querySelector<HTMLButtonElement>(".sidebar-update-card__action")?.click();
+    expect(element.textContent).toContain("New version available");
+    element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta")?.click();
     await resolveUpdateConfirmation("Update Mac app and restart");
     expect(postMessage).toHaveBeenCalledExactlyOnceWith({ type: "start-update" });
     expect(onUpdate).toHaveBeenCalledTimes(2);
@@ -366,8 +370,8 @@ describe("SidebarUpdateCard", () => {
     document.body.append(element);
     await element.updateComplete;
 
-    expect(element.textContent).toContain("Update Gateway");
-    element.querySelector<HTMLButtonElement>(".sidebar-update-card__action")?.click();
+    expect(element.textContent).toContain("New version available");
+    element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta")?.click();
     await resolveUpdateConfirmation("Update and restart");
     expect(onUpdate).toHaveBeenCalledTimes(2);
     expect(postMessage).not.toHaveBeenCalled();
@@ -557,7 +561,7 @@ describe("SidebarUpdateCard", () => {
     const onUpdate = vi.fn();
     element.onUpdate = onUpdate;
 
-    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__action");
+    const action = element.querySelector<HTMLButtonElement>(".sidebar-update-card__cta");
     expect(action?.disabled).toBe(true);
     expect(action?.title).toContain("Administrator access is required");
     action?.click();

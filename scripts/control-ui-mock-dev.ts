@@ -1274,10 +1274,8 @@ async function createChatPickerScenario(
     baseTime - 30_000,
     {
       spawnedBy: "agent:main:tax-research",
-      hasActiveRun: true,
-      status: "running",
-      startedAt: baseTime - 200_000,
-      runtimeMs: 200_000,
+      status: "done",
+      endedAt: baseTime - 30_000,
     },
   );
   const swarmGroupId = "swarm:agent:main:main:mock-turn";
@@ -1517,18 +1515,6 @@ async function createChatPickerScenario(
       childSessions: ["agent:main:subagent:tax-receipts"],
       pinned: true,
     }),
-    sessionRow("agent:main:production-export", "Production export", baseTime - 75_000, {
-      category: "Research",
-      createdActor: MOCK_CREATOR_MIRA,
-      execCwd: "/Users/peter/Projects/clawdbot",
-      lastMessagePreview: "Preparing the final export package",
-    }),
-    sessionRow("agent:main:model-budget", "Model budget review", baseTime - 80_000, {
-      category: "Research",
-      execCwd: "/Users/peter/Projects/openclaw",
-      status: "failed",
-      lastRunError: "Model out of credits: openai/gpt-5.6",
-    }),
     sessionRow("agent:main:work-openclaw", "OpenClaw work checkout", baseTime - 85_000, {
       execCwd: "/Users/peter/Work/openclaw",
       lastReadAt: baseTime - 120_000,
@@ -1542,20 +1528,6 @@ async function createChatPickerScenario(
       unread: true,
     }),
     mainChildRow,
-    sessionRow("agent:main:home-server", "Home server migration", baseTime - 240_000, {
-      execCwd: "/Users/peter/Projects/openclaw",
-      lastMessagePreview: "Reviewing the migration plan",
-      pinned: true,
-    }),
-    sessionRow("agent:main:whatsapp:group:family", "Family", baseTime - 90_000, {
-      kind: "group",
-      channel: "whatsapp",
-      unread: true,
-    }),
-    sessionRow("agent:main:discord:channel:openclaw-dev", "#openclaw-dev", baseTime - 300_000, {
-      kind: "group",
-      channel: "discord",
-    }),
     sessionRow(MOCK_CODING_SESSION_KEY, "sidebar zones", baseTime - 150_000, {
       worktree: {
         id: "wt-sidebar-zones",

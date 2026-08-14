@@ -342,7 +342,6 @@ export function renderRecentSession(params: {
     <openclaw-tooltip
       class="sidebar-hover-tooltip sidebar-session-hover-tooltip"
       delay="400"
-      always-delay
       placement="right"
     >
       <div

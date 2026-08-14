@@ -90,8 +90,7 @@ type SidebarIdentityMenuParams = {
   canPairDevice: boolean;
   basePath: string;
   gatewayVersion: string | null;
-  selfName?: string;
-  selfEmail?: string;
+  profileViewer?: PresenceViewer;
   offline: boolean;
   themeMode: ThemeMode;
   triggerWidth: number;
@@ -384,17 +383,11 @@ export function renderSidebarIdentityMenu(params: SidebarIdentityMenuParams) {
   if (!position) {
     return nothing;
   }
-  const profileName = params.selfName ?? params.selfEmail;
+  const profileName = params.profileViewer?.name ?? params.profileViewer?.email;
   const profileEmail =
-    params.selfEmail && params.selfEmail !== profileName ? params.selfEmail : null;
-  const profileViewer: PresenceViewer | null = profileName
-    ? {
-        id: params.selfEmail ?? profileName,
-        name: params.selfName,
-        email: params.selfEmail,
-        watchedSessions: [],
-      }
-    : null;
+    params.profileViewer?.email && params.profileViewer.email !== profileName
+      ? params.profileViewer.email
+      : null;
   return html`
     <openclaw-menu-surface>
       <wa-dropdown
@@ -458,7 +451,7 @@ export function renderSidebarIdentityMenu(params: SidebarIdentityMenuParams) {
           ? html`<wa-dropdown-item class="sidebar-identity-menu__header" value="command:profile">
                 <span slot="icon" class="sidebar-identity-menu__avatar" aria-hidden="true">
                   <openclaw-viewer-avatar
-                    .user=${profileViewer}
+                    .user=${params.profileViewer}
                     variant="footer"
                   ></openclaw-viewer-avatar>
                 </span>

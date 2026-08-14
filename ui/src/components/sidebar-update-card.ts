@@ -62,6 +62,22 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
     }
   };
 
+  private readonly startUpdate = () => {
+    const busy = this.updateBusy || this.updateSchedule?.campaign?.state === "applying";
+    if (busy || !this.canUpdate) {
+      return;
+    }
+    void confirmAndStartUpdate({
+      startGatewayUpdate: () => this.onUpdate(),
+      ...(this.watchUpdateProgress ? { watchUpdateProgress: this.watchUpdateProgress } : {}),
+      updateAvailable: this.updateAvailable,
+      updateSchedule: this.updateSchedule,
+      // Read the bridge at click time: a Mac app that installed it after the
+      // last availability event still owns this update.
+      viaNativeApp: !this.nativeUpdateDeclined && hasNativeUpdateBridge(),
+    });
+  };
+
   override connectedCallback() {
     super.connectedCallback();
     this.nativeUpdateAvailable = !this.nativeUpdateDeclined && hasNativeUpdateBridge();
@@ -183,40 +199,41 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
         ${this.renderStatus()}
         ${actionable
           ? html`<div class="sidebar-update-card__actions">
-              <button
-                class="sidebar-update-card__action sidebar-update-card__action--undismissable ${busy
-                  ? "sidebar-update-card__action--busy"
-                  : ""}"
-                type="button"
-                title=${this.canUpdate ? nothing : t("updates.adminRequired")}
-                ?disabled=${busy || !this.canUpdate}
-                @click=${() => {
-                  if (busy || !this.canUpdate) {
-                    return;
-                  }
-                  void confirmAndStartUpdate({
-                    startGatewayUpdate: () => this.onUpdate(),
-                    ...(this.watchUpdateProgress
-                      ? { watchUpdateProgress: this.watchUpdateProgress }
-                      : {}),
-                    updateAvailable: this.updateAvailable,
-                    updateSchedule: this.updateSchedule,
-                    // Read the bridge at click time: a Mac app that installed it
-                    // after the last availability event still owns this update.
-                    viaNativeApp: !this.nativeUpdateDeclined && hasNativeUpdateBridge(),
-                  });
-                }}
-              >
-                <span class="sidebar-update-card__icon" aria-hidden="true"
-                  >${busy || availabilityOnly ? icons.refresh : icons.download}</span
-                >
-                <span
-                  class="sidebar-update-card__text"
-                  role=${countdownActive ? "timer" : nothing}
-                  aria-live=${countdownActive ? "off" : nothing}
-                  >${text}</span
-                >
-              </button>
+              ${availabilityOnly
+                ? html`<div class="sidebar-update-card__availability">
+                    <span class="sidebar-update-card__icon" aria-hidden="true"
+                      >${icons.refresh}</span
+                    >
+                    <span class="sidebar-update-card__text">${text}</span>
+                    <button
+                      class="sidebar-update-card__cta"
+                      type="button"
+                      title=${this.canUpdate ? nothing : t("updates.adminRequired")}
+                      ?disabled=${!this.canUpdate}
+                      @click=${this.startUpdate}
+                    >
+                      ${t("updates.sidebar.action")}
+                    </button>
+                  </div>`
+                : html`<button
+                    class="sidebar-update-card__action sidebar-update-card__action--undismissable ${busy
+                      ? "sidebar-update-card__action--busy"
+                      : ""}"
+                    type="button"
+                    title=${this.canUpdate ? nothing : t("updates.adminRequired")}
+                    ?disabled=${busy || !this.canUpdate}
+                    @click=${this.startUpdate}
+                  >
+                    <span class="sidebar-update-card__icon" aria-hidden="true"
+                      >${busy ? icons.refresh : icons.download}</span
+                    >
+                    <span
+                      class="sidebar-update-card__text"
+                      role=${countdownActive ? "timer" : nothing}
+                      aria-live=${countdownActive ? "off" : nothing}
+                      >${text}</span
+                    >
+                  </button>`}
               ${showHold && campaign
                 ? html`
                     <button

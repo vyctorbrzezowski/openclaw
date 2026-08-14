@@ -392,7 +392,8 @@ export const en: TranslationMap = {
       commitsBehind: "{count} commits behind",
     },
     sidebar: {
-      available: "Update available",
+      available: "New version available",
+      action: "Update",
       campaignTarget: "{status} · {target}",
       updating: "Updating Gateway…",
     },
@@ -1909,6 +1910,7 @@ export const en: TranslationMap = {
     customize: "Customize sidebar",
     customizeReset: "Reset sidebar",
     customizeDone: "Done",
+    customizeDiscard: "Discard changes",
     customizeShow: "Show {item} in sidebar",
     customizeHide: "Hide {item} from sidebar",
     workboardGroup: "WorkBoard",

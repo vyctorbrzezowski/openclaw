@@ -153,7 +153,7 @@ class Tooltip extends OpenClawLitElement {
 
     wa-tooltip {
       --max-width: var(--openclaw-tooltip-max-width, min(260px, calc(100vw - 16px)));
-      --wa-tooltip-arrow-size: var(--openclaw-tooltip-arrow-size, 4px);
+      --wa-tooltip-arrow-size: var(--openclaw-tooltip-arrow-size, 0px);
       --wa-tooltip-background-color: var(
         --openclaw-tooltip-background-color,
         color-mix(in srgb, var(--bg-elevated) 97%, var(--text) 3%)

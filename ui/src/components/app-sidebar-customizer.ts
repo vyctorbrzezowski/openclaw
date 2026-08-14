@@ -99,8 +99,9 @@ export function buildSidebarCustomizerSections(params: {
       id: "pinned",
       label: t("nav.pinned"),
       kind: "section",
-      visible: !params.hiddenSectionIds.has("pinned"),
+      visible: true,
       reorderable: false,
+      toggleable: false,
     },
   ];
   for (const section of params.sections) {
@@ -132,8 +133,10 @@ export function buildSidebarCustomizerSections(params: {
 type SidebarCustomizerParams = {
   entries: readonly SidebarCustomizerItem[];
   sections: readonly SidebarCustomizerItem[];
+  dirty: boolean;
   onToggle: (item: SidebarCustomizerItem) => void;
   onDone: () => void;
+  onBack: () => void;
   onEntryDragStart: (event: DragEvent, item: SidebarCustomizerItem) => void;
   onEntryDragOver: (event: DragEvent, entry: string) => void;
   onEntryDragLeave: (event: DragEvent) => void;
@@ -145,10 +148,15 @@ type SidebarCustomizerParams = {
   onDragEnd: (kind: SidebarCustomizerItem["kind"]) => void;
 };
 
-function renderCustomizerItem(item: SidebarCustomizerItem, params: SidebarCustomizerParams) {
+function renderCustomizerItem(
+  item: SidebarCustomizerItem,
+  params: SidebarCustomizerParams,
+  index: number,
+) {
   const toggleable = item.toggleable !== false;
   const draggable =
-    item.reorderable !== false && toggleable && (item.kind === "section" || item.visible);
+    item.reorderable !== false && (item.kind === "section" || (toggleable && item.visible));
+  const showVisibilityControl = toggleable || item.kind === "entry";
   const visibilityLabel = t(item.visible ? "nav.customizeHide" : "nav.customizeShow", {
     item: item.label,
   });
@@ -158,12 +166,13 @@ function renderCustomizerItem(item: SidebarCustomizerItem, params: SidebarCustom
         ? ""
         : "sidebar-customizer__row--hidden"} ${!draggable
         ? "sidebar-customizer__row--fixed"
-        : ""} ${!toggleable ? "sidebar-customizer__row--disabled" : ""} ${item.kind === "section"
-        ? "sidebar-customizer__row--section"
-        : ""}"
-      data-iconless=${item.icon ? "false" : "true"}
+        : ""} ${!toggleable && item.kind === "entry"
+        ? "sidebar-customizer__row--disabled"
+        : ""} ${item.kind === "section" ? "sidebar-customizer__row--section" : ""}"
+      data-iconless=${item.icon || item.kind === "section" ? "false" : "true"}
       role="listitem"
       draggable=${draggable ? "true" : "false"}
+      style=${`--sidebar-customizer-index: ${index}`}
       data-sidebar-customizer-id=${item.id}
       data-session-section=${item.kind === "section" ? item.id : ""}
       @dragstart=${(event: DragEvent) => {
@@ -210,28 +219,29 @@ function renderCustomizerItem(item: SidebarCustomizerItem, params: SidebarCustom
         ? html`<span class="sidebar-customizer__item-icon" aria-hidden="true">${item.icon}</span>`
         : nothing}
       <span
-        class=${classMap({
-          "sidebar-customizer__label": true,
-          "sidebar-customizer__label--section": item.kind === "section",
-        })}
+        class="sidebar-customizer__label ${item.kind === "section"
+          ? "sidebar-customizer__label--section"
+          : ""}"
         >${item.label}</span
       >
-      <button
-        type="button"
-        class="sidebar-customizer__visibility"
-        aria-label=${visibilityLabel}
-        aria-pressed=${String(item.visible)}
-        ?disabled=${!toggleable}
-        title=${toggleable ? visibilityLabel : ""}
-        @mousedown=${(event: MouseEvent) => event.stopPropagation()}
-        @click=${() => {
-          if (toggleable) {
-            params.onToggle(item);
-          }
-        }}
-      >
-        ${item.visible ? icons.eye : icons.eyeOff}
-      </button>
+      ${showVisibilityControl
+        ? html`<button
+            type="button"
+            class="sidebar-customizer__visibility"
+            aria-label=${visibilityLabel}
+            aria-pressed=${String(item.visible)}
+            ?disabled=${!toggleable}
+            title=${toggleable ? visibilityLabel : ""}
+            @mousedown=${(event: MouseEvent) => event.stopPropagation()}
+            @click=${() => {
+              if (toggleable) {
+                params.onToggle(item);
+              }
+            }}
+          >
+            ${item.visible ? icons.eye : icons.eyeOff}
+          </button>`
+        : nothing}
     </div>
   `;
 }
@@ -244,22 +254,27 @@ export function renderSidebarCustomizer(params: SidebarCustomizerParams) {
       @keydown=${(event: KeyboardEvent) => {
         if (event.key === "Escape") {
           event.preventDefault();
-          params.onDone();
+          params.onBack();
         }
       }}
     >
       <div class="sidebar-customizer__scroll">
         <div class="sidebar-customizer__list" role="list">
-          ${params.entries.map((item) => renderCustomizerItem(item, params))}
+          ${params.entries.map((item, index) => renderCustomizerItem(item, params, index))}
         </div>
         <div class="sidebar-customizer__separator" role="separator"></div>
         <div class="sidebar-customizer__list" role="list">
-          ${params.sections.map((item) => renderCustomizerItem(item, params))}
+          ${params.sections.map((item, index) =>
+            renderCustomizerItem(item, params, params.entries.length + index),
+          )}
         </div>
       </div>
       <div class="sidebar-customizer__footer">
         <button type="button" class="btn primary sidebar-customizer__done" @click=${params.onDone}>
           ${t("nav.customizeDone")}
+        </button>
+        <button type="button" class="btn sidebar-customizer__back" @click=${params.onBack}>
+          ${params.dirty ? t("nav.customizeDiscard") : t("common.back")}
         </button>
       </div>
     </section>

@@ -83,9 +83,17 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
   @state() sidebarObserverDigests: ReadonlyMap<string, SessionObserverDigest> = new Map();
   @state() automationAttention = { count: 0, severity: null as "danger" | "warning" | null };
   @state() private sidebarCustomizerOpen = false;
+  @state() private sidebarCustomizerDirty = false;
   @state() private customizerHiddenSectionIds: ReadonlySet<string> = new Set();
 
   private sidebarCustomizerReturnFocus: HTMLElement | null = null;
+  private sidebarCustomizerSnapshot: {
+    sidebarEntries: readonly string[];
+    hiddenSectionIds: ReadonlySet<string>;
+    hiddenCatalogIds: ReadonlySet<string>;
+    groups: readonly string[];
+    sectionOrder: readonly string[];
+  } | null = null;
 
   override readonly sessionOrganizer = new SessionOrganizerController(this);
   override readonly sidebarMenus = new SidebarMenusController(this);
@@ -424,18 +432,50 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
   openSidebarCustomizer(trigger: HTMLElement | null = null): void {
     this.sidebarMenus.dismissTransientMenus();
     this.sidebarCustomizerReturnFocus = trigger;
+    this.sidebarCustomizerSnapshot = {
+      sidebarEntries: [...this.reconciledSidebarZone().sidebarEntries],
+      hiddenSectionIds: new Set(this.customizerHiddenSectionIds),
+      hiddenCatalogIds: new Set(this.hiddenSessionCatalogIds),
+      groups: [...(this.context?.sessions.state.groups ?? [])],
+      sectionOrder: this.knownSectionOrder(),
+    };
+    this.sidebarCustomizerDirty = false;
     this.sidebarCustomizerOpen = true;
   }
 
   private closeSidebarCustomizer(): void {
     this.sidebarCustomizerOpen = false;
+    this.sidebarCustomizerDirty = false;
+    this.sidebarCustomizerSnapshot = null;
     const returnFocus = this.sidebarCustomizerReturnFocus;
     this.sidebarCustomizerReturnFocus = null;
     requestAnimationFrame(() => returnFocus?.focus());
   }
 
+  private discardSidebarCustomizerChanges(): void {
+    const snapshot = this.sidebarCustomizerSnapshot;
+    if (!snapshot || !this.sidebarCustomizerDirty) {
+      this.closeSidebarCustomizer();
+      return;
+    }
+    this.onUpdateSidebarEntries?.([...snapshot.sidebarEntries]);
+    this.customizerHiddenSectionIds = new Set(snapshot.hiddenSectionIds);
+    for (const catalogId of new Set([
+      ...this.hiddenSessionCatalogIds,
+      ...snapshot.hiddenCatalogIds,
+    ])) {
+      setStoredSessionCatalogHidden(catalogId, snapshot.hiddenCatalogIds.has(catalogId));
+    }
+    void this.context?.sessions.groupsPut(snapshot.groups, snapshot.sectionOrder);
+    this.closeSidebarCustomizer();
+  }
+
   private toggleSidebarCustomizerEntry(item: SidebarCustomizerItem): void {
+    if (item.id === "pinned") {
+      return;
+    }
     if (item.kind === "entry" && item.entry) {
+      this.sidebarCustomizerDirty = true;
       const canonical = this.reconciledSidebarZone().sidebarEntries;
       const next = canonical.includes(item.entry)
         ? canonical.filter((candidate) => candidate !== item.entry)
@@ -444,10 +484,12 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
       return;
     }
     if (item.id.startsWith("catalog:")) {
+      this.sidebarCustomizerDirty = true;
       setStoredSessionCatalogHidden(item.id.slice("catalog:".length), item.visible);
       return;
     }
     const next = new Set(this.customizerHiddenSectionIds);
+    this.sidebarCustomizerDirty = true;
     if (item.visible) {
       next.add(item.id);
     } else {
@@ -555,8 +597,10 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     return renderSidebarCustomizer({
       entries: this.sidebarCustomizerEntries(),
       sections: this.sidebarCustomizerSections(),
+      dirty: this.sidebarCustomizerDirty,
       onToggle: (item) => this.toggleSidebarCustomizerEntry(item),
       onDone: () => this.closeSidebarCustomizer(),
+      onBack: () => this.discardSidebarCustomizerChanges(),
       onEntryDragStart: (event, item) => {
         const entry = item.entry ? parseSidebarEntry(item.entry) : null;
         if (entry?.type === "route") {
@@ -568,13 +612,19 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
       onEntryDragOver: (event, entry) =>
         this.sessionOrganizer.handleSidebarZoneDragOver(event, entry),
       onEntryDragLeave: (event) => this.sessionOrganizer.handleSidebarZoneDragLeave(event),
-      onEntryDrop: (event, entry) => this.sessionOrganizer.handleSidebarZoneDrop(event, entry),
+      onEntryDrop: (event, entry) => {
+        this.sidebarCustomizerDirty = true;
+        this.sessionOrganizer.handleSidebarZoneDrop(event, entry);
+      },
       onSectionDragStart: (sectionId) => this.startSidebarSectionDrag(sectionId),
       onSectionDragOver: (event, sectionId, category) =>
         this.sectionDragOver(event, sectionId, category),
       onSectionDragLeave: (event, sectionId, category) =>
         this.sectionDragLeave(event, sectionId, category),
-      onSectionDrop: (event, sectionId, category) => this.sectionDrop(event, sectionId, category),
+      onSectionDrop: (event, sectionId, category) => {
+        this.sidebarCustomizerDirty = true;
+        this.sectionDrop(event, sectionId, category);
+      },
       onDragEnd: (kind) => {
         if (kind === "section") {
           this.finishSidebarSectionDrag();
@@ -589,9 +639,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
     const sidebarZone = this.reconciledSidebarZone();
     // Pinned sessions keep their slot in the canonical entry order but render as
     // their own group, so navigation entries stay a contiguous Pages list.
-    const pinnedEntries = this.customizerHiddenSectionIds.has("pinned")
-      ? []
-      : sidebarZone.entries.filter((entry) => entry.type === "session");
+    const pinnedEntries = sidebarZone.entries.filter((entry) => entry.type === "session");
     const navEntries = sidebarZone.entries.filter((entry) => entry.type !== "session");
     const pinnedCollapsed = this.collapsedSessionSections.has("pinned");
     return html`

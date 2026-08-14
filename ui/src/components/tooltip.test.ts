@@ -126,7 +126,7 @@ describe("openclaw-tooltip", () => {
     expect(styles).toContain("--wa-tooltip-border-color:");
     expect(styles).toContain("--wa-tooltip-border-width: 1px");
     expect(styles).toContain("--wa-tooltip-border-style: solid");
-    expect(styles).toContain("--wa-tooltip-arrow-size: 6px");
+    expect(styles).toContain("--wa-tooltip-arrow-size: 0px");
   });
 
   it("projects rich content into the Web Awesome tooltip", async () => {

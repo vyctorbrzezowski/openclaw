@@ -1170,6 +1170,8 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   border-radius: var(--radius-md);
   color: var(--text);
   cursor: grab;
+  animation: sidebar-customizer-item-enter 140ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--sidebar-customizer-index, 0) * 12ms);
   transition:
     background var(--duration-fast) ease,
     color var(--duration-fast) ease;
@@ -1177,7 +1179,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 
 .sidebar-customizer__row--section {
   min-height: 34px;
-  padding-inline: 8px 4px;
+  padding-inline: 8px 9px;
 }
 
 .sidebar-customizer__row[data-iconless="true"] {
@@ -1235,6 +1237,15 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
   position: absolute;
   inset-inline-start: -14px;
   opacity: 0.58;
+}
+
+.sidebar-customizer__row--section .sidebar-customizer__grip {
+  position: static;
+  inset-inline-start: auto;
+}
+
+.sidebar-customizer__row--section.sidebar-customizer__row--fixed .sidebar-customizer__label {
+  grid-column: 2;
 }
 
 .sidebar-customizer__row:hover .sidebar-customizer__grip,
@@ -1308,14 +1319,45 @@ html.openclaw-native-web-chrome .sidebar-brand__search {
 }
 
 .sidebar-customizer__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   flex: none;
   padding: 8px 2px 0;
 }
 
+.sidebar-customizer__back,
 .sidebar-customizer__done {
   width: 100%;
   min-height: 40px;
   border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.sidebar-customizer__back,
+:root[data-theme-mode="light"] .sidebar-customizer__back,
+.sidebar-customizer__back:hover,
+:root[data-theme-mode="light"] .sidebar-customizer__back:hover {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes sidebar-customizer-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-customizer__row {
+    animation: none;
+  }
 }
 
 /* Active system conditions collapse into one footer notification. */
@@ -1774,7 +1816,8 @@ html.openclaw-native-macos
   margin-top: calc(var(--openclaw-native-titlebar-height, 50px) + 2px);
 }
 
-.sidebar-update-card__action {
+.sidebar-update-card__action,
+.sidebar-update-card__availability {
   min-width: 0;
   flex: 1 1 auto;
   min-height: 34px;
@@ -1786,8 +1829,11 @@ html.openclaw-native-macos
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--info-subtle) 48%, var(--bg-elevated));
   color: var(--text);
-  cursor: var(--cursor-action);
   text-align: left;
+}
+
+.sidebar-update-card__action {
+  cursor: var(--cursor-action);
   transition:
     background var(--duration-fast) ease,
     border-color var(--duration-fast) ease;
@@ -1913,6 +1959,41 @@ body.update-dialog-open .sidebar-update-card__status {
   white-space: nowrap;
 }
 
+.sidebar-update-card__cta {
+  flex: 0 0 auto;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--info);
+  color: var(--bg-elevated);
+  cursor: var(--cursor-action);
+  font-family: inherit;
+  font-size: calc(12px * var(--control-ui-text-scale));
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.sidebar-update-card__cta:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--info) 90%, white);
+}
+
+.sidebar-update-card__cta:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 28%, transparent);
+}
+
+.sidebar-update-card__cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .sidebar-update-card__text--stacked {
   display: flex;
   flex-direction: column;
@@ -1943,21 +2024,22 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-shell__footer .sidebar-update-card {
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
-.sidebar-shell__footer .sidebar-update-card__action {
+.sidebar-shell__footer .sidebar-update-card__action,
+.sidebar-shell__footer .sidebar-update-card__availability {
   min-height: 40px;
   padding: 6px 10px;
   border: 0;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--info-subtle) 72%, var(--bg-elevated));
+  background: color-mix(in srgb, var(--info) 8%, var(--bg-elevated));
 }
 
 .sidebar-shell__footer .sidebar-update-card__action:hover:not(:disabled),
 .sidebar-shell__footer .sidebar-update-card__action:focus-visible {
   border-color: transparent;
-  background: color-mix(in srgb, var(--info) 10%, var(--bg-hover));
+  background: color-mix(in srgb, var(--info) 12%, var(--bg-elevated));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info) 12%, transparent);
 }
 
@@ -1975,6 +2057,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .sidebar-nav {
   --sidebar-page-label-start: var(--sidebar-row-inset, 10px);
+  --sidebar-session-content-start: var(--sidebar-page-label-start);
 
   padding: 0;
 }
@@ -3015,7 +3098,7 @@ body.update-dialog-open .sidebar-update-card__status {
 
 .nav-section__items {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sidebar-zone-entry {
@@ -3564,47 +3647,6 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   color: var(--text-strong);
 }
 
-/* Pinned sessions share the page-nav visual contract while retaining session actions. */
-.sidebar-zone-entry .sidebar-recent-session {
-  position: relative;
-  min-height: 32px;
-  padding: 0 9px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  transition:
-    border-color var(--duration-fast) ease,
-    background var(--duration-fast) ease,
-    color var(--duration-fast) ease,
-    transform var(--duration-fast) ease;
-}
-
-.sidebar-zone-entry .sidebar-recent-session__link {
-  gap: 8px;
-  min-height: 30px;
-  padding: 0;
-}
-
-.sidebar-zone-entry .sidebar-recent-session__name {
-  color: inherit;
-}
-
-.sidebar-zone-entry .sidebar-recent-session:hover {
-  color: var(--text);
-  background: var(--sidebar-row-surface-hover);
-  border-color: transparent;
-}
-
-.sidebar-zone-entry .sidebar-recent-session.sidebar-recent-session--active {
-  color: var(--text-strong);
-  background: var(--sidebar-row-surface-selected);
-  border-color: transparent;
-}
-
-.sidebar-zone-entry .sidebar-recent-session__aside {
-  padding-right: 0;
-}
-
 /* Footer agent chip: identity-first entrance to the active agent. The body
    resumes the latest conversation; trailing actions create/open the menu. */
 .sidebar-agent-card {
@@ -3781,8 +3823,8 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 64px;
-  padding: 6px 0;
+  min-height: 60px;
+  padding: 4px 0 2px;
 }
 
 .sidebar-identity-card {
