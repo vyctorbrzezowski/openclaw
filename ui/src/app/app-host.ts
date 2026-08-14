@@ -184,6 +184,7 @@ class OpenClawShell
   private lastDeletedSessions: ApplicationContext["sessions"]["state"]["deletedSessions"] | null =
     null;
   private stopCommunityInvite: (() => void) | null = null;
+  private readonly shellUpdateListeners = new Set<() => void>();
   readonly outboxStoreImport = createIdleImport(
     () =>
       import("../lib/chat/outbox-store-projection.ts").then((module): OutboxStoreRuntime => module),
@@ -279,6 +280,16 @@ class OpenClawShell
     const routeId = this.routeState.routeId;
     // Hidden workspace chrome must not preload its sidebar and panel graphs.
     return routeId !== undefined && !isSettingsNavigationRoute(routeId) && !this.onboardingMode;
+  }
+
+  /** Route-derived shell state, `context` among it, changes without any capability
+   * emitting: leaving onboarding is only a new route. Owners that read those
+   * getters subscribe here rather than polling the shell for them. */
+  subscribeShellUpdate(listener: () => void): () => void {
+    this.shellUpdateListeners.add(listener);
+    return () => {
+      this.shellUpdateListeners.delete(listener);
+    };
   }
 
   storedOutboxScopeHost(context: ApplicationContext<RouteId>): StoredOutboxScopeHost {
@@ -663,6 +674,9 @@ class OpenClawShell
       this.querySelector("openclaw-sidebar-update-card")
     ) {
       this.loadSidebarUpdateCard();
+    }
+    for (const listener of this.shellUpdateListeners) {
+      listener();
     }
     const chatPage = this.querySelector<ChatPage>("openclaw-chat-page");
     if (chatPage) {
