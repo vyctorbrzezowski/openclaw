@@ -549,7 +549,6 @@ function renderCatalogSessionRow(
             <button
               class="session-action"
               data-catalog-session-menu="true"
-              data-tooltip-suppress
               type="button"
               title=${t("chat.sidebar.openSessionMenu")}
               aria-label=${t("chat.sidebar.openSessionMenu")}

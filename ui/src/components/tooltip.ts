@@ -13,7 +13,6 @@ const SKIP_DELAY = 300;
 const MOVE_LIMIT = 10;
 const RICH_CONTENT_CLOSE_DELAY = 120;
 const SUPPRESS_NEXT_FOCUS_ATTRIBUTE = "data-tooltip-suppress-next-focus";
-const SUPPRESS_WITHIN_SELECTOR = "[data-tooltip-suppress]";
 
 let nextTooltipId = 0;
 
@@ -336,10 +335,7 @@ class Tooltip extends OpenClawLitElement {
 
   private readonly handlePointerMove = (event: PointerEvent) => {
     if (event.pointerType !== "touch") {
-      const target = event.target;
-      if (target instanceof Element && target.closest(SUPPRESS_WITHIN_SELECTOR)) {
-        this.suppressForPointerTarget();
-      } else if (this.triggerHovered) {
+      if (this.triggerHovered) {
         this.scheduleOpen();
       }
       return;
@@ -418,16 +414,6 @@ class Tooltip extends OpenClawLitElement {
       this.openTimer = null;
       this.show();
     }, delay);
-  }
-
-  private suppressForPointerTarget() {
-    this.clearTimers(false);
-    this.contentHovered = false;
-    if (this.webAwesomeTooltip?.open) {
-      this.webAwesomeTooltip.open = false;
-    }
-    this.triggerElement?.removeAttribute("data-tooltip-open");
-    this.provider?.closeTooltip(this);
   }
 
   private show() {
