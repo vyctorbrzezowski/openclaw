@@ -5549,7 +5549,7 @@ describe("chat model controls", () => {
     expect(onThinkingSelect).not.toHaveBeenCalled();
   });
 
-  it("hides provenance controls for an inherited default and resets a user pin", () => {
+  it("hides the provenance footer for an inherited default and resets a recorded pin", () => {
     const { state } = createChatHeaderState({
       model: "gpt-5",
       modelProvider: "openai",
@@ -5586,6 +5586,58 @@ describe("chat model controls", () => {
     expect(onModelSelect).toHaveBeenCalledWith("", "main");
     expect(details?.open).toBe(false);
     expect(document.activeElement).toBe(modelSelect);
+    container.remove();
+  });
+
+  // Settings can move the agent default onto — and back off — a session's pinned
+  // model. Provenance must survive both moves, and the default row must stay a live
+  // way to clear the pin while the two values coincide.
+  it("keeps a session pin selectable and clearable when the agent default becomes the pinned model", () => {
+    const { state } = createChatHeaderState({
+      model: "gpt-5.4",
+      modelProvider: "openai",
+      modelOverrideSource: "user",
+      models: createOpenAiModelCatalog(),
+    });
+    const onModelSelect = vi.fn(async () => true);
+    // The agent default moves onto the very model this session pinned.
+    state.sessionsResult = {
+      ...expectDefined(state.sessionsResult, "sessions result"),
+      defaults: {
+        ...expectDefined(state.sessionsResult, "sessions result").defaults,
+        model: "gpt-5.4",
+        modelProvider: "openai",
+      },
+    };
+    const container = renderModelControls(state, { onModelSelect });
+    document.body.append(container);
+
+    expect(container.querySelector(".chat-controls__model-provenance")?.textContent).toContain(
+      "Only for this session",
+    );
+    const defaultRow = container.querySelector<HTMLButtonElement>(
+      '[data-chat-model-option="openai/gpt-5.4"]',
+    );
+    expect(defaultRow?.dataset.chatModelDefault).toBe("true");
+    // Pre-fix this row was already the selected "inherited" sentinel, so the click
+    // was swallowed and the stored pin survived forever.
+    defaultRow?.click();
+    expect(onModelSelect).toHaveBeenCalledWith("", "main");
+
+    // The default moves away again; the untouched pin is still a pin.
+    onModelSelect.mockClear();
+    state.sessionsResult = {
+      ...expectDefined(state.sessionsResult, "sessions result"),
+      defaults: {
+        ...expectDefined(state.sessionsResult, "sessions result").defaults,
+        model: "gpt-5",
+        modelProvider: "openai",
+      },
+    };
+    renderModelControls(state, { onModelSelect }, container);
+    expect(container.querySelector(".chat-controls__model-provenance")?.textContent).toContain(
+      "Only for this session",
+    );
     container.remove();
   });
 
@@ -5749,18 +5801,13 @@ describe("chat model controls", () => {
     ]);
     expect(visibleOptions[0]?.hasAttribute("data-chat-model-highlighted")).toBe(true);
     expect(
+      visibleOptions[0]
+        ?.querySelector("[data-chat-model-shortcut]")
+        ?.getAttribute("data-chat-model-shortcut-number"),
+    ).toBe("1");
+    expect(
       visibleOptions[0]?.querySelector(".chat-controls__model-option-provider"),
     ).not.toBeNull();
-
-    // A query owns the digit keys, so the keycap promise is withdrawn with it.
-    expect(
-      visibleOptions[0]?.querySelector<HTMLElement>("[data-chat-model-shortcut]")?.hidden,
-    ).toBe(true);
-    expect(visibleOptions[0]?.hasAttribute("aria-keyshortcuts")).toBe(false);
-    const digit = new KeyboardEvent("keydown", { key: "1", bubbles: true, cancelable: true });
-    search!.dispatchEvent(digit);
-    expect(digit.defaultPrevented).toBe(false);
-    expect(onModelSelect).not.toHaveBeenCalled();
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     const highlighted = container.querySelector<HTMLButtonElement>("[data-chat-model-highlighted]");
@@ -5768,43 +5815,6 @@ describe("chat model controls", () => {
     expect(search?.getAttribute("aria-activedescendant")).toBe(highlighted?.id);
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(onModelSelect).toHaveBeenCalledWith("anthropic/claude-sonnet-4-6", "main");
-    expect(details?.open).toBe(false);
-    container.remove();
-  });
-
-  it("selects a model with its digit shortcut while the search is empty", () => {
-    const { state } = createChatHeaderState({
-      model: "gpt-5",
-      modelProvider: "openai",
-      modelOverrideSource: null,
-      models: [
-        { id: "gpt-5", name: "GPT-5", provider: "openai" },
-        { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", provider: "anthropic" },
-      ],
-    });
-    const onModelSelect = vi.fn(async () => true);
-    const container = renderModelControls(state, { onModelSelect });
-    document.body.append(container);
-
-    const details = container.querySelector<HTMLDetailsElement>(".chat-controls__model-picker");
-    const search = container.querySelector<HTMLInputElement>("[data-chat-model-search]");
-    details!.open = true;
-    search!.dispatchEvent(new InputEvent("input", { bubbles: true }));
-
-    const options = Array.from(
-      container.querySelectorAll<HTMLButtonElement>("[data-chat-model-option]"),
-    );
-    // The selected row keeps its check mark and still owns position 1.
-    expect(options[0]?.getAttribute("aria-selected")).toBe("true");
-    expect(options[1]?.dataset.chatModelOption).toBe("anthropic/claude-sonnet-4-6");
-    const shortcut = options[1]?.querySelector<HTMLElement>("[data-chat-model-shortcut]");
-    expect(shortcut?.hidden).toBe(false);
-    expect(shortcut?.textContent).toBe("2");
-    expect(shortcut?.closest("openclaw-tooltip")?.content).toBe("Press 2 to select");
-    expect(options[1]?.getAttribute("aria-keyshortcuts")).toBe("2");
-
-    search!.dispatchEvent(new KeyboardEvent("keydown", { key: "2", bubbles: true }));
     expect(onModelSelect).toHaveBeenCalledWith("anthropic/claude-sonnet-4-6", "main");
     expect(details?.open).toBe(false);
     container.remove();

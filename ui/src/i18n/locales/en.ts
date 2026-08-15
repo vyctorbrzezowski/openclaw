@@ -5186,7 +5186,6 @@ export const en: TranslationMap = {
       noMatchingModels: "No models match your search",
       onlyForSession: "Only for this session",
       useDefaultModel: "Use default ({model})",
-      modelShortcut: "Press {number} to select",
       defaultWithModel: "Default ({model})",
       defaultWithLevel: "Default ({level})",
       fastHelp: "Fast responses finish sooner and can use more of your usage limits.",

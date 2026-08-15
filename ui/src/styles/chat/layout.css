@@ -4762,10 +4762,6 @@ button.chat-reply-preview--message:disabled {
   font-size: 12px;
 }
 
-.chat-controls__model-provenance-value--inherit {
-  color: var(--muted);
-}
-
 .chat-controls__model-catalog-state {
   display: flex;
   align-items: center;

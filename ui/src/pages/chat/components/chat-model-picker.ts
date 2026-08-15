@@ -29,6 +29,8 @@ type ChatModelPickerParams = {
   modelOptions: ChatModelPickerOption[];
   targetGroups?: readonly ChatModelPickerTargetGroup[];
   selectedModelValue: string;
+  /** Recorded user pin, so the footer never offers a reset for an inherited default. */
+  sessionModelPinned: boolean;
   sessionKey: string;
   triggerModelLabel: string;
   triggerStatusLabel?: string;
@@ -555,44 +557,34 @@ export function renderChatModelPicker(params: ChatModelPickerParams) {
                       >
                         ${t("chat.modelControls.noMatchingModels")}
                       </div>
-                      ${params.modelOptions.length > 0
+                      ${params.sessionModelPinned && params.modelOptions.length > 0
                         ? html`<footer class="chat-controls__model-provenance">
-                            ${params.selectedModelValue === ""
-                              ? html`<span class="chat-controls__model-provenance-value--inherit">
-                                  ${t("chat.modelControls.usingDefault")}
-                                </span>`
-                              : html`
-                                  <span>${t("chat.modelControls.sessionOverride")}</span>
-                                  <openclaw-tooltip
-                                    .content=${t("chat.modelControls.resetToDefault", {
-                                      model: params.defaultModelLabel,
-                                    })}
-                                  >
-                                    <button
-                                      class="chat-controls__model-reset"
-                                      data-chat-model-reset="true"
-                                      type="button"
-                                      ?disabled=${params.disabled}
-                                      @click=${(event: MouseEvent) => {
-                                        event.stopPropagation();
-                                        if (params.disabled) {
-                                          event.preventDefault();
-                                          return;
-                                        }
-                                        commitModel("");
-                                        const details = (
-                                          event.currentTarget as HTMLElement
-                                        ).closest<HTMLDetailsElement>("details");
-                                        if (details) {
-                                          details.open = false;
-                                          details.querySelector<HTMLElement>("summary")?.focus();
-                                        }
-                                      }}
-                                    >
-                                      ${t("chat.modelControls.useDefault")}
-                                    </button>
-                                  </openclaw-tooltip>
-                                `}
+                            <span>${t("chat.modelControls.onlyForSession")}</span>
+                            <button
+                              class="chat-controls__model-reset"
+                              data-chat-model-reset="true"
+                              type="button"
+                              ?disabled=${params.disabled}
+                              @click=${(event: MouseEvent) => {
+                                event.stopPropagation();
+                                if (params.disabled) {
+                                  event.preventDefault();
+                                  return;
+                                }
+                                commitModel("");
+                                const details = (
+                                  event.currentTarget as HTMLElement
+                                ).closest<HTMLDetailsElement>("details");
+                                if (details) {
+                                  details.open = false;
+                                  details.querySelector<HTMLElement>("summary")?.focus();
+                                }
+                              }}
+                            >
+                              ${t("chat.modelControls.useDefaultModel", {
+                                model: params.defaultModelLabel,
+                              })}
+                            </button>
                           </footer>`
                         : nothing}
                     `
