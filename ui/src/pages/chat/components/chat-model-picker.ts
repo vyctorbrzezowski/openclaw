@@ -31,6 +31,8 @@ type ChatModelPickerParams = {
   modelOptions: ChatModelPickerOption[];
   targetGroups?: readonly ChatModelPickerTargetGroup[];
   selectedModelValue: string;
+  /** Recorded user pin, so inherited defaults never receive session-only treatment. */
+  sessionModelPinned: boolean;
   sessionKey: string;
   triggerModelLabel: string;
   triggerStatusLabel?: string;
@@ -600,9 +602,9 @@ export function renderChatModelPicker(params: ChatModelPickerParams) {
                       ${params.contextWindow
                         ? renderContextWindowControl(params.contextWindow, params.sessionKey)
                         : nothing}
-                      ${params.modelOptions.length > 0 && params.selectedModelValue !== ""
+                      ${params.sessionModelPinned && params.modelOptions.length > 0
                         ? html`<footer class="chat-controls__model-provenance">
-                            <span>${t("chat.modelControls.sessionOverride")}</span>
+                            <span>${t("chat.modelControls.onlyForSession")}</span>
                           </footer>`
                         : nothing}
                     `

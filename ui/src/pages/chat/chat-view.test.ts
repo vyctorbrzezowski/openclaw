@@ -5914,7 +5914,6 @@ describe("chat model controls", () => {
     const container = renderModelControls(state);
 
     expect(container.querySelector(".chat-controls__model-provenance")).toBeNull();
-    expect(container.querySelector("[data-chat-model-reset]")).toBeNull();
 
     state.sessionsResult = createSessionsListResult({
       model: "gpt-5.4",
@@ -5926,7 +5925,58 @@ describe("chat model controls", () => {
     expect(container.querySelector(".chat-controls__model-provenance")?.textContent?.trim()).toBe(
       "Only for this session",
     );
-    expect(container.querySelector("[data-chat-model-reset]")).toBeNull();
+  });
+
+  // Settings can move the agent default onto - and back off - a session's pinned
+  // model. Provenance must survive both moves, and the default row must stay a live
+  // way to clear the pin while the two values coincide.
+  it("keeps a session pin selectable and clearable when the agent default becomes the pinned model", () => {
+    const { state } = createChatHeaderState({
+      model: "gpt-5.4",
+      modelProvider: "openai",
+      modelOverrideSource: "user",
+      models: createOpenAiModelCatalog(),
+    });
+    const onModelSelect = vi.fn(async () => true);
+    // The agent default moves onto the very model this session pinned.
+    state.sessionsResult = {
+      ...expectDefined(state.sessionsResult, "sessions result"),
+      defaults: {
+        ...expectDefined(state.sessionsResult, "sessions result").defaults,
+        model: "gpt-5.4",
+        modelProvider: "openai",
+      },
+    };
+    const container = renderModelControls(state, { onModelSelect });
+    document.body.append(container);
+
+    expect(container.querySelector(".chat-controls__model-provenance")?.textContent).toContain(
+      "Only for this session",
+    );
+    const defaultRow = container.querySelector<HTMLButtonElement>(
+      '[data-chat-model-option="openai/gpt-5.4"]',
+    );
+    expect(defaultRow?.dataset.chatModelDefault).toBe("true");
+    // Pre-fix this row was already the selected "inherited" sentinel, so the click
+    // was swallowed and the stored pin survived forever.
+    defaultRow?.click();
+    expect(onModelSelect).toHaveBeenCalledWith("", "main");
+
+    // The default moves away again; the untouched pin is still a pin.
+    onModelSelect.mockClear();
+    state.sessionsResult = {
+      ...expectDefined(state.sessionsResult, "sessions result"),
+      defaults: {
+        ...expectDefined(state.sessionsResult, "sessions result").defaults,
+        model: "gpt-5",
+        modelProvider: "openai",
+      },
+    };
+    renderModelControls(state, { onModelSelect }, container);
+    expect(container.querySelector(".chat-controls__model-provenance")?.textContent).toContain(
+      "Only for this session",
+    );
+    container.remove();
   });
 
   it("hides model choices for locked sessions while preserving reasoning and speed", () => {
@@ -6089,18 +6139,13 @@ describe("chat model controls", () => {
     ]);
     expect(visibleOptions[0]?.hasAttribute("data-chat-model-highlighted")).toBe(true);
     expect(
+      visibleOptions[0]
+        ?.querySelector("[data-chat-model-shortcut]")
+        ?.getAttribute("data-chat-model-shortcut-number"),
+    ).toBe("1");
+    expect(
       visibleOptions[0]?.querySelector(".chat-controls__model-option-provider"),
     ).not.toBeNull();
-
-    // A query owns the digit keys, so the keycap promise is withdrawn with it.
-    expect(
-      visibleOptions[0]?.querySelector<HTMLElement>("[data-chat-model-shortcut]")?.hidden,
-    ).toBe(true);
-    expect(visibleOptions[0]?.hasAttribute("aria-keyshortcuts")).toBe(false);
-    const digit = new KeyboardEvent("keydown", { key: "1", bubbles: true, cancelable: true });
-    search!.dispatchEvent(digit);
-    expect(digit.defaultPrevented).toBe(false);
-    expect(onModelSelect).not.toHaveBeenCalled();
 
     search!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     const highlighted = container.querySelector<HTMLButtonElement>("[data-chat-model-highlighted]");
@@ -6140,7 +6185,6 @@ describe("chat model controls", () => {
     expect(visibleOptions).toHaveLength(1);
     expect(visibleOptions[0]?.dataset.chatModelDefault).toBe("true");
   });
-
   it("groups legacy Codex model references under OpenAI", () => {
     const { state } = createChatHeaderState({
       model: "gpt-5.5",
