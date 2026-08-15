@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render } from "lit";
+import { render, type TemplateResult } from "lit";
 import { afterEach, describe, expect, it } from "vitest";
 import { icons } from "./icons.ts";
 
@@ -8,28 +8,37 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("vendored stroke icons", () => {
-  it("exposes the shared presentation marker and SVG stroke contract", () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    render(icons.search, container);
+function renderIcon(body: TemplateResult): SVGElement | null {
+  const container = document.createElement("div");
+  document.body.append(container);
+  render(body, container);
+  return container.querySelector("svg");
+}
 
-    const svg = container.querySelector("svg");
+describe("vendored Solar outline icons", () => {
+  it("exposes the shared presentation marker and SVG fill contract", () => {
+    const svg = renderIcon(icons.search);
+
     expect(svg?.hasAttribute("data-lucide-icon")).toBe(true);
-    expect(svg?.getAttribute("fill")).toBe("none");
-    expect(svg?.getAttribute("stroke")).toBe("currentColor");
-    expect(svg?.getAttribute("stroke-linecap")).toBe("round");
-    expect(svg?.getAttribute("stroke-linejoin")).toBe("round");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+    expect(svg?.getAttribute("stroke")).toBe("none");
   });
 
-  it("renders the semantic ellipsis as three solid dots", () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    render(icons.ellipsis, container);
+  // Glyphs Solar outline has no honest match for stay stroked. They must sit on
+  // the same 24px grid at Solar's 1.5 outline weight, or a kept glyph reads as a
+  // different icon set beside its Solar neighbours in the same row.
+  it("keeps the retained stroked glyphs on Solar's grid and optical weight", () => {
+    const svg = renderIcon(icons.gitBranch);
 
-    const circles = [...container.querySelectorAll("circle")];
-    expect(circles).toHaveLength(3);
-    expect(circles.every((circle) => circle.getAttribute("fill") === "currentColor")).toBe(true);
-    expect(circles.every((circle) => circle.getAttribute("stroke") === "none")).toBe(true);
+    expect(svg?.hasAttribute("data-lucide-icon")).toBe(true);
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg?.getAttribute("fill")).toBe("none");
+    expect(svg?.getAttribute("stroke")).toBe("currentColor");
+    expect(svg?.getAttribute("stroke-width")).toBe("1.5");
+  });
+
+  it("renders one shared menu-dots glyph for both overflow names", () => {
+    expect(icons.ellipsis).toBe(icons.moreHorizontal);
   });
 });
