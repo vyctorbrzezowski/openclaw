@@ -13,7 +13,7 @@ export function renderContinueInTerminalDialog(params: { command: string; onClos
       description=${description}
       @modal-cancel=${params.onClose}
     >
-      <section class="exec-approval-card continue-in-terminal-dialog__card">
+      <section class="dialog-surface continue-in-terminal-dialog__card">
         <header class="continue-in-terminal-dialog__header">
           <h2>${title}</h2>
           <p>${description}</p>
@@ -22,7 +22,7 @@ export function renderContinueInTerminalDialog(params: { command: string; onClos
         <p class="continue-in-terminal-dialog__note">
           ${t("chat.sessionHeader.continueInTerminal.authNote")}
         </p>
-        <footer class="exec-approval-actions">
+        <footer class="dialog-footer">
           <button type="button" class="btn primary" @click=${params.onClose}>
             ${t("common.close")}
           </button>

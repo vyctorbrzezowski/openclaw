@@ -3224,19 +3224,13 @@ td.data-table-key-col {
 
 /* ===========================================
    Exec Approval Modal
-   =========================================== */
 
-.exec-approval-card {
-  width: 100%;
-  max-height: inherit;
-  display: flex;
-  flex-direction: column;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  animation: scale-in 0.2s var(--ease-out);
-}
+   Surface, header, title, subtitle, detail block, footer and opt-out
+   all come from the dialog grammar (styles/dialog.css). What stays
+   here is what only an approval has: the queue badge, the metadata
+   rows, the pending list, and the inline variant that lives in the
+   transcript rather than in a dialog.
+   =========================================== */
 
 .exec-approval-modal-stack {
   display: flex;
@@ -3246,29 +3240,15 @@ td.data-table-key-col {
   overflow-y: auto;
 }
 
+/* The inline approval is the same card rendered in the transcript, so it
+   drops the dialog's lift and entrance and takes a warn tint instead —
+   a message that arrived, not a surface that opened over the page. */
 .exec-approval-card--inline {
   padding: 14px 16px;
   border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
   background: color-mix(in srgb, var(--warn) 5%, var(--card));
+  box-shadow: none;
   animation: none;
-}
-
-.exec-approval-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.exec-approval-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.exec-approval-sub {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 4px;
 }
 
 .exec-approval-queue {
@@ -3280,21 +3260,7 @@ td.data-table-key-col {
   padding: 4px 10px;
 }
 
-.exec-approval-command {
-  margin-top: 12px;
-  max-height: min(40dvh, 320px);
-  padding: 10px 12px;
-  background: var(--secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow-y: auto;
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-family: var(--mono);
-  font-size: 13px;
-}
-
-.exec-approval-command-span {
+.dialog-code__match {
   border-radius: 3px;
   padding: 0 2px;
   background: color-mix(in srgb, var(--exec-highlight) 34%, transparent);
@@ -3323,49 +3289,8 @@ td.data-table-key-col {
   text-align: right;
 }
 
-.exec-approval-error {
-  margin-top: 10px;
-  font-size: 13px;
-  color: var(--danger);
-}
-
 .input-dialog__field {
   margin-top: 14px;
-}
-
-.exec-approval-warning {
-  margin-top: 10px;
-  font-size: 13px;
-  color: var(--warn);
-}
-
-/* The confirm opt-out is a control, not a continuation of the message copy, so it
-   takes the same 12px separation the details block uses and keeps the 16px action
-   gap below it. Without the margin it reads as a third line of the paragraph. */
-.exec-approval-skip {
-  margin-top: 12px;
-  column-gap: 10px;
-  font-size: 13px;
-  cursor: var(--cursor-action);
-}
-
-.exec-approval-skip input[type="checkbox"] {
-  margin: 0;
-  width: 16px;
-  height: 16px;
-}
-
-.exec-approval-actions {
-  margin-top: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.exec-approval-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .exec-approval-list {
@@ -3493,7 +3418,7 @@ td.data-table-key-col {
   height: 100%;
 }
 
-/* The reassurance carries full text weight, unlike the muted .exec-approval-sub it
+/* The reassurance carries full text weight, unlike the muted .dialog-subtitle it
    replaced; this is the zone that should read as settled rather than incidental. */
 .secret-reveal__body {
   margin-top: 16px;
@@ -5068,30 +4993,6 @@ td.data-table-key-col {
   font-family: var(--mono);
   font-size: 12px; /* was 10px */
   line-height: 1.4;
-}
-
-@media (max-width: 768px) {
-  .exec-approval-card {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .exec-approval-actions {
-    flex-direction: column;
-    flex-shrink: 0;
-  }
-
-  .exec-approval-actions .btn {
-    width: 100%;
-  }
-
-  .exec-approval-command {
-    font-size: 12px;
-    padding: 8px 10px;
-    max-height: 40dvh;
-    overflow-y: auto;
-  }
 }
 
 /* ── Shared collapse chevron ── */

@@ -140,9 +140,9 @@ function presentInputDialog(options: InputDialogOptions): Promise<string | null>
             description=${label}
             @modal-cancel=${handleCancel}
           >
-            <form class="exec-approval-card" @submit=${handleSubmit}>
-              <div class="exec-approval-header">
-                <div class="exec-approval-title">${options.title}</div>
+            <form class="dialog-surface" @submit=${handleSubmit}>
+              <div class="dialog-header">
+                <div class="dialog-title">${options.title}</div>
               </div>
               <label class="field input-dialog__field">
                 <span>${label}</span>
@@ -158,10 +158,8 @@ function presentInputDialog(options: InputDialogOptions): Promise<string | null>
                   autofocus
                 />
               </label>
-              ${failure
-                ? html`<div class="exec-approval-error" role="alert">${failure}</div>`
-                : nothing}
-              <div class="exec-approval-actions">
+              ${failure ? html`<div class="dialog-error" role="alert">${failure}</div>` : nothing}
+              <div class="dialog-footer">
                 <button type="submit" class="btn primary" ?disabled=${submitting || blocked}>
                   ${options.submitLabel ?? t("common.save")}
                 </button>

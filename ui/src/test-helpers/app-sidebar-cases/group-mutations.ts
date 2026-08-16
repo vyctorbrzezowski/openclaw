@@ -130,7 +130,7 @@ describe("AppSidebar group mutation collapsed state", () => {
     selectGroupMenuAction(menu, "delete-group");
     const confirm = await waitForFast(() => {
       const button = document.body.querySelector<HTMLButtonElement>(
-        "openclaw-modal-dialog .exec-approval-actions .btn.danger",
+        "openclaw-modal-dialog .dialog-footer .btn.danger",
       );
       if (!button) {
         throw new Error("expected the group delete confirm");
@@ -218,7 +218,7 @@ describe("AppSidebar group mutation collapsed state", () => {
     selectGroupMenuAction(menu, "delete-group");
     const confirm = await waitForFast(() => {
       const button = document.body.querySelector<HTMLButtonElement>(
-        "openclaw-modal-dialog .exec-approval-actions .btn.danger",
+        "openclaw-modal-dialog .dialog-footer .btn.danger",
       );
       if (!button) {
         throw new Error("expected the group delete confirm");
@@ -285,7 +285,7 @@ describe("AppSidebar group mutation collapsed state", () => {
     // group, its members and the collapsed key untouched.
     const cancel = await waitForFast(() => {
       const buttons = document.body.querySelectorAll<HTMLButtonElement>(
-        "openclaw-modal-dialog .exec-approval-actions .btn",
+        "openclaw-modal-dialog .dialog-footer .btn",
       );
       if (buttons.length !== 2) {
         throw new Error("expected the group delete confirm");

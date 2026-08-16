@@ -35,11 +35,11 @@ export function renderConnectMachineDialog(props: ConnectMachineDialogProps) {
       description=${t("newSession.connectMachineDescription")}
       @modal-cancel=${props.onClose}
     >
-      <section class="exec-approval-card connect-machine-dialog__card">
-        <header class="exec-approval-header">
-          <div>
-            <h2 class="exec-approval-title">${title}</h2>
-            <p class="exec-approval-sub">${t("newSession.connectMachineDescription")}</p>
+      <section class="dialog-surface connect-machine-dialog__card">
+        <header class="dialog-header">
+          <div class="dialog-heading">
+            <h2 class="dialog-title">${title}</h2>
+            <p class="dialog-subtitle">${t("newSession.connectMachineDescription")}</p>
           </div>
           <button
             class="btn btn--icon btn--ghost"
@@ -58,7 +58,7 @@ export function renderConnectMachineDialog(props: ConnectMachineDialogProps) {
               </p>`
             : nothing}
           ${props.error
-            ? html`<p class="exec-approval-error" role="alert">
+            ? html`<p class="dialog-error" role="alert">
                 ${t("newSession.connectMachineFailed")} ${props.error}
               </p>`
             : nothing}
@@ -77,7 +77,7 @@ export function renderConnectMachineDialog(props: ConnectMachineDialogProps) {
             : nothing}
         </div>
 
-        <footer class="exec-approval-actions connect-machine-dialog__actions">
+        <footer class="dialog-footer connect-machine-dialog__actions">
           ${command || props.error
             ? html`<button
                 class="btn"

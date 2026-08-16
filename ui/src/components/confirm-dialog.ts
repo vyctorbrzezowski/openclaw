@@ -57,20 +57,18 @@ function presentConfirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
           description=${options.message}
           @modal-cancel=${() => finish(false)}
         >
-          <div class="exec-approval-card">
-            <div class="exec-approval-header">
-              <div>
-                <div class="exec-approval-title">${title}</div>
-                <div class="exec-approval-sub" style="white-space: pre-line">
-                  ${options.message}
-                </div>
+          <div class="dialog-surface">
+            <div class="dialog-header">
+              <div class="dialog-heading">
+                <div class="dialog-title">${title}</div>
+                <div class="dialog-subtitle" style="white-space: pre-line">${options.message}</div>
               </div>
             </div>
             ${options.details
-              ? html`<div class="exec-approval-command mono">${options.details}</div>`
+              ? html`<div class="dialog-code mono">${options.details}</div>`
               : nothing}
             ${options.skipPreference
-              ? html`<label class="field checkbox exec-approval-skip">
+              ? html`<label class="field checkbox dialog-optout">
                   <input
                     type="checkbox"
                     @change=${(event: Event) => {
@@ -80,7 +78,7 @@ function presentConfirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
                   <span>${t("common.dontAskAgain")}</span>
                 </label>`
               : nothing}
-            <div class="exec-approval-actions">
+            <div class="dialog-footer">
               <button
                 type="button"
                 class="btn ${options.danger ? "danger" : "primary"}"

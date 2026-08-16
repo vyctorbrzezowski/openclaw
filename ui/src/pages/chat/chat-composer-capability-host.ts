@@ -507,11 +507,11 @@ export class ChatComposerCapabilityHost {
           this.closeAddDialog();
         }}
       >
-        <div class="exec-approval-card mcp-server-dialog">
-          <div class="exec-approval-header">
-            <div>
-              <div class="exec-approval-title">${title}</div>
-              <div class="exec-approval-sub">${description}</div>
+        <div class="dialog-surface mcp-server-dialog">
+          <div class="dialog-header">
+            <div class="dialog-heading">
+              <div class="dialog-title">${title}</div>
+              <div class="dialog-subtitle">${description}</div>
             </div>
           </div>
           <div class="mcp-server-dialog__scope">

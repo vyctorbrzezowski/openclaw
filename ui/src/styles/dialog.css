@@ -203,6 +203,27 @@ openclaw-modal-dialog.dialog-2xl {
   font-size: 13px;
 }
 
+.dialog-warning {
+  margin-top: 10px;
+  color: var(--warn);
+  font-size: 13px;
+}
+
+/* "Don't ask again". A control, not a third line of the message, so it
+   takes the same separation the detail block does. */
+.dialog-optout {
+  margin-top: 12px;
+  column-gap: 10px;
+  cursor: var(--cursor-action);
+  font-size: 13px;
+}
+
+.dialog-optout input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 .dialog-note {
   margin: 12px 0 0;
   color: var(--muted);
@@ -263,5 +284,11 @@ openclaw-modal-dialog.dialog-2xl {
   .dialog-footer .btn {
     justify-content: center;
     width: 100%;
+  }
+
+  .dialog-code {
+    max-height: 40dvh;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 }

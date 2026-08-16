@@ -267,7 +267,7 @@ suite.define(() => {
           .toBeLessThanOrEqual(0);
       };
       const hiddenActionCounts = async () => ({
-        confirms: await page.locator("openclaw-modal-dialog .exec-approval-actions").count(),
+        confirms: await page.locator("openclaw-modal-dialog .dialog-footer").count(),
         nativeDialogs: nativeDialogs.length,
         patches: (await gateway.getRequests("sessions.patch")).length,
       });

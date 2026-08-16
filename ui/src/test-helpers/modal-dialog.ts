@@ -51,7 +51,7 @@ export function installDialogPolyfill(): () => void {
 export function waitForConfirmDialogActions(): Promise<HTMLElement> {
   return vi.waitFor(() => {
     const actions = document.body.querySelector<HTMLElement>(
-      "openclaw-modal-dialog .exec-approval-actions",
+      "openclaw-modal-dialog .dialog-footer",
     );
     if (!actions) {
       throw new Error("Expected an open confirm dialog");

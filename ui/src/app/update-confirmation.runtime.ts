@@ -119,17 +119,15 @@ export async function confirmAndStartUpdateRuntime(
       render(
         html`
           <openclaw-modal-dialog label=${route.title} description=${body} @modal-cancel=${finish}>
-            <div class="exec-approval-card">
-              <div class="exec-approval-header">
-                <div>
-                  <div class="exec-approval-title">${route.title}</div>
-                  <div class="exec-approval-sub" style="white-space: pre-line">${body}</div>
+            <div class="dialog-surface">
+              <div class="dialog-header">
+                <div class="dialog-heading">
+                  <div class="dialog-title">${route.title}</div>
+                  <div class="dialog-subtitle" style="white-space: pre-line">${body}</div>
                 </div>
               </div>
-              ${details && !failed
-                ? html`<div class="exec-approval-command mono">${details}</div>`
-                : nothing}
-              <div class="exec-approval-actions">
+              ${details && !failed ? html`<div class="dialog-code mono">${details}</div>` : nothing}
+              <div class="dialog-footer">
                 ${failed
                   ? html`<button type="button" class="btn" autofocus @click=${finish}>
                       ${t("common.close")}

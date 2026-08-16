@@ -608,7 +608,7 @@ describe("session organizer destructive confirmations", () => {
 
     const pending = operation.run(harness);
     const actions = await waitForConfirmDialogActions();
-    expect(document.body.querySelector(".exec-approval-skip")).toBeNull();
+    expect(document.body.querySelector(".dialog-optout")).toBeNull();
     answerConfirmDialog(actions, "cancel");
     await pending;
   });
@@ -622,7 +622,7 @@ describe("session organizer destructive confirmations", () => {
     const actions = await waitForConfirmDialogActions();
     const skip = actions
       .closest("openclaw-modal-dialog")
-      ?.querySelector<HTMLInputElement>('.exec-approval-skip input[type="checkbox"]');
+      ?.querySelector<HTMLInputElement>('.dialog-optout input[type="checkbox"]');
     if (!skip) {
       throw new Error("expected the skip checkbox");
     }
@@ -644,7 +644,7 @@ describe("session organizer destructive confirmations", () => {
 
     const pending = deleteSession(harness.host, sessionRow(0), harness.scope);
     const actions = await waitForConfirmDialogActions();
-    expect(document.body.querySelector(".exec-approval-skip")).toBeNull();
+    expect(document.body.querySelector(".dialog-optout")).toBeNull();
     answerConfirmDialog(actions, "confirm");
     await pending;
 

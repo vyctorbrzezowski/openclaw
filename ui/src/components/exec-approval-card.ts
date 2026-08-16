@@ -60,7 +60,7 @@ function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
     }
   }
   if (!accepted.length) {
-    return html`<div class="exec-approval-command mono">${request.command}</div>`;
+    return html`<div class="dialog-code mono">${request.command}</div>`;
   }
   const parts = [];
   cursor = 0;
@@ -69,7 +69,7 @@ function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
       parts.push(request.command.slice(cursor, span.startIndex));
     }
     parts.push(
-      html`<mark class="exec-approval-command-span"
+      html`<mark class="dialog-code__match"
         >${request.command.slice(span.startIndex, span.endIndex)}</mark
       >`,
     );
@@ -78,7 +78,7 @@ function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
   if (cursor < request.command.length) {
     parts.push(request.command.slice(cursor));
   }
-  return html`<div class="exec-approval-command mono">${parts}</div>`;
+  return html`<div class="dialog-code mono">${parts}</div>`;
 }
 
 function renderExecBody(request: ExecApprovalRequestPayload) {
@@ -96,7 +96,7 @@ function renderExecBody(request: ExecApprovalRequestPayload) {
 
 function renderPluginBody(active: ExecApprovalRequest) {
   return html` ${active.pluginDescription
-      ? html`<pre class="exec-approval-command mono" style="white-space:pre-wrap">
+      ? html`<pre class="dialog-code mono" style="white-space:pre-wrap">
 ${active.pluginDescription}</pre>`
       : nothing}
     <div class="exec-approval-meta">
@@ -152,13 +152,13 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
   const title = approvalTitle(active);
   // A timer role preserves context without per-second aria-live announcements.
   return html` <div
-    class="exec-approval-card exec-approval-card--${props.variant}"
+    class="dialog-surface exec-approval-card--${props.variant}"
     data-approval-id=${active.id}
   >
-    <div class="exec-approval-header">
-      <div>
-        <div class="exec-approval-title">${title}</div>
-        <div class="exec-approval-sub exec-approval-countdown" role="timer">
+    <div class="dialog-header">
+      <div class="dialog-heading">
+        <div class="dialog-title">${title}</div>
+        <div class="dialog-subtitle exec-approval-countdown" role="timer">
           ${approvalRemainingLabel(active.expiresAtMs, props.nowMs)}
         </div>
       </div>
@@ -170,10 +170,10 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
     </div>
     ${active.kind === "exec" ? renderExecBody(active.request) : renderPluginBody(active)}
     ${active.kind === "exec" && !decisions.includes("allow-always")
-      ? html`<div class="exec-approval-warning">${t("execApproval.allowAlwaysUnavailable")}</div>`
+      ? html`<div class="dialog-warning">${t("execApproval.allowAlwaysUnavailable")}</div>`
       : nothing}
-    ${props.error ? html`<div class="exec-approval-error">${props.error}</div>` : nothing}
-    <div class="exec-approval-actions">
+    ${props.error ? html`<div class="dialog-error">${props.error}</div>` : nothing}
+    <div class="dialog-footer">
       ${decisions.map((decision) => {
         const label = decisionLabel(decision);
         return html`<button

@@ -464,7 +464,7 @@ describe("CronPage editor state sync", () => {
     await waitForCronPage(() => expect(findRemoveButton()?.disabled).toBe(false));
     findRemoveButton()?.click();
     const findConfirmButton = () =>
-      Array.from(document.querySelectorAll<HTMLButtonElement>(".exec-approval-actions .btn")).find(
+      Array.from(document.querySelectorAll<HTMLButtonElement>(".dialog-footer .btn")).find(
         (button) => button.textContent?.trim() === "Remove",
       );
     await waitForCronPage(() => expect(findConfirmButton()).toBeDefined());

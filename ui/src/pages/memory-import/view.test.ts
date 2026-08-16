@@ -296,9 +296,7 @@ describe("renderMemoryImport", () => {
       container,
     );
 
-    const buttons = [
-      ...container.querySelectorAll<HTMLButtonElement>(".exec-approval-actions button"),
-    ];
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>(".dialog-footer button")];
     expect(buttons).toHaveLength(2);
     expect(buttons.every((button) => button.disabled)).toBe(true);
     buttons[0]?.click();

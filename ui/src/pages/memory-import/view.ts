@@ -389,11 +389,11 @@ function renderConfirmation(props: MemoryImportViewProps) {
         }
       }}
     >
-      <div class="exec-approval-card memory-import__confirm">
-        <div class="exec-approval-header">
-          <div>
-            <div class="exec-approval-title">${title}</div>
-            <div class="exec-approval-sub">${description}</div>
+      <div class="dialog-surface memory-import__confirm">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div class="dialog-title">${title}</div>
+            <div class="dialog-subtitle">${description}</div>
           </div>
         </div>
         <div class="callout ${props.replaceExisting ? "warn" : ""}">
@@ -401,7 +401,7 @@ function renderConfirmation(props: MemoryImportViewProps) {
             ? t("memoryImport.confirmReplace")
             : t("memoryImport.confirmBackup")}
         </div>
-        <div class="exec-approval-actions">
+        <div class="dialog-footer">
           <button
             class="btn primary"
             data-test-id="memory-import-confirm"
@@ -477,19 +477,17 @@ function renderBackfillConfirmation(props: MemoryImportViewProps) {
       description=${t("memoryImport.backfill.rollbackConfirmDescription")}
       @modal-cancel=${props.onBackfillRollbackCancel}
     >
-      <div class="exec-approval-card memory-import__confirm">
-        <div class="exec-approval-header">
-          <div>
-            <div class="exec-approval-title">
-              ${t("memoryImport.backfill.rollbackConfirmTitle")}
-            </div>
-            <div class="exec-approval-sub">
+      <div class="dialog-surface memory-import__confirm">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div class="dialog-title">${t("memoryImport.backfill.rollbackConfirmTitle")}</div>
+            <div class="dialog-subtitle">
               ${t("memoryImport.backfill.rollbackConfirmDescription")}
             </div>
           </div>
         </div>
         <div class="callout warn">${t("memoryImport.backfill.rollbackWarning")}</div>
-        <div class="exec-approval-actions">
+        <div class="dialog-footer">
           <button
             class="btn danger"
             data-test-id="memory-backfill-rollback-confirm"

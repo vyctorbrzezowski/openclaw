@@ -91,11 +91,11 @@ describe("openclaw-exec-approval", () => {
     await getRenderedModalDialog(container);
 
     expect(
-      Array.from(container.querySelectorAll(".exec-approval-actions button > span")).map((label) =>
+      Array.from(container.querySelectorAll(".dialog-footer button > span")).map((label) =>
         label.textContent?.trim(),
       ),
     ).toEqual(["Allow once", "Deny"]);
-    expect(container.querySelector(".exec-approval-warning")?.textContent?.trim()).toBe(
+    expect(container.querySelector(".dialog-warning")?.textContent?.trim()).toBe(
       "Allow Always is unavailable for this command.",
     );
   });
@@ -116,11 +116,11 @@ describe("openclaw-exec-approval", () => {
     await getRenderedModalDialog(container);
 
     expect(
-      Array.from(container.querySelectorAll(".exec-approval-actions button > span")).map((label) =>
+      Array.from(container.querySelectorAll(".dialog-footer button > span")).map((label) =>
         label.textContent?.trim(),
       ),
     ).toEqual(["Allow once", "Deny"]);
-    expect(container.querySelector(".exec-approval-warning")).toBeNull();
+    expect(container.querySelector(".dialog-warning")).toBeNull();
   });
 
   it("renders the live expiry countdown as mm:ss", async () => {
@@ -144,13 +144,13 @@ describe("openclaw-exec-approval", () => {
     const { approval } = await renderApproval(queue);
     await getRenderedModalDialog(container);
 
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-oldest",
     );
     container.querySelector<HTMLButtonElement>(".exec-approval-list__item")?.click();
     await approval.updateComplete;
 
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-newer",
     );
     expect(queue.map((entry) => entry.id)).toEqual(["approval-oldest", "approval-newer"]);
@@ -217,7 +217,7 @@ describe("openclaw-exec-approval", () => {
     const older = createExecRequest({ id: "approval-older", createdAtMs: 1_000 });
     const { approval } = await renderApproval([newer]);
     await getRenderedModalDialog(container);
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-newer",
     );
 
@@ -225,14 +225,14 @@ describe("openclaw-exec-approval", () => {
     // the user is reading must not swap out from under them.
     await renderApproval([older, newer]);
     await approval.updateComplete;
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-newer",
     );
 
     // Once the pinned request settles, the head takes over.
     await renderApproval([older]);
     await approval.updateComplete;
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-older",
     );
   });
@@ -246,13 +246,13 @@ describe("openclaw-exec-approval", () => {
 
     container.querySelector<HTMLButtonElement>(".exec-approval-list__item")?.click();
     await approval.updateComplete;
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-selected",
     );
 
     await renderApproval([displayedHead, selected], { inlineApprovalId: selected.id });
     await approval.updateComplete;
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-head",
     );
 
@@ -260,7 +260,7 @@ describe("openclaw-exec-approval", () => {
       inlineApprovalId: selected.id,
     });
     await approval.updateComplete;
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-head",
     );
   });
@@ -337,7 +337,7 @@ describe("openclaw-exec-approval", () => {
     );
 
     await getRenderedModalDialog(container);
-    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+    expect(container.querySelector("[data-approval-id]")?.getAttribute("data-approval-id")).toBe(
       "approval-other",
     );
   });

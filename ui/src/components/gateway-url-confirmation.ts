@@ -26,18 +26,18 @@ function renderGatewayUrlConfirmation(props: GatewayUrlConfirmationProps) {
       description=${description}
       @modal-cancel=${props.onCancel}
     >
-      <div class="exec-approval-card">
-        <div class="exec-approval-header">
-          <div>
-            <div id=${titleId} class="exec-approval-title">${title}</div>
-            <div id=${descriptionId} class="exec-approval-sub">${description}</div>
+      <div class="dialog-surface">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div id=${titleId} class="dialog-title">${title}</div>
+            <div id=${descriptionId} class="dialog-subtitle">${description}</div>
           </div>
         </div>
-        <div class="exec-approval-command mono">${props.pendingGatewayUrl}</div>
+        <div class="dialog-code mono">${props.pendingGatewayUrl}</div>
         <div class="callout danger" style="margin-top: 12px;">
           ${t("channels.gatewayUrlConfirmation.warning")}
         </div>
-        <div class="exec-approval-actions">
+        <div class="dialog-footer">
           <button class="btn primary" @click=${props.onConfirm}>${t("common.confirm")}</button>
           <button class="btn" @click=${props.onCancel}>${t("common.cancel")}</button>
         </div>

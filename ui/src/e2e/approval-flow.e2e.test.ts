@@ -59,17 +59,15 @@ suite.define(() => {
 
     await expect
       .poll(() =>
-        currentPage
-          .locator('[data-approval-id="approval-active"] .exec-approval-error')
-          .textContent(),
+        currentPage.locator('[data-approval-id="approval-active"] .dialog-error').textContent(),
       )
       .toBe("Approval failed: gateway unavailable");
 
     await currentPage.getByText("echo newer", { exact: true }).click();
     await expect
-      .poll(() => currentPage.locator(".exec-approval-card").getAttribute("data-approval-id"))
+      .poll(() => currentPage.locator("[data-approval-id]").getAttribute("data-approval-id"))
       .toBe("approval-newer");
-    await expect.poll(() => currentPage.locator(".exec-approval-error").count()).toBe(0);
+    await expect.poll(() => currentPage.locator(".dialog-error").count()).toBe(0);
     await expect
       .poll(() => currentPage.getByRole("button", { name: "Deny" }).isEnabled())
       .toBe(true);

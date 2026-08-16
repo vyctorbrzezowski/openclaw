@@ -8,7 +8,7 @@ let restoreDialogPolyfill: () => void;
 
 function tickSkipCheckbox() {
   const checkbox = document.body.querySelector<HTMLInputElement>(
-    '.exec-approval-skip input[type="checkbox"]',
+    '.dialog-optout input[type="checkbox"]',
   );
   if (!checkbox) {
     throw new Error("Expected the skip-preference checkbox");
@@ -81,7 +81,7 @@ describe("showConfirmDialog", () => {
   it("offers the opt-out only when a skip preference is supplied", async () => {
     const plain = showConfirmDialog({ message: "Continue?" });
     await getRenderedModalDialog(document.body);
-    expect(document.body.querySelector(".exec-approval-skip")).toBeNull();
+    expect(document.body.querySelector(".dialog-optout")).toBeNull();
     findButton("Cancel").click();
     await expect(plain).resolves.toBe(false);
 
@@ -92,7 +92,7 @@ describe("showConfirmDialog", () => {
     });
     await getRenderedModalDialog(document.body);
 
-    expect(document.body.querySelector(".exec-approval-skip")).toBeInstanceOf(HTMLElement);
+    expect(document.body.querySelector(".dialog-optout")).toBeInstanceOf(HTMLElement);
     findButton("Confirm").click();
     await expect(offered).resolves.toBe(true);
     expect(remember).not.toHaveBeenCalled();

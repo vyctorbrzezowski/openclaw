@@ -38,20 +38,20 @@ export function renderDreamingToggleConfirmation(props: DreamingToggleConfirmati
 
   return html`
     <openclaw-modal-dialog label=${title} description=${description} @modal-cancel=${handleCancel}>
-      <div class="exec-approval-card">
-        <div class="exec-approval-header">
-          <div>
-            <div id=${titleId} class="exec-approval-title">${title}</div>
-            <div id=${descriptionId} class="exec-approval-sub">${description}</div>
+      <div class="dialog-surface">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div id=${titleId} class="dialog-title">${title}</div>
+            <div id=${descriptionId} class="dialog-subtitle">${description}</div>
           </div>
         </div>
         <div class="callout ${props.enabling ? "info" : "warn"}" style="margin-top: 12px;">
           ${detail}
         </div>
         ${props.hasError
-          ? html`<div class="exec-approval-error">${t("dreaming.toggleConfirmation.failed")}</div>`
+          ? html`<div class="dialog-error">${t("dreaming.toggleConfirmation.failed")}</div>`
           : nothing}
-        <div class="exec-approval-actions">
+        <div class="dialog-footer">
           <button
             class="btn ${props.enabling ? "primary" : "danger"}"
             ?disabled=${props.loading}

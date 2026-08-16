@@ -167,14 +167,14 @@ export abstract class ChatPaneLifecycle extends ChatPaneSessionCreation {
         description=${description}
         @modal-cancel=${() => this.settleResetConfirmation(false)}
       >
-        <div class="exec-approval-card board-reset-confirmation">
-          <div class="exec-approval-header">
-            <div>
-              <div class="exec-approval-title">${title}</div>
-              <div class="exec-approval-sub">${description}</div>
+        <div class="dialog-surface board-reset-confirmation">
+          <div class="dialog-header">
+            <div class="dialog-heading">
+              <div class="dialog-title">${title}</div>
+              <div class="dialog-subtitle">${description}</div>
             </div>
           </div>
-          <div class="exec-approval-actions">
+          <div class="dialog-footer">
             <button
               class="btn primary"
               type="button"

@@ -909,7 +909,7 @@ describe("inline approval card", () => {
       onApprovalDecision,
     });
 
-    const card = container.querySelector(".chat-inline-approval .exec-approval-card");
+    const card = container.querySelector(".chat-inline-approval .exec-approval-card--inline");
     const inlineSurface = container.querySelector(".chat-inline-approval");
     expect(card?.getAttribute("data-approval-id")).toBe("approval-inline");
     expect(inlineSurface?.previousElementSibling?.classList.contains("chat-thread")).toBe(true);
@@ -919,11 +919,11 @@ describe("inline approval card", () => {
     expect(container.querySelector(".exec-approval-countdown")?.textContent?.trim()).toBe(
       "expires in 01:00",
     );
-    expect(container.querySelector(".exec-approval-command-span")?.textContent).toBe("rm -r");
-    expect(container.querySelector(".exec-approval-error")?.textContent).toBe(
+    expect(container.querySelector(".dialog-code__match")?.textContent).toBe("rm -r");
+    expect(container.querySelector(".dialog-error")?.textContent).toBe(
       "Approval failed: gateway unavailable",
     );
-    container.querySelector<HTMLButtonElement>(".exec-approval-actions button")?.click();
+    container.querySelector<HTMLButtonElement>(".dialog-footer button")?.click();
     expect(onApprovalDecision).toHaveBeenCalledWith("approval-inline", "allow-once");
   });
 });
