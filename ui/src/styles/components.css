@@ -646,13 +646,36 @@ openclaw-session-owner-chip {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  max-width: min(520px, calc(100vw - 32px));
+  /* Every card in the stack is exactly this wide, so the collapsed peeking
+     edges line up as one column instead of a ragged pile and a long message
+     grows downward rather than outward. 400px is ~46 characters at the 14px
+     body size — a notification measure, not a paragraph one. */
+  --app-toast-width: 400px;
+
+  width: var(--app-toast-width);
+  max-width: calc(100vw - 32px);
   /* Shares the callout's --alert-* trio (see the alert grammar block below);
      only the neutral defaults differ, because a floating surface needs the
      opaque popover fill the in-flow callout does not. */
   --alert-accent: var(--muted-strong);
   --alert-surface: var(--popover);
   --alert-border: var(--border-strong);
+  /* Card-stack depth. The host writes --app-toast-depth/--app-toast-shift and
+     --app-toast-step after measuring, and the step already carries the sign of
+     the anchored edge, so this transform never needs to know which corner it is
+     in — the responsive placement above stays the sole owner of that. */
+  --app-toast-depth: 0;
+  --app-toast-shift: 0px;
+  --app-toast-step: 10px;
+
+  transform: translateY(calc(var(--app-toast-depth) * var(--app-toast-step)))
+    scale(calc(1 - var(--app-toast-depth) * 0.04));
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    opacity var(--duration-normal) var(--ease-out);
+  /* Arrival is opacity-only (see app-toast-enter): a scale keyframe would
+     override this card's depth transform for the length of the animation. */
+  animation: app-toast-enter var(--duration-normal) var(--ease-out);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--alert-border);
   border-radius: var(--radius-md);
@@ -676,6 +699,7 @@ openclaw-session-owner-chip {
  * even line lengths because the wrapped text is a sentence to read rather than a
  * label to scan. The clamp still bounds a pathological string. */
 .app-toast__message {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   font-size: var(--control-ui-text-md);
@@ -685,6 +709,72 @@ openclaw-session-owner-chip {
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+/* Concurrent outcomes share the corner as a card stack: the newest keeps the
+   anchor and older ones peek out behind it, then the whole group de-groups into
+   a readable list on hover or keyboard focus. Depth is transform-only (see the
+   .app-toast rule above), so every card keeps its own fixed anchor. */
+
+/* Depth reads as distance — the card behind is dimmer as well as smaller, so
+   the front message stays the one being read — and must not paint over the
+   newest one. */
+.app-toast[data-depth="1"] {
+  z-index: calc(var(--z-toast) - 1);
+  opacity: 0.86;
+}
+
+.app-toast[data-depth="2"] {
+  z-index: calc(var(--z-toast) - 2);
+  opacity: 0.7;
+}
+
+/* Beyond the third card a peeking edge is a sliver, not a card; those fold away
+   and the front card carries a count instead. */
+.app-toast[data-collapsed-hidden] {
+  z-index: calc(var(--z-toast) - 3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Expanded: the measured per-card shift replaces the depth step, every card
+   returns to full size and opacity, and each one is independently readable and
+   dismissible. Still translate and scale only — no directional slide that could
+   disagree with the corner the cards are anchored to. */
+.app-toast-stack--expanded .app-toast {
+  transform: translateY(var(--app-toast-shift));
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Phone layouts stretch the card between the gutters instead, which is still
+   one uniform width for every card in the stack. Declared separately from the
+   placement block above so the responsive-position rules stay untouched; both
+   use the app's phone breakpoint. */
+@media (max-width: 768px), (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
+  .app-toast {
+    --app-toast-width: auto;
+  }
+}
+
+.app-toast__count {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  color: var(--muted);
+  font-size: var(--control-ui-text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grouping and de-grouping is decoration over an instant state change: with
+   reduced motion the cards still separate and regroup, they just do it at
+   once. */
+@media (prefers-reduced-motion: reduce) {
+  .app-toast {
+    transition: none;
+  }
 }
 
 /* The dismiss button is styled once for both alert surfaces in the alert
@@ -1401,6 +1491,7 @@ openclaw-github-link-hovercard-provider {
   font-size: var(--control-ui-text-md);
   line-height: 1.5;
   position: relative;
+  animation: alert-enter var(--duration-normal) var(--ease-out);
 }
 
 .callout--dismissible,
@@ -1493,9 +1584,14 @@ openclaw-github-link-hovercard-provider {
   }
 }
 
-.callout,
-.app-toast {
-  animation: alert-enter var(--duration-normal) var(--ease-out);
+/* A toast arrives into a stack whose depth is a transform, so it cannot borrow
+   alert-enter's scale without overriding its own place in the pile for the
+   length of the animation. Fading in is enough: the cards behind it visibly
+   step back at the same moment, which is the arrival cue. */
+@keyframes app-toast-enter {
+  from {
+    opacity: 0;
+  }
 }
 
 .scope-upgrade-chip-row {

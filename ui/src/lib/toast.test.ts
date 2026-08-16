@@ -18,11 +18,16 @@ afterEach(() => {
 });
 
 describe("shared toast", () => {
-  it("reports when no host can present the toast", () => {
+  it("holds a toast reported before any host exists, then shows it", async () => {
     expect(showToast({ message: "Unavailable" })).toBe(false);
+
+    // Outcomes reported during startup race the shell that owns the host, so
+    // the message waits for it instead of being dropped.
+    const host = await mountHost();
+    expect(host.querySelector(".app-toast__message")?.textContent).toBe("Unavailable");
   });
 
-  it("shows and replaces the active toast", async () => {
+  it("stacks concurrent toasts newest first instead of replacing them", async () => {
     const host = await mountHost();
 
     showToast({ message: "First" });
@@ -31,8 +36,53 @@ describe("shared toast", () => {
 
     showToast({ message: "Second" });
     await host.updateComplete;
-    expect(host.querySelectorAll(".app-toast")).toHaveLength(1);
-    expect(host.querySelector(".app-toast__message")?.textContent).toBe("Second");
+    // Batched callers report several outcomes in a row; each one has to survive
+    // its successor rather than be swallowed by it.
+    expect(
+      [...host.querySelectorAll(".app-toast__message")].map((node) => node.textContent),
+    ).toEqual(["Second", "First"]);
+  });
+
+  it("retires the oldest card once the stack is full and counts the overflow", async () => {
+    const host = await mountHost();
+    const retired: string[] = [];
+
+    for (const label of ["1st", "2nd", "3rd", "4th", "5th", "6th"]) {
+      showToast({ message: label, onDismiss: (reason) => retired.push(`${label}:${reason}`) });
+    }
+    await host.updateComplete;
+
+    expect(host.querySelectorAll(".app-toast")).toHaveLength(5);
+    expect(host.querySelector(".app-toast__message")?.textContent).toBe("6th");
+    expect(retired).toEqual(["1st:replaced"]);
+    // Three cards keep a peeking edge; the rest are reported as a count.
+    expect(host.querySelector(".app-toast__count")?.textContent).toBe("+2");
+  });
+
+  it("holds every card's clock while the stack is expanded, then resumes it", async () => {
+    vi.useFakeTimers();
+    const host = await mountHost();
+    showToast({ message: "Held", durationMs: 100 });
+    await host.updateComplete;
+
+    await vi.advanceTimersByTimeAsync(60);
+    host
+      .querySelector(".app-toast-stack")
+      ?.dispatchEvent(new Event("pointerover", { bubbles: true }));
+    await host.updateComplete;
+
+    // Well past the original duration, but the clock is held while it is read.
+    await vi.advanceTimersByTimeAsync(5_000);
+    await host.updateComplete;
+    expect(host.querySelector(".app-toast")).not.toBeNull();
+
+    host
+      .querySelector(".app-toast-stack")
+      ?.dispatchEvent(new Event("pointerout", { bubbles: true }));
+    // The collapse grace period, then the 40ms this toast had left.
+    await vi.advanceTimersByTimeAsync(140 + 40);
+    await host.updateComplete;
+    expect(host.querySelector(".app-toast")).toBeNull();
   });
 
   it("uses the active modal's toast layer before the app layer", async () => {
@@ -112,12 +162,15 @@ describe("shared toast", () => {
 
     showToast({ message: "Third", onDismiss: (reason) => reasons.push(reason) });
     await host.updateComplete;
+    // The front card is the newest, so this dismisses "Third".
     host.querySelector<HTMLButtonElement>(".app-toast__dismiss")?.click();
     await host.updateComplete;
 
     showToast({ message: "Fourth", onDismiss: (reason) => reasons.push(reason) });
     host.remove();
 
-    expect(reasons).toEqual(["replaced", "action", "ran-action", "dismiss", "disconnected"]);
+    // "First" is no longer replaced by "Second" — it waits its turn in the
+    // stack and leaves with the host.
+    expect(reasons).toEqual(["action", "ran-action", "dismiss", "disconnected", "disconnected"]);
   });
 });

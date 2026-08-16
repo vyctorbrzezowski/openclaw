@@ -58,13 +58,41 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
     });
   }
 
+  /** Staggered so the stack is seen assembling rather than appearing whole. */
+  private fireMixed() {
+    const order: readonly (ToastTone | null)[] = ["info", null, "success", "warn", "danger"];
+    order.forEach((tone, index) => {
+      globalThis.setTimeout(() => this.fire(tone), index * 220);
+    });
+  }
+
+  /** Eight in a burst: past the five-card ceiling, so the oldest retire and the
+   * front card reports the overflow count. */
+  private fireRapid() {
+    const order: readonly (ToastTone | null)[] = [
+      "info",
+      "success",
+      "warn",
+      "danger",
+      null,
+      "warn",
+      "danger",
+      "success",
+    ];
+    order.forEach((tone, index) => {
+      globalThis.setTimeout(() => this.fire(tone), index * 60);
+    });
+  }
+
   private renderToastControls() {
     return html`
       <section class="gallery__section">
         <h2>Toasts — click to fire</h2>
         <p class="gallery__note">
-          One at a time by design: <code>show()</code> replaces the visible toast. Desktop places it
-          bottom-right, phone widths full-width at the top.
+          Concurrent outcomes share the corner as a card stack: newest in front, up to three peeking
+          edges, then an overflow count. Hover or tab into the stack to de-group it into a readable
+          list — every card's clock holds while you are in there and resumes where it left off when
+          you leave. All cards share one width, so a long message grows down, not out.
         </p>
         <label class="gallery__toggle">
           <input
@@ -106,6 +134,14 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
             @click=${() => this.fire(null, { action: true })}
           >
             neutral + action
+          </button>
+        </div>
+        <div class="gallery__row">
+          <button class="btn btn--sm" type="button" @click=${() => this.fireMixed()}>
+            fire 5 mixed
+          </button>
+          <button class="btn btn--sm" type="button" @click=${() => this.fireRapid()}>
+            rapid fire × 8 (overflow)
           </button>
         </div>
       </section>
