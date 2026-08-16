@@ -47,10 +47,6 @@ const LONG_TEXT =
 
 class AlertGalleryFixture extends OpenClawLightDomElement {
   @state() private persistent = true;
-  /** EXPERIMENT toggle (discardable with alert-tokens-experiment.css): the open
-   * question is whether the tint veil plus the glyph carry the tone with no
-   * border at all. Side by side beats two screenshots. */
-  @state() private bordersOff = false;
   @state() private dismissed = new Set<string>();
 
   private fire(tone: ToastTone | null, options?: { action?: boolean; long?: boolean }) {
@@ -200,28 +196,15 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
             `,
           )}
         </div>
-        <div class="gallery__row">
-          <button
-            class="btn btn--sm"
-            type="button"
-            @click=${() => {
-              this.dismissed = new Set();
-            }}
-          >
-            Restore dismissed
-          </button>
-          <label class="gallery__toggle">
-            <input
-              type="checkbox"
-              .checked=${this.bordersOff}
-              @change=${(event: Event) => {
-                this.bordersOff = (event.target as HTMLInputElement).checked;
-                document.documentElement.dataset.alertBorder = this.bordersOff ? "off" : "";
-              }}
-            />
-            Borders off (veil + glyph only)
-          </label>
-        </div>
+        <button
+          class="btn btn--sm"
+          type="button"
+          @click=${() => {
+            this.dismissed = new Set();
+          }}
+        >
+          Restore dismissed
+        </button>
       </section>
     `;
   }

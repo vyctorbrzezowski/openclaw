@@ -190,8 +190,31 @@
   }
 }
 
-/* Live A/B for the open question: does the veil plus the glyph carry the tone
-   on its own? Toggled from the gallery; no production surface sets it. */
-:root[data-alert-border="off"] .callout {
+/* Dark drops the alert hairline entirely: the veil and the glyph carry the tone.
+ *
+ * This is not the same call as light, because the same alpha is not the same
+ * edge. A tone border composites over the card's own fill, so on white paper
+ * danger at 22% lands on rgb(251, 199, 194) against a rgb(250, 249, 247) page —
+ * a hairline you read as paper texture. On the rgb(14, 16, 21) dark page the
+ * identical rule lands on rgb(91, 33, 33) against a rgb(36, 21, 24) fill: a
+ * saturated rim with several times the contrast, which is the heavy edge this
+ * treatment was trying to lose. Lowering the alpha far enough to match light's
+ * softness leaves a border indistinguishable from the fill, so the honest end
+ * of that curve is no border.
+ *
+ * Light is deliberately untouched — it is the reference this matches. */
+:root:not([data-theme-mode="light"])
+  :is(
+    .callout,
+    .plugins-page-error,
+    .plugins-row-message,
+    .approval-page__callout,
+    .sw-error,
+    .board-view__error,
+    .sidebar-attention__item--warning,
+    .sidebar-attention__item--error,
+    .sidebar-update-card__status--warn,
+    .sidebar-update-card__status--danger
+  ) {
   border-color: transparent;
 }
