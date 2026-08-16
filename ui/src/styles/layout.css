@@ -1060,8 +1060,8 @@ openclaw-settings-save-indicator {
   flex: 1 1 auto;
   min-width: 0;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0 6px 8px;
+  gap: var(--space-3);
+  padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1075,7 +1075,10 @@ openclaw-settings-save-indicator {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px 6px 6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-sm);
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -1275,16 +1278,14 @@ body.update-dialog-open .sidebar-update-card__status {
 }
 
 .sidebar-update-card__status {
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--secondary);
-  font-size: 12px;
-  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .sidebar-update-card__status--danger,
-.sidebar-update-card__status--warn {
+.sidebar-update-card__status--warn,
+.sidebar-update-card__status--info {
   border-color: var(--alert-border);
   background: var(--alert-surface);
 }

@@ -401,7 +401,13 @@ function renderFileSidebarContent(
           : nothing}
       </div>
       ${Object.values(controls?.copyFeedback ?? {}).includes("failed")
-        ? html`<div class="file-view__save-notice" role="alert">${t("common.copyFailed")}</div>`
+        ? html`<div
+            class="callout callout--danger callout--action file-view__save-notice"
+            role="alert"
+          >
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">${t("common.copyFailed")}</span>
+          </div>`
         : nothing}
       ${controls?.searchOpen
         ? html`
@@ -441,8 +447,18 @@ function renderFileSidebarContent(
         : nothing}
       ${controls?.saveNotice
         ? html`
-            <div class="file-view__save-notice" role="alert">
-              <span>
+            <div
+              class="callout callout--${controls.saveNotice.kind === "conflict"
+                ? "warn"
+                : "danger"} callout--action file-view__save-notice"
+              role="alert"
+            >
+              <span class="callout__icon" aria-hidden="true"
+                >${controls.saveNotice.kind === "conflict"
+                  ? icons.alertTriangle
+                  : icons.alertCircle}</span
+              >
+              <span class="callout__content">
                 ${controls.saveNotice.kind === "conflict"
                   ? t("chat.detailPanel.fileChanged")
                   : controls.saveNotice.message}

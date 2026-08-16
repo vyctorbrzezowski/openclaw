@@ -1662,13 +1662,17 @@ openclaw-session-discussion {
   pointer-events: none;
 }
 
-.file-view__save-notice {
+.callout.file-view__save-notice {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  /* This is the file rail's full-width banner, so it keeps its edge-to-edge
+     placement while borrowing the alert glyph, veil, copy, and action grammar. */
   padding: 8px 10px;
+  border: 0;
   border-bottom: 1px solid var(--alert-border);
+  border-radius: 0;
   background: var(--alert-surface);
   color: var(--text);
   font-size: var(--control-ui-text-sm);

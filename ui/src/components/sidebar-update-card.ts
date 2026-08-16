@@ -141,10 +141,17 @@ class SidebarUpdateCard extends OpenClawLightDomContentsElement {
     // metadata it stays true even when this client is stale.
     return statusBanner
       ? html`<div
-          class="sidebar-update-card__status sidebar-update-card__status--${statusBanner.tone}"
+          class="callout callout--${statusBanner.tone} sidebar-update-card__status sidebar-update-card__status--${statusBanner.tone}"
           role="alert"
         >
-          ${statusBanner.text}
+          <span class="callout__icon" aria-hidden="true"
+            >${statusBanner.tone === "danger"
+              ? icons.alertCircle
+              : statusBanner.tone === "warn"
+                ? icons.alertTriangle
+                : icons.infoCircle}</span
+          >
+          <span class="callout__content">${statusBanner.text}</span>
         </div>`
       : nothing;
   }

@@ -213,60 +213,97 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
       <section class="gallery__section">
         <h2>Surfaces that fold into the same grammar</h2>
         <p class="gallery__note">
-          Each of these used to derive its own tint. They now name a tone and read the shared
-          --alert-* trio, so they belong beside the callouts above rather than beside each other.
+          Each surface uses the callout copy, glyph, veil, border, spacing, and action grammar. The
+          full-width file banner keeps its rail edge, and Limited access stays a compact status chip
+          because those two shapes are structural rather than alert cards.
         </p>
         <div class="gallery__stack">
-          <div class="plugins-page-error">
-            <span>Could not load the plugin catalog.</span>
+          <div class="callout callout--danger callout--action plugins-page-error">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">Could not load the plugin catalog.</span>
             <button class="btn btn--sm" type="button">Try again</button>
           </div>
-          <div class="plugins-row-message">Installed openclaw-telegram 2026.6.2.</div>
-          <div class="plugins-row-message plugins-row-message--error">
-            Plugin failed to load: missing manifest entry point.
+          <div class="callout callout--success callout--action plugins-row-message">
+            <span class="callout__icon" aria-hidden="true">${icons.checkCircle}</span>
+            <span class="callout__content">Installed openclaw-telegram 2026.6.2.</span>
           </div>
-          <div class="approval-page__callout">
-            <span><strong>Connection lost</strong><span>Retry to reload this approval.</span></span>
+          <div
+            class="callout callout--danger callout--action plugins-row-message plugins-row-message--error"
+          >
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content"
+              >Plugin failed to load: missing manifest entry point.</span
+            >
+          </div>
+          <div class="callout callout--danger callout--action approval-page__callout">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">
+              <strong>Connection lost</strong>
+              <span>Retry to reload this approval.</span>
+            </span>
             <button class="btn btn--sm" type="button">Retry</button>
           </div>
-          <div class="sw-error">
-            <span>Could not load the workshop.</span>
+          <div class="callout callout--danger callout--action sw-error">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">Could not load the workshop.</span>
             <button class="btn btn--sm" type="button">Try again</button>
           </div>
-          <div class="board-view__error">Could not apply the board operation.</div>
+          <div class="callout callout--danger callout--action board-view__error">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">Could not apply the board operation.</span>
+          </div>
           <div class="sidebar-attention">
-            <div class="sidebar-attention__item sidebar-attention__item--warning">
+            <div
+              class="callout callout--warn sidebar-attention__item sidebar-attention__item--warning"
+            >
               <span class="sidebar-attention__open">
-                <span class="sidebar-attention__icon">${icons.alertTriangle}</span>
-                <span class="sidebar-attention__label">Session needs attention</span>
+                <span class="callout__icon sidebar-attention__icon">${icons.alertTriangle}</span>
+                <span class="callout__content sidebar-attention__label"
+                  >Session needs attention</span
+                >
               </span>
             </div>
-            <div class="sidebar-attention__item sidebar-attention__item--error">
+            <div
+              class="callout callout--danger sidebar-attention__item sidebar-attention__item--error"
+            >
               <span class="sidebar-attention__open">
-                <span class="sidebar-attention__icon">${icons.alertCircle}</span>
-                <span class="sidebar-attention__label">Run failed</span>
+                <span class="callout__icon sidebar-attention__icon">${icons.alertCircle}</span>
+                <span class="callout__content sidebar-attention__label">Run failed</span>
               </span>
             </div>
           </div>
-          <div class="sidebar-update-card__status sidebar-update-card__status--warn">
-            Update skipped: the Gateway is busy.
+          <div
+            class="callout callout--warn sidebar-update-card__status sidebar-update-card__status--warn"
+          >
+            <span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>
+            <span class="callout__content">Update skipped: the Gateway is busy.</span>
           </div>
-          <div class="sidebar-update-card__status sidebar-update-card__status--danger">
-            Update verification failed.
+          <div
+            class="callout callout--danger sidebar-update-card__status sidebar-update-card__status--danger"
+          >
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">Update verification failed.</span>
           </div>
           <div class="scope-upgrade-chip-row">
             <button class="scope-upgrade-chip" type="button">
               <span class="scope-upgrade-chip__dot"></span>Limited access
             </button>
           </div>
-          <div class="file-view__save-notice">
-            <span>File changed on disk since it was loaded.</span>
+          <div class="callout callout--warn callout--action file-view__save-notice">
+            <span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>
+            <span class="callout__content">File changed on disk since it was loaded.</span>
             <span class="file-view__save-notice-actions">
               <button class="btn btn--sm" type="button">Reload</button>
             </span>
           </div>
           <div class="gallery__toast-slot">
-            <div class="sw-action-toast"><strong>Skill installed</strong></div>
+            <div class="callout callout--action sw-action-toast">
+              <span class="callout__icon" aria-hidden="true">${icons.checkCircle}</span>
+              <span class="callout__content">
+                <strong>Skill installed</strong>
+                <span>workspace-search</span>
+              </span>
+            </div>
           </div>
         </div>
       </section>

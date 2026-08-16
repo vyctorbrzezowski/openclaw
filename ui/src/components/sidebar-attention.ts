@@ -287,23 +287,27 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
       <div class="sidebar-attention" role="status">
         ${items.map(
           (item) => html`
-            <div class="sidebar-attention__item sidebar-attention__item--${item.severity}">
+            <div
+              class="callout callout--${item.severity === "warning"
+                ? "warn"
+                : "danger"} sidebar-attention__item sidebar-attention__item--${item.severity}"
+            >
               <openclaw-tooltip .content=${item.detail ?? item.label}>
                 <button
                   type="button"
                   class="sidebar-attention__open"
                   @click=${() => this.open(item)}
                 >
-                  <span class="sidebar-attention__icon" aria-hidden="true"
+                  <span class="callout__icon sidebar-attention__icon" aria-hidden="true"
                     >${icons[item.icon]}</span
                   >
-                  <span class="sidebar-attention__label">${item.label}</span>
+                  <span class="callout__content sidebar-attention__label">${item.label}</span>
                 </button>
               </openclaw-tooltip>
               <openclaw-tooltip .content=${t("common.dismiss")}>
                 <button
                   type="button"
-                  class="sidebar-attention__dismiss"
+                  class="callout__dismiss sidebar-attention__dismiss"
                   aria-label=${t("common.dismiss")}
                   @click=${() => this.dismiss(item)}
                 >
