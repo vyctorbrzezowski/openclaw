@@ -636,12 +636,13 @@ openclaw-session-owner-chip {
 }
 
 /* Passive notifications stay in the trailing top corner, away from the chat
- * composer and other bottom-docked controls. The host shows one toast at a time
- * (`show()` replaces the active one), so there is no stack to offset against. */
+ * composer and other bottom-docked controls. The stack owns the fixed anchor;
+ * cards are positioned inside it so the stack itself can become the scroll
+ * viewport when a long burst exceeds the available height. */
 .app-toast {
-  position: fixed;
-  right: calc(20px + var(--safe-area-right));
-  top: calc(20px + var(--safe-area-top));
+  position: absolute;
+  top: 0;
+  left: 0;
   /* Depth is the ordering contract: entries are newest-first, so the host's
      depth 0 must always paint above every older card, including depth 3. */
   z-index: calc(var(--z-toast) - var(--app-toast-depth));
@@ -652,8 +653,7 @@ openclaw-session-owner-chip {
      edges line up as one column instead of a ragged pile and a long message
      grows downward rather than outward. 400px is ~46 characters at the 14px
      body size — a notification measure, not a paragraph one. */
-  width: 400px;
-  max-width: calc(100vw - 32px);
+  width: 100%;
   /* Shares the callout's --alert-* trio (see the alert grammar block below);
      only the neutral defaults differ, because a floating surface needs the
      opaque popover fill the in-flow callout does not. */
@@ -713,16 +713,40 @@ openclaw-session-owner-chip {
 
 /* Concurrent outcomes share the corner as a card stack: the newest keeps the
    anchor and older ones peek out behind it, then the whole group de-groups into
-   a readable list on hover or keyboard focus. The wrapper is a stable hit region
-   even though the cards keep their own fixed anchors, so dismissing a card under
-   the pointer cannot collapse the list halfway through reading it. */
+   a readable list on hover or keyboard focus. The wrapper is both the stable hit
+   region and the scroll viewport, so dismissing or reading a card cannot move the
+   pointer out of the stack just because the list is taller than the viewport. */
 .app-toast-stack {
+  --app-toast-shadow-gutter: 12px;
   position: fixed;
-  top: calc(20px + var(--safe-area-top));
-  right: calc(20px + var(--safe-area-right));
+  top: calc(20px + var(--safe-area-top) - var(--app-toast-shadow-gutter));
+  right: calc(20px + var(--safe-area-right) - var(--app-toast-shadow-gutter));
   z-index: var(--z-toast);
-  width: 400px;
-  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  width: calc(400px + var(--app-toast-shadow-gutter) + var(--app-toast-shadow-gutter));
+  max-width: calc(100vw - 32px + var(--app-toast-shadow-gutter) + var(--app-toast-shadow-gutter));
+  height: calc(
+    var(--app-toast-stack-height, 0px) + var(--app-toast-shadow-gutter) +
+      var(--app-toast-shadow-gutter)
+  );
+  max-height: calc(
+    100dvh - 40px - var(--safe-area-top) - var(--safe-area-bottom) +
+      var(--app-toast-shadow-gutter) + var(--app-toast-shadow-gutter)
+  );
+  padding: var(--app-toast-shadow-gutter);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* Absolute cards preserve their measured offsets and depth transforms, but do
+   not contribute to scrollHeight themselves. The content box carries the
+   measured list height so the outer stack can clip and scroll that list. */
+.app-toast-stack__content {
+  position: relative;
+  width: 100%;
   height: var(--app-toast-stack-height, 0px);
 }
 
@@ -745,6 +769,7 @@ openclaw-session-owner-chip {
 /* Beyond the three peeking edges a further card is a sliver, not a card; it
    folds away until the operator hovers or focuses the stack. */
 .app-toast[data-collapsed-hidden] {
+  display: none;
   opacity: 0;
   pointer-events: none;
 }
@@ -759,19 +784,15 @@ openclaw-session-owner-chip {
   pointer-events: auto;
 }
 
-/* Phone layouts stretch the card between the gutters instead, which is still
+/* Phone layouts stretch the stack between the gutters instead, which is still
    one uniform width for every card in the stack. Declared separately from the
    placement block above so the responsive-position rules stay untouched; both
    use the app's phone breakpoint. */
 @media (max-width: 768px), (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
   .app-toast-stack {
-    left: max(12px, var(--safe-area-left));
-    right: max(12px, var(--safe-area-right));
+    left: max(0px, calc(max(12px, var(--safe-area-left)) - var(--app-toast-shadow-gutter)));
+    right: max(0px, calc(max(12px, var(--safe-area-right)) - var(--app-toast-shadow-gutter)));
     max-width: none;
-    width: auto;
-  }
-
-  .app-toast {
     width: auto;
   }
 }

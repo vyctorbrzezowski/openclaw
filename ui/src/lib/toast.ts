@@ -305,11 +305,13 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
         @focusin=${() => this.holdExpanded()}
         @focusout=${(event: FocusEvent) => this.releaseExpanded(event.relatedTarget)}
       >
-        ${repeat(
-          this.entries,
-          (entry) => entry.id,
-          (entry, depth) => this.renderCard(entry, depth),
-        )}
+        <div class="app-toast-stack__content">
+          ${repeat(
+            this.entries,
+            (entry) => entry.id,
+            (entry, depth) => this.renderCard(entry, depth),
+          )}
+        </div>
       </div>
     `;
   }
