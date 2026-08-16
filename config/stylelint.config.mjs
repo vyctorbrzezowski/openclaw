@@ -50,6 +50,15 @@ export default {
       },
     },
     {
+      // EXPERIMENT (discardable): the literal Apple system colors are this
+      // file's subject, not tokens other surfaces should adopt. Remove this
+      // entry together with the stylesheet.
+      files: ["../ui/src/styles/alert-tokens-experiment.css"],
+      rules: {
+        "color-no-hex": null,
+      },
+    },
+    {
       files: ["**/*.ts"],
       customSyntax: "postcss-lit",
     },

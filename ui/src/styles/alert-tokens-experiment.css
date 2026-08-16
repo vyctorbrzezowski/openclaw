@@ -1,0 +1,180 @@
+/* EXPERIMENT — discardable checkpoint, not settled design.
+ *
+ * An Apple-style repalette of the alert grammar, kept in one file so it can be
+ * removed wholesale: delete this stylesheet, its @import in ui/src/styles.css,
+ * the stylelint color-no-hex exemption in config/stylelint.config.mjs, and the
+ * border toggle in the gallery fixture. Nothing outside those four places knows
+ * it exists.
+ *
+ * What it changes about the shipped grammar, and why:
+ *   - Warn goes amber. The canonical --warn/--danger pair collapses in light
+ *     mode: #92400e and #b91c1c are both washed earthy red at 8% tint, so a
+ *     degraded state and a failure read the same.
+ *   - One hue, three intensities, all from alpha: veil, border, glyph. Anything
+ *     derived rather than hand-picked harmonises for free, which is what the
+ *     seven hand-mixed border percentages this lane already deleted did not.
+ *   - Backgrounds are ink over the surface underneath, not pigment of their
+ *     own, so an alert on a card and the same alert on the page agree.
+ *   - Saturation lives in the glyph. Text is always --text; the border is a
+ *     whisper; the veil is a hint.
+ *
+ * The literal hexes below are Apple system colors, which is why this file is
+ * exempt from color-no-hex — they are the experiment's subject, not theme
+ * tokens that some other surface should start reading.
+ */
+
+:root {
+  /* Dark is the base theme here, matching base.css. */
+  --alert-x-neutral-bg: rgba(255, 255, 255, 0.045);
+  --alert-x-neutral-border: rgba(255, 255, 255, 0.09);
+  --alert-x-neutral-icon: rgba(255, 255, 255, 0.55);
+  --alert-x-info-bg: rgba(10, 132, 255, 0.09);
+  --alert-x-info-border: rgba(10, 132, 255, 0.25);
+  --alert-x-info-icon: #409cff;
+  --alert-x-success-bg: rgba(48, 209, 88, 0.08);
+  --alert-x-success-border: rgba(48, 209, 88, 0.22);
+  --alert-x-success-icon: #30d158;
+  --alert-x-warn-bg: rgba(255, 159, 10, 0.07);
+  --alert-x-warn-border: rgba(255, 159, 10, 0.22);
+  --alert-x-warn-icon: #ffb340;
+  --alert-x-danger-bg: rgba(255, 69, 58, 0.09);
+  --alert-x-danger-border: rgba(255, 69, 58, 0.25);
+  --alert-x-danger-icon: #ff6961;
+
+  /* Floating chrome. The toast keeps no outline in either theme; separation is
+     elevation, plus a top highlight in dark so the card still reads as a
+     material with a lit edge rather than a flat patch. */
+  --alert-x-toast-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px -12px rgba(0, 0, 0, 0.62),
+    0 4px 12px -4px rgba(0, 0, 0, 0.4);
+  --alert-x-action-bg: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme-mode="light"] {
+  --alert-x-neutral-bg: rgba(0, 0, 0, 0.035);
+  --alert-x-neutral-border: rgba(0, 0, 0, 0.08);
+  --alert-x-neutral-icon: #6e6e73;
+  --alert-x-info-bg: rgba(0, 122, 255, 0.06);
+  --alert-x-info-border: rgba(0, 122, 255, 0.2);
+  --alert-x-info-icon: #0071e3;
+  --alert-x-success-bg: rgba(52, 199, 89, 0.08);
+  --alert-x-success-border: rgba(52, 199, 89, 0.25);
+  --alert-x-success-icon: #248a3d;
+  --alert-x-warn-bg: rgba(255, 159, 10, 0.08);
+  --alert-x-warn-border: rgba(255, 159, 10, 0.3);
+  --alert-x-warn-icon: #9a6700;
+  --alert-x-danger-bg: rgba(255, 59, 48, 0.06);
+  --alert-x-danger-border: rgba(255, 59, 48, 0.22);
+  --alert-x-danger-icon: #d70015;
+
+  /* No inset highlight in light — a white line on a white card is nothing. The
+     shadow is warm because it is mixed from --text, which every theme family
+     already tunes to its own paper, and the negative spread keeps it a halo
+     under the card instead of a smudge around it. */
+  --alert-x-toast-shadow:
+    0 12px 32px -10px color-mix(in srgb, var(--text) 22%, transparent),
+    0 2px 8px -3px color-mix(in srgb, var(--text) 12%, transparent);
+  --alert-x-action-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* ---- the trio, repointed at the experiment's palette ---- */
+
+.callout {
+  --alert-accent: var(--alert-x-neutral-icon);
+  --alert-surface: var(--alert-x-neutral-bg);
+  --alert-border: var(--alert-x-neutral-border);
+}
+
+.callout--info,
+.app-toast--info {
+  --alert-accent: var(--alert-x-info-icon);
+  --alert-surface: var(--alert-x-info-bg);
+  --alert-border: var(--alert-x-info-border);
+}
+
+.callout--success,
+.app-toast--success {
+  --alert-accent: var(--alert-x-success-icon);
+  --alert-surface: var(--alert-x-success-bg);
+  --alert-border: var(--alert-x-success-border);
+}
+
+.callout--warn,
+.app-toast--warn {
+  --alert-accent: var(--alert-x-warn-icon);
+  --alert-surface: var(--alert-x-warn-bg);
+  --alert-border: var(--alert-x-warn-border);
+}
+
+.callout--danger,
+.app-toast--danger {
+  --alert-accent: var(--alert-x-danger-icon);
+  --alert-surface: var(--alert-x-danger-bg);
+  --alert-border: var(--alert-x-danger-border);
+}
+
+/* ---- floating chrome ---- */
+
+/* The toast drops its outline in both themes and lets elevation do the
+   separating. Its tint still composites onto the opaque popover fill, because a
+   translucent card over arbitrary page content is unreadable. */
+.app-toast {
+  --alert-accent: var(--alert-x-neutral-icon);
+  --alert-border: transparent;
+
+  border-color: transparent;
+  box-shadow: var(--alert-x-toast-shadow);
+}
+
+.app-toast--info,
+.app-toast--success,
+.app-toast--warn,
+.app-toast--danger {
+  border-color: transparent;
+}
+
+/* ---- refinements ---- */
+
+/* An action is a control, not a severity. Tinting it per tone made a Retry on a
+   danger callout read as a second, louder alarm. */
+.callout .btn,
+.app-toast__action {
+  border-color: transparent;
+  background: var(--alert-x-action-bg);
+  color: var(--text);
+}
+
+.callout .btn:hover,
+.app-toast__action:hover {
+  background: var(--alert-x-neutral-border);
+  color: var(--text-strong);
+}
+
+/* Dismiss is available, not advertised. */
+.callout__dismiss,
+.app-toast__dismiss {
+  opacity: 0.4;
+  transition: opacity 120ms ease;
+}
+
+.callout__dismiss:hover,
+.callout__dismiss:focus-visible,
+.app-toast__dismiss:hover,
+.app-toast__dismiss:focus-visible {
+  background: transparent;
+  opacity: 0.8;
+}
+
+/* A 1px border at these alphas is already a whisper; on a 2x display half a
+   device pixel is the hairline the rest of the OS draws. */
+@media (-webkit-min-device-pixel-ratio: 2) {
+  :root[data-theme-mode="light"] .callout {
+    border-width: 0.5px;
+  }
+}
+
+/* Live A/B for the open question: does the veil plus the glyph carry the tone
+   on its own? Toggled from the gallery; no production surface sets it. */
+:root[data-alert-border="off"] .callout {
+  border-color: transparent;
+}
