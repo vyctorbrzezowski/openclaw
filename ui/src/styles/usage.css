@@ -370,10 +370,12 @@
   opacity: 0.75;
 }
 
+/* The selects in this bar left this group: their box is the app's default one
+   now, and restating a fill and a border here is what made a Usage filter read
+   as a different control from the same filter in Settings. They keep the bar's
+   smaller type, which is the one thing that is genuinely local. */
 .usage-date-input,
-.usage-select,
 .usage-query-input,
-.usage-filters-inline select,
 .usage-filters-inline input[type="text"] {
   min-height: 32px;
   border: 1px solid var(--border);
@@ -388,8 +390,12 @@
     background 0.18s var(--ease-out);
 }
 
-.usage-date-input,
-.usage-select {
+.usage-select,
+.usage-filters-inline select {
+  font-size: 12px;
+}
+
+.usage-date-input {
   padding: 6px 10px;
 }
 
@@ -1453,15 +1459,6 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-.sessions-sort select {
-  min-height: 34px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  color: var(--text);
 }
 
 .session-bars {

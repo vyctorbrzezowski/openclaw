@@ -428,14 +428,12 @@
     --menu-item-radius: calc(var(--menu-radius) - var(--menu-padding));
   }
 
-  /* Unlike the doubled classes above, this generic tag selector must outrank
-     dozens of concrete per-feature panels (.cron-job-menu::part(menu),
-     .usage-export-menu::part(menu), and so on app-wide) that each declare
-     their own border-radius from --menu-radius. A bare type selector can
-     never out-specificity a class selector no matter how it's repeated, so
-     !important is the only way for one generic rule to cover every
-     wa-dropdown/wa-popover/wa-select panel by design, matching this PR's
-     "any wa-dropdown, wa-popover or wa-select gets the treatment" intent. */
+  /* The per-feature panels this once had to outrank are gone — the select
+     grammar further down owns their radius now. !important stays because that
+     grammar is a bare type selector too and sits later in the file, so on a
+     specificity tie it would otherwise win and drop the scaled corner. Keeping
+     it also means a future feature rule cannot opt one panel out of the shared
+     curvature by accident, which is the property this block exists to hold. */
   wa-dropdown::part(menu),
   wa-popover::part(body),
   wa-select::part(listbox),
@@ -1154,6 +1152,54 @@ textarea,
 select {
   font: inherit;
   color: inherit;
+}
+
+/* One native select. The app used to draw three different affordances for the
+   same "this opens a list" promise: this chevron on the two form families, a
+   pair of stacked linear-gradient triangles on the workboard, and the raw
+   platform arrow on every select that belonged to neither — and four different
+   boxes underneath them. The dominant settings box becomes the default, so a
+   select with no styling of its own is already right and a form family
+   overrides only the rhythm it has to share with the inputs beside it.
+   An exact height, not a floor: a select never wraps, so letting it size to its
+   own font left the standalone ones landing anywhere between 32 and 38px
+   depending on which stylesheet happened to set a smaller type. Control
+   families that pin their own height (settings rows, .field, the workboard
+   toolbar) still win by specificity.
+   Multi-selects are list boxes, not poppers — no arrow to replace, and
+   appearance:none would strip the scrolling frame they need. */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--select-height, 32px);
+  box-sizing: border-box;
+  padding: 0 36px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-md);
+  /* background-color, not the shorthand: the shorthand resets the chevron
+     longhands below and tiles the arrow across the control. */
+  background-color: color-mix(in srgb, var(--bg) 80%, var(--bg-elevated) 20%);
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: var(--text);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+/* wa-select's combobox is the same control drawn in a shadow root, so it takes
+   the same box. Web Awesome draws its own expand icon inside the part, which is
+   why this one asks for inline padding rather than the chevron's reserved
+   trailing inset. Without this the two spellings of one control sat side by side
+   in Settings at different radii and fills. */
+wa-select::part(combobox) {
+  min-height: var(--select-height, 32px);
+  padding-inline: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg) 80%, var(--bg-elevated) 20%);
+  color: var(--text);
+  cursor: var(--cursor-action);
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 /* One accent for every native check control; without this, surfaces that

@@ -1029,7 +1029,10 @@ openclaw-github-link-hovercard-provider {
 .field textarea,
 .field select {
   border: 1px solid var(--input);
-  background: var(--card);
+  /* background-color, not the shorthand: the shorthand resets the chevron
+     longhands the app-wide select rule sets, leaving this family's selects with
+     no affordance at all. */
+  background-color: var(--card);
   border-radius: var(--radius-md);
   padding: 8px 12px;
   outline: none;
@@ -1042,6 +1045,16 @@ openclaw-github-link-hovercard-provider {
 .field input:not([type="checkbox"]):not([type="radio"]),
 .field select {
   height: 38px;
+}
+
+/* The field family's padding shorthand above outranks the app-wide select rule,
+   so the trailing inset that reserves room for the chevron has to be restated
+   here or the glyph lands on top of the value. The box itself deliberately stays
+   this family's: a select has to line up with the text inputs beside it, so the
+   two form families' differing control heights are a fields question, not a
+   select one. Everything that makes it read as a select is shared. */
+.field select {
+  padding-right: 36px;
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -1186,14 +1199,6 @@ openclaw-github-link-hovercard-provider {
   .oc-sensitive-input[data-sensitive-mask-ready="true"][data-revealed="false"] > input {
     color: CanvasText;
   }
-}
-
-.field select {
-  appearance: none;
-  padding-right: 36px;
-  background-image: var(--select-chevron);
-  background-repeat: no-repeat;
-  background-position: right 10px center;
 }
 
 .field textarea {

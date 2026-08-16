@@ -200,26 +200,19 @@
     0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
-.workboard input.input,
-.workboard select.input {
+.workboard input.input {
   height: var(--workboard-control-height);
   padding: 0 10px;
 }
 
+/* The two stacked gradients that used to draw a solid triangle here are gone;
+   this select takes the app's chevron like every other one, which means it also
+   keeps the inline padding that reserves room for it — only the block padding
+   goes, so the toolbar's fixed control height stays exact. */
 .workboard select.input {
+  height: var(--workboard-control-height);
   max-width: 220px;
-  padding-right: 28px;
-  appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-  background-position:
-    calc(100% - 14px) 50%,
-    calc(100% - 9px) 50%;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
+  padding-block: 0;
 }
 
 .workboard input.input::placeholder,
@@ -403,13 +396,11 @@
   border: 0;
 }
 
+/* Only the toolbar's control height and the full-width fill are this board's;
+   the box itself is the app's select box. */
 .workboard-select::part(combobox) {
   min-height: var(--workboard-control-height);
   width: 100%;
-  border-color: var(--border);
-  border-radius: 7px;
-  background: var(--bg-elevated);
-  color: var(--text);
 }
 
 .workboard-select::part(listbox) {

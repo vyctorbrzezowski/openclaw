@@ -566,30 +566,16 @@ wa-radio-group.settings-segmented::part(radios) {
 }
 
 /* Native controls own their box. wa-select draws the same box on its shadow
-   combobox part below; host chrome would double-border the web component. */
-.settings-input,
-select.settings-select {
+   combobox part below; host chrome would double-border the web component.
+   The select half of this pair is the app-wide default now, so only the text
+   input restates it. */
+.settings-input {
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: var(--radius-md);
-  /* background-color, not the background shorthand: the shorthand resets the
-     .field select chevron longhands (image/repeat/position) and tiles the
-     arrow across Model Providers selects. */
   background-color: color-mix(in srgb, var(--bg) 80%, var(--bg-elevated) 20%);
   color: var(--text);
   padding: 7px 10px;
   transition: border-color var(--duration-fast) var(--ease-out);
-}
-
-/* Single-value selects draw the themed chevron; the engine's stock arrow
-   ignores the 32px control box and renders misaligned. Multi-select list
-   boxes keep native rendering. */
-select.settings-select:not([multiple]) {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: 36px;
-  background-image: var(--select-chevron);
-  background-repeat: no-repeat;
-  background-position: right 10px center;
 }
 
 .settings-row:not(.settings-row--stacked) .settings-row__control > .settings-select {
@@ -739,13 +725,6 @@ wa-select.settings-select {
 
 wa-select.settings-select::part(combobox) {
   min-height: var(--settings-control-height);
-  padding-inline: 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg) 80%, var(--bg-elevated) 20%);
-  color: var(--text);
-  cursor: var(--cursor-action);
-  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 /* [open] is required alongside :focus-within: Chromium does not propagate

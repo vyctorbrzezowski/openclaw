@@ -88,7 +88,9 @@ const specs: readonly SelectSpec[] = [
   {
     label: "Workboard wa-select",
     where: "Workboard card modal",
-    markup: `<wa-select class="workboard-select" value="Backlog">${waOptions("Backlog", "Doing", "Shipped")}</wa-select>`,
+    // Wrapped: --workboard-control-height is scoped to the board, and without it
+    // this row would show a height the product never renders.
+    markup: `<div class="workboard"><wa-select class="workboard-select" value="Backlog">${waOptions("Backlog", "Doing", "Shipped")}</wa-select></div>`,
   },
   {
     label: "Session menu",
