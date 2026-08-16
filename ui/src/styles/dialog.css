@@ -46,19 +46,22 @@ openclaw-modal-dialog.dialog-2xl {
 .dialog-surface {
   --dialog-gutter: 20px;
 
-  /* Separation is elevation plus a whisper of edge, never a drawn outline.
-     Each theme overrides these two tokens below, so the class states the
-     grammar once and the theme picks how the edge is spelled: a tight
-     shadow stop in light, an inset top highlight in dark. */
-  --dialog-border-color: transparent;
-  --dialog-elevation: var(--shadow-xl);
+  /* Separation is elevation, never a drawn outline. The two theme rules
+     below spell that edge — a tight shadow stop in light, an inset top
+     highlight in dark — and between them cover every root, so they, not
+     this block, own --dialog-elevation.
+
+     The 1px transparent border is not a leftover: forced-colors drops
+     box-shadow entirely, and a declared border is what that mode paints
+     as a real edge, so the panel keeps one when its elevation is taken
+     away. */
 
   display: flex;
   width: 100%;
   min-width: 0;
   max-height: inherit;
   flex-direction: column;
-  border: 1px solid var(--dialog-border-color);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
   background: var(--card);
   box-shadow: var(--dialog-elevation);
@@ -76,10 +79,8 @@ openclaw-modal-dialog.dialog-2xl {
    panel, because a neutral, evenly-spread shadow at this blur turns into a
    grey smudge on the ivory instead of depth. The tint is --text so every
    light family (warm paper, openknot-light, dash-light) shades with its own
-   ink. The border stays declared at `transparent` rather than removed so the
-   1px box is identical in both themes and swapping treatments never reflows. */
+   ink. */
 :root[data-theme-mode="light"] .dialog-surface {
-  --dialog-border-color: transparent;
   --dialog-elevation:
     0 1px 3px color-mix(in srgb, var(--text) 6%, transparent),
     0 12px 28px -8px color-mix(in srgb, var(--text) 12%, transparent),
@@ -94,29 +95,9 @@ openclaw-modal-dialog.dialog-2xl {
    the lifting underneath. Scoped `:not(light)` because dark is the `:root`
    default in base.css and some surfaces never set the attribute at all. */
 :root:not([data-theme-mode="light"]) .dialog-surface {
-  --dialog-border-color: transparent;
   --dialog-elevation:
     inset 0 1px 0 color-mix(in srgb, var(--text-strong) 6%, transparent),
     0 16px 32px -12px rgb(0 0 0 / 0.55), 0 32px 64px -16px rgb(0 0 0 / 0.65);
-}
-
-/* EXPERIMENT SCAFFOLDING — delete with its gallery buttons once the edge
-   treatment is chosen. Restores the outlined panel so the two treatments can
-   be compared live on any route, not just in a screenshot pair. The gallery
-   header drives it (see applyDialogEdge in dialog-gallery-fixture.ts); the
-   attribute is absent in the product, so the softened treatment is what
-   ships until this block is removed. */
-:root[data-dialog-edge="current"] .dialog-surface {
-  --dialog-border-color: var(--border);
-  --dialog-elevation: var(--shadow-xl);
-}
-
-:root[data-dialog-edge="current"][data-theme-mode="light"] .dialog-surface {
-  --dialog-border-color: color-mix(in srgb, var(--border) 45%, transparent);
-  --dialog-elevation:
-    0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
-    0 12px 24px -8px color-mix(in srgb, var(--text) 10%, transparent),
-    0 32px 64px -16px color-mix(in srgb, var(--text) 18%, transparent);
 }
 
 /* Header/body/footer own their own padding and are separated by

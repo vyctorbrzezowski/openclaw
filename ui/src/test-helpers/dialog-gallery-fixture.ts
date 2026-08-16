@@ -205,11 +205,6 @@ export class OpenClawDialogGallery extends OpenClawLightDomElement {
         <div class="gallery__themes">
           <button type="button" @click=${() => applyTheme("dark")}>Dark</button>
           <button type="button" @click=${() => applyTheme("light")}>Light</button>
-          <button type="button" @click=${() => applyDialogEdge("current")}>Borda: atual</button>
-          <button type="button" @click=${() => applyDialogEdge("soft")}>Borda: suave</button>
-          <span class="gallery__edge-key"
-            >ou tecla <kbd>B</kbd> (funciona com o dialog aberto)</span
-          >
         </div>
       </header>
 
@@ -550,64 +545,6 @@ function applyTheme(mode: "dark" | "light") {
   root.classList.toggle("wa-dark", mode === "dark");
   root.style.colorScheme = mode;
 }
-
-// Reading the A/B off the panel alone is guesswork, so the live variant is
-// named on screen. A modal paints in the browser top layer, above every
-// z-index, so a plain fixed badge would sit under the panel it describes: this
-// one is a `manual` popover, which joins that same top layer and — unlike an
-// `auto` popover — survives Esc and the dialog's own light dismiss.
-const edgeBadge = document.createElement("div");
-edgeBadge.id = "gallery-edge-badge";
-edgeBadge.popover = "manual";
-edgeBadge.setAttribute("aria-hidden", "true");
-document.body.append(edgeBadge);
-
-// Top-layer entries stack in the order they were shown, so a dialog opened
-// after the badge covers it. Re-showing appends the badge again, back on top.
-function raiseEdgeBadge() {
-  if (edgeBadge.matches(":popover-open")) edgeBadge.hidePopover();
-  edgeBadge.showPopover();
-}
-
-// A modal takes focus when it enters the top layer, and the inner <dialog>
-// lives in the dialog component's shadow root where a mutation observer cannot
-// see it — focusin is the signal that reaches here for every dialog in the
-// gallery, imperative openers included.
-document.addEventListener("focusin", raiseEdgeBadge);
-
-// Drives the `[data-dialog-edge]` A/B in dialog.css while the panel-edge
-// treatment is still an open question. Both this and that block come out
-// together once the treatment is settled.
-function applyDialogEdge(edge: "soft" | "current") {
-  if (edge === "current") {
-    document.documentElement.dataset.dialogEdge = "current";
-  } else {
-    delete document.documentElement.dataset.dialogEdge;
-  }
-  edgeBadge.dataset.edge = edge;
-  render(html`Borda: <strong>${edge === "current" ? "ATUAL" : "SUAVE"}</strong>`, edgeBadge);
-  raiseEdgeBadge();
-}
-
-applyDialogEdge("soft");
-
-// The header buttons are unreachable once a dialog is open — a modal takes
-// the top layer and eats the pointer — which is the one moment the A/B is
-// worth flipping. Keydown still reaches the document, so `B` is the control
-// that actually works mid-comparison.
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "b" && event.key !== "B") return;
-  if (event.metaKey || event.ctrlKey || event.altKey) return;
-  const typing = event
-    .composedPath()
-    .some(
-      (node) =>
-        node instanceof HTMLElement &&
-        (node.isContentEditable || node.tagName === "INPUT" || node.tagName === "TEXTAREA"),
-    );
-  if (typing) return;
-  applyDialogEdge(document.documentElement.dataset.dialogEdge === "current" ? "soft" : "current");
-});
 
 if (!customElements.get("openclaw-dialog-gallery")) {
   customElements.define("openclaw-dialog-gallery", OpenClawDialogGallery);

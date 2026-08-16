@@ -160,17 +160,7 @@ const dialogGalleryFixtureHtml = `<!doctype html>
       .gallery__eyebrow { color: var(--accent); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
       .gallery__head h1 { color: var(--text-strong); font-size: 28px; letter-spacing: -.03em; margin: 10px 0 0; }
       .gallery__head p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 10px 0 0; max-width: 62ch; }
-      .gallery__themes { align-items: center; display: inline-flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 420px; }
-      .gallery__edge-key { color: var(--muted); font-size: 12px; }
-      .gallery__edge-key kbd { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; font: inherit; font-family: ui-monospace, monospace; padding: 1px 5px; }
-      /* The A/B readout has to stay legible with a dialog open, and a modal
-         paints in the top layer above every z-index — a fixed element loses.
-         So the badge is a popover and joins that same layer; the rules below
-         undo the UA popover box (centered, bordered, inset: 0). Shown and
-         restacked by raiseEdgeBadge in dialog-gallery-fixture.ts. */
-      #gallery-edge-badge { background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 999px; box-shadow: 0 10px 30px -10px rgb(0 0 0 / .55); color: var(--muted); font: 600 12px/1 ui-monospace, monospace; inset: auto; left: 50%; letter-spacing: .1em; margin: 0; padding: 10px 16px; pointer-events: none; position: fixed; text-transform: uppercase; top: 16px; transform: translateX(-50%); }
-      #gallery-edge-badge strong { color: var(--text-strong); font-weight: 700; }
-      #gallery-edge-badge[data-edge="current"] strong { color: var(--accent); }
+      .gallery__themes { display: inline-flex; flex: 0 0 auto; gap: 8px; }
       .gallery__themes button { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; color: var(--text); cursor: pointer; font: inherit; font-size: 13px; padding: 8px 14px; }
       .gallery__themes button:hover { background: var(--bg-hover); border-color: var(--border-strong); }
       .gallery__section { margin-top: 40px; }
