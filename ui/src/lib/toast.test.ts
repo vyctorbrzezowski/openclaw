@@ -66,9 +66,7 @@ describe("shared toast", () => {
     await host.updateComplete;
 
     await vi.advanceTimersByTimeAsync(60);
-    host
-      .querySelector(".app-toast-stack")
-      ?.dispatchEvent(new Event("pointerover", { bubbles: true }));
+    host.querySelector(".app-toast-stack")?.dispatchEvent(new Event("pointerenter"));
     await host.updateComplete;
 
     // Well past the original duration, but the clock is held while it is read.
@@ -76,13 +74,36 @@ describe("shared toast", () => {
     await host.updateComplete;
     expect(host.querySelector(".app-toast")).not.toBeNull();
 
-    host
-      .querySelector(".app-toast-stack")
-      ?.dispatchEvent(new Event("pointerout", { bubbles: true }));
+    host.querySelector(".app-toast-stack")?.dispatchEvent(new Event("pointerleave"));
     // The collapse grace period, then the 40ms this toast had left.
     await vi.advanceTimersByTimeAsync(140 + 40);
     await host.updateComplete;
     expect(host.querySelector(".app-toast")).toBeNull();
+  });
+
+  it("stays expanded while dismissing every card before the pointer leaves", async () => {
+    vi.useFakeTimers();
+    const host = await mountHost();
+    for (const label of ["1st", "2nd", "3rd", "4th", "5th", "6th"]) {
+      showToast({ message: label });
+    }
+    await host.updateComplete;
+
+    const stack = host.querySelector<HTMLElement>(".app-toast-stack");
+    expect(stack).not.toBeNull();
+    stack?.dispatchEvent(new Event("pointerenter"));
+    await host.updateComplete;
+    expect(stack?.classList.contains("app-toast-stack--expanded")).toBe(true);
+
+    while (host.querySelector(".app-toast")) {
+      host.querySelector<HTMLButtonElement>(".app-toast__dismiss")?.click();
+      await host.updateComplete;
+      if (host.querySelector(".app-toast")) {
+        expect(host.querySelector(".app-toast-stack--expanded")).not.toBeNull();
+      }
+    }
+
+    expect(host.querySelector(".app-toast-stack")).toBeNull();
   });
 
   it("uses the active modal's toast layer before the app layer", async () => {

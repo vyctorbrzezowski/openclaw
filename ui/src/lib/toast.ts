@@ -136,9 +136,8 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     }
   }
 
-  /** pointerover/out rather than enter/leave: the stack wrapper draws no box of
-   * its own (the cards own the fixed positioning), so only the bubbling pair
-   * reaches it. */
+  /** The wrapper owns a stable hit region, so moving between cards or removing
+   * the card under the pointer does not look like leaving the stack. */
   private holdExpanded() {
     if (this.collapseTimer !== null) {
       globalThis.clearTimeout(this.collapseTimer);
@@ -229,6 +228,17 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
       card.style.setProperty("--app-toast-shift", `${direction * offset}px`);
       offset += card.offsetHeight + EXPANDED_GAP_PX;
     });
+    const visibleCount = this.expanded ? cards.length : Math.min(cards.length, COLLAPSED_VISIBLE);
+    const collapsedHeight = cards
+      .slice(0, visibleCount)
+      .reduce(
+        (height, card, depth) => height + (depth === 0 ? card.offsetHeight : COLLAPSED_STEP_PX),
+        0,
+      );
+    this.style.setProperty(
+      "--app-toast-stack-height",
+      `${this.expanded ? offset : collapsedHeight}px`,
+    );
     this.style.setProperty("--app-toast-direction", String(direction));
     this.style.setProperty("--app-toast-step", `${direction * COLLAPSED_STEP_PX}px`);
   }
@@ -288,8 +298,8 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     return html`
       <div
         class="app-toast-stack${this.expanded ? " app-toast-stack--expanded" : ""}"
-        @pointerover=${() => this.holdExpanded()}
-        @pointerout=${(event: PointerEvent) => this.releaseExpanded(event.relatedTarget)}
+        @pointerenter=${() => this.holdExpanded()}
+        @pointerleave=${(event: PointerEvent) => this.releaseExpanded(event.relatedTarget)}
         @focusin=${() => this.holdExpanded()}
         @focusout=${(event: FocusEvent) => this.releaseExpanded(event.relatedTarget)}
       >
