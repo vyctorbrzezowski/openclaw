@@ -77,6 +77,29 @@ describe("shared toast", () => {
     },
   );
 
+  it("keeps the newest card at the front for a mixed five-card burst", async () => {
+    const host = await mountHost();
+    const cards = [
+      { message: "Info event", tone: "info" as const },
+      { message: "Neutral event" },
+      { message: "Success event", tone: "success" as const },
+      { message: "Warning event", tone: "warn" as const },
+      { message: "Danger event", tone: "danger" as const },
+    ];
+
+    for (const card of cards) {
+      showToast(card);
+    }
+    await host.updateComplete;
+
+    expect(
+      [...host.querySelectorAll(".app-toast__message")].map((node) => node.textContent),
+    ).toEqual(["Danger event", "Warning event", "Success event", "Neutral event", "Info event"]);
+    expect(
+      [...host.querySelectorAll<HTMLElement>(".app-toast")].map((card) => card.dataset.depth),
+    ).toEqual(["0", "1", "2", "3", "4"]);
+  });
+
   it("holds every card's clock while the stack is expanded, then resumes it", async () => {
     vi.useFakeTimers();
     const host = await mountHost();
