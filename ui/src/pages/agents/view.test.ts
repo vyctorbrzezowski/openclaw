@@ -890,7 +890,7 @@ describe("renderAgentFiles", () => {
       .querySelector('[id="agent-files-tab-AGENTS.md"]')
       ?.dispatchEvent(new MouseEvent("click", { detail: 1, bubbles: true }));
     expect(onSelectFile).toHaveBeenCalledWith("AGENTS.md");
-    expect(container.querySelector(".callout.info")?.textContent?.trim()).toBe(
+    expect(container.querySelector(".callout--info")?.textContent?.trim()).toBe(
       "This file does not exist yet. Saving will create it in the agent workspace.",
     );
   });

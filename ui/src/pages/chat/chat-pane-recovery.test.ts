@@ -28,8 +28,7 @@ describe("chat pane session recovery", () => {
     expect(pane.restartRecoveryComposerBanner()).toMatchObject({
       title: "This session ended during a restart.",
       text: "Its transcript is safe.",
-      tone: "neutral",
-      icon: "warning",
+      tone: "warn",
       actionLabel: "Resume in new session",
       actionStyle: "primary",
       busy: false,

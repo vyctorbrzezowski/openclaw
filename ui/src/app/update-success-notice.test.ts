@@ -32,6 +32,7 @@ describe("update success notice", () => {
 
     expect(showToastMock).toHaveBeenCalledWith({
       message: "Gateway updated · now on abcdef1.",
+      tone: "success",
     });
   });
 });

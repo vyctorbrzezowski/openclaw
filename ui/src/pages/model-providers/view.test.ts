@@ -433,8 +433,8 @@ describe("renderModelProviders", () => {
       "Secret saved.",
       "Config refresh failed after the secret was committed.",
     ]);
-    expect(messages[0]?.classList.contains("success")).toBe(true);
-    expect(messages[1]?.classList.contains("warning")).toBe(true);
+    expect(messages[0]?.classList.contains("callout--success")).toBe(true);
+    expect(messages[1]?.classList.contains("callout--warn")).toBe(true);
   });
 
   it("keeps committed default-model success visible beside its refresh warning", () => {
@@ -456,8 +456,8 @@ describe("renderModelProviders", () => {
       "Default models saved.",
       "Config refresh failed after the model defaults were committed.",
     ]);
-    expect(messages[0]?.classList.contains("success")).toBe(true);
-    expect(messages[1]?.classList.contains("warning")).toBe(true);
+    expect(messages[0]?.classList.contains("callout--success")).toBe(true);
+    expect(messages[1]?.classList.contains("callout--warn")).toBe(true);
   });
 
   it("announces provider and default-model mutation failures as accessible alerts", () => {

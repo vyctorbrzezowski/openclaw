@@ -70,8 +70,7 @@ describe("archived session composer banner", () => {
         kind: "composer-replacement",
         title: "This session ended during a restart.",
         text: "Its transcript is safe.",
-        tone: "neutral",
-        icon: "warning",
+        tone: "warn",
         actionLabel: "Resume in new session",
         actionStyle: "primary",
         busy: true,
@@ -84,9 +83,13 @@ describe("archived session composer banner", () => {
       ".agent-chat__disabled-banner button",
     );
     const banner = container.querySelector(".agent-chat__disabled-banner");
-    expect(banner?.classList.contains("info")).toBe(false);
-    expect(banner?.classList.contains("agent-chat__disabled-banner--neutral")).toBe(true);
-    expect(banner?.querySelector(".agent-chat__disabled-banner-icon")).not.toBeNull();
+    // One severity axis: the warn tone brings the tint, the glyph and the
+    // interrupting role together, where a separate icon flag used to put a
+    // warning triangle on a neutral surface.
+    expect(banner?.classList.contains("callout--warn")).toBe(true);
+    expect(banner?.classList.contains("agent-chat__disabled-banner--neutral")).toBe(false);
+    expect(banner?.getAttribute("role")).toBe("alert");
+    expect(banner?.querySelector(".callout__icon")).not.toBeNull();
     expect(banner?.querySelector(".agent-chat__disabled-banner-title")?.textContent).toContain(
       "This session ended during a restart.",
     );

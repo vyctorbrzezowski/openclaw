@@ -1418,7 +1418,6 @@ openclaw-github-link-hovercard-provider {
 /* Body copy stays --text so a long sentence reads as prose; the tone colors the
    glyph and the lead-in instead. Colored body text on a tinted surface is the
    pairing base.css audits, but only for label-length strings. */
-.callout__title,
 .callout strong {
   color: var(--alert-accent);
 }

@@ -177,7 +177,7 @@ describe("agents tools panel (browser)", () => {
     );
     await Promise.resolve();
 
-    expect(container.querySelector(".callout.info")?.textContent?.trim()).toBe(
+    expect(container.querySelector(".callout--info")?.textContent?.trim()).toBe(
       "Could not load runtime tool catalog. Showing built-in fallback list instead.",
     );
   });
@@ -205,9 +205,9 @@ describe("agents tools panel (browser)", () => {
     );
     await Promise.resolve();
 
-    expect(container.querySelector(".agent-tools-notices .callout.info")?.textContent?.trim()).toBe(
-      "MCP servers are configured but not connected yet.",
-    );
+    expect(
+      container.querySelector(".agent-tools-notices .callout--info")?.textContent?.trim(),
+    ).toBe("MCP servers are configured but not connected yet.");
   });
 
   it("closes expanded tool rows when the parent group collapses", async () => {

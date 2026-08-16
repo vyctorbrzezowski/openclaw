@@ -446,7 +446,7 @@ describe("config view", () => {
       formValue: { gateway: {}, agents: { opaque: "off-scope" } },
       activeSection: "gateway",
     });
-    expect(empty.container.querySelector(".config-content-callout .info")).toBeNull();
+    expect(empty.container.querySelector(".config-content-callout .callout--info")).toBeNull();
     expect(findButtonByText(empty.container, "Form").getAttribute("title")).toBe("");
 
     const onFormModeChange = vi.fn();
@@ -461,7 +461,7 @@ describe("config view", () => {
     });
     const banner = queryRequired(
       populated.container,
-      ".config-content-callout .callout.info",
+      ".config-content-callout .callout--info",
       HTMLElement,
     );
     expect(normalizedText(banner)).toBe(
@@ -1033,7 +1033,7 @@ describe("config view", () => {
         .trim(),
     ).toBe("1 secret redacted");
     expect(
-      queryRequired(container, ".config-raw-field .callout.info", HTMLElement)
+      queryRequired(container, ".config-raw-field .callout--info", HTMLElement)
         .textContent?.replace(/\s+/g, " ")
         .trim(),
     ).toBe("1 sensitive value hidden. Use the reveal button above to edit the raw config.");
@@ -1231,7 +1231,7 @@ describe("config view", () => {
         .trim(),
     ).toBe("1 secret redacted");
     expect(
-      queryRequired(container, ".config-raw-field .callout.info", HTMLElement)
+      queryRequired(container, ".config-raw-field .callout--info", HTMLElement)
         .textContent?.replace(/\s+/g, " ")
         .trim(),
     ).toBe("1 sensitive value hidden. Use the reveal button above to edit the raw config.");
