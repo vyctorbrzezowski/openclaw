@@ -399,10 +399,11 @@
   grid-column: 1 / -1;
 }
 
-/* The draft's own footer takes this alongside .dialog-footer; the comment
-   submit row inside the body is the reason the class still carries its own
-   alignment. */
-.workboard-modal__actions {
+/* Only the comment submit row inside the body needs this: it is not a dialog
+   footer and has no grammar of its own. The draft's footer carries the class
+   too, for the selectors that reach it, but takes its layout from
+   .dialog-footer — whose row-reverse would fight a flex-end set here. */
+.workboard-modal__actions:not(.dialog-footer) {
   display: flex;
   justify-content: flex-end;
   gap: 8px;

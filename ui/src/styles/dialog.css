@@ -319,16 +319,23 @@ openclaw-modal-dialog.dialog-2xl {
   line-height: 1.5;
 }
 
-/* Actions hug the trailing edge — the shipped majority before this
-   file existed, and where the eye already ends after reading the
-   body. DOM order stays primary-first so tab order still reaches the
-   action the dialog is asking for; the row never reorders visually,
-   so focus order and reading order agree. */
+/* Actions hug the trailing edge, and the primary lands at the very end
+   of it: rightmost here, and bottom of the stack in the narrow-screen
+   rule below, which has always reversed for the same reason. Every
+   platform the operator compares against puts the confirming action
+   last and the dismissal before it.
+
+   DOM order stays primary-first, so a screen reader still hears the
+   action the dialog is asking for before its escape hatch; row-reverse
+   is what turns that into last-on-screen. Reversing the main axis also
+   flips what flex-end means, hence flex-start to keep the group on the
+   trailing edge. */
 .dialog-footer {
   display: flex;
+  flex-direction: row-reverse;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   margin-top: 16px;
 }
@@ -337,12 +344,6 @@ openclaw-modal-dialog.dialog-2xl {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-/* Pushes what follows it to the trailing edge, for a footer that
-   carries a secondary link beside its actions. */
-.dialog-footer__spacer {
-  margin-inline-end: auto;
 }
 
 @keyframes dialog-enter {
