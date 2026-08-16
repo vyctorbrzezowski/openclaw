@@ -41,12 +41,9 @@
   --alert-x-danger-border: rgba(255, 69, 58, 0.25);
   --alert-x-danger-icon: #ff6961;
 
-  /* Floating chrome. The toast keeps no outline in either theme; separation is
-     elevation, plus a top highlight in dark so the card still reads as a
-     material with a lit edge rather than a flat patch. */
-  --alert-x-toast-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px -12px rgba(0, 0, 0, 0.62),
-    0 4px 12px -4px rgba(0, 0, 0, 0.4);
+  /* Floating chrome. Dark toasts stay calm and flat; separation comes from a
+     diffuse shadow rather than a highlight that makes the card feel raised. */
+  --alert-x-toast-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.42), 0 3px 8px -4px rgba(0, 0, 0, 0.2);
   --alert-x-action-bg: rgba(255, 255, 255, 0.08);
 }
 
@@ -148,6 +145,14 @@
 .app-toast--warn,
 .app-toast--danger {
   border-color: transparent;
+}
+
+/* The base grammar uses a two-layer background so tinted toasts stay opaque.
+   In dark mode the experiment prefers a single, flat veil: the glyph carries
+   the saturation and the surface should not read as a glazed or sculpted card. */
+:root:not([data-theme-mode="light"])
+  :is(.app-toast--info, .app-toast--success, .app-toast--warn, .app-toast--danger) {
+  background: var(--alert-surface);
 }
 
 /* ---- refinements ---- */
