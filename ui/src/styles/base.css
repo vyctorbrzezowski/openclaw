@@ -1120,6 +1120,31 @@ wa-popover::part(body) {
   }
 }
 
+/* The label above a group of options, once. Six stylesheets each spelled this
+   out and no two agreed: 9px to 12px type, four paddings, weights from 600 to
+   700, half of them uppercase and one in --text-strong, which read as a heading
+   rather than a group label. The values here are the ones the majority already
+   used. One of these classes had no rule at all outside a compact variant, so
+   the plain session menu rendered its section labels at body size.
+   Named classes rather than a shared one: these labels live in a dozen
+   templates, and giving the panels one grammar is worth more than a markup
+   sweep — a new menu that wants a group label picks any of these up by adding
+   itself here. */
+.sidebar-customize-menu__title,
+.sidebar-session-sort-menu__title,
+.session-menu__section-label,
+.new-session-page__menu-title,
+.board-widget__menu-heading,
+.chat-pane__sharing-title,
+.chat-talk-input-picker__heading {
+  padding: 4px 8px 2px;
+  color: var(--muted);
+  font-size: var(--control-ui-text-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 /* Web Awesome dropdown items ship `cursor: pointer` on their shadow host.
    Document rules beat `:host`, so route them through the policy here — and
    re-add the disabled cue this override would otherwise clobber. */

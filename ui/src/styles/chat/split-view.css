@@ -573,19 +573,13 @@ openclaw-chat-pane {
   height: min(420px, 60vh);
 }
 
-.chat-pane__sharing-title,
+/* The status line beside this menu's group label; it stays sentence case and
+   keeps its own inset because it reports state rather than naming a group. */
 .chat-pane__sharing-status {
+  padding: 6px 12px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
-}
-
-.chat-pane__sharing-title {
-  padding: 5px 8px 7px;
-}
-
-.chat-pane__sharing-status {
-  padding: 6px 12px;
 }
 
 .chat-pane__sharing-visibility-item[disabled] {
@@ -675,13 +669,6 @@ openclaw-chat-pane {
 
 .chat-header-session-menu--compact .session-menu__item {
   min-height: 44px;
-}
-
-.chat-header-session-menu--compact .session-menu__section-label {
-  padding: 4px 8px 2px;
-  color: var(--muted);
-  font-size: var(--control-ui-text-xs);
-  font-weight: 650;
 }
 
 .chat-header-session-menu--compact::part(menu) {

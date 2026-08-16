@@ -2491,15 +2491,6 @@ wa-dropdown.sidebar-customize-menu::part(menu) {
   max-height: 420px;
 }
 
-.sidebar-customize-menu__title {
-  padding: 6px 8px 8px;
-  font-size: var(--control-ui-text-xs);
-  font-weight: 650;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .sidebar-customize-menu__provenance {
   margin: 0 8px 6px;
   color: var(--muted);
@@ -2653,15 +2644,6 @@ wa-dropdown.sidebar-session-sort-menu {
 wa-dropdown.sidebar-session-sort-menu::part(menu) {
   min-width: 176px;
   max-width: 220px;
-}
-
-.sidebar-session-sort-menu__title {
-  padding: 4px 8px 2px;
-  color: var(--muted);
-  font-size: var(--control-ui-text-xs);
-  font-weight: 650;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .session-menu__item,

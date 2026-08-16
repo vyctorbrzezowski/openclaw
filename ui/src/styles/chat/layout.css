@@ -3354,13 +3354,6 @@ button.chat-reply-preview--message:disabled {
   width: min(300px, calc(100vw - 24px));
 }
 
-.chat-talk-input-picker__heading {
-  padding: 6px 9px 5px;
-  color: var(--text-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .chat-talk-input-picker__item {
   color: var(--text);
   font-size: 13px;
