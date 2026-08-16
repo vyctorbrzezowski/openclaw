@@ -24,30 +24,10 @@
  */
 
 :root {
-  /* Dark is the base theme here, matching base.css. */
-  --alert-x-neutral-bg: rgba(255, 255, 255, 0.045);
-  --alert-x-neutral-border: rgba(255, 255, 255, 0.09);
-  --alert-x-neutral-icon: rgba(255, 255, 255, 0.55);
-  --alert-x-info-bg: rgba(10, 132, 255, 0.09);
-  --alert-x-info-border: rgba(10, 132, 255, 0.25);
-  --alert-x-info-icon: #409cff;
-  --alert-x-success-bg: rgba(48, 209, 88, 0.08);
-  --alert-x-success-border: rgba(48, 209, 88, 0.22);
-  --alert-x-success-icon: #30d158;
-  --alert-x-warn-bg: rgba(255, 159, 10, 0.07);
-  --alert-x-warn-border: rgba(255, 159, 10, 0.22);
-  --alert-x-warn-icon: #ffb340;
-  --alert-x-danger-bg: rgba(255, 69, 58, 0.09);
-  --alert-x-danger-border: rgba(255, 69, 58, 0.25);
-  --alert-x-danger-icon: #ff6961;
+  --alert-x-surface: #fbfbfa;
+  --alert-x-text: #1d1d1f;
+  --alert-x-text-secondary: #6e6e73;
 
-  /* Floating chrome. Dark toasts stay calm and flat; separation comes from a
-     diffuse shadow rather than a highlight that makes the card feel raised. */
-  --alert-x-toast-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.42), 0 3px 8px -4px rgba(0, 0, 0, 0.2);
-  --alert-x-action-bg: rgba(255, 255, 255, 0.08);
-}
-
-:root[data-theme-mode="light"] {
   --alert-x-neutral-bg: rgba(0, 0, 0, 0.035);
   --alert-x-neutral-border: rgba(0, 0, 0, 0.08);
   --alert-x-neutral-icon: #6e6e73;
@@ -65,13 +45,39 @@
   --alert-x-danger-icon: #d70015;
 
   /* No inset highlight in light — a white line on a white card is nothing. The
-     shadow is warm because it is mixed from --text, which every theme family
-     already tunes to its own paper, and the negative spread keeps it a halo
-     under the card instead of a smudge around it. */
+     shadow is warm because it is mixed from the alert text, and the negative
+     spread keeps it a halo under the card instead of a smudge around it. */
   --alert-x-toast-shadow:
-    0 12px 32px -10px color-mix(in srgb, var(--text) 22%, transparent),
-    0 2px 8px -3px color-mix(in srgb, var(--text) 12%, transparent);
+    0 12px 32px -10px color-mix(in srgb, var(--alert-x-text) 22%, transparent),
+    0 2px 8px -3px color-mix(in srgb, var(--alert-x-text) 12%, transparent);
   --alert-x-action-bg: rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="dark"] {
+  --alert-x-surface: #161618;
+  --alert-x-text: rgba(255, 255, 255, 0.86);
+  --alert-x-text-secondary: rgba(255, 255, 255, 0.55);
+
+  --alert-x-neutral-bg: rgba(255, 255, 255, 0.045);
+  --alert-x-neutral-border: rgba(255, 255, 255, 0.09);
+  --alert-x-neutral-icon: rgba(255, 255, 255, 0.55);
+  --alert-x-info-bg: rgba(10, 132, 255, 0.09);
+  --alert-x-info-border: rgba(10, 132, 255, 0.25);
+  --alert-x-info-icon: #409cff;
+  --alert-x-success-bg: rgba(48, 209, 88, 0.08);
+  --alert-x-success-border: rgba(48, 209, 88, 0.22);
+  --alert-x-success-icon: #30d158;
+  --alert-x-warn-bg: rgba(255, 159, 10, 0.07);
+  --alert-x-warn-border: rgba(255, 159, 10, 0.22);
+  --alert-x-warn-icon: #ffb340;
+  --alert-x-danger-bg: rgba(255, 69, 58, 0.09);
+  --alert-x-danger-border: rgba(255, 69, 58, 0.25);
+  --alert-x-danger-icon: #ff6961;
+
+  /* Dark toasts stay calm and flat; separation comes from a diffuse shadow
+     rather than a highlight that makes the card feel raised. */
+  --alert-x-toast-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.42), 0 3px 8px -4px rgba(0, 0, 0, 0.2);
+  --alert-x-action-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* ---- the trio, repointed at the experiment's palette ----
@@ -141,9 +147,18 @@
    card over arbitrary page content is unreadable. */
 .app-toast {
   --alert-accent: var(--alert-x-neutral-icon);
+  --alert-surface: var(--alert-x-surface);
   --alert-border: var(--alert-x-neutral-border);
+  --alert-x-toast-base: var(--alert-x-surface);
 
+  color: var(--alert-x-text);
   box-shadow: var(--alert-x-toast-shadow);
+}
+
+.callout__content > span,
+.callout strong,
+.app-toast__message {
+  color: var(--alert-x-text);
 }
 
 /* ---- refinements ---- */
@@ -171,7 +186,7 @@
   border: 0;
   border-radius: var(--radius-full);
   background: var(--alert-x-action-bg);
-  color: var(--text);
+  color: var(--alert-x-text);
   font-size: var(--control-ui-text-sm);
   font-weight: 600;
   line-height: 1.2;
@@ -192,7 +207,7 @@
   .btn:is(:hover, :focus-visible),
 .app-toast__action:is(:hover, :focus-visible) {
   background: var(--alert-x-neutral-border);
-  color: var(--text-strong);
+  color: var(--alert-x-text);
 }
 
 :is(
@@ -217,6 +232,7 @@
 /* Dismiss is available, not advertised. */
 .callout__dismiss,
 .app-toast__dismiss {
+  color: var(--alert-x-text-secondary);
   opacity: 0.4;
   transition: opacity 120ms ease;
 }

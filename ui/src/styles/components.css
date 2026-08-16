@@ -1721,7 +1721,9 @@ openclaw-github-link-hovercard-provider {
 .app-toast--warn,
 .app-toast--danger,
 .app-toast--info {
-  background: linear-gradient(var(--alert-surface), var(--alert-surface)), var(--popover);
+  background:
+    linear-gradient(var(--alert-surface), var(--alert-surface)),
+    var(--alert-x-toast-base, var(--popover));
 }
 
 /* Pending routes share the native mascot without exposing transient panel text. */
