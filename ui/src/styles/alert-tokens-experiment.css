@@ -146,13 +146,16 @@
    tint still composites onto the opaque popover fill, because a translucent
    card over arbitrary page content is unreadable. */
 .app-toast {
-  --alert-accent: var(--alert-x-neutral-icon);
-  --alert-surface: var(--alert-x-surface);
-  --alert-border: var(--alert-x-neutral-border);
   --alert-x-toast-base: var(--alert-x-surface);
 
   color: var(--alert-x-text);
   box-shadow: var(--alert-x-toast-shadow);
+}
+
+.app-toast:not(.app-toast--info, .app-toast--success, .app-toast--warn, .app-toast--danger) {
+  --alert-accent: var(--alert-x-neutral-icon);
+  --alert-surface: var(--alert-x-surface);
+  --alert-border: var(--alert-x-neutral-border);
 }
 
 .callout__content > span,
