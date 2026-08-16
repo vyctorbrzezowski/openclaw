@@ -743,7 +743,7 @@ openclaw-session-owner-chip {
 }
 
 /* Beyond the three peeking edges a further card is a sliver, not a card; it
-   folds away and the front card carries a count instead. */
+   folds away until the operator hovers or focuses the stack. */
 .app-toast[data-collapsed-hidden] {
   opacity: 0;
   pointer-events: none;
@@ -774,17 +774,6 @@ openclaw-session-owner-chip {
   .app-toast {
     width: auto;
   }
-}
-
-.app-toast__count {
-  flex: 0 0 auto;
-  padding: 1px 7px;
-  border-radius: var(--radius-full);
-  background: var(--bg-hover);
-  color: var(--muted);
-  font-size: var(--control-ui-text-xs);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Grouping and de-grouping is decoration over an instant state change: with
@@ -1515,14 +1504,14 @@ openclaw-github-link-hovercard-provider {
 
 /* The shell defaults to non-selectable chrome, but alert copy is operator
    output: it must be usable as text. Controls stay isolated so dragging across
-   a card never selects a pill, dismiss affordance, or overflow count. */
+   a card never selects a pill or dismiss affordance. */
 .callout,
 .app-toast__message {
   user-select: text;
   -webkit-user-select: text;
 }
 
-:is(.callout, .app-toast) :is(button, .app-toast__count) {
+:is(.callout, .app-toast) button {
   user-select: none;
   -webkit-user-select: none;
 }

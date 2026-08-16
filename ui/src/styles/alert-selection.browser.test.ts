@@ -26,7 +26,6 @@ function fixtureDocument(css: string): string {
     <div class="app-toast-stack">
       <div class="app-toast">
         <span class="app-toast__message">Copy this toast outcome</span>
-        <span class="app-toast__count">+3</span>
         <button class="app-toast__action" type="button">Undo</button>
         <button class="app-toast__dismiss" type="button">Dismiss</button>
       </div>
@@ -81,7 +80,6 @@ describeAlertSelection("Control UI alert text selection", () => {
           calloutUserSelect: getComputedStyle(callout).userSelect,
           toastUserSelect: getComputedStyle(toastMessage).userSelect,
           controls: [
-            ".app-toast__count",
             ".app-toast__action",
             ".app-toast__dismiss",
             ".callout .btn",
@@ -93,7 +91,7 @@ describeAlertSelection("Control UI alert text selection", () => {
       expect(result.calloutSelection).toBe("Copy this callout explanation");
       expect(result.calloutUserSelect).toBe("text");
       expect(result.toastUserSelect).toBe("text");
-      expect(result.controls).toEqual(["none", "none", "none", "none", "none"]);
+      expect(result.controls).toEqual(["none", "none", "none", "none"]);
     } finally {
       await page.close().catch(() => {});
     }

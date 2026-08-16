@@ -214,12 +214,6 @@
   gap: var(--space-3);
 }
 
-/* The overflow count reports state; its neutral veil must not read as another
-   button in the stack. */
-.app-toast__count {
-  background: var(--alert-x-neutral-bg);
-}
-
 /* Dismiss is available, not advertised. */
 .callout__dismiss,
 .app-toast__dismiss {

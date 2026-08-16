@@ -32,8 +32,7 @@ export type ToastOptions = {
 
 const DEFAULT_TOAST_DURATION_MS = 6_000;
 
-/** The front card plus up to three peeking edges stay visible while collapsed.
- * Past this the stack reports the remainder as a count. */
+/** The front card plus up to three peeking edges stay visible while collapsed. */
 const COLLAPSED_VISIBLE = 4;
 
 /** Hard ceiling on concurrent toasts. A burst larger than this is a runaway
@@ -73,10 +72,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
    * screen reader gets and the order the depth transforms below assume. */
   @state() private entries: ToastEntry[] = [];
   @state() private expanded = false;
-  /** Outcomes retired by the stack ceiling still belong in the collapsed count
-   * until the remaining stack is gone, so the count accounts for every outcome
-   * in the burst rather than only the cards still mounted. */
-  private overflowCount = 0;
   /** The expanded list has gaps between cards, and crossing one briefly points
    * at the page behind. A short grace period keeps that from reading as
    * "pointer left" and collapsing the stack under the operator's cursor. */
@@ -120,7 +115,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     const stacked = [entry, ...this.entries];
     const overflow = stacked.slice(MAX_STACKED_TOASTS);
     this.entries = stacked.slice(0, MAX_STACKED_TOASTS);
-    this.overflowCount += overflow.length;
     for (const retired of overflow) {
       this.clearTimer(retired);
       retired.options.onDismiss?.("replaced");
@@ -193,7 +187,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     entry.options.onDismiss?.(reason);
     if (this.entries.length === 0) {
       this.expanded = false;
-      this.overflowCount = 0;
     }
   }
 
@@ -201,7 +194,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     const dismissed = this.entries;
     this.entries = [];
     this.expanded = false;
-    this.overflowCount = 0;
     if (this.collapseTimer !== null) {
       globalThis.clearTimeout(this.collapseTimer);
       this.collapseTimer = null;
@@ -261,7 +253,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     const { options } = entry;
     const tone = options.tone;
     const hidden = depth >= COLLAPSED_VISIBLE && !this.expanded;
-    const overflow = Math.max(0, this.entries.length - COLLAPSED_VISIBLE + this.overflowCount);
     return html`
       <div
         class="app-toast${tone ? ` app-toast--${tone}` : ""}"
@@ -275,9 +266,6 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
           ? html`<span class="app-toast__icon" aria-hidden="true">${TONE_ICONS[tone]}</span>`
           : nothing}
         <span class="app-toast__message">${options.message}</span>
-        ${depth === 0 && !this.expanded && overflow > 0
-          ? html`<span class="app-toast__count">${`+${overflow}`}</span>`
-          : nothing}
         ${options.actionLabel && options.onAction
           ? html`
               <button

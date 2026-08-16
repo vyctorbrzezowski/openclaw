@@ -43,39 +43,20 @@ describe("shared toast", () => {
     ).toEqual(["Second", "First"]);
   });
 
-  it.each([
-    {
-      total: 5,
-      labels: ["1st", "2nd", "3rd", "4th", "5th"],
-      front: "5th",
-      retired: [],
-      count: "+1",
-    },
-    {
-      total: 7,
-      labels: ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"],
-      front: "7th",
-      retired: ["1st", "2nd"],
-      count: "+3",
-    },
-  ])(
-    "counts every dispatched card for $total outcomes",
-    async ({ labels, front, retired: expectedRetired, count }) => {
-      const host = await mountHost();
-      const retired: string[] = [];
+  it("keeps the five-card ceiling without an overflow control", async () => {
+    const host = await mountHost();
+    const retired: string[] = [];
 
-      for (const label of labels) {
-        showToast({ message: label, onDismiss: (reason) => retired.push(`${label}:${reason}`) });
-      }
-      await host.updateComplete;
+    for (const label of ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"]) {
+      showToast({ message: label, onDismiss: (reason) => retired.push(`${label}:${reason}`) });
+    }
+    await host.updateComplete;
 
-      expect(host.querySelectorAll(".app-toast")).toHaveLength(5);
-      expect(host.querySelector(".app-toast__message")?.textContent).toBe(front);
-      expect(retired).toEqual(expectedRetired.map((label) => `${label}:replaced`));
-      // Total dispatched = front + three visible edges + the counter.
-      expect(host.querySelector(".app-toast__count")?.textContent).toBe(count);
-    },
-  );
+    expect(host.querySelectorAll(".app-toast")).toHaveLength(5);
+    expect(host.querySelector(".app-toast__message")?.textContent).toBe("7th");
+    expect(retired).toEqual(["1st:replaced", "2nd:replaced"]);
+    expect(host.querySelector(".app-toast__count")).toBeNull();
+  });
 
   it("keeps the newest card at the front for a mixed five-card burst", async () => {
     const host = await mountHost();
