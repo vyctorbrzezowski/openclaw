@@ -149,7 +149,12 @@ const dialogGalleryFixtureHtml = `<!doctype html>
     </script>
     <link rel="stylesheet" href="/src/styles.css" />
     <style>
-      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+      /* base.css clips the root so the app shell's panes own scrolling; this
+         page is a plain document and takes the root scroller back. !important
+         because the fixture module imports styles.css, which Vite injects
+         after this block, so a same-specificity rule here would lose. */
+      html, body { height: auto !important; overflow: visible !important; overscroll-behavior: auto !important; }
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); user-select: text; }
       openclaw-dialog-gallery { box-sizing: border-box; display: block; margin: 0 auto; max-width: 1180px; padding: 40px 32px 72px; }
       .gallery__head { align-items: flex-start; display: flex; gap: 24px; justify-content: space-between; margin-bottom: 36px; }
       .gallery__eyebrow { color: var(--accent); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
