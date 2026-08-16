@@ -115,11 +115,6 @@ openclaw-board-view {
 .board-tabs__overflow::part(menu),
 .board-widget__menu::part(menu) {
   min-width: 190px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 .board-tabs__overflow-item {

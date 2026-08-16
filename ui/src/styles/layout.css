@@ -2489,12 +2489,6 @@ wa-dropdown.sidebar-customize-menu::part(menu) {
   min-width: 224px;
   max-width: 264px;
   max-height: 420px;
-  overflow-y: auto;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 .sidebar-customize-menu__title {
@@ -2621,11 +2615,6 @@ wa-dropdown.session-menu {
 wa-dropdown.session-menu::part(menu) {
   min-width: 224px;
   max-width: 264px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 /* Popover hosts live in the top layer so menus escape in-page stacking
@@ -2664,11 +2653,6 @@ wa-dropdown.sidebar-session-sort-menu {
 wa-dropdown.sidebar-session-sort-menu::part(menu) {
   min-width: 176px;
   max-width: 220px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 .sidebar-session-sort-menu__title {

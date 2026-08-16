@@ -260,6 +260,10 @@
   --menu-item-radius: var(--radius-sm);
   --menu-item-height: 28px;
   --menu-padding: 4px;
+  /* One entrance for every select panel. Longer than --duration-fast on purpose:
+     at 100ms the scale reads as a flicker rather than the list growing out of
+     the control the operator just pressed. */
+  --menu-enter-duration: 140ms;
 
   /* Transitions - Crisp and responsive */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -1052,6 +1056,70 @@ a {
 
 a:hover {
   text-decoration-thickness: 2px;
+}
+
+/* The select panel, once, for every popper the operator can open: dropdown
+   menus, wa-select listboxes, the popovers that back the picker chips, and the
+   two panels the chat composer positions by hand. Hairline, corner, elevation
+   and entrance all live here, so a feature stylesheet declares only what is
+   genuinely its own — how wide the panel is, and a tighter scroll cap when its
+   list should stop short of the viewport. Restating the surface per feature is
+   what let four radii, three shadow tiers and two border mixes ship beside each
+   other; there is nothing left to restate.
+   Generic type selectors on purpose: an unlisted new menu must inherit the
+   grammar rather than render on Web Awesome's stock panel. The two classes are
+   named here for the same reason .slash-menu-item is named in the corner block
+   above — they are menu chrome that no ::part() selector can reach. */
+wa-dropdown::part(menu),
+wa-select::part(listbox),
+wa-popover::part(body),
+.slash-menu,
+.chat-controls__inline-select-menu {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--menu-radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  animation: menu-surface-enter var(--menu-enter-duration) var(--ease-out);
+}
+
+/* Only the component-backed panels own their inset and scrolling. The two
+   hand-positioned ones wrap their list in a scroll box of their own, so padding
+   here would double against it. */
+wa-dropdown::part(menu),
+wa-select::part(listbox),
+wa-popover::part(body) {
+  padding: var(--menu-padding);
+  /* Web Awesome owns the collision-aware max-height, so the panel only needs to
+     be told to scroll inside it; `contain` keeps a wheel at the list's end from
+     scrolling the page behind the open menu. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Scale from the panel's own centre rather than a placement-specific corner:
+   these panels open above, below and to either side of their control, and a
+   fixed origin reads as the list arriving from the wrong direction for half of
+   them. Small enough that it lands as the list settling into place. */
+@keyframes menu-surface-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  wa-dropdown::part(menu),
+  wa-select::part(listbox),
+  wa-popover::part(body),
+  .slash-menu,
+  .chat-controls__inline-select-menu {
+    animation: none;
+  }
 }
 
 /* Web Awesome dropdown items ship `cursor: pointer` on their shadow host.

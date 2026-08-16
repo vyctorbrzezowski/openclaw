@@ -2776,11 +2776,6 @@ button.chat-reply-preview--message:disabled {
 
 .agent-chat__attach-menu::part(menu) {
   width: 152px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 .agent-chat__attach-menu-option {
@@ -3357,11 +3352,6 @@ button.chat-reply-preview--message:disabled {
 
 .chat-talk-input-picker::part(menu) {
   width: min(300px, calc(100vw - 24px));
-  padding: 6px;
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-elevated) 96%, var(--card));
-  box-shadow: var(--shadow-md);
 }
 
 .chat-talk-input-picker__heading {
@@ -3874,10 +3864,6 @@ button.chat-reply-preview--message:disabled {
   right: 0;
   max-height: 288px;
   overflow: hidden;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  box-shadow: var(--shadow-md);
   z-index: 30;
   margin-bottom: 4px;
 }
@@ -4392,13 +4378,6 @@ button.chat-reply-preview--message:disabled {
   height: 100%;
   stroke: currentColor;
   fill: none;
-}
-
-.chat-controls__inline-select-menu {
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-elevated) 96%, var(--card));
-  box-shadow: var(--shadow-md);
 }
 
 .chat-controls__inline-select-option {

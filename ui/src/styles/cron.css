@@ -1053,18 +1053,8 @@
 
 .cron-job-menu::part(menu) {
   min-width: 170px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }
 
 .cron-filter-dropdown__details::part(menu) {
   width: min(300px, calc(100vw - 48px));
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
 }

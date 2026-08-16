@@ -203,13 +203,6 @@
 .model-setup-provider-select::part(menu) {
   width: min(620px, calc(100vw - 32px));
   max-height: min(420px, 58dvh);
-  overflow-y: auto;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
-  color: var(--text);
 }
 
 .model-setup-provider-select__trigger {

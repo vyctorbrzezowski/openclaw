@@ -3607,13 +3607,6 @@ td.data-table-key-col {
 .agent-select::part(menu) {
   width: min(320px, calc(100vw - 24px));
   max-height: 320px;
-  overflow-y: auto;
-  padding: var(--menu-padding);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
-  color: var(--text);
 }
 
 .agent-select__trigger {
