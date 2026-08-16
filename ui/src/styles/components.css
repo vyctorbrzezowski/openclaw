@@ -1535,15 +1535,25 @@ openclaw-github-link-hovercard-provider {
 }
 
 .callout__content {
+  display: grid;
+  gap: 3px;
   min-width: 0;
   flex: 1;
 }
 
-/* Body copy stays --text so a long sentence reads as prose; the tone colors the
-   glyph and the lead-in instead. Colored body text on a tinted surface is the
-   pairing base.css audits, but only for label-length strings. */
+/* Body copy and lead-ins stay neutral; severity belongs to the glyph and veil. */
+.callout__content > :is(strong, span) {
+  display: block;
+}
+
+.callout__content > span {
+  color: var(--text);
+  font-size: var(--control-ui-text-sm);
+  font-weight: 400;
+}
+
 .callout strong {
-  color: var(--alert-accent);
+  color: var(--text);
 }
 
 /* One icon spec for every alert surface: 17px optical size at 1.8 stroke,
@@ -1646,7 +1656,7 @@ openclaw-github-link-hovercard-provider {
      severity block below. */
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--alert-surface), var(--bg-elevated));
-  color: var(--alert-accent);
+  color: var(--text);
   font-size: var(--control-ui-text-sm);
   font-weight: 600;
 }
@@ -1664,7 +1674,7 @@ openclaw-github-link-hovercard-provider {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--alert-accent);
 }
 
 /* The four severities, one formula, both hosts. Every value derives from the

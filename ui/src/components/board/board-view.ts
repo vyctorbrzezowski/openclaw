@@ -2,6 +2,7 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { repeat } from "lit/directives/repeat.js";
+import { icons } from "../../components/icons.ts";
 import { t } from "../../i18n/index.ts";
 import {
   BOARD_GRID_COLUMNS,
@@ -695,7 +696,13 @@ class OpenClawBoardView extends OpenClawLightDomElement {
       <section class="board-view" aria-label=${t("board.label")}>
         ${this.renderTabs(tabs, activeTabId)} ${this.renderGrid(widgets, tabs, snapshot.sessionKey)}
         ${this.actionError
-          ? html`<div class="board-view__error" role="alert">${this.actionError}</div>`
+          ? html`<div
+              class="callout callout--danger callout--action board-view__error"
+              role="alert"
+            >
+              <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+              <span class="callout__content">${this.actionError}</span>
+            </div>`
           : nothing}
         <div class="board-announcer" aria-live="polite" aria-atomic="true">
           ${this.announcement

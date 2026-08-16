@@ -150,7 +150,16 @@
 
 /* An action is a control, not a severity. Tinting it per tone made a Retry on a
    danger callout read as a second, louder alarm. */
-:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+:is(
+    .callout,
+    .plugins-page-error,
+    .plugins-row-message,
+    .approval-page__callout,
+    .sw-error,
+    .board-view__error,
+    .sidebar-update-card__status,
+    .file-view__save-notice
+  )
   .btn,
 .app-toast__action {
   display: inline-flex;
@@ -170,14 +179,32 @@
   white-space: nowrap;
 }
 
-:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+:is(
+    .callout,
+    .plugins-page-error,
+    .plugins-row-message,
+    .approval-page__callout,
+    .sw-error,
+    .board-view__error,
+    .sidebar-update-card__status,
+    .file-view__save-notice
+  )
   .btn:is(:hover, :focus-visible),
 .app-toast__action:is(:hover, :focus-visible) {
   background: var(--alert-x-neutral-border);
   color: var(--text-strong);
 }
 
-:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+:is(
+    .callout,
+    .plugins-page-error,
+    .plugins-row-message,
+    .approval-page__callout,
+    .sw-error,
+    .board-view__error,
+    .sidebar-update-card__status,
+    .file-view__save-notice
+  )
   .btn:active,
 .app-toast__action:active {
   background: var(--alert-x-neutral-border);

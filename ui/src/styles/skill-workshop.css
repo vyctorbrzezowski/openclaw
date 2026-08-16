@@ -93,11 +93,8 @@
   justify-content: space-between;
   gap: var(--space-3);
   margin: 0 0 12px;
-  border: 1px solid var(--alert-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  color: var(--alert-accent);
-  background: var(--alert-surface);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  color: var(--text);
 }
 
 .sw-muted {
@@ -860,6 +857,10 @@
   color: var(--text);
   box-shadow: var(--alert-x-toast-shadow);
   white-space: nowrap;
+}
+
+.sw-action-toast .callout__content {
+  white-space: normal;
 }
 
 .sw-action-toast strong {

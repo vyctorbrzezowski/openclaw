@@ -4,6 +4,7 @@ import { html, nothing } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import "../../components/file-preview-modal-registration.ts";
+import { icons } from "../../components/icons.ts";
 import "../../components/modal-dialog.ts";
 import "../../components/tooltip.ts";
 import { t } from "../../i18n/index.ts";
@@ -79,8 +80,9 @@ export function renderSkillWorkshop(props: SkillWorkshopProps) {
   return html`
     <section class="skill-workshop sw-mode-${props.mode}">
       ${props.error
-        ? html`<div class="sw-error" role="status">
-            <span>${props.error}</span>
+        ? html`<div class="callout callout--danger callout--action sw-error" role="status">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">${props.error}</span>
             <button type="button" class="btn btn--sm" @click=${props.onRetry}>
               ${t("pluginsPage.tryAgain")}
             </button>
@@ -426,10 +428,12 @@ function renderDetail(props: SkillWorkshopProps, proposal: SkillWorkshopProposal
 
 function renderActionNotice(notice: SkillWorkshopActionNotice) {
   return html`
-    <div class="sw-action-toast" role="status" aria-live="polite">
-      <span>${notice.label}</span>
-      <strong>${notice.slug}</strong>
-      <span>·</span>
+    <div class="callout callout--action sw-action-toast" role="status" aria-live="polite">
+      <span class="callout__icon" aria-hidden="true">${icons.checkCircle}</span>
+      <span class="callout__content">
+        <strong>${notice.label}</strong>
+        <span>${notice.slug}</span>
+      </span>
     </div>
   `;
 }

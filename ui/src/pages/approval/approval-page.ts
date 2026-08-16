@@ -21,6 +21,7 @@ import {
 } from "../../app/context.ts";
 import { readGatewayOperatorAccess } from "../../app/operator-access.ts";
 import { controlUiPublicAssetPath } from "../../app/public-assets.ts";
+import { icons } from "../../components/icons.ts";
 import { i18n, t } from "../../i18n/index.ts";
 import { OpenClawLightDomElement } from "../../lit/openclaw-element.ts";
 const APPROVAL_POLL_INTERVAL_MS = 2_000;
@@ -589,8 +590,9 @@ export class ApprovalPage extends OpenClawLightDomElement {
 
   private renderConnectionError() {
     return html`
-      <div class="approval-page__callout" role="alert">
-        <div>
+      <div class="callout callout--danger callout--action approval-page__callout" role="alert">
+        <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+        <div class="callout__content">
           <strong>${t("approvalPage.connectionErrorTitle")}</strong>
           <span>${t("approvalPage.connectionErrorDescription")}</span>
         </div>

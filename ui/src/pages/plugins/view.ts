@@ -415,6 +415,18 @@ function renderMetaLine(parts: ReadonlyArray<TemplateResult | string | typeof no
   </span>`;
 }
 
+function pluginMessageTone(kind: PluginRowMessage["kind"]): "danger" | "success" | "warn" {
+  return kind === "error" ? "danger" : kind === "warning" ? "warn" : "success";
+}
+
+function pluginMessageIcon(kind: PluginRowMessage["kind"]) {
+  return kind === "error"
+    ? icons.alertCircle
+    : kind === "warning"
+      ? icons.alertTriangle
+      : icons.checkCircle;
+}
+
 function renderRowMessage(
   key: string,
   message: PluginRowMessage | undefined,
@@ -538,8 +550,16 @@ function renderRowMessage(
   }
   const role = resolvedMessage.kind === "error" ? "alert" : "status";
   return html`
-    <div class="plugins-row-message plugins-row-message--${resolvedMessage.kind}" role=${role}>
-      <span>${resolvedMessage.text}</span>
+    <div
+      class="callout callout--${pluginMessageTone(
+        resolvedMessage.kind,
+      )} callout--action plugins-row-message plugins-row-message--${resolvedMessage.kind}"
+      role=${role}
+    >
+      <span class="callout__icon" aria-hidden="true"
+        >${pluginMessageIcon(resolvedMessage.kind)}</span
+      >
+      <span class="callout__content">${resolvedMessage.text}</span>
       ${resolvedMessage.acknowledge
         ? html`
             <button
@@ -830,8 +850,12 @@ function renderPluginRow(
         ${renderCatalogActions(plugin, props, busy, key)}
       </div>
       ${plugin.error
-        ? html`<div class="plugins-row-message plugins-row-message--error" role="alert">
-            ${plugin.error}
+        ? html`<div
+            class="callout callout--danger callout--action plugins-row-message plugins-row-message--error"
+            role="alert"
+          >
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">${plugin.error}</span>
           </div>`
         : nothing}
       ${renderRowMessage(key, props.messages[key], busy, props, installIdentity)}
@@ -1306,8 +1330,12 @@ function renderDetailOverlay(props: PluginsViewProps) {
                 `}
           </div>
           ${plugin.error
-            ? html`<div class="plugins-row-message plugins-row-message--error" role="alert">
-                ${plugin.error}
+            ? html`<div
+                class="callout callout--danger callout--action plugins-row-message plugins-row-message--error"
+                role="alert"
+              >
+                <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+                <span class="callout__content">${plugin.error}</span>
               </div>`
             : nothing}
           ${renderRowMessage(key, props.messages[key], busy, props, installIdentity)}
@@ -1409,8 +1437,9 @@ export function renderPlugins(props: PluginsViewProps) {
           </div>`
         : nothing}
       ${props.error
-        ? html`<div class="plugins-page-error" role="alert">
-            <span>${props.error}</span>
+        ? html`<div class="callout callout--danger callout--action plugins-page-error" role="alert">
+            <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+            <span class="callout__content">${props.error}</span>
             <button type="button" class="btn btn--sm" @click=${props.onRefresh}>
               ${t("pluginsPage.tryAgain")}
             </button>
@@ -1418,11 +1447,16 @@ export function renderPlugins(props: PluginsViewProps) {
         : nothing}
       ${props.pageNotice
         ? html`<div
-            class="plugins-row-message plugins-row-message--${props.pageNotice
+            class="callout callout--${pluginMessageTone(
+              props.pageNotice.kind,
+            )} callout--action plugins-row-message plugins-row-message--${props.pageNotice
               .kind} plugins-page-notice"
             role=${props.pageNotice.kind === "error" ? "alert" : "status"}
           >
-            <span>${props.pageNotice.text}</span>
+            <span class="callout__icon" aria-hidden="true"
+              >${pluginMessageIcon(props.pageNotice.kind)}</span
+            >
+            <span class="callout__content">${props.pageNotice.text}</span>
           </div>`
         : nothing}
 

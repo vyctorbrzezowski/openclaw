@@ -2,6 +2,7 @@
 // tab: config read/patch plumbing plus the toggle, pitch, and error renderers.
 import { asNullableRecord as asRecord } from "@openclaw/normalization-core/record-coerce";
 import { html, nothing } from "lit";
+import { icons } from "../../components/icons.ts";
 import { t } from "../../i18n/index.ts";
 import { resolveEditableSnapshotConfig } from "../../lib/config/config-state-model.ts";
 import type { RuntimeConfigCapability } from "../../lib/config/runtime-config-capability.ts";
@@ -129,5 +130,8 @@ export function renderSelfLearningError(selfLearning: SkillWorkshopSelfLearning 
   if (!selfLearning?.error) {
     return nothing;
   }
-  return html`<div class="sw-error" role="status"><span>${selfLearning.error}</span></div>`;
+  return html`<div class="callout callout--danger callout--action sw-error" role="status">
+    <span class="callout__icon" aria-hidden="true">${icons.alertCircle}</span>
+    <span class="callout__content">${selfLearning.error}</span>
+  </div>`;
 }

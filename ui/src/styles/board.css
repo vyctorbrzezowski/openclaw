@@ -14,12 +14,15 @@ openclaw-board-view {
 }
 
 .board-view__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   background: var(--alert-surface);
   border: 1px solid var(--alert-border);
   border-radius: var(--radius-md);
-  color: var(--alert-accent);
+  color: var(--text);
   font-size: var(--control-ui-text-sm);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
 }
 
 .board-tabs {
