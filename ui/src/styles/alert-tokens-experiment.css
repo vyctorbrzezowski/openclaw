@@ -127,6 +127,12 @@
   --alert-border: var(--alert-x-danger-border);
 }
 
+.sw-action-toast {
+  --alert-accent: var(--alert-x-neutral-icon);
+  --alert-surface: var(--popover);
+  --alert-border: var(--alert-x-neutral-border);
+}
+
 /* ---- floating chrome ---- */
 
 /* The toast follows the callout's border policy: the light reference keeps a
@@ -144,7 +150,8 @@
 
 /* An action is a control, not a severity. Tinting it per tone made a Retry on a
    danger callout read as a second, louder alarm. */
-.callout .btn,
+:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+  .btn,
 .app-toast__action {
   display: inline-flex;
   flex: 0 0 auto;
@@ -163,17 +170,21 @@
   white-space: nowrap;
 }
 
-.callout .btn:hover,
-.callout .btn:focus-visible,
-.app-toast__action:hover,
-.app-toast__action:focus-visible {
+:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+  .btn:is(:hover, :focus-visible),
+.app-toast__action:is(:hover, :focus-visible) {
   background: var(--alert-x-neutral-border);
   color: var(--text-strong);
 }
 
-.callout .btn:active,
+:is(.callout, .plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice)
+  .btn:active,
 .app-toast__action:active {
   background: var(--alert-x-neutral-border);
+}
+
+:is(.plugins-page-error, .approval-page__callout, .sw-error, .file-view__save-notice) {
+  gap: var(--space-3);
 }
 
 /* The overflow count reports state; its neutral veil must not read as another
@@ -197,10 +208,24 @@
   opacity: 0.8;
 }
 
+:is(.sidebar-attention__item--warning, .sidebar-attention__item--error) .sidebar-attention__icon {
+  width: 17px;
+  height: 17px;
+  color: var(--alert-accent);
+}
+
+:is(.sidebar-attention__item--warning, .sidebar-attention__item--error)
+  .sidebar-attention__icon
+  svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+}
+
 /* A 1px border at these alphas is already a whisper; on a 2x display half a
    device pixel is the hairline the rest of the OS draws. */
 @media (-webkit-min-device-pixel-ratio: 2) {
-  :root[data-theme-mode="light"] :is(.callout, .app-toast) {
+  :root[data-theme-mode="light"] :is(.callout, .app-toast, .sw-action-toast) {
     border-width: 0.5px;
   }
 }
@@ -226,11 +251,13 @@
     .plugins-row-message,
     .approval-page__callout,
     .sw-error,
+    .sw-action-toast,
     .board-view__error,
     .sidebar-attention__item--warning,
     .sidebar-attention__item--error,
     .sidebar-update-card__status--warn,
-    .sidebar-update-card__status--danger
+    .sidebar-update-card__status--danger,
+    .file-view__save-notice
   ) {
   border-color: transparent;
 }
