@@ -121,6 +121,58 @@ const boardFixtureHtml = `<!doctype html>
   </body>
 </html>`;
 
+// Alert grammar review surface: every toast tone and callout shape on one
+// page, so a severity that drifts is visible side by side instead of three
+// routes apart. Mirrors the board fixture's standalone bootstrap.
+const alertGalleryFixturePath = "/__fixtures/alerts/";
+const alertGalleryFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw Alert Gallery</title>
+    <script>
+      // Standalone fixture: mirror the app bootstrap's root theme contract.
+      const mediaQuery = matchMedia("(prefers-color-scheme: light)");
+      const applyTheme = () => {
+        const mode = mediaQuery.matches ? "light" : "dark";
+        document.documentElement.dataset.theme = mode;
+        document.documentElement.dataset.themeMode = mode;
+        document.documentElement.classList.toggle("wa-light", mode === "light");
+        document.documentElement.classList.toggle("wa-dark", mode === "dark");
+        document.documentElement.style.colorScheme = mode;
+      };
+      applyTheme();
+      mediaQuery.addEventListener("change", applyTheme);
+    </script>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <style>
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+      /* styles.css clips the document because the app shell scrolls its own
+         panes, and Vite injects it after this block. The gallery owns its
+         scroller instead of fighting that. */
+      .gallery { box-sizing: border-box; height: 100vh; overflow: auto; margin: 0 auto; padding: 36px max(36px, calc(50% - 540px)) 220px; }
+      .gallery__header { align-items: end; display: flex; gap: 24px; justify-content: space-between; margin-bottom: 8px; }
+      .gallery__header span { color: var(--muted); font: 10px ui-monospace, monospace; letter-spacing: .15em; }
+      .gallery__header h1 { color: var(--text-strong); font-size: 24px; letter-spacing: -.03em; margin: 5px 0 0; }
+      .gallery__section { border-top: 1px solid var(--border); margin-top: 32px; padding-top: 24px; }
+      .gallery__section h2 { color: var(--text-strong); font-size: 15px; margin: 0 0 6px; }
+      .gallery__note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0 0 14px; max-width: 62ch; }
+      .gallery__row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+      .gallery__stack { display: grid; gap: 12px; }
+      .gallery__grid { display: grid; gap: 10px; grid-template-columns: 72px repeat(4, minmax(0, 1fr)); align-items: center; margin-bottom: 16px; }
+      .gallery__label { color: var(--muted); font: 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      .gallery__toggle { align-items: center; color: var(--muted); display: inline-flex; font-size: 12px; gap: 6px; margin-bottom: 10px; }
+      @media (max-width: 900px) { .gallery__grid { grid-template-columns: 1fr; } .gallery__label { margin-top: 12px; } }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/test-helpers/alert-gallery-fixture.ts"></script>
+  </body>
+</html>`;
+
 function mockFileHash(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -2479,6 +2531,26 @@ function createBoardFixturePlugin(): Plugin {
   };
 }
 
+function createAlertGalleryFixturePlugin(): Plugin {
+  return {
+    name: "openclaw-control-ui-alert-gallery-fixture",
+    configureServer(server) {
+      server.middlewares.use(alertGalleryFixturePath, (_req, res, next) => {
+        void server
+          .transformIndexHtml(alertGalleryFixturePath, alertGalleryFixtureHtml)
+          .then((html) => {
+            res.statusCode = 200;
+            res.setHeader("content-type", "text/html; charset=utf-8");
+            res.end(html);
+          })
+          .catch((error: unknown) => {
+            next(error as Error);
+          });
+      });
+    },
+  };
+}
+
 function hostForUrl(boundAddress: string, requestedHost: string): string {
   const host = boundAddress === "0.0.0.0" || boundAddress === "::" ? requestedHost : boundAddress;
   const reachableHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
@@ -2530,7 +2602,11 @@ const server = await createServer({
       : {}),
     include: ["lit/directives/repeat.js"],
   },
-  plugins: [createMockGatewayPlugin(scenario), createBoardFixturePlugin()],
+  plugins: [
+    createMockGatewayPlugin(scenario),
+    createBoardFixturePlugin(),
+    createAlertGalleryFixturePlugin(),
+  ],
   publicDir: path.join(uiRoot, "public"),
   resolve: {
     alias: [
@@ -2552,6 +2628,13 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] alert gallery: ${resolveServerUrl(
+    server,
+    options.host,
+    alertGalleryFixturePath,
+  )}`,
 );
 await waitForShutdown();
 await server.close();
