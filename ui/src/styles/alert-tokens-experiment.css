@@ -130,8 +130,8 @@
 /* ---- floating chrome ---- */
 
 /* The toast drops its outline in both themes and lets elevation do the
-   separating. Its tint still composites onto the opaque popover fill, because a
-   translucent card over arbitrary page content is unreadable. */
+   separating. Its flat tint still composites onto the opaque popover fill,
+   because a translucent card over arbitrary page content is unreadable. */
 .app-toast {
   --alert-accent: var(--alert-x-neutral-icon);
   --alert-border: transparent;
@@ -145,14 +145,6 @@
 .app-toast--warn,
 .app-toast--danger {
   border-color: transparent;
-}
-
-/* The base grammar uses a two-layer background so tinted toasts stay opaque.
-   In dark mode the experiment prefers a single, flat veil: the glyph carries
-   the saturation and the surface should not read as a glazed or sculpted card. */
-:root:not([data-theme-mode="light"])
-  :is(.app-toast--info, .app-toast--success, .app-toast--warn, .app-toast--danger) {
-  background: var(--alert-surface);
 }
 
 /* ---- refinements ---- */
