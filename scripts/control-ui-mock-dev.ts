@@ -68,9 +68,8 @@ const [MOCK_CREATOR_PETER, MOCK_CREATOR_MIRA] = MOCK_SESSION_CREATORS as [
 const SESSION_PAGE_SIZE = 50;
 const TOTAL_MOCK_SESSIONS = 650;
 const TOTAL_TELEGRAM_SESSIONS = 180;
-// Keep timer-backed attention fixtures inside the browser's 32-bit timeout
-// range; very distant dates fire immediately in Chromium instead of staying pending.
-const ATTENTION_FIXTURE_EXPIRES_AT = Date.now() + 20 * 60_000;
+const ATTENTION_FIXTURE_TTL_MS = 20 * 60_000;
+const ATTENTION_FIXTURE_EXPIRES_AT = Date.now() + ATTENTION_FIXTURE_TTL_MS;
 const NARRATION_DEMO_SESSION_KEY = "agent:main:sidebar-narration-demo";
 const NARRATION_DEMO_RUN_ID = "mock-sidebar-narration-run";
 const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
@@ -2523,16 +2522,22 @@ function scenarioForApprovalMode(
   const mode = new URL(originalUrl ?? "/", "http://control-ui-mock.local").searchParams.get(
     "approvals",
   );
-  if (mode !== "single") {
-    return scenario;
-  }
-  const execApprovals = scenario.methodResponses?.["exec.approval.list"];
+  const refreshExpiry = (value: unknown): unknown[] =>
+    Array.isArray(value)
+      ? value.map((approval) =>
+          typeof approval === "object" && approval !== null
+            ? { ...approval, expiresAtMs: Date.now() + ATTENTION_FIXTURE_TTL_MS }
+            : approval,
+        )
+      : [];
+  const execApprovals = refreshExpiry(scenario.methodResponses?.["exec.approval.list"]);
+  const pluginApprovals = refreshExpiry(scenario.methodResponses?.["plugin.approval.list"]);
   return {
     ...scenario,
     methodResponses: {
       ...scenario.methodResponses,
-      "exec.approval.list": Array.isArray(execApprovals) ? execApprovals.slice(0, 1) : [],
-      "plugin.approval.list": [],
+      "exec.approval.list": mode === "single" ? execApprovals.slice(0, 1) : execApprovals,
+      "plugin.approval.list": mode === "single" ? [] : pluginApprovals,
       "openclaw.approval.list": [],
     },
   };
