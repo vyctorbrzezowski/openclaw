@@ -502,12 +502,13 @@ function renderClawHubDetailDialog(props: SkillsProps) {
 
   return html`
     <openclaw-modal-dialog
+      class="dialog-2xl"
       label=${detail?.skill?.displayName ?? props.clawhubDetailRef ?? t("skillsPage.notFound")}
-      style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
       @modal-cancel=${props.onClawHubDetailClose}
     >
       <div
-        class="md-preview-dialog__panel ${props.clawhubDetailError && !props.clawhubDetailLoading
+        class="dialog-surface dialog-surface--divided md-preview-dialog__panel ${props.clawhubDetailError &&
+        !props.clawhubDetailLoading
           ? "md-preview-dialog__panel--message-only"
           : ""}"
       >
@@ -530,7 +531,7 @@ function renderClawHubDetailDialog(props: SkillsProps) {
             ${t("skillsPage.close")}
           </button>
         </div>
-        <div class="md-preview-dialog__body" style="display: grid; gap: 16px;">
+        <div class="md-preview-dialog__body dialog-body--stack">
           ${props.clawhubDetailLoading
             ? html`<div class="muted">${t("common.loading")}</div>`
             : props.clawhubDetailError
@@ -641,11 +642,11 @@ function renderSkillDetail(skill: SkillStatusEntry, props: SkillsProps) {
 
   return html`
     <openclaw-modal-dialog
+      class="dialog-2xl"
       label=${skill.name}
-      style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
       @modal-cancel=${props.onDetailClose}
     >
-      <div class="md-preview-dialog__panel">
+      <div class="dialog-surface dialog-surface--divided md-preview-dialog__panel">
         <div class="md-preview-dialog__header">
           <div
             class="md-preview-dialog__title"
@@ -659,7 +660,7 @@ function renderSkillDetail(skill: SkillStatusEntry, props: SkillsProps) {
             ${t("skillsPage.close")}
           </button>
         </div>
-        <div class="md-preview-dialog__body" style="display: grid; gap: 16px;">
+        <div class="md-preview-dialog__body dialog-body--stack">
           <div>
             <div style="font-size: 14px; line-height: 1.5; color: var(--text);">
               ${skill.description}

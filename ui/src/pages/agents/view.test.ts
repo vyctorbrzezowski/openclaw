@@ -1050,7 +1050,12 @@ describe("renderAgentFiles", () => {
     const previewExpandButton = expandButton!;
     previewExpandButton.click();
 
-    expect([...previewPanel.classList]).toEqual(["md-preview-dialog__panel", "fullscreen"]);
+    expect([...previewPanel.classList]).toEqual([
+      "dialog-surface",
+      "dialog-surface--divided",
+      "md-preview-dialog__panel",
+      "fullscreen",
+    ]);
     expect([...previewExpandButton.classList]).toEqual([
       "btn",
       "btn--sm",
@@ -1063,7 +1068,11 @@ describe("renderAgentFiles", () => {
 
     container.querySelector<HTMLButtonElement>('[aria-label="Close preview"]')?.click();
 
-    expect([...previewPanel.classList]).toEqual(["md-preview-dialog__panel"]);
+    expect([...previewPanel.classList]).toEqual([
+      "dialog-surface",
+      "dialog-surface--divided",
+      "md-preview-dialog__panel",
+    ]);
     expect([...previewExpandButton.classList]).toEqual([
       "btn",
       "btn--sm",

@@ -737,17 +737,13 @@ h3.plugins-subheader {
   color: var(--danger);
 }
 
+/* Surface, radius and fill come from the dialog grammar (styles/dialog.css);
+   the divided variant is what lets the cover art run edge to edge under the
+   clipped corner. `position: relative` anchors the close button over it, and
+   the height cap keeps a long detail off the viewport edge. */
 .plugins-detail {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  width: min(680px, 100%);
   max-height: min(85vh, 860px);
-  overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .plugins-cover {
@@ -804,9 +800,14 @@ h3.plugins-subheader {
   stroke-linejoin: round;
 }
 
+/* The body scrolls rather than the panel: the cover art is the plugin's
+   identity, so it stays put while the detail under it moves. */
 .plugins-detail__body {
   display: grid;
+  align-content: start;
   gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
   padding: var(--space-5) var(--space-5) var(--space-6);
 }
 

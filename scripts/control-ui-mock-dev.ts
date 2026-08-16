@@ -121,6 +121,62 @@ const boardFixtureHtml = `<!doctype html>
   </body>
 </html>`;
 
+const dialogGalleryFixturePath = "/__fixtures/dialogs/";
+const dialogGalleryFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw Dialog Gallery</title>
+    <script>
+      // This standalone fixture bypasses app bootstrap, so mirror its root theme contract.
+      const mediaQuery = matchMedia("(prefers-color-scheme: light)");
+      const applyTheme = () => {
+        const mode = mediaQuery.matches ? "light" : "dark";
+        document.documentElement.dataset.theme = mode;
+        document.documentElement.dataset.themeMode = mode;
+        document.documentElement.classList.toggle("wa-light", mode === "light");
+        document.documentElement.classList.toggle("wa-dark", mode === "dark");
+        document.documentElement.style.colorScheme = mode;
+      };
+      applyTheme();
+      if (typeof mediaQuery.addEventListener === "function") {
+        mediaQuery.addEventListener("change", applyTheme);
+      } else {
+        mediaQuery.addListener(applyTheme);
+      }
+    </script>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <style>
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+      openclaw-dialog-gallery { box-sizing: border-box; display: block; margin: 0 auto; max-width: 1180px; padding: 40px 32px 72px; }
+      .gallery__head { align-items: flex-start; display: flex; gap: 24px; justify-content: space-between; margin-bottom: 36px; }
+      .gallery__eyebrow { color: var(--accent); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
+      .gallery__head h1 { color: var(--text-strong); font-size: 28px; letter-spacing: -.03em; margin: 10px 0 0; }
+      .gallery__head p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 10px 0 0; max-width: 62ch; }
+      .gallery__themes { display: inline-flex; flex: 0 0 auto; gap: 8px; }
+      .gallery__themes button { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; color: var(--text); cursor: pointer; font: inherit; font-size: 13px; padding: 8px 14px; }
+      .gallery__themes button:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+      .gallery__section { margin-top: 40px; }
+      .gallery__section h2 { color: var(--text-strong); font-size: 15px; letter-spacing: -.01em; margin: 0 0 6px; }
+      .gallery__hint { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 16px; max-width: 68ch; }
+      .gallery__grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: 14px; }
+      .gallery__card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; color: inherit; cursor: pointer; display: grid; font: inherit; gap: 5px; padding: 14px 16px; text-align: left; text-decoration: none; }
+      .gallery__card:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+      .gallery__card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .gallery__card strong { color: var(--text-strong); font-size: 14px; font-weight: 620; }
+      .gallery__card span { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+      .gallery__card em { color: var(--muted); font-size: 12px; font-style: normal; line-height: 1.5; opacity: .8; }
+      @media (max-width: 700px) { openclaw-dialog-gallery { padding: 24px 18px 48px; } .gallery__head { flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/test-helpers/dialog-gallery-fixture.ts"></script>
+  </body>
+</html>`;
+
 function mockFileHash(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -2459,13 +2515,13 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
   };
 }
 
-function createBoardFixturePlugin(): Plugin {
+function createHtmlFixturePlugin(name: string, fixturePath: string, fixtureHtml: string): Plugin {
   return {
-    name: "openclaw-control-ui-board-fixture",
+    name,
     configureServer(server) {
-      server.middlewares.use(boardFixturePath, (_req, res, next) => {
+      server.middlewares.use(fixturePath, (_req, res, next) => {
         void server
-          .transformIndexHtml(boardFixturePath, boardFixtureHtml)
+          .transformIndexHtml(fixturePath, fixtureHtml)
           .then((html) => {
             res.statusCode = 200;
             res.setHeader("content-type", "text/html; charset=utf-8");
@@ -2530,7 +2586,19 @@ const server = await createServer({
       : {}),
     include: ["lit/directives/repeat.js"],
   },
-  plugins: [createMockGatewayPlugin(scenario), createBoardFixturePlugin()],
+  plugins: [
+    createMockGatewayPlugin(scenario),
+    createHtmlFixturePlugin(
+      "openclaw-control-ui-board-fixture",
+      boardFixturePath,
+      boardFixtureHtml,
+    ),
+    createHtmlFixturePlugin(
+      "openclaw-control-ui-dialog-gallery",
+      dialogGalleryFixturePath,
+      dialogGalleryFixtureHtml,
+    ),
+  ],
   publicDir: path.join(uiRoot, "public"),
   resolve: {
     alias: [
@@ -2552,6 +2620,9 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] dialog gallery: ${resolveServerUrl(server, options.host, dialogGalleryFixturePath)}`,
 );
 await waitForShutdown();
 await server.close();

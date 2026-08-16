@@ -588,13 +588,15 @@ export function renderAgentFiles(params: {
                         </label>
                         <openclaw-modal-dialog
                           manual
+                          class="dialog-2xl"
                           label=${activeEntry.name}
-                          style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
                           @modal-cancel=${(e: Event) => {
                             resetAgentFilePreview(e.currentTarget as HTMLElement);
                           }}
                         >
-                          <div class="md-preview-dialog__panel">
+                          <div
+                            class="dialog-surface dialog-surface--divided md-preview-dialog__panel"
+                          >
                             <div class="md-preview-dialog__header">
                               <div class="md-preview-dialog__header-main">
                                 <div class="md-preview-dialog__eyebrow">

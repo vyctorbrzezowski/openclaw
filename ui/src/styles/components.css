@@ -3392,10 +3392,12 @@ td.data-table-key-col {
   font-size: 12px;
 }
 
-/* The success mark leads the title, so this header centres its row rather
-   than taking the grammar's flex-start alignment. */
+/* The success mark leads the title as one phrase, so this header packs its
+   row from the start and centres it, rather than taking the grammar's
+   split-to-both-edges layout meant for a title and a trailing close. */
 .secret-reveal__header {
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
 }
 
@@ -3917,25 +3919,24 @@ td.data-table-key-col {
   gap: 8px;
 }
 
+/* The reader panel is a divided dialog surface: fill, border, radius, shadow,
+   entrance and clipping come from the dialog grammar (styles/dialog.css).
+   What stays here is the reading height it reserves and the resize
+   transition it animates when the header's expand control fires. */
 .md-preview-dialog__panel {
   position: relative;
-  width: 100%;
   min-height: min(76vh, 820px);
-  max-height: calc(100vh - 32px);
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 84%, white 8%);
-  border-radius: calc(var(--radius-xl) + 6px);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, black 6%), var(--panel));
-  box-shadow:
-    0 32px 96px rgba(0, 0, 0, 0.48),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  overflow: hidden;
   transition:
     width var(--duration-normal) var(--ease-out),
-    max-height var(--duration-normal) var(--ease-out),
-    margin var(--duration-normal) var(--ease-out);
+    max-height var(--duration-normal) var(--ease-out);
+}
+
+/* The panel's own height bound has to outrank `.dialog-surface`'s
+   `max-height: inherit`, and dialog.css loads after this file; scoping by the
+   host it always lives in buys the specificity without doubling the class.
+   Without a bound the body cannot scroll and a long document runs off screen. */
+openclaw-modal-dialog .md-preview-dialog__panel {
+  max-height: calc(100dvh - 48px);
 }
 
 /* A refusal or empty-state message is a few lines; without this the reader height reserved for
@@ -3951,11 +3952,6 @@ td.data-table-key-col {
   gap: 18px;
   padding: 20px 22px 16px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel) 90%, black 10%),
-    color-mix(in srgb, var(--panel) 96%, transparent 4%)
-  );
 }
 
 .md-preview-dialog__header-main {
@@ -4064,20 +4060,16 @@ td.data-table-key-col {
   height: 16px;
 }
 
+/* The reading ground sits a shade behind the panel so the document card reads
+   as paper on a desk; taken from --bg it inverts with the theme instead of
+   staying the near-black gradient this dialog used to paint in both. */
 .md-preview-dialog__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   padding: clamp(18px, 3vw, 28px);
-  background:
-    radial-gradient(circle at top right, rgba(255, 92, 92, 0.055), transparent 32%),
-    radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.045), transparent 28%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--panel) 84%, black 16%),
-      color-mix(in srgb, var(--bg) 88%, black 12%)
-    );
+  background: var(--bg);
 }
 
 .md-preview-dialog__meta {
@@ -4085,12 +4077,7 @@ td.data-table-key-col {
   flex-wrap: wrap;
   gap: 8px;
   padding: 0 22px 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 88%, white 6%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel) 96%, transparent 4%),
-    color-mix(in srgb, var(--panel) 92%, black 8%)
-  );
+  border-bottom: 1px solid var(--border);
 }
 
 .md-preview-dialog__chip {
@@ -4101,7 +4088,7 @@ td.data-table-key-col {
   min-height: 32px;
   padding: 6px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid color-mix(in srgb, var(--border) 78%, white 10%);
+  border: 1px solid var(--border);
   background: color-mix(in srgb, var(--secondary) 72%, transparent);
   color: var(--muted);
   font-size: 12px;
@@ -4131,7 +4118,9 @@ td.data-table-key-col {
 
 .md-preview-dialog__reader {
   --md-preview-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --md-preview-document-bg: color-mix(in srgb, var(--bg) 92%, var(--panel) 8%);
+  /* Paper on a desk: the document takes the raised card fill so it stays a
+     step in front of the reading ground in both themes. */
+  --md-preview-document-bg: var(--card);
   position: relative;
   width: min(100%, 82ch);
   margin: 0 auto;
@@ -4289,9 +4278,7 @@ td.data-table-key-col {
 }
 
 .md-preview-dialog__panel.fullscreen {
-  width: 100%;
-  max-height: calc(100vh - 20px);
-  margin: 0;
+  max-height: calc(100dvh - 20px);
 }
 
 .md-preview-dialog__panel.fullscreen .md-preview-dialog__header {
@@ -4331,12 +4318,14 @@ td.data-table-key-col {
 }
 
 @media (max-width: 768px) {
+  /* Phone-sized: the reader takes what the primitive's viewport clamp allows
+     rather than reserving three quarters of a tall screen up front. */
   .md-preview-dialog__panel {
-    width: 100%;
-    min-height: calc(100vh - 12px);
-    max-height: calc(100vh - 12px);
-    margin: 0;
-    border-radius: var(--radius-xl);
+    min-height: 0;
+  }
+
+  openclaw-modal-dialog .md-preview-dialog__panel {
+    max-height: 90dvh;
   }
 
   .md-preview-dialog__header {
@@ -4361,13 +4350,6 @@ td.data-table-key-col {
   .md-preview-dialog__reader {
     width: 100%;
     padding: 20px 16px 22px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .md-preview-dialog__panel {
-    animation: none;
-    transition: none;
   }
 }
 

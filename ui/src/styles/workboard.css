@@ -1198,30 +1198,29 @@
   height: 100%;
 }
 
+/* The drawer takes the dialog surface bare and then paints the chrome a
+   drawer needs and the grammar's floating card does not: one leading edge,
+   full height, and the panel itself as the scroll container. */
 .workboard-detail {
-  display: flex;
-  flex-direction: column;
   gap: 14px;
-  width: 100%;
   min-height: 0;
-  padding: 16px;
+  padding: var(--dialog-gutter);
   overflow: auto;
-  border-left: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-  background: color-mix(in srgb, var(--panel) 98%, var(--bg) 2%);
+  border-left: 1px solid var(--border);
+  background: var(--card);
   box-shadow: var(--shadow-xl);
 }
 
-.workboard-detail__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+/* An edge-anchored panel has no floating corner to round; doubled so it
+   outranks the shared corner-shape radius in base.css. */
+.workboard-detail.workboard-detail {
+  border-radius: 0;
 }
 
-.workboard-detail__header h2 {
-  margin: 8px 0 0;
-  font-size: 1.04rem;
-  line-height: 1.25;
+/* The priority chip is this drawer's eyebrow, so the heading column keeps
+   it at its own width instead of stretching it across the title. */
+.workboard-detail .dialog-heading {
+  justify-items: start;
 }
 
 .workboard-detail__section {
@@ -1530,7 +1529,6 @@ openclaw-workboard-card-dashboard {
 
   .workboard-detail {
     min-height: 100dvh;
-    border-top: 0;
     border-left: 0;
   }
 

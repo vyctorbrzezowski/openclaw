@@ -372,14 +372,10 @@
     corner-shape: superellipse(1.5);
   }
 
-  /* These two add a fixed cosmetic offset on top of the --radius-xl step in
-     their home rule (components.css); only the --radius-xl portion scales,
-     matching that intent. */
-  .md-preview-dialog__panel.md-preview-dialog__panel {
-    border-radius: calc(20px * var(--openclaw-corner-radius-scale) + 6px);
-    corner-shape: superellipse(1.5);
-  }
-
+  /* The document card adds a fixed cosmetic offset on top of the --radius-xl
+     step in its home rule (components.css); only the --radius-xl portion
+     scales, matching that intent. Its panel is a .dialog-surface and takes
+     the shared dialog corner above. */
   .md-preview-dialog__reader.md-preview-dialog__reader {
     border-radius: calc(20px * var(--openclaw-corner-radius-scale) + 2px);
     corner-shape: superellipse(1.5);
