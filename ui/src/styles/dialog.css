@@ -100,6 +100,25 @@ openclaw-modal-dialog.dialog-2xl {
     0 16px 32px -12px rgb(0 0 0 / 0.55), 0 32px 64px -16px rgb(0 0 0 / 0.65);
 }
 
+/* EXPERIMENT SCAFFOLDING — delete with its gallery buttons once the edge
+   treatment is chosen. Restores the outlined panel so the two treatments can
+   be compared live on any route, not just in a screenshot pair. The gallery
+   header drives it (see applyDialogEdge in dialog-gallery-fixture.ts); the
+   attribute is absent in the product, so the softened treatment is what
+   ships until this block is removed. */
+:root[data-dialog-edge="current"] .dialog-surface {
+  --dialog-border-color: var(--border);
+  --dialog-elevation: var(--shadow-xl);
+}
+
+:root[data-dialog-edge="current"][data-theme-mode="light"] .dialog-surface {
+  --dialog-border-color: color-mix(in srgb, var(--border) 45%, transparent);
+  --dialog-elevation:
+    0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+    0 12px 24px -8px color-mix(in srgb, var(--text) 10%, transparent),
+    0 32px 64px -16px color-mix(in srgb, var(--text) 18%, transparent);
+}
+
 /* Header/body/footer own their own padding and are separated by
    hairlines instead of whitespace. For wizards and long scrolling
    readers, where the body has to scroll under a fixed title. */

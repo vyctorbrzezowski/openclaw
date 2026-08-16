@@ -205,6 +205,11 @@ export class OpenClawDialogGallery extends OpenClawLightDomElement {
         <div class="gallery__themes">
           <button type="button" @click=${() => applyTheme("dark")}>Dark</button>
           <button type="button" @click=${() => applyTheme("light")}>Light</button>
+          <button type="button" @click=${() => applyDialogEdge("current")}>Borda: atual</button>
+          <button type="button" @click=${() => applyDialogEdge("soft")}>Borda: suave</button>
+          <span class="gallery__edge-key"
+            >ou tecla <kbd>B</kbd> (funciona com o dialog aberto)</span
+          >
         </div>
       </header>
 
@@ -545,6 +550,35 @@ function applyTheme(mode: "dark" | "light") {
   root.classList.toggle("wa-dark", mode === "dark");
   root.style.colorScheme = mode;
 }
+
+// Drives the `[data-dialog-edge]` A/B in dialog.css while the panel-edge
+// treatment is still an open question. Both this and that block come out
+// together once the treatment is settled.
+function applyDialogEdge(edge: "soft" | "current") {
+  if (edge === "current") {
+    document.documentElement.dataset.dialogEdge = "current";
+    return;
+  }
+  delete document.documentElement.dataset.dialogEdge;
+}
+
+// The header buttons are unreachable once a dialog is open — a modal takes
+// the top layer and eats the pointer — which is the one moment the A/B is
+// worth flipping. Keydown still reaches the document, so `B` is the control
+// that actually works mid-comparison.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "b" && event.key !== "B") return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const typing = event
+    .composedPath()
+    .some(
+      (node) =>
+        node instanceof HTMLElement &&
+        (node.isContentEditable || node.tagName === "INPUT" || node.tagName === "TEXTAREA"),
+    );
+  if (typing) return;
+  applyDialogEdge(document.documentElement.dataset.dialogEdge === "current" ? "soft" : "current");
+});
 
 if (!customElements.get("openclaw-dialog-gallery")) {
   customElements.define("openclaw-dialog-gallery", OpenClawDialogGallery);

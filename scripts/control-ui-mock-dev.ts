@@ -160,7 +160,9 @@ const dialogGalleryFixtureHtml = `<!doctype html>
       .gallery__eyebrow { color: var(--accent); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
       .gallery__head h1 { color: var(--text-strong); font-size: 28px; letter-spacing: -.03em; margin: 10px 0 0; }
       .gallery__head p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 10px 0 0; max-width: 62ch; }
-      .gallery__themes { display: inline-flex; flex: 0 0 auto; gap: 8px; }
+      .gallery__themes { align-items: center; display: inline-flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 420px; }
+      .gallery__edge-key { color: var(--muted); font-size: 12px; }
+      .gallery__edge-key kbd { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; font: inherit; font-family: ui-monospace, monospace; padding: 1px 5px; }
       .gallery__themes button { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; color: var(--text); cursor: pointer; font: inherit; font-size: 13px; padding: 8px 14px; }
       .gallery__themes button:hover { background: var(--bg-hover); border-color: var(--border-strong); }
       .gallery__section { margin-top: 40px; }
