@@ -121,6 +121,85 @@ const boardFixtureHtml = `<!doctype html>
   </body>
 </html>`;
 
+const transcriptGalleryFixturePath = "/__fixtures/transcript/";
+const transcriptGalleryFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw Transcript Artifact Gallery</title>
+    <script>
+      // This standalone fixture bypasses app bootstrap, so mirror its root theme contract.
+      const stored = localStorage.getItem("openclaw-transcript-gallery-theme");
+      const mediaQuery = matchMedia("(prefers-color-scheme: light)");
+      const applyTheme = () => {
+        const mode = stored ?? (mediaQuery.matches ? "light" : "dark");
+        document.documentElement.dataset.theme = mode;
+        document.documentElement.dataset.themeMode = mode;
+        document.documentElement.classList.toggle("wa-light", mode === "light");
+        document.documentElement.classList.toggle("wa-dark", mode === "dark");
+        document.documentElement.style.colorScheme = mode;
+      };
+      applyTheme();
+      if (typeof mediaQuery.addEventListener === "function") {
+        mediaQuery.addEventListener("change", applyTheme);
+      } else {
+        mediaQuery.addListener(applyTheme);
+      }
+    </script>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <style>
+      /* base.css clips the root so the app shell's panes own scrolling; this
+         page is a plain document and takes the root scroller back. !important
+         because the fixture module imports styles.css, which Vite injects
+         after this block, so a same-specificity rule here would lose. */
+      html, body { height: auto !important; overflow: visible !important; overscroll-behavior: auto !important; }
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); user-select: text; }
+      openclaw-transcript-gallery { box-sizing: border-box; display: block; margin: 0 auto; max-width: 1180px; padding: 0 32px 96px; }
+      /* Pinned so the theme toggle and the section jumps stay reachable from
+         anywhere in a gallery that is many viewports tall. The negative inline
+         margin bleeds the bar over the host's gutters so nothing scrolls past
+         it at the column edges. */
+      .tg__bar { backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 88%, transparent); border-bottom: 1px solid var(--border); box-shadow: 0 6px 18px -14px rgba(0,0,0,.75); margin: 0 calc(50% - 50vw) 26px; padding-inline: max(32px, calc(50vw - 558px)); position: sticky; top: 0; z-index: 40; }
+      .tg__bar-inner { align-items: center; display: flex; gap: 18px; min-height: 52px; }
+      .tg__bar-title { color: var(--text-strong); flex: 0 0 auto; font-size: 13px; font-weight: 640; letter-spacing: -.01em; }
+      .tg__bar-nav { display: flex; flex: 1 1 auto; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+      .tg__bar-nav::-webkit-scrollbar { display: none; }
+      .tg__bar-nav a { border-radius: 8px; color: var(--muted); flex: 0 0 auto; font-size: 12.5px; padding: 5px 9px; text-decoration: none; white-space: nowrap; }
+      .tg__bar-nav a:hover { background: var(--bg-hover); color: var(--text); }
+      .tg__head { align-items: flex-start; display: flex; gap: 24px; justify-content: space-between; margin-bottom: 28px; }
+      .tg__eyebrow { color: var(--accent); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .14em; margin: 0; text-transform: uppercase; }
+      .tg__head h1 { color: var(--text-strong); font-size: 28px; letter-spacing: -.03em; margin: 10px 0 0; }
+      .tg__head p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 10px 0 0; max-width: 62ch; }
+      .tg__themes { display: inline-flex; flex: 0 0 auto; gap: 6px; }
+      .tg__themes button { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 9px; color: var(--text); cursor: pointer; font: inherit; font-size: 12.5px; padding: 6px 12px; }
+      .tg__themes button:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+      .tg__index { border: 1px solid var(--border); border-radius: 14px; display: grid; gap: 4px 18px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin-bottom: 48px; padding: 16px 18px; }
+      .tg__index a { color: var(--text); font-size: 13px; line-height: 1.9; text-decoration: none; }
+      .tg__index a:hover { color: var(--accent); text-decoration: underline; }
+      .tg__index a i { color: var(--muted); font-size: 11px; font-style: normal; margin-left: 6px; }
+      .tg__section { border-top: 1px solid var(--border); margin-top: 52px; padding-top: 26px; scroll-margin-top: 64px; }
+      .tg__section > h2 { color: var(--text-strong); font-size: 19px; letter-spacing: -.02em; margin: 0 0 6px; }
+      .tg__hint { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 8px; max-width: 74ch; }
+      .tg__case { margin-top: 26px; scroll-margin-top: 64px; }
+      .tg__case > h3 { color: var(--text-strong); font-size: 14px; font-weight: 620; margin: 0 0 4px; }
+      .tg__case > h3 code { color: var(--muted); font: 11px ui-monospace, monospace; font-weight: 400; margin-left: 8px; }
+      /* The stage stands in for the chat pane: .chat supplies the transcript
+         custom properties and the flex column .chat-thread expects, and the
+         fixed height gives the row virtualizer a real scrollport to measure. */
+      .tg__stage { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; height: var(--tg-stage-height, 520px); margin-top: 10px; overflow: hidden; }
+      .tg__stage--tall { --tg-stage-height: 760px; }
+      .tg__stage--short { --tg-stage-height: 320px; }
+      @media (max-width: 700px) { openclaw-transcript-gallery { padding: 0 18px 64px; } .tg__bar { padding-inline: 18px; }.tg__head { flex-direction: column; } .tg__bar-title { display: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/test-helpers/transcript-gallery-fixture.ts"></script>
+  </body>
+</html>`;
+
 function mockFileHash(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -2459,13 +2538,13 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
   };
 }
 
-function createBoardFixturePlugin(): Plugin {
+function createHtmlFixturePlugin(name: string, fixturePath: string, fixtureHtml: string): Plugin {
   return {
-    name: "openclaw-control-ui-board-fixture",
+    name,
     configureServer(server) {
-      server.middlewares.use(boardFixturePath, (_req, res, next) => {
+      server.middlewares.use(fixturePath, (_req, res, next) => {
         void server
-          .transformIndexHtml(boardFixturePath, boardFixtureHtml)
+          .transformIndexHtml(fixturePath, fixtureHtml)
           .then((html) => {
             res.statusCode = 200;
             res.setHeader("content-type", "text/html; charset=utf-8");
@@ -2530,7 +2609,19 @@ const server = await createServer({
       : {}),
     include: ["lit/directives/repeat.js"],
   },
-  plugins: [createMockGatewayPlugin(scenario), createBoardFixturePlugin()],
+  plugins: [
+    createMockGatewayPlugin(scenario),
+    createHtmlFixturePlugin(
+      "openclaw-control-ui-board-fixture",
+      boardFixturePath,
+      boardFixtureHtml,
+    ),
+    createHtmlFixturePlugin(
+      "openclaw-control-ui-transcript-gallery",
+      transcriptGalleryFixturePath,
+      transcriptGalleryFixtureHtml,
+    ),
+  ],
   publicDir: path.join(uiRoot, "public"),
   resolve: {
     alias: [
@@ -2552,6 +2643,9 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] transcript gallery: ${resolveServerUrl(server, options.host, transcriptGalleryFixturePath)}`,
 );
 await waitForShutdown();
 await server.close();
