@@ -71,17 +71,20 @@ openclaw-modal-dialog.dialog-2xl {
 /* Light mode dims the page with an ivory wash rather than a dark scrim (see
    the backdrop note in modal-dialog.ts), so a full-strength border is the
    only edge the eye gets and the panel reads as stamped on rather than
-   lifted. Drop it to a hairline and let a three-stop shadow do the work.
-   Negative spread on the wide stops keeps the falloff under the panel: a
-   neutral, evenly-spread shadow at this blur turns into a grey smudge on the
-   ivory instead of depth. The tint is --text so every light family (warm
-   paper, openknot-light, dash-light) shades with its own ink. */
+   lifted. Drop the outline entirely and let a three-stop shadow do the work,
+   the way the reference dialogs do: the tight first stop is the edge, not a
+   drawn line. Negative spread on the wide stops keeps the falloff under the
+   panel, because a neutral, evenly-spread shadow at this blur turns into a
+   grey smudge on the ivory instead of depth. The tint is --text so every
+   light family (warm paper, openknot-light, dash-light) shades with its own
+   ink. The border stays declared at `transparent` rather than removed so the
+   1px box is identical in both themes and swapping treatments never reflows. */
 :root[data-theme-mode="light"] .dialog-surface {
-  --dialog-border-color: color-mix(in srgb, var(--border) 45%, transparent);
+  --dialog-border-color: transparent;
   --dialog-elevation:
-    0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
-    0 12px 24px -8px color-mix(in srgb, var(--text) 10%, transparent),
-    0 32px 64px -16px color-mix(in srgb, var(--text) 18%, transparent);
+    0 1px 3px color-mix(in srgb, var(--text) 6%, transparent),
+    0 12px 28px -8px color-mix(in srgb, var(--text) 12%, transparent),
+    0 36px 72px -16px color-mix(in srgb, var(--text) 20%, transparent);
 }
 
 /* Header/body/footer own their own padding and are separated by
