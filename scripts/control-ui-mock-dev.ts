@@ -161,6 +161,9 @@ const alertGalleryFixtureHtml = `<!doctype html>
       .gallery__note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0 0 14px; max-width: 62ch; }
       .gallery__row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
       .gallery__stack { display: grid; gap: 12px; }
+      /* .sw-action-toast is absolutely positioned against its scroll container in
+         the real page; the slot gives it one here instead of the whole gallery. */
+      .gallery__toast-slot { position: relative; min-height: 96px; }
       .gallery__grid { display: grid; gap: 10px; grid-template-columns: 72px repeat(4, minmax(0, 1fr)); align-items: center; margin-bottom: 16px; }
       .gallery__label { color: var(--muted); font: 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
       .gallery__toggle { align-items: center; color: var(--muted); display: inline-flex; font-size: 12px; gap: 6px; margin-bottom: 10px; }

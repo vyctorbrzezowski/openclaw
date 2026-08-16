@@ -230,7 +230,9 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
               <button class="btn btn--sm" type="button">Reload</button>
             </span>
           </div>
-          <div class="sw-action-toast"><strong>Skill installed</strong></div>
+          <div class="gallery__toast-slot">
+            <div class="sw-action-toast"><strong>Skill installed</strong></div>
+          </div>
         </div>
       </section>
     `;
