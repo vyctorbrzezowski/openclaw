@@ -436,10 +436,10 @@ html.openclaw-native-web-chrome .shell-chrome-controls {
   color: color-mix(in srgb, var(--muted) 82%, transparent);
 }
 
-.settings-sidebar__search-input:focus {
-  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+/* Border and ring come from base.css; the lift of the fill is this field's own,
+   because it sits on the sidebar rather than on a form surface. */
+.settings-sidebar__search-input:focus-visible {
   background: color-mix(in srgb, var(--card) 88%, transparent);
-  box-shadow: var(--focus-ring);
 }
 
 .settings-sidebar__search-input::-webkit-search-cancel-button {

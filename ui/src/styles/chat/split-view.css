@@ -265,7 +265,9 @@ openclaw-chat-pane {
   min-width: 60px;
   height: 28px;
   padding: 0 7px;
-  border: 1px solid var(--accent);
+  /* Resting border, not the accent it used to wear: this field only exists while
+     the operator is renaming, so it was red the entire time it was on screen. */
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--panel);
   color: var(--text);

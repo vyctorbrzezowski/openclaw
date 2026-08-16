@@ -940,12 +940,6 @@
   line-height: 1.55;
 }
 
-.sw-revision-dialog__input:focus-visible {
-  outline: none;
-  border-color: var(--border-strong);
-  box-shadow: none;
-}
-
 .sw-revision-dialog__status {
   display: inline-flex;
   align-items: center;

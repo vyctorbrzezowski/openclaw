@@ -1504,11 +1504,6 @@ openclaw-session-discussion {
   font-size: var(--control-ui-text-sm);
 }
 
-.file-view__search input:focus-visible {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
 .file-view__search-counter {
   min-width: 4.5ch;
   color: var(--muted);

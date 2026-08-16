@@ -465,12 +465,6 @@
   color: var(--muted);
 }
 
-.settings-theme-import__input:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: var(--focus-ring);
-}
-
 .settings-theme-import__actions {
   display: flex;
   flex-wrap: wrap;

@@ -724,11 +724,12 @@ select.settings-select:not([multiple]) {
   color: var(--muted);
 }
 
-.settings-input:focus-visible,
+/* .settings-input takes its focus from base.css. The select is not text entry,
+   so it repeats the pair to stay in step with the input beside it. */
 select.settings-select:focus-visible {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border) 45%);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 /* ── Web Awesome select ── */

@@ -280,10 +280,6 @@ wa-popover.new-session-page__select::part(body) {
   outline: none;
 }
 
-.new-session-page__project-search input:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-
 .new-session-page__project-status,
 .new-session-page__project-error {
   padding: 5px 8px;
@@ -323,10 +319,6 @@ wa-popover.new-session-page__select::part(body) {
   color: var(--text);
   font-size: 12px;
   outline: none;
-}
-
-.new-session-page__menu-field input:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 /* Context line inside a picker menu, e.g. which repo syncs to a cloud worker. */

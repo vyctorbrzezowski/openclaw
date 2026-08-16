@@ -272,9 +272,11 @@
   transition: border-color var(--duration-fast) ease;
 }
 
+/* The field's frame is this wrapper, not the number input it holds, so the
+   wrapper carries the text-entry focus pair. */
 .session-filter-field:focus-within {
-  border-color: var(--border-strong);
-  box-shadow: var(--focus-ring);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 .session-filter-label,

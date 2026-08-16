@@ -58,8 +58,11 @@ export const browserPanelStyles = css`
     outline: none;
     text-overflow: ellipsis;
   }
+  /* The app-wide text-entry focus lives in base.css and cannot cross into this
+     shadow root, so the pair is read from the inherited custom properties. */
   .bp-url:focus {
-    border-color: var(--accent, #ff5c5c);
+    border-color: var(--input-focus-border, #6c6d76);
+    box-shadow: var(--input-focus-ring, inset 0 0 0 1px rgb(139 139 148 / 45%));
     background: var(--bg, #0e1015);
   }
   .bp-annotatebar {

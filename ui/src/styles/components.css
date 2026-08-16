@@ -1052,11 +1052,13 @@ openclaw-github-link-hovercard-provider {
   }
 }
 
-.field input:focus-visible,
-.field textarea:focus-visible,
+/* The input and the textarea take their focus from base.css. The select is not
+   text entry, so that rule skips it; it repeats the pair here rather than keep
+   the accent ring it used to draw, which would have left one control in a form
+   framed red while its neighbours went quiet. */
 .field select:focus-visible {
-  border-color: var(--ring);
-  box-shadow: var(--focus-ring);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 /* Carapace Sensitive Input adapted to the Control UI token contract. */
@@ -1080,9 +1082,11 @@ openclaw-github-link-hovercard-provider {
   border-color: var(--border-strong);
 }
 
+/* The frame belongs to this wrapper, not to the input inside it, so the wrapper
+   carries the text-entry focus pair on :focus-within. */
 .oc-sensitive-input:focus-within {
-  border-color: var(--ring);
-  box-shadow: var(--focus-ring);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 .oc-sensitive-input > input {
@@ -2088,11 +2092,6 @@ openclaw-chat-session-rail {
   font-size: 12.5px;
 }
 
-.chat-session-rail__input:focus {
-  border-color: var(--border-strong);
-  outline: none;
-}
-
 .chat-session-rail__input::placeholder {
   color: var(--muted);
 }
@@ -2508,11 +2507,6 @@ openclaw-chat-session-rail {
   border-radius: var(--radius-sm);
   outline: none;
   transition: border-color var(--duration-fast) ease;
-}
-
-.data-table-search input:focus-visible {
-  border-color: var(--border-strong);
-  box-shadow: var(--focus-ring);
 }
 
 .data-table-search input::placeholder {
@@ -3905,8 +3899,11 @@ td.data-table-key-col {
   transition: border-color var(--duration-fast) ease;
 }
 
+/* The chips and the entry share one frame, so the wrapper shows the focus and
+   the bare input inside it stays frameless (below). */
 .agent-chip-input:focus-within {
-  border-color: var(--accent);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 .agent-chip-input input,

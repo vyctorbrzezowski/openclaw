@@ -398,14 +398,13 @@
   border-color: var(--border-strong);
 }
 
-.usage-date-input:focus-visible,
+/* The inputs in this toolbar take their focus from base.css; the selects beside
+   them repeat the pair so the row does not change frame colour mid-way. */
 .usage-select:focus-visible,
-.usage-query-input:focus-visible,
-.usage-filters-inline select:focus-visible,
-.usage-filters-inline input[type="text"]:focus-visible {
+.usage-filters-inline select:focus-visible {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 .usage-separator,

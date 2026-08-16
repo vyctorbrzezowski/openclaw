@@ -264,11 +264,6 @@ openclaw-chat-question-panel {
   outline: none;
 }
 
-.chat-question-panel__other:focus {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: 0 0 0 3px var(--accent-subtle);
-}
-
 .chat-question-panel__other::placeholder {
   color: var(--muted);
 }

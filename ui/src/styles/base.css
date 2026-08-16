@@ -170,6 +170,15 @@
   --focus: rgba(255, 92, 92, 0.2);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 3px color-mix(in srgb, var(--ring) 80%, transparent);
   --focus-glow: 0 0 0 2px var(--bg), 0 0 0 3px var(--ring), 0 0 16px var(--accent-glow);
+  /* Text entry's focus, and only text entry's: a field is a resting surface the
+     operator writes in, so focusing it is a neutral state rather than the
+     attention signal --focus-ring carries. Derived from --muted/--border rather
+     than --ring, because --ring is red in every shipped theme and a red frame on
+     a field reads as a rejected entry. Defined once for every theme — the mix
+     follows whatever --muted and --border that theme sets. Same pair the
+     composer surface uses (chat/layout.css .agent-chat__input:focus-within). */
+  --input-focus-border: color-mix(in srgb, var(--muted) 72%, var(--border));
+  --input-focus-ring: inset 0 0 0 1px color-mix(in srgb, var(--muted) 45%, transparent);
 
   /* Grid */
   --grid-line: rgba(255, 255, 255, 0.03);
@@ -1269,4 +1278,34 @@ wa-popover::part(body)::-webkit-scrollbar-thumb:hover {
 
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Every text-entry control shows focus on its own frame. The rule above draws an
+   offset accent rectangle outside the box, and the accent is red in every
+   shipped theme, so a focused field looked rejected — six stylesheets had
+   already opted out of it one at a time, each inventing its own replacement.
+   This is the one replacement: the border tints and a 1px ring is drawn inside
+   the padding box. Both changes are colour only, so nothing moves as the caret
+   lands — an outer spread or an offset outline would each read as the field
+   inflating, and in a dense toolbar they overlap the control next door.
+   Excluded types have no frame to tint: they keep the outline, which is their
+   only focus indicator. A field whose frame belongs to a wrapper (chip inputs,
+   the composer) still overrides this; the wrapper carries the same pair. */
+:is(
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="color"],
+    [type="image"],
+    [type="submit"],
+    [type="reset"],
+    [type="button"]
+  ),
+  textarea
+):focus-visible {
+  outline: none;
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
