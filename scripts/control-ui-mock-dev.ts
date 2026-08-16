@@ -121,6 +121,75 @@ const boardFixtureHtml = `<!doctype html>
   </body>
 </html>`;
 
+const selectsFixturePath = "/__fixtures/selects/";
+const selectsFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw Selects Fixture</title>
+    <script>
+      // Standalone fixture: no app bootstrap, so mirror its root theme contract.
+      // ?theme=light|dark pins a mode for screenshot pairs; otherwise follow the OS.
+      const pinned = new URLSearchParams(location.search).get("theme");
+      const mediaQuery = matchMedia("(prefers-color-scheme: light)");
+      const applyTheme = () => {
+        const mode = pinned === "light" || pinned === "dark"
+          ? pinned
+          : mediaQuery.matches ? "light" : "dark";
+        document.documentElement.dataset.theme = mode;
+        document.documentElement.dataset.themeMode = mode;
+        document.documentElement.classList.toggle("wa-light", mode === "light");
+        document.documentElement.classList.toggle("wa-dark", mode === "dark");
+        document.documentElement.style.colorScheme = mode;
+      };
+      applyTheme();
+      mediaQuery.addEventListener("change", applyTheme);
+    </script>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <style>
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+      .selects-fixture-shell { box-sizing: border-box; margin: 0 auto; max-width: 1200px; padding: 32px; }
+      .selects-fixture-header { align-items: baseline; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 8px; }
+      .selects-fixture-header h1 { color: var(--text-strong); font-size: 22px; letter-spacing: -.03em; margin: 0; }
+      .selects-fixture-header nav { display: flex; gap: 10px; font: 12px ui-monospace, monospace; }
+      .selects-fixture-header a { color: var(--muted); }
+      .selects-fixture-lede { color: var(--muted); font-size: 13px; margin: 0 0 28px; max-width: 62ch; }
+      /* Generous row height: an open panel must not be clipped by the next row. */
+      .selects-fixture__grid { display: grid; gap: 4px; }
+      .selects-fixture__row { align-items: center; border-top: 1px solid var(--border); display: grid; gap: 20px; grid-template-columns: minmax(0, 22ch) minmax(0, 1fr); min-height: 62px; padding: 10px 0; }
+      .selects-fixture__meta h2 { color: var(--text-strong); font-size: 13px; font-weight: 600; margin: 0; }
+      .selects-fixture__meta p { color: var(--muted); font-size: 11px; margin: 3px 0 0; }
+      .selects-fixture__control { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      /* The slash menu positions itself against a relative ancestor and opens
+         upward, so it needs a host tall enough to show inside the row. */
+      .selects-fixture__slash-host { position: relative; height: 132px; width: 260px; }
+      .selects-fixture__control [data-static-panel] { width: 260px; }
+      @media (max-width: 768px) { .selects-fixture__row { grid-template-columns: minmax(0, 1fr); } }
+    </style>
+  </head>
+  <body>
+    <div class="selects-fixture-shell">
+      <div class="selects-fixture-header">
+        <h1>Selects</h1>
+        <nav>
+          <a href="?theme=light">light</a>
+          <a href="?theme=dark">dark</a>
+          <a href="?">system</a>
+        </nav>
+      </div>
+      <p class="selects-fixture-lede">
+        One instance of every select family, under production class names. Click a
+        trigger to open its panel; the two panels the composer positions by hand are
+        rendered open. Any row that stops matching its neighbours is drift.
+      </p>
+      <div id="app"></div>
+    </div>
+    <script type="module" src="/src/test-helpers/selects-fixture.ts"></script>
+  </body>
+</html>`;
+
 function mockFileHash(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -2459,13 +2528,14 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
   };
 }
 
-function createBoardFixturePlugin(): Plugin {
+/** Serves one standalone fixture page, outside the app shell and its bootstrap. */
+function createFixturePlugin(id: string, route: string, fixtureHtml: string): Plugin {
   return {
-    name: "openclaw-control-ui-board-fixture",
+    name: `openclaw-control-ui-${id}-fixture`,
     configureServer(server) {
-      server.middlewares.use(boardFixturePath, (_req, res, next) => {
+      server.middlewares.use(route, (_req, res, next) => {
         void server
-          .transformIndexHtml(boardFixturePath, boardFixtureHtml)
+          .transformIndexHtml(route, fixtureHtml)
           .then((html) => {
             res.statusCode = 200;
             res.setHeader("content-type", "text/html; charset=utf-8");
@@ -2530,7 +2600,11 @@ const server = await createServer({
       : {}),
     include: ["lit/directives/repeat.js"],
   },
-  plugins: [createMockGatewayPlugin(scenario), createBoardFixturePlugin()],
+  plugins: [
+    createMockGatewayPlugin(scenario),
+    createFixturePlugin("board", boardFixturePath, boardFixtureHtml),
+    createFixturePlugin("selects", selectsFixturePath, selectsFixtureHtml),
+  ],
   publicDir: path.join(uiRoot, "public"),
   resolve: {
     alias: [
@@ -2552,6 +2626,9 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] selects fixture: ${resolveServerUrl(server, options.host, selectsFixturePath)}`,
 );
 await waitForShutdown();
 await server.close();
