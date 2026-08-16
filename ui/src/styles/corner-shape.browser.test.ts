@@ -219,6 +219,7 @@ const ROOT_RADIUS_TOKENS = {
 function readUiCss(): string {
   return [
     "ui/src/styles/base.css",
+    "ui/src/styles/dialog.css",
     "ui/src/styles/components.css",
     "ui/src/styles/layout.css",
     "ui/src/styles/option-card.css",

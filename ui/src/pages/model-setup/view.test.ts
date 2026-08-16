@@ -480,7 +480,9 @@ describe("renderModelSetup", () => {
     expect(text(dialog!)).toContain("Verified in 73 ms");
     dialog?.querySelector<HTMLButtonElement>(".primary")?.click();
     expect(onOpenChat).toHaveBeenCalledOnce();
-    dialog?.querySelectorAll<HTMLButtonElement>("button").item(0).click();
+    // Identity, not position: the dialog footer orders the action it is asking
+    // for first, so an index here would silently follow that ordering.
+    dialog?.querySelector<HTMLButtonElement>(".dialog-footer .btn:not(.primary)")?.click();
     expect(onSuccessClose).toHaveBeenCalledOnce();
   });
 

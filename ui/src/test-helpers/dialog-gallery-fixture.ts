@@ -115,13 +115,13 @@ const LINKED_DIALOGS: readonly LinkedDialog[] = [
     title: "Workboard card create / edit",
     where: "Workboard toolbar and per-card edit",
     route: "/workboard",
-    path: "New card, or Edit on an existing card.",
+    path: "New card, or Edit on an existing card. Needs plugins.entries.workboard.enabled.",
   },
   {
     title: "Workboard card detail drawer",
     where: "Workboard, card click",
     route: "/workboard",
-    path: "Click a card.",
+    path: "Click a card. Needs plugins.entries.workboard.enabled.",
   },
   {
     title: "Model setup wizard",
