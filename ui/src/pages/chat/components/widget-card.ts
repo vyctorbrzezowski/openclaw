@@ -59,7 +59,7 @@ async function pinWidget(event: Event, pin: () => Promise<void>): Promise<void> 
     button.ariaLabel = t("chat.toolCards.pinToDashboard");
     const failureLabel = t("chat.toolCards.pinToDashboardFailed");
     button.title = failureLabel;
-    showToast({ message: failureLabel });
+    showToast({ message: failureLabel, tone: "danger" });
   }
 }
 
@@ -435,17 +435,17 @@ function handleWidgetExportAction(
           ?.querySelector<HTMLIFrameElement>(".chat-tool-card__preview-frame")
       : null;
   if (!frame) {
-    showToast({ message: t("chat.toolCards.widgetExportFailed") });
+    showToast({ message: t("chat.toolCards.widgetExportFailed"), tone: "danger" });
     return;
   }
   void exportWidget(value, frame, title)
     .then((result) => {
       if (result === "rerender-required") {
-        showToast({ message: t("chat.toolCards.widgetExportRerender") });
+        showToast({ message: t("chat.toolCards.widgetExportRerender"), tone: "warn" });
       }
     })
     .catch(() => {
-      showToast({ message: t("chat.toolCards.widgetExportFailed") });
+      showToast({ message: t("chat.toolCards.widgetExportFailed"), tone: "danger" });
     });
 }
 

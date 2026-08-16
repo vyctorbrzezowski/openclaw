@@ -284,7 +284,10 @@ export async function deleteSessionsBatch(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.deleteSessionsStale", { count: String(rows.length) }) });
+    showToast({
+      message: t("sessionsView.deleteSessionsStale", { count: String(rows.length) }),
+      tone: "warn",
+    });
     return;
   }
   if (!confirmed) {
@@ -419,7 +422,7 @@ export async function createSessionGroup(
     // Closing on that would leave the skipped rows unaccounted for, so the
     // partial outcome is named here; it is terminal, as the group already exists.
     if (moved === "completed" && targets.length < sessions.length) {
-      showToast({ message: t("sessionsView.newGroupMovePartial") });
+      showToast({ message: t("sessionsView.newGroupMovePartial"), tone: "warn" });
     }
     return moved;
   }
@@ -432,7 +435,7 @@ export async function createSessionGroup(
   // not proof the sessions are gone — say so rather than closing on a silent
   // non-outcome the operator cannot account for.
   if (sessions.length > 0) {
-    showToast({ message: t("sessionsView.newGroupMoveSkipped") });
+    showToast({ message: t("sessionsView.newGroupMoveSkipped"), tone: "warn" });
   }
   // Re-render so the new section shows up.
   host.requestUpdate();
@@ -517,7 +520,10 @@ export async function stopCloudWorker(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.stopCloudWorkerStale", { session: session.label }) });
+    showToast({
+      message: t("sessionsView.stopCloudWorkerStale", { session: session.label }),
+      tone: "warn",
+    });
     return;
   }
   if (!confirmed) {
@@ -568,7 +574,10 @@ export async function deleteSession(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.deleteSessionStale", { session: session.label }) });
+    showToast({
+      message: t("sessionsView.deleteSessionStale", { session: session.label }),
+      tone: "warn",
+    });
     return;
   }
   if (!confirmed) {
@@ -633,6 +642,7 @@ export async function deleteSession(
               count: "1",
               branches: preserved.branch,
             }),
+            tone: "warn",
           });
           return;
         }

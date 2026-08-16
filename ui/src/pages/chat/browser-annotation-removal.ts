@@ -69,7 +69,7 @@ export function removeBrowserAnnotationWithUndo(
       }
       if (!canAdmitBrowserAnnotation(latest, modelContext)) {
         finalizeRemoval();
-        presentToast({ message: labels.undoUnavailable });
+        presentToast({ message: labels.undoUnavailable, tone: "warn" });
         return;
       }
       settled = true;

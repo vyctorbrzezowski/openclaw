@@ -177,7 +177,7 @@ export function renderMessageImages(images: RenderableImageBlock[], opts?: Image
             : null;
           if (!safeUrl) {
             pendingWindow?.close();
-            showToast({ message: t("chat.imageLightbox.loadFailed") });
+            showToast({ message: t("chat.imageLightbox.loadFailed"), tone: "danger" });
           } else if (pendingWindow) {
             pendingWindow.location.replace(safeUrl);
           } else {
@@ -186,20 +186,20 @@ export function renderMessageImages(images: RenderableImageBlock[], opts?: Image
         })
         .catch(() => {
           pendingWindow?.close();
-          showToast({ message: t("chat.imageLightbox.loadFailed") });
+          showToast({ message: t("chat.imageLightbox.loadFailed"), tone: "danger" });
         });
       return;
     }
     void resolveManagedOutgoingImageBlobUrl(img.displayUrl, opts, img.artifactId, "full")
       .then((freshUrl) => {
         if (!freshUrl) {
-          showToast({ message: t("chat.imageLightbox.loadFailed") });
+          showToast({ message: t("chat.imageLightbox.loadFailed"), tone: "danger" });
           return;
         }
         const release = cacheKey ? retainManagedImageBlobUrl(cacheKey) : undefined;
         openResolvedImage(opts.onOpenImage, freshUrl, title, release, requestVersion);
       })
-      .catch(() => showToast({ message: t("chat.imageLightbox.loadFailed") }));
+      .catch(() => showToast({ message: t("chat.imageLightbox.loadFailed"), tone: "danger" }));
   };
 
   const renderImageElement = (img: RenderableImageBlock, previewUrl: string) => {
@@ -505,7 +505,7 @@ function renderManagedImageActions(
       const blob = await readManagedOutgoingImageBlob(image.displayUrl, opts, image.artifactId);
       downloadImageBlob(blob, imageDownloadFileName(title, blob.type));
     } catch {
-      showToast({ message: t("chat.imageLightbox.downloadFailed") });
+      showToast({ message: t("chat.imageLightbox.downloadFailed"), tone: "danger" });
     }
   };
   const copy = async () => {
@@ -518,9 +518,9 @@ function renderManagedImageActions(
       );
       void png.catch(() => {});
       await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
-      showToast({ message: t("common.copied") });
+      showToast({ message: t("common.copied"), tone: "success" });
     } catch {
-      showToast({ message: t("chat.imageLightbox.copyFailed") });
+      showToast({ message: t("chat.imageLightbox.copyFailed"), tone: "danger" });
     }
   };
   return html`
