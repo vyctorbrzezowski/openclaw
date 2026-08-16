@@ -74,7 +74,9 @@ export interface ShellChromeHost extends HTMLElement {
   readonly desktopPanelElement: OptionalCustomElement;
   readonly execApprovalElement: OptionalCustomElement;
   readonly commandPalette: CommandPaletteElement | undefined;
-  readonly approvalOverlay: (HTMLElement & { show(): void }) | undefined;
+  readonly approvalOverlay:
+    | (HTMLElement & { show(): void; showForSession(sessionKey: string): void })
+    | undefined;
   routeState: ShellRouteState;
   navDrawerOpen: boolean;
   desktopNavigationExpanded: boolean;
@@ -456,9 +458,10 @@ export class ShellChromeOwner {
     this.runWithCommandPalette((palette) => palette.togglePalette());
   };
 
-  readonly openApprovals = (): void => {
+  readonly openApprovals = (sessionKey?: string): void => {
     const host = this.host;
-    const show = () => host.approvalOverlay?.show();
+    const show = () =>
+      sessionKey ? host.approvalOverlay?.showForSession(sessionKey) : host.approvalOverlay?.show();
     if (isOptionalElementDefined(host.execApprovalElement)) {
       show();
       return;

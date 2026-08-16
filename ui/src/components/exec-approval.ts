@@ -5,9 +5,9 @@ import { modalApprovalQueue } from "../app/approval-presentation.ts";
 import type { ExecApprovalDecision, ExecApprovalRequest } from "../app/exec-approval.ts";
 import { t } from "../i18n/index.ts";
 import { resolveAsciiShortcutKey } from "../lib/keyboard-shortcuts.ts";
+import { normalizeSessionKeyForUiComparison } from "../lib/sessions/session-key.ts";
 import { OpenClawLightDomContentsElement } from "../lit/openclaw-element.ts";
 import { renderExecApprovalCard, resolveApprovalDecisions } from "./exec-approval-card.ts";
-import { icons } from "./icons.ts";
 
 type ExecApprovalProps = {
   queue: readonly ExecApprovalRequest[];
@@ -85,6 +85,20 @@ class ExecApproval extends OpenClawLightDomContentsElement {
     });
   }
 
+  showForSession(sessionKey: string): void {
+    const normalizedSessionKey = normalizeSessionKeyForUiComparison(sessionKey);
+    const active = this.displayedQueue().find(
+      (entry) =>
+        normalizeSessionKeyForUiComparison(entry.request.sessionKey) === normalizedSessionKey,
+    );
+    if (!active) {
+      return;
+    }
+    this.selectedApprovalId = active.id;
+    this.commandExpanded = false;
+    void this.updateComplete.then(() => this.schedulePosition());
+  }
+
   private displayedQueue(): readonly ExecApprovalRequest[] {
     const props = this.props;
     if (!props) {
@@ -96,17 +110,21 @@ class ExecApproval extends OpenClawLightDomContentsElement {
   }
 
   private activeApproval(queue: readonly ExecApprovalRequest[]): ExecApprovalRequest | null {
-    return queue.find((entry) => entry.id === this.selectedApprovalId) ?? queue.at(0) ?? null;
+    return (
+      queue.find((entry) => entry.id === this.selectedApprovalId) ??
+      queue.find((entry) => this.sessionRow(entry) !== null) ??
+      queue.at(0) ??
+      null
+    );
   }
 
-  private selectOffset(queue: readonly ExecApprovalRequest[], offset: number): void {
-    const activeIndex = Math.max(
-      0,
-      queue.findIndex((entry) => entry.id === this.selectedApprovalId),
-    );
-    const nextIndex = (activeIndex + offset + queue.length) % queue.length;
-    this.selectedApprovalId = queue[nextIndex]?.id ?? null;
-    this.commandExpanded = false;
+  private sessionRow(approval: ExecApprovalRequest): HTMLElement | null {
+    const sessionKey = approval.request.sessionKey?.trim();
+    return sessionKey
+      ? (Array.from(document.querySelectorAll<HTMLElement>("[data-session-key]")).find(
+          (row) => row.dataset.sessionKey === sessionKey,
+        ) ?? null)
+      : null;
   }
 
   private sessionDisplayName(active: ExecApprovalRequest): string {
@@ -129,20 +147,20 @@ class ExecApproval extends OpenClawLightDomContentsElement {
       return;
     }
     const active = this.activeApproval(this.displayedQueue());
-    const sessionKey = active?.request.sessionKey?.trim();
     // Follow the sidebar's canonical row when it is rendered. Catalog-filtered
     // or offscreen sessions fall back to the nav edge so the prompt stays visible.
-    const row = sessionKey
-      ? document.querySelector<HTMLElement>(`[data-session-key="${CSS.escape(sessionKey)}"]`)
-      : null;
+    const row = active ? this.sessionRow(active) : null;
     const nav = shell?.querySelector<HTMLElement>(".shell-nav");
     const anchor = row?.getBoundingClientRect() ?? nav?.getBoundingClientRect();
     const surface = popover.getBoundingClientRect();
     const left = Math.max(12, Math.min((anchor?.right ?? 0) + 12, innerWidth - surface.width - 12));
-    const preferredTop = row ? row.getBoundingClientRect().top : 68;
+    const preferredTop = row ? row.getBoundingClientRect().top - 12 : 68;
     const top = Math.max(12, Math.min(preferredTop, innerHeight - surface.height - 12));
     popover.style.left = `${Math.round(left)}px`;
     popover.style.top = `${Math.round(top)}px`;
+    const anchorCenter = anchor ? anchor.top + anchor.height / 2 : top + 24;
+    const arrowY = Math.max(16, Math.min(anchorCenter - top, surface.height - 16));
+    popover.style.setProperty("--exec-approval-anchor-y", `${Math.round(arrowY)}px`);
   }
 
   private handleKeydown(event: KeyboardEvent, active: ExecApprovalRequest): void {
@@ -171,7 +189,10 @@ class ExecApproval extends OpenClawLightDomContentsElement {
     // queue, and swapping the card mid-read could answer a request never read.
     const displayedQueue = this.displayedQueue();
     if (!displayedQueue.some((entry) => entry.id === this.selectedApprovalId)) {
-      this.selectedApprovalId = displayedQueue.at(0)?.id ?? null;
+      this.selectedApprovalId =
+        displayedQueue.find((entry) => this.sessionRow(entry) !== null)?.id ??
+        displayedQueue.at(0)?.id ??
+        null;
       this.commandExpanded = false;
     }
   }
@@ -187,10 +208,6 @@ class ExecApproval extends OpenClawLightDomContentsElement {
     if (!props || !active) {
       return nothing;
     }
-    const activeIndex = Math.max(
-      0,
-      queue.findIndex((entry) => entry.id === active.id),
-    );
     return html`
       <section
         class="exec-approval-popover"
@@ -200,31 +217,6 @@ class ExecApproval extends OpenClawLightDomContentsElement {
         data-anchor-session=${active.request.sessionKey ?? ""}
         @keydown=${(event: KeyboardEvent) => this.handleKeydown(event, active)}
       >
-        ${queue.length > 1
-          ? html`<nav class="exec-approval-pager" aria-label=${t("execApproval.pendingRequests")}>
-              <button
-                type="button"
-                aria-label=${t("execApproval.previousRequest")}
-                @click=${() => this.selectOffset(queue, -1)}
-              >
-                ${icons.arrowLeft}
-              </button>
-              <span aria-live="polite"
-                >${t("execApproval.requestPosition", {
-                  current: String(activeIndex + 1),
-                  total: String(queue.length),
-                })}</span
-              >
-              <button
-                class="exec-approval-pager__next"
-                type="button"
-                aria-label=${t("execApproval.nextRequest")}
-                @click=${() => this.selectOffset(queue, 1)}
-              >
-                ${icons.arrowLeft}
-              </button>
-            </nav>`
-          : nothing}
         ${renderExecApprovalCard({
           approval: active,
           busy: props.busy,

@@ -64,6 +64,7 @@ export abstract class AppSidebarBase extends OpenClawLightDomContentsElement {
   @property({ attribute: false }) onRefresh: () => void = () => undefined;
   @property({ attribute: false }) onHoldUpdate: () => Promise<boolean> = async () => false;
   @property({ attribute: false }) onOpenApprovals?: () => void;
+  @property({ attribute: false }) onPreviewApproval?: (sessionKey: string) => void;
   @property({ attribute: false }) onRetryConnect?: () => void;
   @property({ attribute: false }) onOpenNewSession?: (
     agentId: string,

@@ -115,7 +115,7 @@ export interface ShellViewHost {
   handleThemeChange(event: CustomEvent<ThemeModeChangeDetail>): void;
   nativeNavCollapsed(): boolean;
   navigate(routeId: string, options?: ApplicationNavigationOptions): void;
-  openApprovals(): void;
+  openApprovals(sessionKey?: string): void;
   openNewSession(agentId: string, target?: NewSessionTarget): void;
   openPalette(): void;
   refreshControlUi(): void;
@@ -393,6 +393,7 @@ export function renderApplicationShell(host: ShellViewHost) {
       onRefresh: () => host.refreshControlUi(),
       onHoldUpdate: () => context.overlays.holdUpdate(),
       onOpenApprovals: () => host.openApprovals(),
+      onPreviewApproval: (sessionKey: string) => host.openApprovals(sessionKey),
       onRetryConnect: () => context.gateway.connect(),
       onOpenNewSession: openNewSession,
       onUpdateSidebarEntries: (entries: string[]) =>

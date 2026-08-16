@@ -93,6 +93,7 @@ export interface SessionListHost {
   readonly sessionCreatorFilterActive: boolean;
   readonly sessionOwnershipVisible: boolean;
   readonly onOpenNewSession?: (agentId: string, target?: NewSessionTarget) => void;
+  readonly onPreviewApproval?: (sessionKey: string) => void;
   readonly onNavigate?: (
     routeId: NavigationRouteId,
     options?: ApplicationNavigationOptions,
@@ -253,6 +254,10 @@ export function renderRecentSession(params: {
     requiredScope: "operator.write",
   });
   const rowDraggable = !session.isChild && groupWriteAccess.allowed;
+  const hasApproval = sessionHasPendingApproval(
+    host.sessionData.approvalBadgeSnapshot(),
+    session.key,
+  );
   // Always reserve the lead so every title shares the section-label text line.
   const row = html`
     <div
@@ -276,8 +281,18 @@ export function renderRecentSession(params: {
           }}
       @contextmenu=${openMenuFromEvent ?? nothing}
       @keydown=${openMenuFromEvent ?? nothing}
-      @mouseenter=${(event: MouseEvent) => startHoverMarquee(event.currentTarget as HTMLElement)}
+      @mouseenter=${(event: MouseEvent) => {
+        startHoverMarquee(event.currentTarget as HTMLElement);
+        if (hasApproval) {
+          host.onPreviewApproval?.(session.key);
+        }
+      }}
       @mouseleave=${(event: MouseEvent) => stopHoverMarquee(event.currentTarget as HTMLElement)}
+      @focusin=${() => {
+        if (hasApproval) {
+          host.onPreviewApproval?.(session.key);
+        }
+      }}
     >
       <a
         href=${session.href}
@@ -331,10 +346,7 @@ export function renderRecentSession(params: {
           ...session,
           hasComposerDraft: session.hasComposerDraft === true && !session.visuallyActive,
           pullRequest: session.pullRequest ?? display?.pullRequest,
-          hasApproval: sessionHasPendingApproval(
-            host.sessionData.approvalBadgeSnapshot(),
-            session.key,
-          ),
+          hasApproval,
         })}
       </a>
       ${session.childSessionKeys.length > 0

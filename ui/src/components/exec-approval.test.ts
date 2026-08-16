@@ -80,6 +80,7 @@ describe("openclaw-exec-approval", () => {
   afterEach(async () => {
     render(nothing, container);
     container.remove();
+    document.querySelectorAll("[data-test-approval-row]").forEach((row) => row.remove());
     await i18n.setLocale("en");
     vi.restoreAllMocks();
   });
@@ -99,7 +100,7 @@ describe("openclaw-exec-approval", () => {
 
     expect(container.querySelector("openclaw-modal-dialog")).toBeNull();
     expect(container.querySelector(".exec-approval-popover")?.getAttribute("role")).toBe("region");
-    expect(container.querySelector(".exec-approval-session__name")?.textContent?.trim()).toBe(
+    expect(container.querySelector(".exec-approval-title")?.textContent?.trim()).toBe(
       "Quarterly tax filing",
     );
     const technicalDetails = container.querySelector<HTMLDetailsElement>(".exec-approval-details");
@@ -159,17 +160,25 @@ describe("openclaw-exec-approval", () => {
     renderedPopover();
 
     expect(container.querySelector(".exec-approval-countdown")?.textContent?.trim()).toBe(
-      "expires in 01:31",
+      "Command approval · expires in 01:31",
     );
   });
 
-  it("selects another queued request without changing queue order", async () => {
+  it("shows the approval owned by the focused session without changing queue order", async () => {
     const queue = [
-      createExecRequest({ id: "approval-oldest", createdAtMs: 1 }),
+      createExecRequest({
+        id: "approval-oldest",
+        createdAtMs: 1,
+        request: { command: "echo oldest", sessionKey: "agent:main:oldest" },
+      }),
       createExecRequest({
         id: "approval-newer",
         createdAtMs: 2,
-        request: { command: "pnpm test", agentId: "worker" },
+        request: {
+          command: "pnpm test",
+          agentId: "worker",
+          sessionKey: "agent:main:newer",
+        },
       }),
     ];
     const { approval } = await renderApproval(queue);
@@ -178,13 +187,41 @@ describe("openclaw-exec-approval", () => {
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-oldest",
     );
-    container.querySelector<HTMLButtonElement>(".exec-approval-pager__next")?.click();
+    (approval as LitElement & { showForSession(sessionKey: string): void }).showForSession(
+      "agent:main:newer",
+    );
     await approval.updateComplete;
 
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-newer",
     );
+    expect(container.querySelector(".exec-approval-pager")).toBeNull();
     expect(queue.map((entry) => entry.id)).toEqual(["approval-oldest", "approval-newer"]);
+  });
+
+  it("anchors the default card to the first pending session row that is visible", async () => {
+    const visibleRow = document.createElement("div");
+    visibleRow.dataset.testApprovalRow = "true";
+    visibleRow.dataset.sessionKey = "agent:main:visible";
+    document.body.append(visibleRow);
+
+    await renderApproval([
+      createExecRequest({
+        id: "approval-other-agent",
+        createdAtMs: 1,
+        request: { command: "echo hidden", sessionKey: "agent:other:hidden" },
+      }),
+      createExecRequest({
+        id: "approval-visible",
+        createdAtMs: 2,
+        request: { command: "echo visible", sessionKey: "agent:main:visible" },
+      }),
+    ]);
+
+    expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
+      "approval-visible",
+    );
+    expect(renderedPopover().dataset.anchorSession).toBe("agent:main:visible");
   });
 
   it("expands a long command without replacing the active request", async () => {
@@ -268,13 +305,23 @@ describe("openclaw-exec-approval", () => {
   });
 
   it("repins the popover card when its selection becomes inline", async () => {
-    const selected = createExecRequest({ id: "approval-selected", createdAtMs: 2_000 });
-    const displayedHead = createExecRequest({ id: "approval-head", createdAtMs: 1_000 });
+    const selected = createExecRequest({
+      id: "approval-selected",
+      createdAtMs: 2_000,
+      request: { command: "echo selected", sessionKey: "agent:main:selected" },
+    });
+    const displayedHead = createExecRequest({
+      id: "approval-head",
+      createdAtMs: 1_000,
+      request: { command: "echo head", sessionKey: "agent:main:head" },
+    });
     const olderArrival = createExecRequest({ id: "approval-older", createdAtMs: 500 });
     const { approval } = await renderApproval([displayedHead, selected]);
     renderedPopover();
 
-    container.querySelector<HTMLButtonElement>(".exec-approval-pager__next")?.click();
+    (approval as LitElement & { showForSession(sessionKey: string): void }).showForSession(
+      "agent:main:selected",
+    );
     await approval.updateComplete;
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-selected",

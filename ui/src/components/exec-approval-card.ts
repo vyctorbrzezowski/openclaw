@@ -122,7 +122,7 @@ function renderMetaChip(label: string, value?: string | null) {
 }
 
 function commandNeedsExpansion(command: string): boolean {
-  return command.length > 96 || command.split("\n").length > 2;
+  return command.length > 72 || command.split("\n").length > 2;
 }
 
 function renderPopoverBody(props: ExecApprovalCardProps) {
@@ -133,14 +133,7 @@ function renderPopoverBody(props: ExecApprovalCardProps) {
   const commandClass = `exec-approval-command mono ${
     canExpand && props.commandExpanded !== true ? "exec-approval-command--collapsed" : ""
   }`;
-  const sessionKey = request.sessionKey?.trim();
   return html`
-    <div class="exec-approval-session">
-      <span>${t("execApproval.labels.conversation")}</span>
-      <strong class="exec-approval-session__name" title=${sessionKey ?? nothing}
-        >${props.sessionDisplayName ?? t("execApproval.unknownConversation")}</strong
-      >
-    </div>
     ${command
       ? html`<div class="exec-approval-command-shell">
           ${active.kind === "exec"
@@ -169,12 +162,12 @@ function renderPopoverBody(props: ExecApprovalCardProps) {
         ? renderMetaChip(t("execApproval.labels.severity"), active.pluginSeverity)
         : renderMetaChip(t("execApproval.labels.security"), request.security)}
       ${renderMetaChip(t("execApproval.labels.plugin"), active.pluginId)}
-      ${renderMetaChip(t("execApproval.labels.agent"), request.agentId)}
     </div>
     <details class="exec-approval-details">
       <summary>${t("execApproval.technicalDetails")}</summary>
       <div class="exec-approval-meta">
-        ${renderMetaRow(t("execApproval.labels.sessionId"), sessionKey)}
+        ${renderMetaRow(t("execApproval.labels.agent"), request.agentId)}
+        ${renderMetaRow(t("execApproval.labels.sessionId"), request.sessionKey?.trim())}
         ${renderMetaRow(t("execApproval.labels.host"), request.host)}
         ${renderMetaRow(t("execApproval.labels.cwd"), request.cwd, { path: true })}
         ${renderMetaRow(t("execApproval.labels.resolved"), request.resolvedPath, { path: true })}
@@ -229,7 +222,10 @@ function approvalTitle(active: ExecApprovalRequest): string {
 export function renderExecApprovalCard(props: ExecApprovalCardProps) {
   const active = props.approval;
   const decisions = resolveApprovalDecisions(active);
-  const title = approvalTitle(active);
+  const title =
+    props.variant === "popover" && props.sessionDisplayName
+      ? props.sessionDisplayName
+      : approvalTitle(active);
   // A timer role preserves context without per-second aria-live announcements.
   return html` <div
     class="exec-approval-card exec-approval-card--${props.variant}"
@@ -239,7 +235,9 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
       <div>
         <div class="exec-approval-title">${title}</div>
         <div class="exec-approval-sub exec-approval-countdown" role="timer">
-          ${approvalRemainingLabel(active.expiresAtMs, props.nowMs)}
+          ${props.variant === "popover"
+            ? html`${approvalTitle(active)} · `
+            : nothing}${approvalRemainingLabel(active.expiresAtMs, props.nowMs)}
         </div>
       </div>
     </div>
@@ -256,7 +254,7 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
       ${decisions.map((decision) => {
         const label = decisionLabel(decision);
         return html`<button
-          class=${decisionClass(decision, props.variant)}
+          class=${`${decisionClass(decision, props.variant)} exec-approval-action--${decision}`}
           type="button"
           ?disabled=${props.busy}
           title=${props.variant === "popover" ? `${label} (${decisionShortcut(decision)})` : label}

@@ -137,7 +137,9 @@ class OpenClawShell
   readonly execApprovalElement = EXEC_APPROVAL_ELEMENT;
   @query("openclaw-command-palette") commandPalette: CommandPaletteElement | undefined;
   @query("openclaw-exec-approval")
-  approvalOverlay: (HTMLElement & { show(): void }) | undefined;
+  approvalOverlay:
+    | (HTMLElement & { show(): void; showForSession(sessionKey: string): void })
+    | undefined;
   commandPaletteTarget: CommandPaletteTargetDetail | undefined;
   navDrawerTrigger: HTMLElement | null = null;
   // Desktop and modal navigation are two slots for the same live sidebar.
@@ -501,7 +503,7 @@ class OpenClawShell
   readonly refreshControlUi = () => this.shellChrome.refreshControlUi();
   readonly handleShellNavDrawerToggle = (event: Event) =>
     this.shellChrome.handleShellNavDrawerToggle(event);
-  readonly openApprovals = () => this.shellChrome.openApprovals();
+  readonly openApprovals = (sessionKey?: string) => this.shellChrome.openApprovals(sessionKey);
   readonly handleDeferredTerminalToggle = (event: Event) =>
     this.shellChrome.handleDeferredTerminalToggle(event);
   readonly handleDeferredBrowserToggle = (event: Event) =>

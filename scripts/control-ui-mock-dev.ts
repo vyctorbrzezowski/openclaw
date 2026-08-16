@@ -2532,11 +2532,23 @@ function scenarioForApprovalMode(
       : [];
   const execApprovals = refreshExpiry(scenario.methodResponses?.["exec.approval.list"]);
   const pluginApprovals = refreshExpiry(scenario.methodResponses?.["plugin.approval.list"]);
+  const singleApproval = execApprovals.find(
+    (approval) =>
+      typeof approval === "object" &&
+      approval !== null &&
+      "id" in approval &&
+      approval.id === "mock-production-export-approval",
+  );
   return {
     ...scenario,
     methodResponses: {
       ...scenario.methodResponses,
-      "exec.approval.list": mode === "single" ? execApprovals.slice(0, 1) : execApprovals,
+      "exec.approval.list":
+        mode === "single"
+          ? singleApproval
+            ? [singleApproval]
+            : execApprovals.slice(0, 1)
+          : execApprovals,
       "plugin.approval.list": mode === "single" ? [] : pluginApprovals,
       "openclaw.approval.list": [],
     },
