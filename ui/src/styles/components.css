@@ -1513,6 +1513,20 @@ openclaw-github-link-hovercard-provider {
   animation: alert-enter var(--duration-normal) var(--ease-out);
 }
 
+/* The shell defaults to non-selectable chrome, but alert copy is operator
+   output: it must be usable as text. Controls stay isolated so dragging across
+   a card never selects a pill, dismiss affordance, or overflow count. */
+.callout,
+.app-toast__message {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+:is(.callout, .app-toast) :is(button, .app-toast__count) {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .callout--dismissible,
 .callout--action {
   display: flex;
