@@ -1,16 +1,17 @@
-// Every select-like control in the Control UI, on one page, openable.
+// The selects context dossier: every select-like control in the Control UI, each
+// shown inside the region it actually ships in, with its box measured.
 //
-// The app spreads its pickers across a dozen routes, several of which need a
-// live session before they render at all, so comparing two of them side by side
-// used to mean two browsers and a good memory. This fixture puts one instance of
-// each family under the production class names and the real Web Awesome hosts,
-// which is what makes a drift in the shared grammar visible as a difference
-// between two neighbouring rows rather than something only a route-by-route
-// sweep would catch.
+// The plain gallery this replaces proved that the families differ. It could not
+// answer the question that decides what to do about it — whether a unified
+// trigger would still sit right among its neighbours — because a control on a
+// blank row has no neighbours to sit wrong beside. So each family here renders
+// its real surrounding region under production class names, and the numbers
+// beside it are read off that live element rather than transcribed, which keeps
+// the dossier honest as the stylesheets move.
 //
 // It renders outside the app shell, so it loads the app stylesheet plus every
-// route stylesheet that owns a picker; without them the feature classes below
-// resolve to nothing and the page silently proves the wrong thing.
+// route stylesheet that owns one of these regions; without them the class names
+// resolve to nothing and the page silently proves something else.
 import "../styles.css";
 import "../styles/usage.css";
 import "../styles/cron.css";
@@ -19,202 +20,211 @@ import "../styles/workboard.css";
 import "../styles/model-setup.css";
 import "../styles/new-session.css";
 import "../styles/sessions.css";
+import "../styles/settings.css";
+import "../styles/config.css";
 import "../styles/chat.css";
 import "../components/web-awesome.ts";
 import "../components/web-awesome-select.ts";
 import "../components/web-awesome-popover.ts";
+import type { BlendVerdict, SelectFamily } from "./selects-fixture-contract.ts";
+import { CANONICAL_TRIGGER_PROPOSAL, SELECT_FAMILIES } from "./selects-fixture-families.ts";
+import { TRIGGER_FAMILIES } from "./selects-fixture-triggers.ts";
 
-type SelectSpec = {
-  /** Shown as the row's caption, and used to name the screenshot. */
-  readonly label: string;
-  /** Where the operator meets this control in the product. */
-  readonly where: string;
-  readonly markup: string;
+/** Boxes first, then the things that open panels — the order the dossier argues in. */
+const ALL_FAMILIES: readonly SelectFamily[] = [...SELECT_FAMILIES, ...TRIGGER_FAMILIES];
+
+const VERDICT_LABEL: Record<BlendVerdict["kind"], string> = {
+  free: "free to standardize",
+  constrained: "standardize with a constraint",
+  leave: "leave alone",
 };
 
-const menuItems = (...entries: readonly (readonly [label: string, checked?: boolean])[]): string =>
-  entries
-    .map(
-      ([label, checked]) =>
-        `<wa-dropdown-item type="checkbox"${checked ? " checked" : ""}>${label}</wa-dropdown-item>`,
-    )
+/**
+ * `source` is a file path plus prose, and prose about selects contains tag
+ * names: one entry reads "no matching <select class=\"input\"> exists", which
+ * interpolated raw opened a real select in the parse stream and swallowed the
+ * next card's habitat whole — the board card silently lost its control and its
+ * metrics read "no target". Locks and notes are authored markup and stay raw;
+ * this field is text and is treated as text.
+ */
+function escapeText(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function verdictBadge(verdict: BlendVerdict): string {
+  const detail = verdict.kind === "constrained" ? ` — keep ${escapeText(verdict.keep)}` : "";
+  return `<span class="dossier__badge dossier__badge--${verdict.kind}">${VERDICT_LABEL[verdict.kind]}${detail}</span>`;
+}
+
+function renderCard(family: SelectFamily): string {
+  const locks =
+    family.locks.length === 0
+      ? `<p class="dossier__none">Nothing found. Its size is its own.</p>`
+      : `<ul class="dossier__locks">${family.locks.map((lock) => `<li>${lock}</li>` /* authored markup: locks cite <code> spans by design */).join("")}</ul>`;
+  return `<article class="dossier" id="${family.id}" data-verdict="${family.verdict.kind}">
+    <details class="dossier__detail" open>
+      <summary class="dossier__summary">
+        <span class="dossier__title">
+          <span class="dossier__name">${escapeText(family.label)}</span>
+          <span class="dossier__kind">${family.kind}</span>
+        </span>
+        <span class="dossier__where">${escapeText(family.where)}</span>
+        ${verdictBadge(family.verdict)}
+      </summary>
+      <div class="dossier__panel">
+        <div class="dossier__habitat" data-family="${family.id}">${family.habitat}</div>
+        <aside class="dossier__aside">
+          <h3>Reconstructed from</h3>
+          <p class="dossier__source"><code>${escapeText(family.source)}</code>${
+            family.liveRoute
+              ? ` · <a href="${family.liveRoute}" target="_blank" rel="noreferrer">see it live</a>`
+              : ""
+          }</p>
+          <h3>Measured</h3>
+          <table class="dossier__metrics" data-metrics-for="${family.id}">
+            <tbody><tr><td colspan="2">measuring…</td></tr></tbody>
+          </table>
+          <h3>Neighbour locks</h3>
+          ${locks}
+          <h3>Blend verdict</h3>
+          <p class="dossier__note">${escapeText(family.verdict.note)}</p>
+        </aside>
+      </div>
+    </details>
+  </article>`;
+}
+
+/**
+ * The rows of the metrics table, in the order a reader compares them.
+ *
+ * Computed height rather than getBoundingClientRect: several habitats sit in
+ * regions that ship an entrance animation (the dialog card scales from 0.95),
+ * and a rect read mid-animation reported a .field select as 36.1px when its
+ * rule says 38. The used value is the number the stylesheet is arguing about.
+ */
+function readMetrics(box: Element): readonly (readonly [string, string])[] {
+  const style = getComputedStyle(box);
+  const border = `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`;
+  return [
+    ["height", style.height],
+    ["font-size", style.fontSize],
+    ["padding", style.padding],
+    ["radius", style.borderTopLeftRadius],
+    ["border", style.borderTopStyle === "none" ? "none" : border],
+    ["fill", style.backgroundColor],
+  ];
+}
+
+/**
+ * The box a reader sees is not always the element in the markup: Web Awesome
+ * draws its combobox and its trigger chrome inside a shadow root, so a family
+ * that names a part is measured there instead of on its host.
+ */
+function resolveMeasuredBox(family: SelectFamily, root: Element): Element | undefined {
+  const host = root.querySelector("[data-measure]");
+  if (!host) {
+    return undefined;
+  }
+  if (!family.measurePart) {
+    return host;
+  }
+  return host.shadowRoot?.querySelector(`[part~="${family.measurePart}"]`) ?? undefined;
+}
+
+function paintMetrics(family: SelectFamily): void {
+  const habitat = document.querySelector(`.dossier__habitat[data-family="${family.id}"]`);
+  const table = document.querySelector(`[data-metrics-for="${family.id}"] tbody`);
+  if (!habitat || !table) {
+    return;
+  }
+  const box = resolveMeasuredBox(family, habitat);
+  if (!box) {
+    table.innerHTML = `<tr><td colspan="2" class="dossier__none">no [data-measure] target</td></tr>`;
+    return;
+  }
+  table.innerHTML = readMetrics(box)
+    .map(([name, value]) => `<tr><th>${name}</th><td>${value}</td></tr>`)
     .join("");
+}
 
-const options = (...entries: readonly string[]): string =>
-  entries.map((entry) => `<option>${entry}</option>`).join("");
+/** Web Awesome hosts have no box until they upgrade, so measuring races them. */
+async function waitForWebAwesome(): Promise<void> {
+  await Promise.all(
+    ["wa-select", "wa-dropdown", "wa-popover"].map((tag) => customElements.whenDefined(tag)),
+  );
+  const hosts = [
+    ...document.querySelectorAll<HTMLElement & { updateComplete?: Promise<unknown> }>(
+      "wa-select, wa-dropdown, wa-popover",
+    ),
+  ];
+  await Promise.all(hosts.map((host) => Promise.resolve(host.updateComplete)));
+  await document.fonts?.ready;
+}
 
-const waOptions = (...entries: readonly string[]): string =>
-  entries.map((entry) => `<wa-option value="${entry}">${entry}</wa-option>`).join("");
-
-// Ordered by family so the page reads as a comparison, not a catalogue: every
-// native box together, then every component-backed panel, then the two the chat
-// composer positions by hand.
-const specs: readonly SelectSpec[] = [
-  {
-    label: "Settings row select",
-    where: "Settings → Appearance, Talk, MCP, config forms",
-    markup: `<select class="settings-select">${options("Enter to send", "Cmd+Enter to send")}</select>`,
-  },
-  {
-    label: "Field select",
-    where: "Dialogs and inline forms (.field)",
-    markup: `<div class="field"><select>${options("Local checkout", "Worktree")}</select></div>`,
-  },
-  {
-    label: "Usage filter select",
-    where: "Usage → filters bar",
-    markup: `<select class="usage-select">${options("America/Sao_Paulo", "UTC")}</select>`,
-  },
-  {
-    label: "Sessions sort select",
-    where: "Usage → sessions table",
-    markup: `<div class="sessions-sort"><select>${options("Newest first", "Oldest first")}</select></div>`,
-  },
-  {
-    label: "Workboard input select",
-    where: "Workboard toolbar",
-    markup: `<div class="workboard"><select class="input">${options("All boards", "Release")}</select></div>`,
-  },
-  {
-    label: "Board widget move select",
-    where: "Chat board widget → card",
-    markup: `<div class="workboard-widget-card__move"><select>${options("Todo", "In progress", "Done")}</select></div>`,
-  },
-  {
-    label: "Settings wa-select",
-    where: "Settings → language, model and channel pickers",
-    markup: `<wa-select class="settings-select" value="Sonnet">${waOptions("Sonnet", "Opus", "Haiku")}</wa-select>`,
-  },
-  {
-    label: "Workboard wa-select",
-    where: "Workboard card modal",
-    // Wrapped: --workboard-control-height is scoped to the board, and without it
-    // this row would show a height the product never renders.
-    markup: `<div class="workboard"><wa-select class="workboard-select" value="Backlog">${waOptions("Backlog", "Doing", "Shipped")}</wa-select></div>`,
-  },
-  {
-    label: "Session menu",
-    where: "Sidebar session row, chat header",
-    markup: `<wa-dropdown class="session-menu"><button slot="trigger" class="btn">Session</button>${menuItems(["Rename"], ["Duplicate"], ["Archive"])}</wa-dropdown>`,
-  },
-  {
-    label: "Session sort menu",
-    where: "Sidebar → session list header",
-    markup: `<wa-dropdown class="sidebar-session-sort-menu"><button slot="trigger" class="btn">Sort</button><div class="sidebar-session-sort-menu__title">Sort by</div>${menuItems(["Recent", true], ["Name"], ["Created"])}</wa-dropdown>`,
-  },
-  {
-    label: "Sidebar customize menu",
-    where: "Sidebar → customize",
-    markup: `<wa-dropdown class="sidebar-customize-menu"><button slot="trigger" class="btn">Customize</button><div class="sidebar-customize-menu__title">Sections</div>${menuItems(["Pinned", true], ["Recent", true], ["Catalogs"])}</wa-dropdown>`,
-  },
-  {
-    label: "Usage filter dropdown",
-    where: "Usage → filters bar",
-    markup: `<wa-dropdown class="usage-filter-select"><button slot="trigger" class="btn">Models</button>${menuItems(["claude-opus", true], ["gpt-5.6-luna"], ["sonnet-4.6"])}</wa-dropdown>`,
-  },
-  {
-    label: "Usage export menu",
-    where: "Usage → export",
-    markup: `<wa-dropdown class="usage-export-menu"><button slot="trigger" class="btn">Export</button>${menuItems(["CSV"], ["JSON"])}</wa-dropdown>`,
-  },
-  {
-    label: "Cron job menu",
-    where: "Cron → job row",
-    markup: `<wa-dropdown class="cron-job-menu"><button slot="trigger" class="btn">Job</button>${menuItems(["Run now"], ["Pause"], ["Delete"])}</wa-dropdown>`,
-  },
-  {
-    label: "Cron filter dropdown",
-    where: "Cron → runs filters",
-    markup: `<wa-dropdown class="cron-filter-dropdown__details"><button slot="trigger" class="btn">Status</button>${menuItems(["Succeeded", true], ["Failed"], ["Skipped"])}</wa-dropdown>`,
-  },
-  {
-    label: "Agent select",
-    where: "Devices, Skills, Workboard, New Session, Agents",
-    markup: `<wa-dropdown class="agent-select"><button slot="trigger" class="btn">Molty</button>${menuItems(["Molty", true], ["Research"], ["Ops"])}</wa-dropdown>`,
-  },
-  {
-    label: "Provider picker",
-    where: "Model Setup → manual provider",
-    markup: `<wa-dropdown class="model-setup-provider-select"><button slot="trigger" class="btn">Anthropic</button>${menuItems(["Anthropic", true], ["OpenAI"], ["Google"])}</wa-dropdown>`,
-  },
-  {
-    label: "Board widget menu",
-    where: "Chat board widget header",
-    markup: `<wa-dropdown class="board-widget__menu"><button slot="trigger" class="btn">Widget</button>${menuItems(["Move to tab"], ["Remove"])}</wa-dropdown>`,
-  },
-  {
-    label: "Board tab overflow",
-    where: "Board tab strip",
-    markup: `<wa-dropdown class="board-tabs__overflow"><button slot="trigger" class="btn">More</button>${menuItems(["Operations"], ["Metrics"])}</wa-dropdown>`,
-  },
-  {
-    label: "Tool card actions",
-    where: "Chat → tool card widget",
-    markup: `<wa-dropdown class="chat-tool-card__widget-actions"><button slot="trigger" class="btn">Actions</button>${menuItems(["Open"], ["Copy"])}</wa-dropdown>`,
-  },
-  {
-    label: "Pane placement menu",
-    where: "Chat split view → pane header",
-    markup: `<wa-dropdown class="chat-pane__placement-menu"><button slot="trigger" class="btn">Placement</button>${menuItems(["Right", true], ["Bottom"], ["Full"])}</wa-dropdown>`,
-  },
-  {
-    label: "Pane gateway menu",
-    where: "Chat split view → pane header",
-    markup: `<wa-dropdown class="chat-pane__gateway-menu"><button slot="trigger" class="btn">Gateway</button>${menuItems(["Local", true], ["Cloud"])}</wa-dropdown>`,
-  },
-  {
-    label: "Editor picker",
-    where: "Chat sidebar → file view",
-    markup: `<wa-dropdown class="sidebar-file-view__editor-menu"><button slot="trigger" class="btn">Editor</button>${menuItems(["VS Code", true], ["Zed"], ["Vim"])}</wa-dropdown>`,
-  },
-  {
-    label: "Composer attach menu",
-    where: "Chat composer → plus button",
-    markup: `<wa-dropdown class="agent-chat__attach-menu"><button slot="trigger" class="btn">Attach</button>${menuItems(["File"], ["Image"])}</wa-dropdown>`,
-  },
-  {
-    label: "Mic device picker",
-    where: "Chat composer → microphone chevron",
-    markup: `<wa-dropdown class="chat-talk-input-picker"><button slot="trigger" class="btn">Mic</button><div class="chat-talk-input-picker__heading">Input device</div>${menuItems(["System default", true], ["MacBook Pro Microphone"], ["AirPods Pro"])}</wa-dropdown>`,
-  },
-  {
-    label: "New session chip popover",
-    where: "New Session → where / project / detail chips",
-    // wa-popover anchors by id, not by a slot; the trigger is a sibling.
-    markup: `<button id="selects-fixture-where" class="btn">Where</button><wa-popover class="new-session-page__select new-session-page__picker-popover" for="selects-fixture-where" placement="bottom-start" without-arrow><div class="new-session-page__menu-title">Devices</div>${menuItems(["This device", true], ["Cloud"])}</wa-popover>`,
-  },
-  {
-    label: "Composer inline select",
-    where: "Chat composer → model and reasoning pills",
-    markup: `<div class="chat-controls__inline-select-menu" data-static-panel><button class="chat-controls__inline-select-option">Opus 5</button><button class="chat-controls__inline-select-option">Sonnet 4.6</button><button class="chat-controls__inline-select-option">Haiku</button></div>`,
-  },
-  {
-    label: "Slash menu",
-    where: "Chat composer → typing /",
-    // role="option" divs, exactly as the composer renders them: on a <button>
-    // the native chrome would show through and the row would prove nothing.
-    markup: `<div class="selects-fixture__slash-host"><div class="slash-menu" data-static-panel><div class="slash-menu__scroll"><div class="slash-menu-item" role="option"><span>/compact</span><span>Summarise the thread</span></div><div class="slash-menu-item slash-menu-item--active" role="option"><span>/model</span><span>Switch model</span></div><div class="slash-menu-item" role="option"><span>/resume</span><span>Resume a session</span></div></div></div></div>`,
-  },
-];
-
-// The two hand-positioned panels have no trigger to press, so they are rendered
-// open and inert. Everything else is a real host the operator opens by clicking.
-function renderRow(spec: SelectSpec, index: number): string {
-  return `<section class="selects-fixture__row" data-select-index="${index}" data-select-label="${spec.label}">
-    <header class="selects-fixture__meta">
-      <h2>${spec.label}</h2>
-      <p>${spec.where}</p>
-    </header>
-    <div class="selects-fixture__control">${spec.markup}</div>
+function renderSummaryTable(): string {
+  const counts = { free: 0, constrained: 0, leave: 0 };
+  for (const family of ALL_FAMILIES) {
+    counts[family.verdict.kind] += 1;
+  }
+  const proposal = CANONICAL_TRIGGER_PROPOSAL;
+  return `<section class="dossier-summary" id="summary">
+    <h2>Summary</h2>
+    <p class="dossier-summary__counts">
+      <strong>${ALL_FAMILIES.length}</strong> families —
+      <span class="dossier__badge dossier__badge--free">${counts.free} free</span>
+      <span class="dossier__badge dossier__badge--constrained">${counts.constrained} constrained</span>
+      <span class="dossier__badge dossier__badge--leave">${counts.leave} leave alone</span>
+    </p>
+    <h3>The canonical trigger, if you say go</h3>
+    <table class="dossier__metrics dossier__metrics--proposal">
+      <tbody>
+        <tr><th>height</th><td>${proposal.height}</td></tr>
+        <tr><th>font-size</th><td>${proposal.fontSize}</td></tr>
+        <tr><th>padding</th><td>${proposal.padding}</td></tr>
+        <tr><th>radius</th><td>${proposal.radius}</td></tr>
+        <tr><th>border</th><td>${proposal.border}</td></tr>
+        <tr><th>fill</th><td>${proposal.fill}</td></tr>
+        <tr><th>chevron</th><td>${proposal.chevron}</td></tr>
+      </tbody>
+    </table>
   </section>`;
 }
 
-function mountSelectsFixture(): void {
+function renderIndex(): string {
+  const rows = ALL_FAMILIES.map(
+    (family) =>
+      `<li><a href="#${family.id}">${family.label}</a><span class="dossier__badge dossier__badge--${family.verdict.kind}">${family.verdict.kind}</span></li>`,
+  ).join("");
+  return `<nav class="dossier-index"><ol>${rows}</ol></nav>`;
+}
+
+async function mountSelectsFixture(): Promise<void> {
   const root = document.querySelector("#app");
   if (!root) {
     throw new Error("selects fixture: missing #app root");
   }
-  root.innerHTML = `<div class="selects-fixture__grid">${specs.map(renderRow).join("")}</div>`;
+  root.innerHTML = `${renderIndex()}<div class="dossier-list">${ALL_FAMILIES.map(renderCard).join("")}</div>${renderSummaryTable()}`;
+  await waitForWebAwesome();
+  for (const family of ALL_FAMILIES) {
+    paintMetrics(family);
+  }
+  // Collapsing a card unmounts nothing, but reopening one that was closed at
+  // measure time gives its first real geometry only now.
+  root.addEventListener(
+    "toggle",
+    (event) => {
+      const detail = event.target;
+      if (!(detail instanceof HTMLDetailsElement) || !detail.open) {
+        return;
+      }
+      const id = detail.closest(".dossier")?.id;
+      const family = ALL_FAMILIES.find((entry) => entry.id === id);
+      if (family) {
+        paintMetrics(family);
+      }
+    },
+    true,
+  );
 }
 
-mountSelectsFixture();
+void mountSelectsFixture();

@@ -158,35 +158,86 @@ const selectsFixtureHtml = `<!doctype html>
       .selects-fixture-header h1 { color: var(--text-strong); font-size: 22px; letter-spacing: -.03em; margin: 0; }
       .selects-fixture-header nav { display: flex; gap: 10px; font: 12px ui-monospace, monospace; }
       .selects-fixture-header a { color: var(--muted); }
-      .selects-fixture-lede { color: var(--muted); font-size: 13px; margin: 0 0 28px; max-width: 62ch; }
-      /* Generous row height: an open panel must not be clipped by the next row. */
-      .selects-fixture__grid { display: grid; gap: 4px; }
-      .selects-fixture__row { align-items: center; border-top: 1px solid var(--border); display: grid; gap: 20px; grid-template-columns: minmax(0, 22ch) minmax(0, 1fr); min-height: 62px; padding: 10px 0; }
-      .selects-fixture__meta h2 { color: var(--text-strong); font-size: 13px; font-weight: 600; margin: 0; }
-      .selects-fixture__meta p { color: var(--muted); font-size: 11px; margin: 3px 0 0; }
-      .selects-fixture__control { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      .selects-fixture-lede { color: var(--muted); font-size: 13px; margin: 0 0 24px; max-width: 68ch; }
+
+      /* Jump list: the page is long, and the operator reads it verdict-first. */
+      .dossier-index { border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 28px; padding: 12px 16px; }
+      .dossier-index ol { columns: 2; column-gap: 28px; list-style: decimal; margin: 0; padding-left: 20px; }
+      .dossier-index li { break-inside: avoid; margin: 3px 0; }
+      .dossier-index a { color: var(--text); font-size: 12px; text-decoration: none; }
+      .dossier-index a:hover { text-decoration: underline; }
+      .dossier-index .dossier__badge { margin-left: 6px; }
+
+      .dossier-list { display: grid; gap: 18px; }
+      .dossier { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; scroll-margin-top: 16px; }
+      /* The verdict tints the card's own edge, so scrolling the page reads as a
+         list of decisions before any of the detail is taken in. */
+      .dossier[data-verdict="free"] { border-left: 3px solid var(--ok); }
+      .dossier[data-verdict="constrained"] { border-left: 3px solid var(--warn); }
+      .dossier[data-verdict="leave"] { border-left: 3px solid var(--muted); }
+      .dossier__summary { align-items: baseline; cursor: pointer; display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 12px 16px; }
+      .dossier__summary::-webkit-details-marker { display: none; }
+      .dossier__title { align-items: baseline; display: flex; gap: 8px; }
+      .dossier__name { color: var(--text-strong); font-size: 14px; font-weight: 600; }
+      .dossier__kind { border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--muted); font: 10px ui-monospace, monospace; padding: 1px 7px; }
+      .dossier__where { color: var(--muted); font-size: 11px; flex: 1 1 auto; }
+      .dossier__badge { border-radius: var(--radius-full); font: 10px ui-monospace, monospace; padding: 2px 9px; white-space: nowrap; }
+      .dossier__badge--free { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+      .dossier__badge--constrained { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+      .dossier__badge--leave { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+
+      .dossier__panel { border-top: 1px solid var(--border); display: grid; gap: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
+      /* The habitat sits on the page canvas, not the card's, so a region that
+         relies on contrast against --bg is not judged against the wrong ground. */
+      .dossier__habitat { background: var(--bg); box-sizing: border-box; overflow: visible; padding: 20px; }
+      .dossier__aside { border-left: 1px solid var(--border); box-sizing: border-box; padding: 16px; }
+      .dossier__aside h3 { color: var(--muted); font: 650 10px/1 ui-monospace, monospace; letter-spacing: .08em; margin: 0 0 7px; text-transform: uppercase; }
+      .dossier__aside h3 + * { margin-bottom: 16px; }
+      .dossier__metrics { border-collapse: collapse; font: 11px ui-monospace, monospace; width: 100%; }
+      .dossier__metrics th { color: var(--muted); font-weight: 400; padding: 2px 10px 2px 0; text-align: left; white-space: nowrap; }
+      .dossier__metrics td { color: var(--text-strong); overflow-wrap: anywhere; padding: 2px 0; }
+      .dossier__locks { color: var(--text); font-size: 11px; line-height: 1.5; margin: 0; padding-left: 16px; }
+      .dossier__locks li { margin: 0 0 5px; }
+      .dossier__note { color: var(--text); font-size: 11px; line-height: 1.5; margin: 0; }
+      .dossier__source { color: var(--muted); font: 10px ui-monospace, monospace; margin: 0; overflow-wrap: anywhere; }
+      .dossier__source a { color: var(--accent); }
+      .dossier__none { color: var(--muted); font-size: 11px; margin: 0; }
+
+      .dossier-summary { border: 1px solid var(--border-strong); border-radius: var(--radius-md); margin: 32px 0 64px; padding: 20px 24px; }
+      .dossier-summary h2 { color: var(--text-strong); font-size: 16px; margin: 0 0 10px; }
+      .dossier-summary h3 { color: var(--muted); font: 650 10px/1 ui-monospace, monospace; letter-spacing: .08em; margin: 20px 0 8px; text-transform: uppercase; }
+      .dossier-summary__counts { align-items: center; color: var(--text); display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; margin: 0; }
+      .dossier__metrics--proposal { max-width: 420px; }
+
+      /* Habitat helpers. Regions that the app gives a bounded column are given
+         one here too, or a toolbar meant for 900px sprawls across the card. */
+      .habitat-frame { border: 1px dashed color-mix(in srgb, var(--border-strong) 60%, transparent); border-radius: var(--radius-sm); padding: 14px; }
+      .habitat-frame--narrow { max-width: 420px; }
+      .habitat-note { color: var(--muted); font: 10px ui-monospace, monospace; margin: 0 0 10px; }
       /* The slash menu anchors at bottom:100% of its relative ancestor, i.e.
          entirely above it, so the host is a thin strip pushed down far enough
-         for the panel to land inside this row instead of over the one above. */
-      .selects-fixture__slash-host { position: relative; height: 8px; width: 300px; margin-top: 140px; }
-      .selects-fixture__control [data-static-panel] { width: 260px; }
-      @media (max-width: 768px) { .selects-fixture__row { grid-template-columns: minmax(0, 1fr); } }
+         for the panel to land inside its own card. */
+      .habitat-slash-host { position: relative; height: 8px; margin-top: 150px; width: 320px; }
+
+      @media (max-width: 900px) { .dossier__panel { grid-template-columns: minmax(0, 1fr); } .dossier__aside { border-left: 0; border-top: 1px solid var(--border); } .dossier-index ol { columns: 1; } }
     </style>
   </head>
   <body>
     <div class="selects-fixture-shell">
       <div class="selects-fixture-header">
-        <h1>Selects</h1>
+        <h1>Selects — context dossier</h1>
         <nav>
+          <a href="#summary">summary</a>
           <a href="?theme=light">light</a>
           <a href="?theme=dark">dark</a>
           <a href="?">system</a>
         </nav>
       </div>
       <p class="selects-fixture-lede">
-        One instance of every select family, under production class names. Click a
-        trigger to open its panel; the two panels the composer positions by hand are
-        rendered open. Any row that stops matching its neighbours is drift.
+        Every select-like control, each inside the region it actually ships in, so a
+        proposed unified trigger can be judged against the neighbours it would have
+        to sit beside. Numbers are read off the live element, not transcribed. Nothing
+        here is standardized yet — the badge on each card is a recommendation.
       </p>
       <div id="app"></div>
     </div>
