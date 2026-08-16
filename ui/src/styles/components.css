@@ -695,15 +695,15 @@ openclaw-session-owner-chip {
 }
 
 /* Toasts carry recovery instructions ("Undo", where to re-enable), so a message
- * that outgrows one line wraps instead of ellipsing the instruction away, with
- * even line lengths because the wrapped text is a sentence to read rather than a
- * label to scan. The clamp still bounds a pathological string. */
+ * that outgrows one line wraps instead of ellipsing the instruction away. Keep
+ * the normal greedy measure: balancing lines spends usable width and makes a
+ * short sentence break before it reaches the trailing controls. */
 .app-toast__message {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   font-size: var(--control-ui-text-md);
-  text-wrap: balance;
+  text-wrap: wrap;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 3;
