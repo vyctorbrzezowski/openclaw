@@ -180,7 +180,8 @@ const specs: readonly SelectSpec[] = [
   {
     label: "New session chip popover",
     where: "New Session → where / project / detail chips",
-    markup: `<wa-popover class="new-session-page__select"><button slot="anchor" class="btn">Where</button><div class="new-session-page__menu-title">Devices</div>${menuItems(["This device", true], ["Cloud"])}</wa-popover>`,
+    // wa-popover anchors by id, not by a slot; the trigger is a sibling.
+    markup: `<button id="selects-fixture-where" class="btn">Where</button><wa-popover class="new-session-page__select new-session-page__picker-popover" for="selects-fixture-where" placement="bottom-start" without-arrow><div class="new-session-page__menu-title">Devices</div>${menuItems(["This device", true], ["Cloud"])}</wa-popover>`,
   },
   {
     label: "Composer inline select",
@@ -190,7 +191,9 @@ const specs: readonly SelectSpec[] = [
   {
     label: "Slash menu",
     where: "Chat composer → typing /",
-    markup: `<div class="selects-fixture__slash-host"><div class="slash-menu" data-static-panel><div class="slash-menu__scroll"><button class="slash-menu-item">/compact</button><button class="slash-menu-item">/model</button><button class="slash-menu-item">/resume</button></div></div></div>`,
+    // role="option" divs, exactly as the composer renders them: on a <button>
+    // the native chrome would show through and the row would prove nothing.
+    markup: `<div class="selects-fixture__slash-host"><div class="slash-menu" data-static-panel><div class="slash-menu__scroll"><div class="slash-menu-item" role="option"><span>/compact</span><span>Summarise the thread</span></div><div class="slash-menu-item slash-menu-item--active" role="option"><span>/model</span><span>Switch model</span></div><div class="slash-menu-item" role="option"><span>/resume</span><span>Resume a session</span></div></div></div></div>`,
   },
 ];
 

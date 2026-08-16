@@ -150,7 +150,10 @@ const selectsFixtureHtml = `<!doctype html>
     <link rel="stylesheet" href="/src/styles.css" />
     <style>
       body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
-      .selects-fixture-shell { box-sizing: border-box; margin: 0 auto; max-width: 1200px; padding: 32px; }
+      /* base.css clips the document because the app scrolls its own panes, and
+         its stylesheet is injected after this block, so the shell owns the
+         scroll rather than trying to win overflow back on html/body. */
+      .selects-fixture-shell { box-sizing: border-box; height: 100dvh; overflow-y: auto; margin: 0 auto; max-width: 1200px; padding: 32px; }
       .selects-fixture-header { align-items: baseline; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 8px; }
       .selects-fixture-header h1 { color: var(--text-strong); font-size: 22px; letter-spacing: -.03em; margin: 0; }
       .selects-fixture-header nav { display: flex; gap: 10px; font: 12px ui-monospace, monospace; }
@@ -162,9 +165,10 @@ const selectsFixtureHtml = `<!doctype html>
       .selects-fixture__meta h2 { color: var(--text-strong); font-size: 13px; font-weight: 600; margin: 0; }
       .selects-fixture__meta p { color: var(--muted); font-size: 11px; margin: 3px 0 0; }
       .selects-fixture__control { display: flex; align-items: center; gap: 12px; min-width: 0; }
-      /* The slash menu positions itself against a relative ancestor and opens
-         upward, so it needs a host tall enough to show inside the row. */
-      .selects-fixture__slash-host { position: relative; height: 132px; width: 260px; }
+      /* The slash menu anchors at bottom:100% of its relative ancestor, i.e.
+         entirely above it, so the host is a thin strip pushed down far enough
+         for the panel to land inside this row instead of over the one above. */
+      .selects-fixture__slash-host { position: relative; height: 8px; width: 300px; margin-top: 140px; }
       .selects-fixture__control [data-static-panel] { width: 260px; }
       @media (max-width: 768px) { .selects-fixture__row { grid-template-columns: minmax(0, 1fr); } }
     </style>
