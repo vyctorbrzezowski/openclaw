@@ -219,8 +219,12 @@ export function renderChannelDetail(params: {
 }): TemplateResult {
   const body = renderChannelBody(params.channelId, params.props, params.data);
   return html`
-    <openclaw-modal-dialog label=${params.label} @modal-cancel=${() => params.onClose()}>
-      <div class="channels-detail">
+    <openclaw-modal-dialog
+      class="dialog-lg"
+      label=${params.label}
+      @modal-cancel=${() => params.onClose()}
+    >
+      <div class="dialog-surface dialog-surface--divided channels-detail">
         <div class="channels-detail__header">
           ${renderChannelIcon(params.channelId, params.label, "cover")}
           <div class="channels-detail__header-actions">
@@ -237,7 +241,7 @@ export function renderChannelDetail(params: {
             </button>
             <button
               type="button"
-              class="btn channels-detail__close"
+              class="dialog-close"
               aria-label=${t("common.close")}
               @click=${() => params.onClose()}
             >
@@ -245,7 +249,7 @@ export function renderChannelDetail(params: {
             </button>
           </div>
         </div>
-        <div class="channels-detail__body">
+        <div class="dialog-body dialog-body--stack">
           ${params.props.setupBlockedByDirtyConfig && params.props.configFormDirty
             ? html`<div class="callout warn">${t("channels.hub.saveBeforeSetup")}</div>`
             : nothing}

@@ -255,18 +255,21 @@ export function renderChannelWizard(
 
   return html`
     <openclaw-modal-dialog
+      class="dialog-md"
       label=${t("channels.setup.dialogLabel", { channel: label })}
       @modal-cancel=${() => props.onClose()}
     >
-      <div class="channels-wizard">
-        <div class="channels-wizard__header">
+      <div class="dialog-surface dialog-surface--divided channels-wizard">
+        <div class="dialog-header channels-wizard__header">
           ${channel ? renderChannelIcon(channel, label, "tile") : nothing}
-          <div class="channels-wizard__heading">
-            <h2>${t("channels.setup.title", { channel: label })}</h2>
-            <div class="muted">${t("channels.setup.subtitle")}</div>
+          <div class="dialog-heading">
+            <h2 class="dialog-title">${t("channels.setup.title", { channel: label })}</h2>
+            <div class="dialog-subtitle">${t("channels.setup.subtitle")}</div>
           </div>
         </div>
-        <div class="channels-wizard__body">${renderHelperLinks(channel, step)} ${body}</div>
+        <div class="dialog-body dialog-body--stack">
+          ${renderHelperLinks(channel, step)} ${body}
+        </div>
       </div>
     </openclaw-modal-dialog>
   `;

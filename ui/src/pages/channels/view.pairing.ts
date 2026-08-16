@@ -295,62 +295,72 @@ export function renderChannelPairingPrompt(props: ChannelsProps) {
     ? t("channels.pairing.approveDialogTitle")
     : t("channels.pairing.dismissDialogTitle");
   return html`
-    <openclaw-modal-dialog label=${dialogTitle} @modal-cancel=${props.onPairingPromptCancel}>
-      <div class="channels-pairing-dialog">
-        <div class="settings-row__title">${dialogTitle}</div>
-        <div class="settings-row__desc">
-          ${request.senderId} · ${request.channelLabel} · ${requestAccountName(request)}
-          (${request.accountId})
+    <openclaw-modal-dialog
+      class="dialog-md"
+      label=${dialogTitle}
+      @modal-cancel=${props.onPairingPromptCancel}
+    >
+      <div class="dialog-surface channels-pairing-dialog">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div class="dialog-title">${dialogTitle}</div>
+            <div class="dialog-subtitle">
+              ${request.senderId} · ${request.channelLabel} · ${requestAccountName(request)}
+              (${request.accountId})
+            </div>
+          </div>
         </div>
-        <div class="callout ${approving ? "info" : "warn"}">
-          ${approving
-            ? t("channels.pairing.approveExplanation")
-            : t("channels.pairing.dismissExplanation")}
+        <div class="dialog-body dialog-body--stack">
+          <div class="callout ${approving ? "info" : "warn"}">
+            ${approving
+              ? t("channels.pairing.approveExplanation")
+              : t("channels.pairing.dismissExplanation")}
+          </div>
+          ${props.pairingError
+            ? html`<div class="callout danger" role="alert">${props.pairingError}</div>`
+            : nothing}
+          ${approving && request.notifySupported
+            ? html`
+                <label class="channels-pairing-dialog__option">
+                  <input
+                    type="checkbox"
+                    .checked=${prompt.notify}
+                    @change=${(event: Event) =>
+                      props.onPairingPromptChange({
+                        notify:
+                          event.currentTarget instanceof HTMLInputElement
+                            ? event.currentTarget.checked
+                            : false,
+                      })}
+                  />
+                  <span>${t("channels.pairing.notifyRequester")}</span>
+                </label>
+              `
+            : nothing}
+          ${approving && ownerMissing && props.canAdmin
+            ? html`
+                <label class="channels-pairing-dialog__option">
+                  <input
+                    type="checkbox"
+                    .checked=${prompt.bootstrapCommandOwner}
+                    @change=${(event: Event) =>
+                      props.onPairingPromptChange({
+                        bootstrapCommandOwner:
+                          event.currentTarget instanceof HTMLInputElement
+                            ? event.currentTarget.checked
+                            : false,
+                      })}
+                  />
+                  <span>${t("channels.pairing.makeCommandOwner")}</span>
+                </label>
+                <div class="dialog-subtitle">${t("channels.pairing.commandOwnerHelp")}</div>
+              `
+            : nothing}
+          ${approving && ownerMissing && !props.canAdmin
+            ? html`<div class="callout warn">${t("channels.pairing.commandOwnerNeedsAdmin")}</div>`
+            : nothing}
         </div>
-        ${props.pairingError
-          ? html`<div class="callout danger" role="alert">${props.pairingError}</div>`
-          : nothing}
-        ${approving && request.notifySupported
-          ? html`
-              <label class="channels-pairing-dialog__option">
-                <input
-                  type="checkbox"
-                  .checked=${prompt.notify}
-                  @change=${(event: Event) =>
-                    props.onPairingPromptChange({
-                      notify:
-                        event.currentTarget instanceof HTMLInputElement
-                          ? event.currentTarget.checked
-                          : false,
-                    })}
-                />
-                <span>${t("channels.pairing.notifyRequester")}</span>
-              </label>
-            `
-          : nothing}
-        ${approving && ownerMissing && props.canAdmin
-          ? html`
-              <label class="channels-pairing-dialog__option">
-                <input
-                  type="checkbox"
-                  .checked=${prompt.bootstrapCommandOwner}
-                  @change=${(event: Event) =>
-                    props.onPairingPromptChange({
-                      bootstrapCommandOwner:
-                        event.currentTarget instanceof HTMLInputElement
-                          ? event.currentTarget.checked
-                          : false,
-                    })}
-                />
-                <span>${t("channels.pairing.makeCommandOwner")}</span>
-              </label>
-              <div class="settings-row__desc">${t("channels.pairing.commandOwnerHelp")}</div>
-            `
-          : nothing}
-        ${approving && ownerMissing && !props.canAdmin
-          ? html`<div class="callout warn">${t("channels.pairing.commandOwnerNeedsAdmin")}</div>`
-          : nothing}
-        <div class="channels-pairing-dialog__actions">
+        <div class="dialog-footer">
           <button
             type="button"
             class=${approving ? "btn primary" : "btn danger"}

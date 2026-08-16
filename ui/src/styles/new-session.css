@@ -398,23 +398,7 @@ wa-popover.new-session-page__project-popover::part(body) {
   color: var(--muted);
 }
 
-.connect-machine-dialog {
-  --openclaw-modal-width: 480px;
-}
-
-.connect-machine-dialog__card {
-  padding: 18px;
-}
-
-.connect-machine-dialog__card h2,
-.connect-machine-dialog__card p {
-  margin-block: 0;
-}
-
-.connect-machine-dialog__body {
-  margin-top: 16px;
-}
-
+/* Surface, header, body and footer come from the dialog grammar. */
 .connect-machine-dialog__status,
 .connect-machine-dialog__hint {
   color: var(--muted);
@@ -437,6 +421,9 @@ wa-popover.new-session-page__project-popover::part(body) {
   user-select: all;
 }
 
+/* Neither of these is the dialog's answer — one reissues the code, the
+   other leaves for device management — so the row splits instead of
+   pretending to be a confirm/cancel pair. */
 .connect-machine-dialog__actions {
   justify-content: space-between;
 }

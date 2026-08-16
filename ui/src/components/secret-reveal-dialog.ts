@@ -70,15 +70,17 @@ export function showSecretRevealDialog(options: SecretRevealDialogOptions): Prom
             @modal-cancel=${handleCancel}
           >
             <div class="dialog-surface">
-              <div class="secret-reveal__header">
+              <div class="dialog-header secret-reveal__header">
                 ${options.status === "success"
                   ? html`<span class="secret-reveal__status" aria-hidden="true"
                       >${icons.check}</span
                     >`
                   : nothing}
-                <div class="dialog-title">${options.title}</div>
+                <div class="dialog-heading">
+                  <div class="dialog-title">${options.title}</div>
+                </div>
               </div>
-              <div class="secret-reveal__body"><p>${options.message}</p></div>
+              <div class="dialog-body secret-reveal__body"><p>${options.message}</p></div>
               ${options.callout
                 ? html`<div class="callout info secret-reveal__callout">${options.callout}</div>`
                 : nothing}

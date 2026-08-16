@@ -161,102 +161,106 @@ export function showSessionGroupDefaultsDialog(options: Options): Promise<void> 
           >
             <form class="dialog-surface" @submit=${handleSubmit}>
               <div class="dialog-header">
-                <div class="dialog-title">
-                  ${t("sessionsView.groupDefaultsTitle", { group: options.group })}
+                <div class="dialog-heading">
+                  <div class="dialog-title">
+                    ${t("sessionsView.groupDefaultsTitle", { group: options.group })}
+                  </div>
                 </div>
               </div>
-              <div class="field">
-                <span>${t("sessionsView.groupDefaultsCwd")}</span>
-                <span class="new-session-page__select">
-                  <button
-                    id="session-group-defaults-folder-trigger"
-                    type="button"
-                    class="new-session-page__trigger"
-                    aria-label="${t("sessionsView.groupDefaultsCwd")}: ${folderLabel}"
-                    aria-haspopup="dialog"
-                    ?disabled=${submitting}
+              <div class="dialog-body dialog-body--stack">
+                <div class="field">
+                  <span>${t("sessionsView.groupDefaultsCwd")}</span>
+                  <span class="new-session-page__select">
+                    <button
+                      id="session-group-defaults-folder-trigger"
+                      type="button"
+                      class="new-session-page__trigger"
+                      aria-label="${t("sessionsView.groupDefaultsCwd")}: ${folderLabel}"
+                      aria-haspopup="dialog"
+                      ?disabled=${submitting}
+                    >
+                      <span class="new-session-page__target-icon" aria-hidden="true"
+                        >${icons.folder}</span
+                      >
+                      <span class="new-session-page__trigger-label">${folderLabel}</span>
+                      <span class="new-session-page__trigger-chevron" aria-hidden="true"
+                        >${icons.chevronDown}</span
+                      >
+                    </button>
+                  </span>
+                  <wa-popover
+                    class="new-session-page__select new-session-page__project-popover new-session-page__picker-popover session-group-defaults__folder-popover"
+                    for="session-group-defaults-folder-trigger"
+                    placement="bottom-start"
+                    without-arrow
+                    @wa-hide=${showPickerRoot}
                   >
-                    <span class="new-session-page__target-icon" aria-hidden="true"
-                      >${icons.folder}</span
-                    >
-                    <span class="new-session-page__trigger-label">${folderLabel}</span>
-                    <span class="new-session-page__trigger-chevron" aria-hidden="true"
-                      >${icons.chevronDown}</span
-                    >
-                  </button>
-                </span>
-                <wa-popover
-                  class="new-session-page__select new-session-page__project-popover new-session-page__picker-popover session-group-defaults__folder-popover"
-                  for="session-group-defaults-folder-trigger"
-                  placement="bottom-start"
-                  without-arrow
-                  @wa-hide=${showPickerRoot}
-                >
-                  ${browserVisible
-                    ? renderPlaceBrowser({
-                        listing: browserListing,
-                        target: browserTarget,
-                        loading: browserLoading,
-                        error: browserError,
-                        pathDraft: browserPathDraft,
-                        usablePath: usableBrowserPath,
-                        registerProjectPath: null,
-                        registeringProject: false,
-                        onPathDraftChange: (value) => {
-                          browserPathDraft = value;
-                          paint();
-                        },
-                        onNavigate: (path) => void loadDirectory(path),
-                        onBack: showPickerRoot,
-                        onRegisterProject: () => undefined,
-                        onClose: showPickerRoot,
-                        onApplyFolder: applyFolder,
-                      })
-                    : html`
-                        <div class="new-session-page__picker-root">
-                          ${renderSessionMenuItem(
-                            {
-                              value: "agent-workspace",
-                              label: t("sessionsView.groupDefaultsCwdPlaceholder"),
-                              icon: icons.folder,
-                              checked: !trimmedCwd,
-                              onSelect: () => applyFolder(""),
-                            },
-                            submitting,
-                          )}
-                          <button
-                            type="button"
-                            class="session-menu__item"
-                            data-value="browse"
-                            aria-pressed="false"
-                            ?disabled=${submitting}
-                            @click=${showBrowser}
-                          >
-                            <span class="session-menu__check" aria-hidden="true"></span>
-                            <span class="session-menu__text">${t("newSession.browse")}</span>
-                            <span class="new-session-page__menu-chevron" aria-hidden="true"
-                              >${icons.chevronRight}</span
+                    ${browserVisible
+                      ? renderPlaceBrowser({
+                          listing: browserListing,
+                          target: browserTarget,
+                          loading: browserLoading,
+                          error: browserError,
+                          pathDraft: browserPathDraft,
+                          usablePath: usableBrowserPath,
+                          registerProjectPath: null,
+                          registeringProject: false,
+                          onPathDraftChange: (value) => {
+                            browserPathDraft = value;
+                            paint();
+                          },
+                          onNavigate: (path) => void loadDirectory(path),
+                          onBack: showPickerRoot,
+                          onRegisterProject: () => undefined,
+                          onClose: showPickerRoot,
+                          onApplyFolder: applyFolder,
+                        })
+                      : html`
+                          <div class="new-session-page__picker-root">
+                            ${renderSessionMenuItem(
+                              {
+                                value: "agent-workspace",
+                                label: t("sessionsView.groupDefaultsCwdPlaceholder"),
+                                icon: icons.folder,
+                                checked: !trimmedCwd,
+                                onSelect: () => applyFolder(""),
+                              },
+                              submitting,
+                            )}
+                            <button
+                              type="button"
+                              class="session-menu__item"
+                              data-value="browse"
+                              aria-pressed="false"
+                              ?disabled=${submitting}
+                              @click=${showBrowser}
                             >
-                          </button>
-                        </div>
-                      `}
-                </wa-popover>
-                <span class="muted" title=${trimmedCwd || nothing}
-                  >${trimmedCwd || t("sessionsView.groupDefaultsCwdHint")}</span
-                >
+                              <span class="session-menu__check" aria-hidden="true"></span>
+                              <span class="session-menu__text">${t("newSession.browse")}</span>
+                              <span class="new-session-page__menu-chevron" aria-hidden="true"
+                                >${icons.chevronRight}</span
+                              >
+                            </button>
+                          </div>
+                        `}
+                  </wa-popover>
+                  <span class="muted" title=${trimmedCwd || nothing}
+                    >${trimmedCwd || t("sessionsView.groupDefaultsCwdHint")}</span
+                  >
+                </div>
+                <label class="field">
+                  <span>${t("sessionsView.groupDefaultsMode")}</span>
+                  <select name="mode" ?disabled=${submitting}>
+                    <option value="local" ?selected=${!options.defaults.worktree}>
+                      ${t("sessionsView.groupDefaultsLocal")}
+                    </option>
+                    <option value="worktree" ?selected=${options.defaults.worktree}>
+                      ${t("sessionsView.groupDefaultsWorktree")}
+                    </option>
+                  </select>
+                </label>
+                ${failure ? html`<div class="dialog-error" role="alert">${failure}</div>` : nothing}
               </div>
-              <label class="field">
-                <span>${t("sessionsView.groupDefaultsMode")}</span>
-                <select name="mode" ?disabled=${submitting}>
-                  <option value="local" ?selected=${!options.defaults.worktree}>
-                    ${t("sessionsView.groupDefaultsLocal")}
-                  </option>
-                  <option value="worktree" ?selected=${options.defaults.worktree}>
-                    ${t("sessionsView.groupDefaultsWorktree")}
-                  </option>
-                </select>
-              </label>
-              ${failure ? html`<div class="dialog-error" role="alert">${failure}</div>` : nothing}
               <div class="dialog-footer">
                 <button type="submit" class="btn primary" ?disabled=${submitting}>
                   ${t("common.save")}

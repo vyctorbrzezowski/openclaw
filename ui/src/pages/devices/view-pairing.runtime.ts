@@ -76,14 +76,14 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
 
   return html`
     <openclaw-modal-dialog label=${title} description=${description} @modal-cancel=${props.onClose}>
-      <section class="device-pair-setup">
-        <header class="device-pair-setup__header">
+      <section class="dialog-surface device-pair-setup">
+        <header class="dialog-header dialog-header--centered device-pair-setup__header">
           <div class="device-pair-setup__phone" aria-hidden="true">
             ${isNodeSetup ? icons.server : icons.smartphone}
           </div>
-          <div>
-            <h2>${title}</h2>
-            <p>${description}</p>
+          <div class="dialog-heading">
+            <h2 class="dialog-title dialog-title--hero">${title}</h2>
+            <p class="dialog-subtitle">${description}</p>
             ${lifecycle.phase !== "success" && !isNodeSetup
               ? html`<p class="device-pair-setup__get-apps">
                   ${t("devices.pairing.noApp")}
@@ -303,7 +303,7 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
             : nothing}
         </div>
 
-        <footer class="device-pair-setup__footer">
+        <footer class="dialog-footer device-pair-setup__footer">
           <a
             href=${pairingDocsUrl}
             target=${EXTERNAL_LINK_TARGET}

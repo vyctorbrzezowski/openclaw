@@ -957,47 +957,16 @@
   border: 1px solid color-mix(in oklab, var(--accent) 24%, transparent);
 }
 
+/* Surface, header and body padding come from the dialog grammar
+   (styles/dialog.css); a wiki page reads better at a fixed reader
+   height than at whatever the content happens to be. */
 .dreams-diary__preview-panel {
-  display: flex;
-  flex-direction: column;
-  width: min(1120px, 100%);
   height: min(840px, calc(100dvh - 64px));
-  min-height: 0;
-  border-radius: 18px;
-  border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
-  background: color-mix(in oklab, var(--panel) 96%, transparent);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
-}
-
-.dreams-diary__preview-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border-bottom: 1px solid color-mix(in oklab, var(--border) 62%, transparent);
-}
-
-.dreams-diary__preview-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .dreams-diary__preview-meta {
-  margin-top: 6px;
-  font-size: 12px; /* was 11px */
-  line-height: 1.5;
-  color: var(--muted);
+  font-size: 12px;
   overflow-wrap: anywhere;
-}
-
-.dreams-diary__preview-body {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 20px;
 }
 
 .dreams-diary__preview-hint {

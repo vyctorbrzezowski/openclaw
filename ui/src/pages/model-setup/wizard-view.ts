@@ -27,6 +27,7 @@ export function renderModelSetupWizard(props: WizardViewProps): TemplateResult |
     props.state.phase === "done";
   return html`
     <openclaw-modal-dialog
+      class="dialog-md"
       label=${t(
         props.mode === "prepare"
           ? "modelSetup.wizard.prepareDialogLabel"
@@ -34,19 +35,21 @@ export function renderModelSetupWizard(props: WizardViewProps): TemplateResult |
       )}
       @modal-cancel=${canCancel ? props.onCancel : props.onClose}
     >
-      <div class="model-setup-wizard">
-        <div class="model-setup-wizard__header">
-          <h2>
-            ${props.state.phase === "step" && props.state.step.title
-              ? props.state.step.title
-              : t(
-                  props.mode === "prepare"
-                    ? "modelSetup.wizard.prepareTitle"
-                    : "modelSetup.wizard.title",
-                )}
-          </h2>
+      <div class="dialog-surface dialog-surface--divided model-setup-wizard">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <h2 class="dialog-title">
+              ${props.state.phase === "step" && props.state.step.title
+                ? props.state.step.title
+                : t(
+                    props.mode === "prepare"
+                      ? "modelSetup.wizard.prepareTitle"
+                      : "modelSetup.wizard.title",
+                  )}
+            </h2>
+          </div>
         </div>
-        <div class="model-setup-wizard__body">
+        <div class="dialog-body dialog-body--stack model-setup-wizard__body">
           ${props.refreshWarning
             ? html`<div class="callout warning" role="alert">${props.refreshWarning}</div>`
             : nothing}
@@ -95,7 +98,7 @@ export function renderModelSetupWizard(props: WizardViewProps): TemplateResult |
         ${props.state.phase === "step"
           ? nothing
           : html`
-              <div class="model-setup-wizard__footer">
+              <div class="dialog-footer">
                 <button
                   type="button"
                   class="btn"

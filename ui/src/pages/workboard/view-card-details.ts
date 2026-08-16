@@ -256,29 +256,29 @@ export function renderCardDetailsPanel(props: WorkboardProps) {
   ];
   return html`
     <openclaw-modal-dialog
-      class="drawer"
+      class="drawer dialog-sm"
       label=${card.title}
       description=${task && taskIsAuthoritative
         ? taskDetail(task)
         : (lifecycle.session?.displayName ?? formatted.detail)}
-      style="--openclaw-modal-width: min(460px, 100vw); --openclaw-modal-max-height: 100dvh;"
+      style="--openclaw-modal-max-height: 100dvh;"
       @modal-cancel=${() => {
         closeCardDetails(state);
         props.onRequestUpdate?.();
       }}
     >
       <aside id=${workboardCardDetailDrawerId} class="workboard-detail-drawer">
-        <div class="workboard-detail">
-          <header class="workboard-detail__header">
-            <div>
+        <div class="dialog-surface dialog-surface--bare workboard-detail">
+          <header class="dialog-header">
+            <div class="dialog-heading">
               <span class="workboard-card__priority">${formatPriorityLabel(card.priority)}</span>
-              <h2 id=${workboardCardDetailTitleId}>
+              <h2 id=${workboardCardDetailTitleId} class="dialog-title">
                 <span class="sr-only">${t("workboard.detailTitle")}: </span>${card.title}
               </h2>
             </div>
             <openclaw-tooltip .content=${t("common.cancel")}>
               <button
-                class="btn btn--icon workboard-card__icon"
+                class="dialog-close"
                 type="button"
                 aria-label=${t("common.cancel")}
                 @click=${() => {

@@ -624,29 +624,25 @@ function renderWikiPreviewOverlay(props: DreamingProps) {
   return html`
     <openclaw-modal-dialog
       .label=${state.wikiPreviewTitle || t("dreaming.wiki.previewFallbackTitle")}
-      style="--openclaw-modal-width: 1120px"
+      class="dialog-2xl"
       @modal-cancel=${() => closeWikiPreview(props)}
     >
-      <div class="dreams-diary__preview-panel">
-        <div class="dreams-diary__preview-header">
-          <div>
-            <div class="dreams-diary__preview-title">
+      <div class="dialog-surface dialog-surface--divided dreams-diary__preview-panel">
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div class="dialog-title">
               ${state.wikiPreviewTitle || t("dreaming.wiki.previewFallbackTitle")}
             </div>
-            <div class="dreams-diary__preview-meta">
+            <div class="dialog-subtitle dreams-diary__preview-meta">
               ${state.wikiPreviewPath}
               ${state.wikiPreviewUpdatedAt ? ` · ${state.wikiPreviewUpdatedAt}` : ""}
             </div>
           </div>
-          <button
-            type="button"
-            class="btn btn--subtle btn--sm"
-            @click=${() => closeWikiPreview(props)}
-          >
+          <button type="button" class="btn btn--sm" @click=${() => closeWikiPreview(props)}>
             ${t("dreaming.wiki.close")}
           </button>
         </div>
-        <div class="dreams-diary__preview-body">
+        <div class="dialog-body dreams-diary__preview-body">
           ${state.wikiPreviewLoading
             ? html`<div class="dreams-diary__empty-text">${t("dreaming.wiki.loadingPage")}</div>`
             : state.wikiPreviewError

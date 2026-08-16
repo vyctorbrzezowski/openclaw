@@ -3392,8 +3392,9 @@ td.data-table-key-col {
   font-size: 12px;
 }
 
+/* The success mark leads the title, so this header centres its row rather
+   than taking the grammar's flex-start alignment. */
 .secret-reveal__header {
-  display: flex;
   align-items: center;
   gap: 12px;
 }
@@ -3421,7 +3422,6 @@ td.data-table-key-col {
 /* The reassurance carries full text weight, unlike the muted .dialog-subtitle it
    replaced; this is the zone that should read as settled rather than incidental. */
 .secret-reveal__body {
-  margin-top: 16px;
   color: var(--text);
   font-size: 13px;
   line-height: 1.6;
@@ -4879,16 +4879,6 @@ td.data-table-key-col {
   }
 }
 
-.cmd-palette {
-  width: 100%;
-  overflow: hidden;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  animation: scale-in 0.15s ease-out;
-}
-
 .cmd-palette__label {
   position: absolute;
   width: 1px;
@@ -5018,43 +5008,30 @@ td.data-table-key-col {
   transform: rotate(-90deg);
 }
 
-/* Mobile pairing */
+/* Mobile pairing. Surface, header layout and title scale come from the
+   dialog grammar; the panel scrolls as a whole (rather than a fixed
+   header over a scrolling body) because the pairing QR and the access
+   picker have to stay in one visual column. */
 .device-pair-setup {
-  max-height: calc(100dvh - 48px);
+  padding: 0;
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--card) 96%, black 4%);
-  box-shadow: var(--shadow-xl);
 }
 
 .device-pair-setup__header {
   position: relative;
-  display: grid;
-  justify-items: center;
   gap: 12px;
   padding: 28px 52px 18px;
-  text-align: center;
 }
 
-.device-pair-setup__header h2 {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
-.device-pair-setup__header p {
+/* The description is prose, so it takes a measure rather than the panel
+   width the rest of the header stack uses. */
+.device-pair-setup__header .dialog-subtitle {
   max-width: 390px;
-  margin: 7px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
 }
 
-.device-pair-setup__header p.device-pair-setup__get-apps {
-  margin-top: 2px;
+.device-pair-setup__get-apps {
+  margin: 0;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -5384,6 +5361,7 @@ td.data-table-key-col {
   border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg-elevated) 45%, transparent);
   font-size: 13px;
+  margin-top: 0;
 }
 
 .device-pair-setup__footer a {

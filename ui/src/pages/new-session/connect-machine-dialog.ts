@@ -30,19 +30,19 @@ export function renderConnectMachineDialog(props: ConnectMachineDialogProps) {
 
   return html`
     <openclaw-modal-dialog
-      class="connect-machine-dialog"
+      class="connect-machine-dialog dialog-sm"
       label=${title}
       description=${t("newSession.connectMachineDescription")}
       @modal-cancel=${props.onClose}
     >
-      <section class="dialog-surface connect-machine-dialog__card">
+      <section class="dialog-surface">
         <header class="dialog-header">
           <div class="dialog-heading">
             <h2 class="dialog-title">${title}</h2>
             <p class="dialog-subtitle">${t("newSession.connectMachineDescription")}</p>
           </div>
           <button
-            class="btn btn--icon btn--ghost"
+            class="dialog-close"
             type="button"
             aria-label=${t("common.dismiss")}
             @click=${props.onClose}
@@ -51,7 +51,7 @@ export function renderConnectMachineDialog(props: ConnectMachineDialogProps) {
           </button>
         </header>
 
-        <div class="connect-machine-dialog__body">
+        <div class="dialog-body connect-machine-dialog__body">
           ${props.loading && !command
             ? html`<p class="connect-machine-dialog__status" role="status">
                 ${t("newSession.connectMachineGenerating")}

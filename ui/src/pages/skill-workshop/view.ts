@@ -4,6 +4,7 @@ import { html, nothing } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import "../../components/file-preview-modal-registration.ts";
+import { icons } from "../../components/icons.ts";
 import "../../components/modal-dialog.ts";
 import "../../components/tooltip.ts";
 import { t } from "../../i18n/index.ts";
@@ -126,30 +127,30 @@ function renderRevisionDialog(props: SkillWorkshopProps, proposal: SkillWorkshop
     <openclaw-modal-dialog
       .label=${`${t("skillWorkshop.revision.title", { verb })}: ${proposal.slug}`}
       .description=${t("skillWorkshop.revision.description")}
-      style="--openclaw-modal-width: 560px"
+      class="dialog-md"
       @modal-cancel=${props.onRevisionCancel}
     >
-      <section class="sw-revision-dialog ${busy ? "sw-revision-dialog--sending" : ""}">
-        <div class="sw-revision-dialog__head">
-          <div>
-            <div class="sw-revision-dialog__eyebrow">
-              ${t("skillWorkshop.revision.title", { verb })}
-            </div>
-            <h2 id="sw-revision-title">${proposal.slug}</h2>
+      <section
+        class="dialog-surface sw-revision-dialog ${busy ? "sw-revision-dialog--sending" : ""}"
+      >
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <div class="dialog-eyebrow">${t("skillWorkshop.revision.title", { verb })}</div>
+            <h2 id="sw-revision-title" class="dialog-title">${proposal.slug}</h2>
           </div>
           <openclaw-tooltip content=${t("skillWorkshop.actions.close")}>
             <button
               type="button"
-              class="sw-revision-dialog__close"
+              class="dialog-close"
               aria-label=${t("skillWorkshop.actions.close")}
               ?disabled=${Boolean(props.actionBusy)}
               @click=${props.onRevisionCancel}
             >
-              ×
+              ${icons.x}
             </button>
           </openclaw-tooltip>
         </div>
-        <p class="sw-revision-dialog__copy">${t("skillWorkshop.revision.description")}</p>
+        <p class="dialog-note">${t("skillWorkshop.revision.description")}</p>
         <textarea
           class="sw-revision-dialog__input"
           autofocus
@@ -167,22 +168,22 @@ function renderRevisionDialog(props: SkillWorkshopProps, proposal: SkillWorkshop
               </div>
             `
           : nothing}
-        <div class="sw-revision-dialog__actions">
+        <div class="dialog-footer">
           <button
             type="button"
-            class="sw-btn sw-btn--ghost"
-            ?disabled=${Boolean(props.actionBusy)}
-            @click=${props.onRevisionCancel}
-          >
-            ${t("skillWorkshop.actions.cancel")}
-          </button>
-          <button
-            type="button"
-            class="sw-btn sw-btn--primary ${busy ? "is-busy" : ""}"
+            class="btn primary"
             ?disabled=${!canSubmit}
             @click=${() => props.onRevisionSubmit(proposal.key)}
           >
             ${busy ? t("skillWorkshop.actions.sending") : t("skillWorkshop.revision.send")}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            ?disabled=${Boolean(props.actionBusy)}
+            @click=${props.onRevisionCancel}
+          >
+            ${t("skillWorkshop.actions.cancel")}
           </button>
         </div>
       </section>

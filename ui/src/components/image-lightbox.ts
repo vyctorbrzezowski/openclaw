@@ -49,19 +49,30 @@ class OpenClawImageLightbox extends OpenClawLitElement {
       --openclaw-modal-max-height: calc(100dvh - 40px);
     }
 
+    /* The dialog grammar's --bare case: the shell sizes and dismisses it,
+       the panel keeps the house radius, corner and lift, and only the fill
+       departs. Shadow DOM cannot see styles/dialog.css, so the shared
+       values are restated rather than composed. */
     .lightbox {
-      width: min(1280px, calc(100vw - 40px));
-      height: min(900px, calc(100dvh - 40px));
       display: grid;
+      width: 100%;
+      height: min(900px, calc(100dvh - 40px));
       grid-template-rows: auto minmax(0, 1fr);
-      overflow: hidden;
       border: 1px solid color-mix(in srgb, var(--border-strong) 80%, transparent);
       border-radius: var(--radius-lg);
       /* Deliberately darker than any theme surface: the lightbox is a
          photo-viewer chrome that stays near-black in light mode too, so the
          white text and white-alpha borders below assume this literal. */
       background: #07090f;
-      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.6);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+    }
+
+    @supports (corner-shape: superellipse(1.5)) {
+      .lightbox {
+        border-radius: calc(14px * var(--openclaw-corner-radius-scale));
+        corner-shape: superellipse(1.5);
+      }
     }
 
     .header {
@@ -113,9 +124,11 @@ class OpenClawImageLightbox extends OpenClawLitElement {
       background: rgba(255, 255, 255, 0.14);
     }
 
+    /* Inset, like every other dialog control: these buttons sit against the
+       lightbox edge, where an outset ring reads as the button growing. */
     .action:focus-visible {
       outline: 2px solid #fff;
-      outline-offset: 2px;
+      outline-offset: -2px;
     }
 
     .close {
@@ -163,7 +176,6 @@ class OpenClawImageLightbox extends OpenClawLitElement {
       }
 
       .lightbox {
-        width: calc(100vw - 24px);
         height: 90dvh;
         border: 0;
         border-radius: 0;

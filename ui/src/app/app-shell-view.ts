@@ -155,14 +155,14 @@ function renderDevicePairSetupLoading(props: DevicePairSetupProps) {
     description=${message}
     @modal-cancel=${props.onClose}
   >
-    <section class="device-pair-setup" aria-busy="true">
-      <header class="device-pair-setup__header">
-        <div>
-          <h2>${title}</h2>
-          <p role="status">${message}</p>
+    <section class="dialog-surface device-pair-setup" aria-busy="true">
+      <header class="dialog-header dialog-header--centered device-pair-setup__header">
+        <div class="dialog-heading">
+          <h2 class="dialog-title dialog-title--hero">${title}</h2>
+          <p class="dialog-subtitle" role="status">${message}</p>
         </div>
       </header>
-      <footer class="device-pair-setup__footer">
+      <footer class="dialog-footer device-pair-setup__footer">
         <button class="btn btn--ghost" type="button" @click=${props.onClose}>
           ${t("common.close")}
         </button>
@@ -182,16 +182,16 @@ function renderDevicePairSetupLoadFailure(host: ShellViewHost, props: DevicePair
     description=${message}
     @modal-cancel=${props.onClose}
   >
-    <section class="device-pair-setup">
-      <header class="device-pair-setup__header">
-        <div>
-          <h2>${title}</h2>
-          <p>${message}</p>
+    <section class="dialog-surface device-pair-setup">
+      <header class="dialog-header dialog-header--centered device-pair-setup__header">
+        <div class="dialog-heading">
+          <h2 class="dialog-title dialog-title--hero">${title}</h2>
+          <p class="dialog-subtitle">${message}</p>
         </div>
       </header>
-      <footer class="device-pair-setup__footer">
+      <footer class="dialog-footer device-pair-setup__footer">
         <button
-          class="btn btn--primary"
+          class="btn primary"
           type="button"
           @click=${() => host.retryDevicePairSetupRenderer()}
         >

@@ -131,6 +131,25 @@ openclaw-modal-dialog.dialog-2xl {
   line-height: 1.5;
 }
 
+/* Two title scales, not five. The hero pair is for the handful of
+   dialogs that are an arrival rather than a question — device pairing,
+   setup success, the memory-import offer — which shipped at 20px and
+   24px with three different header layouts between them. */
+.dialog-header--centered {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.dialog-header--centered .dialog-heading {
+  justify-items: center;
+}
+
+.dialog-title--hero {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
 /* Header dismissal. The focus ring is inset: a dialog's close button
    sits against the panel edge, and an outset ring there reads as the
    button growing rather than as focus. */
@@ -171,6 +190,16 @@ openclaw-modal-dialog.dialog-2xl {
   margin-top: 14px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Body rhythm for dialogs whose content is a short stack of blocks
+   (callouts, option rows, a field or two) rather than one flowing
+   document. Replaces the per-dialog `display: grid; gap` each of them
+   used to declare on its own panel. */
+.dialog-body--stack {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 /* Scroll containers are focusable for keyboard scrolling; keep that

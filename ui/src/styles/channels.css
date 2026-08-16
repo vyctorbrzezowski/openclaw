@@ -73,18 +73,6 @@
 
 /* ---------- detail overlay ---------- */
 
-.channels-detail {
-  display: flex;
-  flex-direction: column;
-  width: min(680px, calc(100vw - 48px));
-  max-height: min(85dvh, 860px);
-  overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
-}
-
 .channels-detail__header {
   position: relative;
   flex: 0 0 auto;
@@ -100,21 +88,12 @@
   gap: var(--space-2);
 }
 
-.channels-detail__header-actions .btn {
+/* The action row floats over the cover art, so its controls stay legible only
+   while they keep a translucent plate — including the shared close button. */
+.channels-detail__header-actions .btn,
+.channels-detail__header-actions .dialog-close {
   background: color-mix(in srgb, var(--bg) 55%, transparent);
   backdrop-filter: blur(4px);
-}
-
-.channels-detail__close {
-  width: 32px;
-  height: 32px;
-  padding: 7px;
-}
-
-.channels-detail__body {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) var(--space-5);
 }
 
 /* ---------- DM sender access requests ---------- */
@@ -185,17 +164,6 @@
   line-height: 1.5;
 }
 
-.channels-pairing-dialog {
-  display: grid;
-  width: min(520px, calc(100vw - 48px));
-  gap: var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
-}
-
 .channels-pairing-dialog__option {
   display: flex;
   align-items: flex-start;
@@ -206,13 +174,6 @@
 
 .channels-pairing-dialog__option input {
   margin-top: 3px;
-}
-
-.channels-pairing-dialog__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {
@@ -228,47 +189,11 @@
 
 /* ---------- setup wizard dialog ---------- */
 
-.channels-wizard {
-  display: flex;
-  flex-direction: column;
-  width: min(540px, calc(100vw - 48px));
-  max-height: min(85dvh, 760px);
-  overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
-}
-
+/* The channel tile leads the title instead of a trailing close button, so this
+   header packs from the start edge rather than splitting to both edges. */
 .channels-wizard__header {
-  display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) 0;
-}
-
-.channels-wizard__heading {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.channels-wizard__heading h2 {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: var(--control-ui-text-lg);
-  font-weight: 660;
-  letter-spacing: -0.015em;
-}
-
-.channels-wizard__heading .muted {
-  font-size: var(--control-ui-text-sm);
-}
-
-.channels-wizard__body {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  justify-content: flex-start;
 }
 
 .channels-wizard__note {

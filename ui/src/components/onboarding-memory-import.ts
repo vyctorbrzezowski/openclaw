@@ -392,27 +392,31 @@ class OnboardingMemoryImport extends OpenClawLightDomElement {
     const body = t("onboarding.memoryImport.body");
     return html`
       <openclaw-modal-dialog
-        class="onboarding-memory-import-dialog"
+        class="onboarding-memory-import-dialog dialog-lg"
         label=${title}
         description=${body}
         @modal-cancel=${(event: Event) => this.handleModalCancel(event)}
       >
-        <section class="onboarding-memory-import">
-          <header>
-            <h2>${this.done ? t("onboarding.memoryImport.doneTitle") : title}</h2>
-            <p>
-              ${this.done
-                ? t("onboarding.memoryImport.doneBody", {
-                    migrated: String(migrated),
-                    skipped: String(skipped),
-                  })
-                : body}
-            </p>
+        <section class="dialog-surface dialog-surface--divided onboarding-memory-import">
+          <header class="dialog-header">
+            <div class="dialog-heading">
+              <h2 class="dialog-title dialog-title--hero">
+                ${this.done ? t("onboarding.memoryImport.doneTitle") : title}
+              </h2>
+              <p class="dialog-subtitle">
+                ${this.done
+                  ? t("onboarding.memoryImport.doneBody", {
+                      migrated: String(migrated),
+                      skipped: String(skipped),
+                    })
+                  : body}
+              </p>
+            </div>
           </header>
-          <ul>
+          <ul class="dialog-body">
             ${providers.map((provider) => this.renderProvider(provider))}
           </ul>
-          <footer>
+          <footer class="dialog-footer">
             ${this.done
               ? html`<button
                   class="btn primary"

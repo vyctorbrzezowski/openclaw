@@ -10,8 +10,7 @@
   gap: 16px;
 }
 
-.model-setup__intro h1,
-.model-setup-wizard h2 {
+.model-setup__intro h1 {
   margin: 0;
   font-size: 20px;
 }
@@ -277,8 +276,7 @@
 .model-setup-provider-select__chevron svg,
 .model-setup-provider-select__placeholder-icon svg,
 .model-setup__manual-help svg,
-.model-setup-success__icon svg,
-.model-setup-success__actions svg {
+.model-setup-success__icon svg {
   width: 18px;
   height: 18px;
 }
@@ -323,16 +321,11 @@
 }
 
 .model-setup-success {
-  display: grid;
-  justify-items: center;
-  gap: 18px;
-  width: min(480px, calc(100vw - 48px));
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-lg);
   text-align: center;
+}
+
+.model-setup-success__hero {
+  justify-items: center;
 }
 
 .model-setup-success__icon {
@@ -343,12 +336,12 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--ok) 14%, var(--panel));
+  background: color-mix(in srgb, var(--ok) 14%, var(--card));
   color: var(--ok);
 }
 
 .model-setup-success__icon--provider {
-  background: color-mix(in srgb, var(--text-strong) 8%, var(--panel));
+  background: color-mix(in srgb, var(--text-strong) 8%, var(--card));
 }
 
 .model-setup-success__provider-icon {
@@ -365,10 +358,10 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border: 3px solid var(--panel);
+  border: 3px solid var(--card);
   border-radius: 50%;
   background: var(--ok);
-  color: var(--panel);
+  color: var(--card);
 }
 
 .model-setup-success__status-badge svg {
@@ -407,7 +400,7 @@
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--ok) 32%, var(--border));
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--ok) 7%, var(--panel));
+  background: color-mix(in srgb, var(--ok) 7%, var(--card));
 }
 
 .model-setup-success__summary span {
@@ -420,50 +413,10 @@
   font-size: 14px;
 }
 
-.model-setup-success__actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.model-setup-success__actions .btn {
-  justify-content: center;
-}
-
-.model-setup-wizard {
-  display: grid;
-  min-width: 0;
-  max-height: min(720px, calc(100dvh - 48px));
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-lg);
-}
-
-.model-setup-wizard__header,
-.model-setup-wizard__body,
-.model-setup-wizard__footer {
-  padding: 18px;
-}
-
-.model-setup-wizard__header {
-  border-bottom: 1px solid var(--border);
-}
-
+/* Wizard steps carry long model refs and command lines; the explicit track keeps
+   them inside the column instead of widening the scrolling body. */
 .model-setup-wizard__body {
-  display: grid;
   grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-  gap: 14px;
-  overflow: auto;
-}
-
-.model-setup-wizard__footer {
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid var(--border);
 }
 
 @media (max-width: 640px) {
@@ -479,18 +432,5 @@
 
   .model-setup__row-actions {
     justify-content: flex-start;
-  }
-
-  .model-setup-success {
-    width: calc(100vw - 24px);
-    padding: 22px 18px;
-  }
-
-  .model-setup-success__actions {
-    flex-direction: column-reverse;
-  }
-
-  .model-setup-success__actions .btn {
-    width: 100%;
   }
 }

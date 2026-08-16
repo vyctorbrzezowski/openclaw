@@ -251,38 +251,12 @@
   margin: 0;
 }
 
+/* Surface, header, body and footer come from the dialog grammar
+   (styles/dialog.css); the draft is a divided dialog. What stays here is
+   the definite height, so the middle section scrolls under a fixed title
+   and action row instead of the panel growing past the viewport. */
 .workboard-draft {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 14px;
-  width: 100%;
-  height: min(860px, calc(100vh - 56px));
-  min-height: 0;
-  overflow: hidden;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--panel) 96%, var(--bg) 4%);
-  box-shadow: var(--shadow-xl);
-}
-
-.workboard-modal__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.workboard-modal__header h2 {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.25;
-}
-
-.workboard-modal__header p {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 0.82rem;
+  height: min(860px, calc(100dvh - 48px));
 }
 
 .workboard-draft__main {
@@ -294,10 +268,6 @@
 .workboard-draft__body {
   display: grid;
   gap: 14px;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-right: 2px;
   overscroll-behavior: contain;
 }
 
@@ -429,15 +399,13 @@
   grid-column: 1 / -1;
 }
 
+/* The draft's own footer takes this alongside .dialog-footer; the comment
+   submit row inside the body is the reason the class still carries its own
+   alignment. */
 .workboard-modal__actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.workboard-draft > .workboard-modal__actions {
-  padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .workboard-toolbar .btn,
@@ -1487,23 +1455,6 @@ openclaw-workboard-card-dashboard {
 }
 
 @media (max-width: 900px) {
-  .workboard-draft {
-    width: 100%;
-    height: 100dvh;
-    max-height: none;
-    border: 0;
-    border-radius: 0;
-    padding: 14px;
-  }
-
-  .workboard-modal__header {
-    align-items: center;
-  }
-
-  .workboard-draft__body {
-    padding-right: 0;
-  }
-
   .workboard-toolbar {
     display: flex;
     flex-direction: column;

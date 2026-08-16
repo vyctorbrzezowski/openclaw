@@ -43,16 +43,26 @@ export class OpenClawFilePreviewModal extends OpenClawLitElement {
       display: contents;
     }
 
+    /* The dialog grammar's divided surface, restated: this component renders
+       into a shadow root, so it cannot compose styles/dialog.css. Keep these
+       four values in step with .dialog-surface there. */
     .modal {
+      display: flex;
       width: 100%;
       height: min(780px, 86vh);
-      background: var(--bg);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
-      display: flex;
       flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--card);
+      box-shadow: var(--shadow-xl);
       overflow: hidden;
+    }
+
+    @supports (corner-shape: superellipse(1.5)) {
+      .modal {
+        border-radius: calc(14px * var(--openclaw-corner-radius-scale));
+        corner-shape: superellipse(1.5);
+      }
     }
 
     .head {
@@ -61,7 +71,7 @@ export class OpenClawFilePreviewModal extends OpenClawLitElement {
       gap: 12px;
       padding: 16px 20px;
       border-bottom: 1px solid var(--border);
-      background: var(--bg);
+      background: var(--card);
     }
 
     .search-icon {
@@ -406,19 +416,31 @@ export class OpenClawFilePreviewModal extends OpenClawLitElement {
       flex: 1;
     }
 
+    /* Mirrors the global .btn, which cannot cross this shadow boundary. */
     .button {
-      height: 36px;
-      padding: 0 14px;
-      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
       border: 1px solid var(--border);
+      border-radius: var(--radius-md);
       background: var(--bg-elevated);
       color: var(--text);
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
     }
 
     .button:hover {
       border-color: var(--border-strong);
+      background: var(--bg-hover);
       color: var(--text-strong);
+    }
+
+    .button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
     }
 
     .empty-title {

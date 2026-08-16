@@ -13,15 +13,15 @@ export function renderContinueInTerminalDialog(params: { command: string; onClos
       description=${description}
       @modal-cancel=${params.onClose}
     >
-      <section class="dialog-surface continue-in-terminal-dialog__card">
-        <header class="continue-in-terminal-dialog__header">
-          <h2>${title}</h2>
-          <p>${description}</p>
+      <section class="dialog-surface">
+        <header class="dialog-header">
+          <div class="dialog-heading">
+            <h2 class="dialog-title">${title}</h2>
+            <p class="dialog-subtitle">${description}</p>
+          </div>
         </header>
-        ${renderConnectCommand(params.command)}
-        <p class="continue-in-terminal-dialog__note">
-          ${t("chat.sessionHeader.continueInTerminal.authNote")}
-        </p>
+        <div class="dialog-body">${renderConnectCommand(params.command)}</div>
+        <p class="dialog-note">${t("chat.sessionHeader.continueInTerminal.authNote")}</p>
         <footer class="dialog-footer">
           <button type="button" class="btn primary" @click=${params.onClose}>
             ${t("common.close")}

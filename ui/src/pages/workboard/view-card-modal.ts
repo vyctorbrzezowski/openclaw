@@ -183,9 +183,9 @@ export function renderCardModal(props: WorkboardProps) {
   };
   return html`
     <openclaw-modal-dialog
+      class="dialog-2xl"
       label=${editing ? t("workboard.editCard") : t("workboard.newCard")}
       description=${editing ? t("workboard.editCardHelp") : t("workboard.newCardHelp")}
-      style="--openclaw-modal-width: min(1120px, calc(100vw - 56px)); --openclaw-modal-max-height: calc(100dvh - 56px);"
       @modal-cancel=${(event: Event) => {
         if (!dismissDraft()) {
           event.preventDefault();
@@ -196,7 +196,7 @@ export function renderCardModal(props: WorkboardProps) {
     >
       <form
         id=${workboardCardModalId}
-        class="workboard-draft"
+        class="dialog-surface dialog-surface--divided workboard-draft"
         aria-busy=${draftActionsBusy ? "true" : "false"}
         @input=${(event: InputEvent) => {
           const input = event.target;
@@ -221,18 +221,18 @@ export function renderCardModal(props: WorkboardProps) {
           });
         }}
       >
-        <div class="workboard-modal__header">
-          <div>
-            <h2 id=${workboardCardModalTitleId}>
+        <div class="dialog-header">
+          <div class="dialog-heading">
+            <h2 id=${workboardCardModalTitleId} class="dialog-title">
               ${editing ? t("workboard.editCard") : t("workboard.newCard")}
             </h2>
-            <p id=${workboardCardModalDescriptionId}>
+            <p id=${workboardCardModalDescriptionId} class="dialog-subtitle">
               ${editing ? t("workboard.editCardHelp") : t("workboard.newCardHelp")}
             </p>
           </div>
           <openclaw-tooltip .content=${t("common.cancel")}>
             <button
-              class="btn btn--icon workboard-card__icon"
+              class="dialog-close"
               type="button"
               aria-label=${t("common.cancel")}
               ?disabled=${draftDismissalBusy}
@@ -246,7 +246,7 @@ export function renderCardModal(props: WorkboardProps) {
             </button>
           </openclaw-tooltip>
         </div>
-        <div class="workboard-draft__body">
+        <div class="dialog-body workboard-draft__body">
           ${!editing
             ? html`
                 <div class="workboard-template-strip" aria-label=${t("workboard.templatesLabel")}>
@@ -389,7 +389,7 @@ export function renderCardModal(props: WorkboardProps) {
               `
             : nothing}
         </div>
-        <div class="workboard-modal__actions">
+        <div class="dialog-footer workboard-modal__actions">
           <button
             class="btn primary workboard-draft__submit"
             ?disabled=${draftActionsBusy || !state.draftTitle.trim()}
