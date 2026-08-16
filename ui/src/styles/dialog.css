@@ -46,12 +46,11 @@ openclaw-modal-dialog.dialog-2xl {
 .dialog-surface {
   --dialog-gutter: 20px;
 
-  /* Separation is one treatment carrying the weight, not two at full
-     strength. Dark keeps the drawn border because a shadow dies against a
-     dark page; light hands the job to elevation (override below). Both are
-     tokens so the class states the grammar once and the theme picks the
-     balance. */
-  --dialog-border-color: var(--border);
+  /* Separation is elevation plus a whisper of edge, never a drawn outline.
+     Each theme overrides these two tokens below, so the class states the
+     grammar once and the theme picks how the edge is spelled: a tight
+     shadow stop in light, an inset top highlight in dark. */
+  --dialog-border-color: transparent;
   --dialog-elevation: var(--shadow-xl);
 
   display: flex;
@@ -85,6 +84,20 @@ openclaw-modal-dialog.dialog-2xl {
     0 1px 3px color-mix(in srgb, var(--text) 6%, transparent),
     0 12px 28px -8px color-mix(in srgb, var(--text) 12%, transparent),
     0 36px 72px -16px color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+/* Dark mode has the opposite problem: a shadow has nothing to fall on, so
+   the panel needs a lit edge instead of a drawn one. An inset top highlight
+   reads as the light source catching the panel's top lip — the way a real
+   raised surface behaves — where the old `1px solid var(--border)` outlined
+   all four sides at equal weight and looked like a keyline. Deep shadow does
+   the lifting underneath. Scoped `:not(light)` because dark is the `:root`
+   default in base.css and some surfaces never set the attribute at all. */
+:root:not([data-theme-mode="light"]) .dialog-surface {
+  --dialog-border-color: transparent;
+  --dialog-elevation:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 6%, transparent),
+    0 16px 32px -12px rgb(0 0 0 / 0.55), 0 32px 64px -16px rgb(0 0 0 / 0.65);
 }
 
 /* Header/body/footer own their own padding and are separated by
