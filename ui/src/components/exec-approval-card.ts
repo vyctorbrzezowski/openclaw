@@ -20,12 +20,14 @@ type ExecApprovalCardProps = {
   busy: boolean;
   error: string | null;
   nowMs: number;
-  variant: "inline" | "modal";
-  queueCount?: number;
+  variant: "inline" | "popover";
+  sessionDisplayName?: string;
+  commandExpanded?: boolean;
+  onToggleCommand?: () => void;
   onDecision: (approvalId: string, decision: ExecApprovalDecision) => void | Promise<void>;
 };
 
-export function approvalRemainingLabel(expiresAtMs: number, nowMs: number): string {
+function approvalRemainingLabel(expiresAtMs: number, nowMs: number): string {
   return expiresAtMs > nowMs
     ? t("execApproval.expiresIn", { time: formatCountdown(expiresAtMs, nowMs, true) })
     : t("execApproval.expired");
@@ -40,7 +42,13 @@ function renderMetaRow(label: string, value?: string | null, opts?: { path?: boo
   </div>`;
 }
 
-function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
+function renderCommandWithSpans(
+  request: ExecApprovalRequestPayload,
+  options: { collapsed?: boolean } = {},
+) {
+  const commandClass = `exec-approval-command mono ${
+    options.collapsed ? "exec-approval-command--collapsed" : ""
+  }`;
   const spans = [...(request.commandSpans ?? [])]
     .filter(
       (span) =>
@@ -60,7 +68,7 @@ function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
     }
   }
   if (!accepted.length) {
-    return html`<div class="exec-approval-command mono">${request.command}</div>`;
+    return html`<div class=${commandClass}>${request.command}</div>`;
   }
   const parts = [];
   cursor = 0;
@@ -78,7 +86,7 @@ function renderCommandWithSpans(request: ExecApprovalRequestPayload) {
   if (cursor < request.command.length) {
     parts.push(request.command.slice(cursor));
   }
-  return html`<div class="exec-approval-command mono">${parts}</div>`;
+  return html`<div class=${commandClass}>${parts}</div>`;
 }
 
 function renderExecBody(request: ExecApprovalRequestPayload) {
@@ -107,6 +115,75 @@ ${active.pluginDescription}</pre>`
     </div>`;
 }
 
+function renderMetaChip(label: string, value?: string | null) {
+  return value
+    ? html`<span class="exec-approval-meta-chip"><span>${label}</span>${value}</span>`
+    : nothing;
+}
+
+function commandNeedsExpansion(command: string): boolean {
+  return command.length > 96 || command.split("\n").length > 2;
+}
+
+function renderPopoverBody(props: ExecApprovalCardProps) {
+  const active = props.approval;
+  const request = active.request;
+  const command = active.kind === "exec" ? request.command : (active.pluginDescription ?? "");
+  const canExpand = commandNeedsExpansion(command);
+  const commandClass = `exec-approval-command mono ${
+    canExpand && props.commandExpanded !== true ? "exec-approval-command--collapsed" : ""
+  }`;
+  const sessionKey = request.sessionKey?.trim();
+  return html`
+    <div class="exec-approval-session">
+      <span>${t("execApproval.labels.conversation")}</span>
+      <strong class="exec-approval-session__name" title=${sessionKey ?? nothing}
+        >${props.sessionDisplayName ?? t("execApproval.unknownConversation")}</strong
+      >
+    </div>
+    ${command
+      ? html`<div class="exec-approval-command-shell">
+          ${active.kind === "exec"
+            ? renderCommandWithSpans(request, {
+                collapsed: canExpand && props.commandExpanded !== true,
+              })
+            : html`<pre class=${commandClass}>${command}</pre>`}
+          ${canExpand
+            ? html`<button
+                class="exec-approval-command-toggle"
+                type="button"
+                aria-expanded=${String(props.commandExpanded === true)}
+                @click=${props.onToggleCommand}
+              >
+                ${t(
+                  props.commandExpanded === true
+                    ? "execApproval.hideCommand"
+                    : "execApproval.showCommand",
+                )}
+              </button>`
+            : nothing}
+        </div>`
+      : nothing}
+    <div class="exec-approval-meta-chips">
+      ${active.kind === "plugin"
+        ? renderMetaChip(t("execApproval.labels.severity"), active.pluginSeverity)
+        : renderMetaChip(t("execApproval.labels.security"), request.security)}
+      ${renderMetaChip(t("execApproval.labels.plugin"), active.pluginId)}
+      ${renderMetaChip(t("execApproval.labels.agent"), request.agentId)}
+    </div>
+    <details class="exec-approval-details">
+      <summary>${t("execApproval.technicalDetails")}</summary>
+      <div class="exec-approval-meta">
+        ${renderMetaRow(t("execApproval.labels.sessionId"), sessionKey)}
+        ${renderMetaRow(t("execApproval.labels.host"), request.host)}
+        ${renderMetaRow(t("execApproval.labels.cwd"), request.cwd, { path: true })}
+        ${renderMetaRow(t("execApproval.labels.resolved"), request.resolvedPath, { path: true })}
+        ${renderMetaRow(t("execApproval.labels.ask"), request.ask)}
+      </div>
+    </details>
+  `;
+}
+
 function decisionLabel(decision: ExecApprovalDecision) {
   return t(
     decision === "allow-once"
@@ -117,8 +194,11 @@ function decisionLabel(decision: ExecApprovalDecision) {
   );
 }
 
-function decisionClass(decision: ExecApprovalDecision) {
-  return decision === "allow-once" ? "btn primary" : decision === "deny" ? "btn danger" : "btn";
+function decisionClass(decision: ExecApprovalDecision, variant: ExecApprovalCardProps["variant"]) {
+  if (decision === "allow-once") {
+    return "btn primary";
+  }
+  return decision === "deny" && variant === "inline" ? "btn danger" : "btn";
 }
 
 function decisionShortcut(decision: ExecApprovalDecision) {
@@ -140,7 +220,7 @@ export function resolveApprovalDecisions(
     : DEFAULT_EXEC_APPROVAL_DECISIONS;
 }
 
-export function approvalTitle(active: ExecApprovalRequest): string {
+function approvalTitle(active: ExecApprovalRequest): string {
   return active.kind !== "exec"
     ? (active.pluginTitle ?? t("execApproval.pluginApprovalNeeded"))
     : t("execApproval.execApprovalNeeded");
@@ -162,13 +242,12 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
           ${approvalRemainingLabel(active.expiresAtMs, props.nowMs)}
         </div>
       </div>
-      ${(props.queueCount ?? 0) > 1
-        ? html`<div class="exec-approval-queue">
-            ${t("execApproval.pending", { count: String(props.queueCount) })}
-          </div>`
-        : nothing}
     </div>
-    ${active.kind === "exec" ? renderExecBody(active.request) : renderPluginBody(active)}
+    ${props.variant === "popover"
+      ? renderPopoverBody(props)
+      : active.kind === "exec"
+        ? renderExecBody(active.request)
+        : renderPluginBody(active)}
     ${active.kind === "exec" && !decisions.includes("allow-always")
       ? html`<div class="exec-approval-warning">${t("execApproval.allowAlwaysUnavailable")}</div>`
       : nothing}
@@ -177,10 +256,10 @@ export function renderExecApprovalCard(props: ExecApprovalCardProps) {
       ${decisions.map((decision) => {
         const label = decisionLabel(decision);
         return html`<button
-          class=${decisionClass(decision)}
+          class=${decisionClass(decision, props.variant)}
           type="button"
           ?disabled=${props.busy}
-          title=${props.variant === "modal" ? `${label} (${decisionShortcut(decision)})` : label}
+          title=${props.variant === "popover" ? `${label} (${decisionShortcut(decision)})` : label}
           @click=${() => props.onDecision(active.id, decision)}
         >
           <span>${label}</span>

@@ -3234,8 +3234,48 @@ td.data-table-key-col {
 }
 
 /* ===========================================
-   Exec Approval Modal
+   Exec Approval Popover
    =========================================== */
+
+.exec-approval-popover {
+  position: fixed;
+  z-index: 85;
+  top: 68px;
+  left: calc(var(--shell-nav-width) + 12px);
+  width: clamp(340px, 29vw, 420px);
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 76%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / 0.2),
+    0 2px 8px rgb(0 0 0 / 0.12);
+  color: var(--popover-foreground);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  animation: exec-approval-enter 160ms var(--ease-out);
+}
+
+.exec-approval-popover:focus-visible {
+  outline: none;
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / 0.2),
+    0 2px 8px rgb(0 0 0 / 0.12),
+    var(--focus-ring);
+}
+
+@keyframes exec-approval-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-5px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
 
 .exec-approval-card {
   width: 100%;
@@ -3246,15 +3286,7 @@ td.data-table-key-col {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
-  animation: scale-in 0.2s var(--ease-out);
-}
-
-.exec-approval-modal-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: calc(100dvh - 48px);
-  overflow-y: auto;
+  animation: none;
 }
 
 .exec-approval-card--inline {
@@ -3262,6 +3294,13 @@ td.data-table-key-col {
   border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
   background: color-mix(in srgb, var(--warn) 5%, var(--card));
   animation: none;
+}
+
+.exec-approval-card--popover {
+  padding: 16px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
 }
 
 .exec-approval-header {
@@ -3273,7 +3312,8 @@ td.data-table-key-col {
 
 .exec-approval-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .exec-approval-sub {
@@ -3282,17 +3322,96 @@ td.data-table-key-col {
   margin-top: 4px;
 }
 
-.exec-approval-queue {
-  font-size: 12px; /* was 11px */
-  font-weight: 500;
-  color: var(--muted);
+.exec-approval-pager {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 26px;
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  padding: 4px 10px;
+  background: color-mix(in srgb, var(--secondary) 72%, transparent);
+  color: var(--muted);
+}
+
+.exec-approval-pager span {
+  min-width: 40px;
+  font: 11px/1 var(--mono);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.exec-approval-pager button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--muted);
+  cursor: var(--cursor-action);
+}
+
+.exec-approval-pager button:hover,
+.exec-approval-pager button:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.exec-approval-pager button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.exec-approval-pager button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.exec-approval-pager__next svg {
+  transform: rotate(180deg);
+}
+
+.exec-approval-popover:has(.exec-approval-pager) .exec-approval-header {
+  padding-right: 112px;
+}
+
+.exec-approval-session {
+  display: grid;
+  gap: 3px;
+  margin-top: 14px;
+}
+
+.exec-approval-session > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.exec-approval-session__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exec-approval-command-shell {
+  margin-top: 12px;
 }
 
 .exec-approval-command {
-  margin-top: 12px;
+  margin-top: 0;
   max-height: min(40dvh, 320px);
   padding: 10px 12px;
   background: var(--secondary);
@@ -3303,6 +3422,41 @@ td.data-table-key-col {
   white-space: pre-wrap;
   font-family: var(--mono);
   font-size: 13px;
+}
+
+.exec-approval-card--inline .exec-approval-command {
+  margin-top: 12px;
+}
+
+.exec-approval-command--collapsed {
+  display: -webkit-box;
+  height: 58px;
+  max-height: 58px;
+  overflow: hidden;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.exec-approval-command-toggle {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: var(--cursor-action);
+}
+
+.exec-approval-command-toggle:hover,
+.exec-approval-command-toggle:focus-visible {
+  color: var(--text);
+}
+
+.exec-approval-command-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .exec-approval-command-span {
@@ -3318,6 +3472,49 @@ td.data-table-key-col {
   gap: 6px;
   font-size: 13px;
   color: var(--muted);
+}
+
+.exec-approval-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.exec-approval-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--secondary) 64%, transparent);
+  color: var(--text);
+  font: 11px/1.3 var(--mono);
+}
+
+.exec-approval-meta-chip span {
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+
+.exec-approval-details {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.exec-approval-details summary {
+  width: max-content;
+  cursor: var(--cursor-action);
+}
+
+.exec-approval-details .exec-approval-meta {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
 }
 
 .exec-approval-meta-row {
@@ -3373,76 +3570,34 @@ td.data-table-key-col {
   gap: 8px;
 }
 
+.exec-approval-card--popover .exec-approval-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.exec-approval-card--popover .exec-approval-actions .btn {
+  justify-content: center;
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+.exec-approval-card--popover .exec-approval-actions .btn.primary {
+  border-color: transparent;
+  background: var(--text-strong);
+  color: var(--bg);
+}
+
+.exec-approval-card--popover .exec-approval-actions .btn.primary:hover {
+  background: color-mix(in srgb, var(--text-strong) 88%, var(--bg));
+}
+
 .exec-approval-actions .btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-.exec-approval-list {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-}
-
-.exec-approval-list__heading {
-  padding: 2px 4px 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.exec-approval-list__item {
-  display: grid;
-  grid-template-columns: minmax(64px, 0.25fr) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 7px 8px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: var(--cursor-action);
-}
-
-.exec-approval-list__item:hover,
-.exec-approval-list__item:focus-visible {
-  border-color: var(--border);
-  background: var(--secondary);
-}
-
-.exec-approval-list__item:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 1px;
-}
-
-.exec-approval-list__agent,
-.exec-approval-list__command {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.exec-approval-list__agent {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.exec-approval-list__command {
-  font-size: 12px;
-}
-
-.exec-approval-list__expiry {
-  color: var(--warn);
-  font: 11px/1.2 var(--mono);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ===========================================
@@ -5082,18 +5237,27 @@ td.data-table-key-col {
 }
 
 @media (max-width: 768px) {
+  .exec-approval-popover {
+    top: auto !important;
+    right: 12px;
+    bottom: 12px;
+    left: 12px !important;
+    width: auto;
+    max-height: min(72dvh, 560px);
+  }
+
   .exec-approval-card {
     padding: 16px;
     display: flex;
     flex-direction: column;
   }
 
-  .exec-approval-actions {
+  .exec-approval-card--inline .exec-approval-actions {
     flex-direction: column;
     flex-shrink: 0;
   }
 
-  .exec-approval-actions .btn {
+  .exec-approval-card--inline .exec-approval-actions .btn {
     width: 100%;
   }
 

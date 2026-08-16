@@ -4,11 +4,9 @@ import { html, nothing, render, type LitElement } from "lit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExecApprovalRequest } from "../app/exec-approval.ts";
 import { i18n } from "../i18n/index.ts";
-import { getRenderedModalDialog, installDialogPolyfill } from "../test-helpers/modal-dialog.ts";
 import "./exec-approval.ts";
 
 let container: HTMLDivElement;
-let restoreDialogPolyfill: () => void;
 
 function createExecRequest(overrides: Partial<ExecApprovalRequest> = {}): ExecApprovalRequest {
   return {
@@ -31,6 +29,7 @@ async function renderApproval(
     errors: ReadonlyMap<string, string>;
     nowMs: number;
     inlineApprovalId: string | null;
+    resolveSessionName: (sessionKey: string) => string;
     onDecision: ReturnType<typeof vi.fn>;
   }> = {},
 ) {
@@ -44,6 +43,7 @@ async function renderApproval(
         errors: overrides.errors ?? new Map(),
         nowMs: overrides.nowMs ?? Date.now(),
         inlineApprovalId: overrides.inlineApprovalId ?? null,
+        resolveSessionName: overrides.resolveSessionName,
         onDecision,
       }}
     ></openclaw-exec-approval>`,
@@ -61,9 +61,17 @@ function chord(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
   return new KeyboardEvent("keydown", { key, metaKey: true, bubbles: true, ...init });
 }
 
+function renderedPopover(): HTMLElement {
+  const popover = container.querySelector<HTMLElement>(".exec-approval-popover");
+  expect(popover).toBeInstanceOf(HTMLElement);
+  if (!popover) {
+    throw new Error("Expected approval popover");
+  }
+  return popover;
+}
+
 describe("openclaw-exec-approval", () => {
   beforeEach(async () => {
-    restoreDialogPolyfill = installDialogPolyfill();
     await i18n.setLocale("en");
     container = document.createElement("div");
     document.body.append(container);
@@ -73,8 +81,31 @@ describe("openclaw-exec-approval", () => {
     render(nothing, container);
     container.remove();
     await i18n.setLocale("en");
-    restoreDialogPolyfill();
     vi.restoreAllMocks();
+  });
+
+  it("keeps the app usable while identifying the requesting conversation by name", async () => {
+    const sessionKey = "agent:roboclaw:dashboard:27d25e4e-a830-47db-a457-ea14ecde0df0";
+    await renderApproval(
+      createExecRequest({
+        request: {
+          command: "openclaw export --target production",
+          agentId: "roboclaw",
+          sessionKey,
+        },
+      }),
+      { resolveSessionName: () => "Quarterly tax filing" },
+    );
+
+    expect(container.querySelector("openclaw-modal-dialog")).toBeNull();
+    expect(container.querySelector(".exec-approval-popover")?.getAttribute("role")).toBe("region");
+    expect(container.querySelector(".exec-approval-session__name")?.textContent?.trim()).toBe(
+      "Quarterly tax filing",
+    );
+    const technicalDetails = container.querySelector<HTMLDetailsElement>(".exec-approval-details");
+    expect(technicalDetails?.open).toBe(false);
+    expect(technicalDetails?.textContent).toContain(sessionKey);
+    expect(document.body.inert).not.toBe(true);
   });
 
   it("uses neutral unavailable copy for exec allow-always decisions", async () => {
@@ -88,7 +119,7 @@ describe("openclaw-exec-approval", () => {
       }),
     );
 
-    await getRenderedModalDialog(container);
+    renderedPopover();
 
     expect(
       Array.from(container.querySelectorAll(".exec-approval-actions button > span")).map((label) =>
@@ -113,7 +144,7 @@ describe("openclaw-exec-approval", () => {
       }),
     );
 
-    await getRenderedModalDialog(container);
+    renderedPopover();
 
     expect(
       Array.from(container.querySelectorAll(".exec-approval-actions button > span")).map((label) =>
@@ -125,7 +156,7 @@ describe("openclaw-exec-approval", () => {
 
   it("renders the live expiry countdown as mm:ss", async () => {
     await renderApproval(createExecRequest({ expiresAtMs: 90_500 }), { nowMs: 0 });
-    await getRenderedModalDialog(container);
+    renderedPopover();
 
     expect(container.querySelector(".exec-approval-countdown")?.textContent?.trim()).toBe(
       "expires in 01:31",
@@ -142,12 +173,12 @@ describe("openclaw-exec-approval", () => {
       }),
     ];
     const { approval } = await renderApproval(queue);
-    await getRenderedModalDialog(container);
+    renderedPopover();
 
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-oldest",
     );
-    container.querySelector<HTMLButtonElement>(".exec-approval-list__item")?.click();
+    container.querySelector<HTMLButtonElement>(".exec-approval-pager__next")?.click();
     await approval.updateComplete;
 
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
@@ -156,32 +187,31 @@ describe("openclaw-exec-approval", () => {
     expect(queue.map((entry) => entry.id)).toEqual(["approval-oldest", "approval-newer"]);
   });
 
-  it("compacts queued commands without splitting a surrogate pair", async () => {
-    const queue = [
-      createExecRequest({ id: "approval-active", createdAtMs: 1 }),
-      createExecRequest({
-        id: "approval-queued",
-        createdAtMs: 2,
-        // The emoji straddles code unit 61, so a hard slice(0, 61) would
-        // leave a dangling high surrogate in front of the ellipsis.
-        request: { command: `${"a".repeat(60)}🙂 --with-extra-arguments` },
-      }),
-    ];
-    await renderApproval(queue);
-    await getRenderedModalDialog(container);
-
-    expect(container.querySelector(".exec-approval-list__command")?.textContent).toBe(
-      `${"a".repeat(60)}…`,
+  it("expands a long command without replacing the active request", async () => {
+    const command = `python publish.py ${"--include-audit-log ".repeat(8)}`;
+    const { approval } = await renderApproval(
+      createExecRequest({ request: { command, agentId: "worker" } }),
     );
+
+    expect(container.querySelector(".exec-approval-command")?.classList).toContain(
+      "exec-approval-command--collapsed",
+    );
+    container.querySelector<HTMLButtonElement>(".exec-approval-command-toggle")?.click();
+    await approval.updateComplete;
+
+    expect(container.querySelector(".exec-approval-command")?.classList).not.toContain(
+      "exec-approval-command--collapsed",
+    );
+    expect(container.querySelector(".exec-approval-command")?.textContent).toContain(command);
   });
 
-  it("handles modal approval keyboard shortcuts", async () => {
+  it("handles approval shortcuts while focus is in the popover", async () => {
     const { onDecision } = await renderApproval(createExecRequest());
-    const { modal } = await getRenderedModalDialog(container);
+    const popover = renderedPopover();
 
-    modal.dispatchEvent(chord("Enter"));
-    modal.dispatchEvent(chord("Enter", { shiftKey: true }));
-    modal.dispatchEvent(chord("в", { code: "KeyD", metaKey: false, ctrlKey: true }));
+    popover.dispatchEvent(chord("Enter"));
+    popover.dispatchEvent(chord("Enter", { shiftKey: true }));
+    popover.dispatchEvent(chord("в", { code: "KeyD", metaKey: false, ctrlKey: true }));
 
     expect(onDecision.mock.calls).toEqual([
       ["approval-1", "allow-once"],
@@ -192,22 +222,22 @@ describe("openclaw-exec-approval", () => {
 
   it("ignores bare keys so stray typing cannot authorize a command", async () => {
     const { onDecision } = await renderApproval(createExecRequest());
-    const { modal } = await getRenderedModalDialog(container);
+    const popover = renderedPopover();
 
-    modal.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
-    modal.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    modal.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
-    modal.dispatchEvent(chord("Enter", { altKey: true }));
+    popover.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+    popover.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    popover.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
+    popover.dispatchEvent(chord("Enter", { altKey: true }));
 
     expect(onDecision).not.toHaveBeenCalled();
   });
 
   it("ignores auto-repeated shortcut keydown events", async () => {
     const { onDecision } = await renderApproval(createExecRequest());
-    const { modal } = await getRenderedModalDialog(container);
+    const popover = renderedPopover();
 
-    modal.dispatchEvent(chord("Enter", { repeat: true }));
-    modal.dispatchEvent(chord("Enter", { shiftKey: true, repeat: true }));
+    popover.dispatchEvent(chord("Enter", { repeat: true }));
+    popover.dispatchEvent(chord("Enter", { shiftKey: true, repeat: true }));
 
     expect(onDecision).not.toHaveBeenCalled();
   });
@@ -216,7 +246,7 @@ describe("openclaw-exec-approval", () => {
     const newer = createExecRequest({ id: "approval-newer", createdAtMs: 2_000 });
     const older = createExecRequest({ id: "approval-older", createdAtMs: 1_000 });
     const { approval } = await renderApproval([newer]);
-    await getRenderedModalDialog(container);
+    renderedPopover();
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-newer",
     );
@@ -237,14 +267,14 @@ describe("openclaw-exec-approval", () => {
     );
   });
 
-  it("repins the modal card when its selection becomes inline", async () => {
+  it("repins the popover card when its selection becomes inline", async () => {
     const selected = createExecRequest({ id: "approval-selected", createdAtMs: 2_000 });
     const displayedHead = createExecRequest({ id: "approval-head", createdAtMs: 1_000 });
     const olderArrival = createExecRequest({ id: "approval-older", createdAtMs: 500 });
     const { approval } = await renderApproval([displayedHead, selected]);
-    await getRenderedModalDialog(container);
+    renderedPopover();
 
-    container.querySelector<HTMLButtonElement>(".exec-approval-list__item")?.click();
+    container.querySelector<HTMLButtonElement>(".exec-approval-pager__next")?.click();
     await approval.updateComplete;
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-selected",
@@ -271,20 +301,20 @@ describe("openclaw-exec-approval", () => {
     });
     const onDecision = vi.fn();
     await renderApproval(restricted, { busy: true, onDecision });
-    let rendered = await getRenderedModalDialog(container);
-    rendered.modal.dispatchEvent(chord("Enter"));
+    let popover = renderedPopover();
+    popover.dispatchEvent(chord("Enter"));
 
     await renderApproval(restricted, { onDecision });
-    rendered = await getRenderedModalDialog(container);
-    rendered.modal.dispatchEvent(chord("Enter", { shiftKey: true }));
+    popover = renderedPopover();
+    popover.dispatchEvent(chord("Enter", { shiftKey: true }));
     const input = document.createElement("input");
-    rendered.modal.append(input);
+    popover.append(input);
     input.dispatchEvent(chord("d", { composed: true }));
     const editor = document.createElement("div");
     editor.setAttribute("contenteditable", "true");
     const editorChild = document.createElement("span");
     editor.append(editorChild);
-    rendered.modal.append(editor);
+    popover.append(editor);
     editorChild.dispatchEvent(chord("Enter", { composed: true }));
 
     expect(onDecision).not.toHaveBeenCalled();
@@ -294,7 +324,7 @@ describe("openclaw-exec-approval", () => {
     { reason: "a decision is in flight", busy: true, allowedDecisions: undefined },
     { reason: "denial is unavailable", busy: false, allowedDecisions: ["allow-once"] as const },
   ])("keeps the pending approval visible when $reason", async ({ busy, allowedDecisions }) => {
-    const { onDecision } = await renderApproval(
+    await renderApproval(
       createExecRequest({
         request: {
           command: "echo hello",
@@ -303,31 +333,27 @@ describe("openclaw-exec-approval", () => {
       }),
       { busy },
     );
-    const { modal } = await getRenderedModalDialog(container);
-    const cancel = new CustomEvent("modal-cancel", {
-      bubbles: true,
-      composed: true,
-      cancelable: true,
-    });
-
-    expect(modal.dispatchEvent(cancel)).toBe(false);
-    expect(cancel.defaultPrevented).toBe(true);
-    expect(onDecision).not.toHaveBeenCalled();
+    expect(renderedPopover()).toBeInstanceOf(HTMLElement);
+    const buttons = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(".exec-approval-actions button"),
+    );
+    expect(buttons.map((button) => button.textContent?.trim())).toContain("Allow once");
+    expect(buttons.every((button) => button.disabled)).toBe(busy);
   });
 
-  it("suppresses the automatic modal for the inline request but opens it on demand", async () => {
+  it("suppresses the automatic popover for the inline request but opens it on demand", async () => {
     const { approval } = await renderApproval(createExecRequest(), {
       inlineApprovalId: "approval-1",
     });
-    expect(container.querySelector("openclaw-modal-dialog")).toBeNull();
+    expect(container.querySelector(".exec-approval-popover")).toBeNull();
 
     (approval as LitElement & { show(): void }).show();
     await approval.updateComplete;
 
-    expect(container.querySelector("openclaw-modal-dialog")).not.toBeNull();
+    expect(container.querySelector(".exec-approval-popover")).not.toBeNull();
   });
 
-  it("keeps unrelated requests modal while one active-session request is inline", async () => {
+  it("keeps unrelated requests in the popover while one active-session request is inline", async () => {
     await renderApproval(
       [
         createExecRequest({ id: "approval-inline" }),
@@ -336,7 +362,7 @@ describe("openclaw-exec-approval", () => {
       { inlineApprovalId: "approval-inline" },
     );
 
-    await getRenderedModalDialog(container);
+    renderedPopover();
     expect(container.querySelector(".exec-approval-card")?.getAttribute("data-approval-id")).toBe(
       "approval-other",
     );
@@ -346,12 +372,12 @@ describe("openclaw-exec-approval", () => {
     let rendered = await renderApproval(createExecRequest(), { inlineApprovalId: "approval-1" });
     (rendered.approval as LitElement & { show(): void }).show();
     await rendered.approval.updateComplete;
-    expect(container.querySelector("openclaw-modal-dialog")).not.toBeNull();
+    expect(container.querySelector(".exec-approval-popover")).not.toBeNull();
 
     rendered = await renderApproval([], { inlineApprovalId: null });
     await rendered.approval.updateComplete;
     await renderApproval(createExecRequest(), { inlineApprovalId: "approval-1" });
 
-    expect(container.querySelector("openclaw-modal-dialog")).toBeNull();
+    expect(container.querySelector(".exec-approval-popover")).toBeNull();
   });
 });

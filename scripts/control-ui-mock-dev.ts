@@ -68,7 +68,9 @@ const [MOCK_CREATOR_PETER, MOCK_CREATOR_MIRA] = MOCK_SESSION_CREATORS as [
 const SESSION_PAGE_SIZE = 50;
 const TOTAL_MOCK_SESSIONS = 650;
 const TOTAL_TELEGRAM_SESSIONS = 180;
-const ATTENTION_FIXTURE_EXPIRES_AT = Date.parse("2099-01-01T00:00:00.000Z");
+// Keep timer-backed attention fixtures inside the browser's 32-bit timeout
+// range; very distant dates fire immediately in Chromium instead of staying pending.
+const ATTENTION_FIXTURE_EXPIRES_AT = Date.now() + 20 * 60_000;
 const NARRATION_DEMO_SESSION_KEY = "agent:main:sidebar-narration-demo";
 const NARRATION_DEMO_RUN_ID = "mock-sidebar-narration-run";
 const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
@@ -1329,6 +1331,26 @@ async function createChatPickerScenario(
       createdActor: MOCK_CREATOR_MIRA,
       execCwd: "/Users/peter/Projects/clawdbot",
     }),
+    sessionRow(
+      "agent:roboclaw:dashboard:27d25e4e-a830-47db-a457-ea14ecde0df0",
+      "Quarterly tax filing",
+      baseTime - 77_000,
+      {
+        category: "Research",
+        createdActor: MOCK_CREATOR_PETER,
+        execCwd: "/Users/peter/Projects/finance-ops",
+      },
+    ),
+    sessionRow("agent:main:release-readiness", "Release readiness review", baseTime - 78_000, {
+      category: "Research",
+      createdActor: MOCK_CREATOR_MIRA,
+      execCwd: "/Users/peter/Projects/openclaw",
+    }),
+    sessionRow("agent:main:retention-policy", "Customer data retention", baseTime - 79_000, {
+      category: "Research",
+      createdActor: MOCK_CREATOR_PETER,
+      execCwd: "/Users/peter/Projects/policies",
+    }),
     sessionRow("agent:main:model-budget", "Model budget review", baseTime - 80_000, {
       category: "Research",
       execCwd: "/Users/peter/Projects/openclaw",
@@ -1478,6 +1500,15 @@ async function createChatPickerScenario(
       "browser.request",
       "chat.metadata",
       "chat.startup",
+      ...(fixture === "approval"
+        ? [
+            "exec.approval.list",
+            "exec.approval.resolve",
+            "openclaw.approval.list",
+            "plugin.approval.list",
+            "plugin.approval.resolve",
+          ]
+        : []),
       "question.list",
       "openclaw.changes.list",
       "openclaw.chat",
@@ -1826,24 +1857,76 @@ async function createChatPickerScenario(
           },
         ],
       },
-      // Pending exec approvals reopen as a blocking modal on every page load
-      // (connect-time exec.approval.list recovery), so the demo approval is
-      // opt-in via --fixture=approval instead of polluting the default mock.
+      // The approval demo is opt-in so its persistent popover does not pollute
+      // the default mock. `?approvals=single` narrows this multi-request fixture
+      // in createMockGatewayPlugin, allowing both states on one running server.
       "exec.approval.list":
         fixture === "approval"
           ? [
               {
-                id: "mock-production-export-approval",
+                id: "mock-tax-filing-approval",
                 request: {
-                  command: "openclaw export --target production",
-                  sessionKey: "agent:main:production-export",
+                  command:
+                    "python scripts/submit_return.py --year 2025 --jurisdiction federal --attach audit-summary.json --confirm-final",
+                  cwd: "/Users/peter/Projects/finance-ops",
+                  host: "Peter's MacBook Pro",
+                  security: "Elevated",
+                  ask: "on-miss",
+                  agentId: "roboclaw",
+                  sessionKey: "agent:roboclaw:dashboard:27d25e4e-a830-47db-a457-ea14ecde0df0",
                 },
                 createdAtMs: baseTime - 75_000,
                 expiresAtMs: ATTENTION_FIXTURE_EXPIRES_AT,
               },
+              {
+                id: "mock-production-export-approval",
+                request: {
+                  command: "openclaw export --target production",
+                  cwd: "/Users/peter/Projects/clawdbot",
+                  host: "Local",
+                  security: "Restricted",
+                  ask: "on-request",
+                  agentId: "main",
+                  sessionKey: "agent:main:production-export",
+                },
+                createdAtMs: baseTime - 65_000,
+                expiresAtMs: ATTENTION_FIXTURE_EXPIRES_AT,
+              },
+              {
+                id: "mock-release-approval",
+                request: {
+                  command: "gh release create v2026.8.16 --verify-tag --generate-notes",
+                  cwd: "/Users/peter/Projects/openclaw",
+                  host: "Local",
+                  security: "Network",
+                  ask: "on-request",
+                  agentId: "main",
+                  sessionKey: "agent:main:release-readiness",
+                },
+                createdAtMs: baseTime - 55_000,
+                expiresAtMs: ATTENTION_FIXTURE_EXPIRES_AT,
+              },
             ]
           : [],
-      "plugin.approval.list": [],
+      "plugin.approval.list":
+        fixture === "approval"
+          ? [
+              {
+                id: "mock-retention-plugin-approval",
+                request: {
+                  title: "Data retention policy update",
+                  description:
+                    "Allow the compliance plugin to publish the reviewed 90-day retention policy.",
+                  severity: "Medium",
+                  pluginId: "compliance-policy",
+                  agentId: "main",
+                  sessionKey: "agent:main:retention-policy",
+                },
+                createdAtMs: baseTime - 45_000,
+                expiresAtMs: ATTENTION_FIXTURE_EXPIRES_AT,
+              },
+            ]
+          : [],
       "openclaw.approval.list": [],
       "sessions.patch": { ok: true },
       "sessions.diff": buildSessionDiffMock(),
@@ -2433,8 +2516,29 @@ function createCustodianMockInitScript(): string {
   return `(() => { const __name = (target) => target; (${installControlUiCustodianMock.toString()})(${CUSTODIAN_CHAT_REPLY_DELAY_MS}); })();`;
 }
 
+function scenarioForApprovalMode(
+  scenario: ControlUiMockGatewayScenario,
+  originalUrl: string | undefined,
+): ControlUiMockGatewayScenario {
+  const mode = new URL(originalUrl ?? "/", "http://control-ui-mock.local").searchParams.get(
+    "approvals",
+  );
+  if (mode !== "single") {
+    return scenario;
+  }
+  const execApprovals = scenario.methodResponses?.["exec.approval.list"];
+  return {
+    ...scenario,
+    methodResponses: {
+      ...scenario.methodResponses,
+      "exec.approval.list": Array.isArray(execApprovals) ? execApprovals.slice(0, 1) : [],
+      "plugin.approval.list": [],
+      "openclaw.approval.list": [],
+    },
+  };
+}
+
 function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin {
-  const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const custodianInitScript = escapeScriptContent(createCustodianMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
   return {
@@ -2450,7 +2554,9 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
     // request and the scenario's bootstrap fields never reach the app.
     enforce: "pre",
     name: "openclaw-control-ui-mock-gateway",
-    transformIndexHtml(html) {
+    transformIndexHtml(html, context) {
+      const pageScenario = scenarioForApprovalMode(scenario, context.originalUrl);
+      const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(pageScenario));
       return html.replace(
         "</head>",
         `    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${custodianInitScript}\n    </script>\n  </head>`,
