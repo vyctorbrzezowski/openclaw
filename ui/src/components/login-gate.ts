@@ -286,7 +286,7 @@ function refreshLoginGatePage() {
 function renderLoginFailure(feedback: LoginFailureFeedback) {
   return html`
     <div
-      class="callout danger login-gate__failure"
+      class="callout callout--danger login-gate__failure"
       role="alert"
       aria-live="polite"
       data-kind=${feedback.kind}

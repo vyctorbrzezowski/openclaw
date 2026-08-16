@@ -296,7 +296,7 @@ function renderProvider(props: MemoryImportViewProps, provider: MemoryMigrationP
     props.backfillBusy === "rollback" ||
     props.backfillRollbackPending;
   const rows = provider.error
-    ? html`<div class="callout danger" role="alert">${provider.error}</div>`
+    ? html`<div class="callout callout--danger" role="alert">${provider.error}</div>`
     : !provider.found
       ? renderSettingsEmpty(provider.message ?? t("memoryImport.noMemoryFound"))
       : html`
@@ -396,7 +396,7 @@ function renderConfirmation(props: MemoryImportViewProps) {
             <div class="exec-approval-sub">${description}</div>
           </div>
         </div>
-        <div class="callout ${props.replaceExisting ? "warn" : ""}">
+        <div class="callout ${props.replaceExisting ? "callout--warn" : ""}">
           ${props.replaceExisting
             ? t("memoryImport.confirmReplace")
             : t("memoryImport.confirmBackup")}
@@ -488,7 +488,7 @@ function renderBackfillConfirmation(props: MemoryImportViewProps) {
             </div>
           </div>
         </div>
-        <div class="callout warn">${t("memoryImport.backfill.rollbackWarning")}</div>
+        <div class="callout callout--warn">${t("memoryImport.backfill.rollbackWarning")}</div>
         <div class="exec-approval-actions">
           <button
             class="btn danger"
@@ -588,7 +588,7 @@ function renderBackfillSection(props: MemoryImportViewProps) {
                   </div>`,
                 })}
                 ${props.backfillError
-                  ? html`<div class="callout danger" role="alert">${props.backfillError}</div>`
+                  ? html`<div class="callout callout--danger" role="alert">${props.backfillError}</div>`
                   : nothing}
                 ${result
                   ? html`<div
@@ -622,7 +622,7 @@ function renderBackfillSection(props: MemoryImportViewProps) {
                           </ul>`
                         : html`<span>${t("memoryImport.backfill.noCandidates")}</span>`}
                       ${result.truncated
-                        ? html`<div class="callout warn">
+                        ? html`<div class="callout callout--warn">
                             ${t("memoryImport.backfill.previewTruncated")}
                           </div>`
                         : nothing}
@@ -680,10 +680,10 @@ export function renderMemoryImport(props: MemoryImportViewProps) {
       ${renderSettingsPage(html`
         ${renderIntroSection(props)} ${renderBackfillSection(props)}
         ${props.error
-          ? html`<div class="callout danger" role="alert">${props.error}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.error}</div>`
           : nothing}
         ${props.applyError
-          ? html`<div class="callout danger" role="alert">${props.applyError}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.applyError}</div>`
           : nothing}
         ${props.loading && !props.plan
           ? html`<div class="settings-group memory-import__loading" aria-busy="true">

@@ -110,13 +110,11 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
         <div
           class="agent-chat__disabled-banner callout ${props.disabledBanner.tone === "neutral"
             ? "agent-chat__disabled-banner--neutral"
-            : "info"} callout--action"
-          role="status"
+            : `callout--${props.disabledBanner.tone ?? "info"}`} callout--action"
+          role=${props.disabledBanner.tone === "warn" ? "alert" : "status"}
         >
-          ${props.disabledBanner.icon === "warning"
-            ? html`<span class="agent-chat__disabled-banner-icon" aria-hidden="true"
-                >${icons.alertTriangle}</span
-              >`
+          ${props.disabledBanner.tone === "warn"
+            ? html`<span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>`
             : nothing}
           <div class="callout__content">
             ${props.disabledBanner.title

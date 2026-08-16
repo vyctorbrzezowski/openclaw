@@ -1,14 +1,28 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
+import { icons } from "../components/icons.ts";
 import { t } from "../i18n/index.ts";
 import { OpenClawLightDomContentsElement } from "../lit/openclaw-element.ts";
 
 type ToastDismissReason = "action" | "dismiss" | "disconnected" | "replaced" | "timeout";
 
+/** Same four severities the inline callout speaks; see the alert grammar block
+ * in components.css. Omitting the tone keeps the neutral popover chrome, which
+ * is right for an outcome that is neither good news nor a problem. */
+export type ToastTone = "danger" | "info" | "success" | "warn";
+
+const TONE_ICONS: Readonly<Record<ToastTone, TemplateResult>> = {
+  danger: icons.alertCircle,
+  info: icons.infoCircle,
+  success: icons.checkCircle,
+  warn: icons.alertTriangle,
+};
+
 export type ToastOptions = {
   /** A template lets a message name a destination the operator can actually open,
    * instead of spelling out a settings path the toast then makes them find. */
   message: string | TemplateResult;
+  tone?: ToastTone;
   actionLabel?: string;
   onAction?: () => void;
   onDismiss?: (reason: ToastDismissReason) => void;
@@ -82,8 +96,17 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     if (!toast) {
       return nothing;
     }
+    const tone = toast.tone;
     return html`
-      <div class="app-toast" role="status" aria-live="polite" aria-atomic="true">
+      <div
+        class="app-toast${tone ? ` app-toast--${tone}` : ""}"
+        role=${tone === "danger" || tone === "warn" ? "alert" : "status"}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        ${tone
+          ? html`<span class="app-toast__icon" aria-hidden="true">${TONE_ICONS[tone]}</span>`
+          : nothing}
         <span class="app-toast__message">${toast.message}</span>
         ${toast.actionLabel && toast.onAction
           ? html`
@@ -103,9 +126,10 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
           type="button"
           class="app-toast__dismiss"
           aria-label=${t("common.dismiss")}
+          title=${t("common.dismiss")}
           @click=${() => this.dismiss("dismiss")}
         >
-          ×
+          ${icons.x}
         </button>
       </div>
     `;

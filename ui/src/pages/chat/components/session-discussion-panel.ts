@@ -236,7 +236,7 @@ class SessionDiscussionPanel extends OpenClawLightDomElement {
     if (this.discussionTask.status === TaskStatus.ERROR) {
       const error = this.discussionTask.error;
       return html`<div class="session-discussion__empty">
-        <div class="callout danger">${error instanceof Error ? error.message : String(error)}</div>
+        <div class="callout callout--danger">${error instanceof Error ? error.message : String(error)}</div>
       </div>`;
     }
     const value = this.discussionTask.value;

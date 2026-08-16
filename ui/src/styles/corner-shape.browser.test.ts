@@ -100,6 +100,18 @@ const CORNER_CASES: readonly CornerCase[] = [
     superelliptical: "17.5px",
   },
   {
+    circular: "10px",
+    markup: '<div class="callout callout--warn">Showing stale data.</div>',
+    selector: ".callout",
+    superelliptical: "12.5px",
+  },
+  {
+    circular: "10px",
+    markup: '<div class="app-toast">Session archived</div>',
+    selector: ".app-toast",
+    superelliptical: "12.5px",
+  },
+  {
     // Real DOM shape from chat-composer-slash-menu.ts: .slash-menu-item is a
     // div two levels below .slash-menu (through .slash-menu__scroll and
     // .slash-menu-group), not a direct child. Item radius is panel radius

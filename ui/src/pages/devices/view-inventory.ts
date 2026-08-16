@@ -90,8 +90,8 @@ export function renderDeviceInventory(props: DevicesProps) {
       : groups.map((group) => renderInventoryGroup(group, props))}
   `;
   return html`
-    ${props.devicesError ? html`<div class="callout danger">${props.devicesError}</div>` : nothing}
-    ${props.lastError ? html`<div class="callout danger">${props.lastError}</div>` : nothing}
+    ${props.devicesError ? html`<div class="callout callout--danger">${props.devicesError}</div>` : nothing}
+    ${props.lastError ? html`<div class="callout callout--danger">${props.lastError}</div>` : nothing}
     ${pending.length > 0
       ? renderSettingsSection(
           { title: t("devices.inventory.pendingApproval"), count: pending.length },

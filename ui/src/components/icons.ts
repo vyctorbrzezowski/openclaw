@@ -192,6 +192,18 @@ export const icons = {
     />
     <path d="M12 9v4" />
     <path d="M12 17h.01" />`),
+  /* Completes the severity set alertTriangle started (see the alert grammar in
+     components.css). Three circles against the warning triangle: silhouette,
+     not only color, is what separates "act now" from "for your records" for a
+     reader who cannot rely on the tint. */
+  checkCircle: strokeIcon(svg` <circle cx="12" cy="12" r="10" />
+    <path d="m9 12 2 2 4-4" />`),
+  alertCircle: strokeIcon(svg` <circle cx="12" cy="12" r="10" />
+    <path d="M12 8v4" />
+    <path d="M12 16h.01" />`),
+  infoCircle: strokeIcon(svg` <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />`),
   hand: strokeIcon(svg` <path d="M18 11V6a2 2 0 0 0-4 0v5" />
     <path d="M14 10V4a2 2 0 0 0-4 0v6" />
     <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />

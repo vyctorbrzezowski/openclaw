@@ -647,11 +647,17 @@ openclaw-session-owner-chip {
   align-items: center;
   gap: var(--space-3);
   max-width: min(520px, calc(100vw - 32px));
-  padding: 10px 12px 10px 16px;
-  border: 1px solid var(--border-strong);
+  /* Shares the callout's --alert-* trio (see the alert grammar block below);
+     only the neutral defaults differ, because a floating surface needs the
+     opaque popover fill the in-flow callout does not. */
+  --alert-accent: var(--muted-strong);
+  --alert-surface: var(--popover);
+  --alert-border: var(--border-strong);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--alert-border);
   border-radius: var(--radius-md);
-  background: var(--popover);
-  color: var(--popover-foreground);
+  background: var(--alert-surface);
+  color: var(--text);
   box-shadow: var(--shadow-lg);
 }
 
@@ -681,36 +687,19 @@ openclaw-session-owner-chip {
   -webkit-box-orient: vertical;
 }
 
-.app-toast__action,
-.app-toast__dismiss {
+/* The dismiss button is styled once for both alert surfaces in the alert
+   grammar block below; only the action label is toast-specific. */
+.app-toast__action {
   flex: 0 0 auto;
   border: 0;
   background: transparent;
-  color: inherit;
-}
-
-.app-toast__action {
   color: var(--accent);
   font-size: var(--control-ui-text-sm);
   font-weight: 700;
 }
 
-.app-toast__dismiss {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 20px;
-  line-height: 1;
-}
-
 .app-toast__action:hover,
-.app-toast__action:focus-visible,
-.app-toast__dismiss:hover,
-.app-toast__dismiss:focus-visible {
+.app-toast__action:focus-visible {
   color: var(--text-strong);
 }
 
@@ -1392,15 +1381,24 @@ openclaw-github-link-hovercard-provider {
 }
 
 /* ===========================================
-   Callouts - Informative with subtle depth
-   =========================================== */
+   Alerts - one grammar for every status surface
+   ===========================================
+   .callout is the in-flow surface, .app-toast (above) the floating one. Both
+   read the same --alert-accent/--alert-surface/--alert-border trio, so a
+   warning is the same warning wherever it lands and a new severity is one
+   modifier rather than a new dialect. Each host declares its own neutral
+   defaults; the shared severity modifiers further down override them. */
 
 .callout {
-  padding: 14px 16px;
+  --alert-accent: var(--muted-strong);
+  --alert-surface: var(--secondary);
+  --alert-border: var(--border);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--secondary);
-  border: 1px solid var(--border);
-  font-size: 13px;
+  background: var(--alert-surface);
+  border: 1px solid var(--alert-border);
+  color: var(--text);
+  font-size: var(--control-ui-text-md);
   line-height: 1.5;
   position: relative;
 }
@@ -1409,7 +1407,7 @@ openclaw-github-link-hovercard-provider {
 .callout--action {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .callout__content {
@@ -1417,24 +1415,59 @@ openclaw-github-link-hovercard-provider {
   flex: 1;
 }
 
-.callout__dismiss {
+/* Body copy stays --text so a long sentence reads as prose; the tone colors the
+   glyph and the lead-in instead. Colored body text on a tinted surface is the
+   pairing base.css audits, but only for label-length strings. */
+.callout__title,
+.callout strong {
+  color: var(--alert-accent);
+}
+
+/* One icon spec for every alert surface: 17px optical size at 1.8 stroke,
+   painted by the tone. Sized here rather than per-feature so a warning glyph
+   never arrives a different weight than the one two panels over. */
+.callout__icon,
+.app-toast__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--alert-accent);
+}
+
+.callout__icon svg,
+.app-toast__icon svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+}
+
+/* Close affordance shared with the toast: same 28px target, same muted-to-strong
+   hover, same 16px glyph. --bg-hover rather than a white wash, which was
+   invisible in every light theme. */
+.callout__dismiss,
+.app-toast__dismiss {
+  display: grid;
   width: 28px;
   height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  place-items: center;
   flex: 0 0 auto;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: currentColor;
+  color: var(--muted);
 }
 
-.callout__dismiss:hover {
-  background: rgba(255, 255, 255, 0.08);
+.callout__dismiss:hover,
+.callout__dismiss:focus-visible,
+.app-toast__dismiss:hover,
+.app-toast__dismiss:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text-strong);
 }
 
-.callout__dismiss svg {
+.callout__dismiss svg,
+.app-toast__dismiss svg {
   display: block;
   width: 16px;
   height: 16px;
@@ -1443,6 +1476,27 @@ openclaw-github-link-hovercard-provider {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Alerts arrive rather than blink into place. Scale-only, no travel: the toast
+   sits bottom-right on desktop and top on phones, so any directional slide
+   would read backwards on one of them. base.css neutralises this under
+   prefers-reduced-motion. */
+@keyframes alert-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.callout,
+.app-toast {
+  animation: alert-enter var(--duration-normal) var(--ease-out);
 }
 
 .scope-upgrade-chip-row {
@@ -1482,36 +1536,46 @@ openclaw-github-link-hovercard-provider {
   background: currentColor;
 }
 
-.callout.danger {
-  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--danger) 14%, var(--bg-elevated)) 0%,
-    color-mix(in srgb, var(--danger) 8%, var(--bg-elevated)) 100%
-  );
-  color: color-mix(in srgb, var(--danger) 82%, var(--text-strong));
+/* The four severities, one formula, both hosts. Every value derives from the
+   canonical --ok/--warn/--danger/--info pair documented in base.css, so a theme
+   family or light mode retints all of them at once — the reason the old
+   hand-mixed gradients and raw rgba() variants drifted apart. Declared after
+   .callout and .app-toast so they win at equal specificity. */
+.callout--success,
+.app-toast--success {
+  --alert-accent: var(--ok);
+  --alert-surface: var(--ok-subtle);
+  --alert-border: color-mix(in srgb, var(--ok) 32%, var(--border));
 }
 
-.callout.warn {
-  border-color: color-mix(in srgb, var(--warn) 34%, var(--border));
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--warn) 14%, var(--bg-elevated)) 0%,
-    color-mix(in srgb, var(--warn) 8%, var(--bg-elevated)) 100%
-  );
-  color: color-mix(in srgb, var(--warn) 82%, var(--text-strong));
+.callout--warn,
+.app-toast--warn {
+  --alert-accent: var(--warn);
+  --alert-surface: var(--warn-subtle);
+  --alert-border: color-mix(in srgb, var(--warn) 32%, var(--border));
 }
 
-.callout.info {
-  border-color: rgba(59, 130, 246, 0.25);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
-  color: var(--info);
+.callout--danger,
+.app-toast--danger {
+  --alert-accent: var(--danger);
+  --alert-surface: var(--danger-subtle);
+  --alert-border: color-mix(in srgb, var(--danger) 32%, var(--border));
 }
 
-.callout.success {
-  border-color: rgba(34, 197, 94, 0.25);
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.04) 100%);
-  color: var(--ok);
+.callout--info,
+.app-toast--info {
+  --alert-accent: var(--info);
+  --alert-surface: var(--info-subtle);
+  --alert-border: color-mix(in srgb, var(--info) 32%, var(--border));
+}
+
+/* A tinted toast still floats above arbitrary content, so its tint composites
+   onto the opaque popover surface instead of whatever is behind it. */
+.app-toast--success,
+.app-toast--warn,
+.app-toast--danger,
+.app-toast--info {
+  background: linear-gradient(var(--alert-surface), var(--alert-surface)), var(--popover);
 }
 
 /* Pending routes share the native mascot without exposing transient panel text. */

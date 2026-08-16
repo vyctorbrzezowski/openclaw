@@ -173,8 +173,11 @@ function renderVisibilityPill(params: {
 
 export function renderDraftError(message: string) {
   return html`
-    <div class="callout danger new-session-page__error new-session-page__alert" role="alert">
-      <span class="new-session-page__alert-icon" aria-hidden="true">${icons.alertTriangle}</span>
+    <div
+      class="callout callout--danger new-session-page__error new-session-page__alert"
+      role="alert"
+    >
+      <span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>
       <span class="callout__content new-session-page__alert-message">${message}</span>
     </div>
   `;

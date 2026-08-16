@@ -519,7 +519,7 @@ function renderManual(props: ModelSetupViewProps, result: SystemAgentSetupDetect
           <span>${t("modelSetup.manual.verifyHint")}</span>
         </div>
         ${props.manualError
-          ? html`<div class="callout danger" role="alert">${props.manualError}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.manualError}</div>`
           : nothing}
         ${testing
           ? html`<div class="model-setup__testing" role="status">
@@ -527,7 +527,7 @@ function renderManual(props: ModelSetupViewProps, result: SystemAgentSetupDetect
             </div>`
           : nothing}
         ${failure
-          ? html`<div class="callout danger" role="alert">
+          ? html`<div class="callout callout--danger" role="alert">
               <strong>${failureLabel(failure.status)}</strong> ${failure.error}
             </div>`
           : nothing}
@@ -563,11 +563,11 @@ function renderReady(props: ModelSetupViewProps, result: SystemAgentSetupDetectR
     : nothing;
   if (!props.canAdmin) {
     return html`${current}
-      <div class="callout warning" role="note">${t("modelSetup.access.adminRequired")}</div>`;
+      <div class="callout callout--warn" role="note">${t("modelSetup.access.adminRequired")}</div>`;
   }
   if (props.gatewayTooOld) {
     return html`${current}
-      <div class="callout warning" role="note">${t("modelSetup.access.gatewayTooOld")}</div>`;
+      <div class="callout callout--warn" role="note">${t("modelSetup.access.gatewayTooOld")}</div>`;
   }
   return html`
     ${current} ${renderEmptyState(props, result)} ${renderCandidateRows(props, result)}
@@ -581,18 +581,18 @@ export function renderModelSetup(props: ModelSetupViewProps): TemplateResult {
   if (props.page.phase === "ready") {
     body = renderReady(props, props.page.result);
   } else if (!props.canAdmin) {
-    body = html`<div class="callout warning" role="note">
+    body = html`<div class="callout callout--warn" role="note">
       ${t("modelSetup.access.adminRequired")}
     </div>`;
   } else if (props.gatewayTooOld) {
-    body = html`<div class="callout warning" role="note">
+    body = html`<div class="callout callout--warn" role="note">
       ${t("modelSetup.access.gatewayTooOld")}
     </div>`;
   } else if (props.page.phase === "loading") {
     body = html`<div class="model-setup__loading" role="status">${t("modelSetup.loading")}</div>`;
   } else if (props.page.phase === "detect-error") {
     body = html`
-      <div class="callout danger" role="alert">${props.page.message}</div>
+      <div class="callout callout--danger" role="alert">${props.page.message}</div>
       <button type="button" class="btn" @click=${props.onDetect}>${t("modelSetup.retry")}</button>
     `;
   }
@@ -619,7 +619,7 @@ export function renderModelSetup(props: ModelSetupViewProps): TemplateResult {
           : nothing}
       </div>
       ${props.refreshWarning
-        ? html`<div class="callout warning" role="alert">${props.refreshWarning}</div>`
+        ? html`<div class="callout callout--warn" role="alert">${props.refreshWarning}</div>`
         : nothing}
       ${body}
     </div>

@@ -223,9 +223,9 @@ export function renderAgentChannels(params: {
       t("agents.context.configurationSubtitle"),
       params.onSelectPanel,
     )}
-    ${params.error ? html`<div class="callout danger">${params.error}</div>` : nothing}
+    ${params.error ? html`<div class="callout callout--danger">${params.error}</div>` : nothing}
     ${!params.snapshot
-      ? html`<div class="callout info">${t("agents.channels.loadHint")}</div>`
+      ? html`<div class="callout callout--info">${t("agents.channels.loadHint")}</div>`
       : nothing}
     ${renderSettingsSection(
       {
@@ -315,7 +315,7 @@ export function renderAgentCron(params: {
       t("agents.context.schedulingSubtitle"),
       params.onSelectPanel,
     )}
-    ${params.error ? html`<div class="callout danger">${params.error}</div>` : nothing}
+    ${params.error ? html`<div class="callout callout--danger">${params.error}</div>` : nothing}
     ${renderSettingsSection(
       {
         title: t("agents.cronPanel.schedulerTitle"),
@@ -453,7 +453,7 @@ export function renderAgentFiles(params: {
 
   return html`
     ${params.agentFilesError
-      ? html`<div class="callout danger">${params.agentFilesError}</div>`
+      ? html`<div class="callout callout--danger">${params.agentFilesError}</div>`
       : nothing}
     ${renderSettingsSection(
       {
@@ -567,7 +567,7 @@ export function renderAgentFiles(params: {
                           </div>
                         </div>
                         ${activeEntry.missing
-                          ? html`<div class="callout info">
+                          ? html`<div class="callout callout--info">
                               ${activeEntry.expectedAbsent === true
                                 ? t("agents.files.createHint")
                                 : t("agents.files.missingHint")}

@@ -49,8 +49,10 @@ export type CapabilityMenuProps = Omit<
 type ChatComposerDisabledBannerContent = {
   title?: string;
   text: string;
-  tone?: "info" | "neutral";
-  icon?: "warning";
+  /* One severity axis. A separate icon flag used to sit beside this and the two
+     drifted apart — the restart-recovery banner asked for a warning triangle on
+     a neutral surface. The glyph now follows the tone. */
+  tone?: "info" | "neutral" | "warn";
   actionLabel: string;
   actionStyle?: "primary";
   busy?: boolean;

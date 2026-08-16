@@ -460,7 +460,7 @@ export function renderConfig(props: ConfigProps) {
             ? html`
                 ${formUnsafe && showModeToggle && rawAvailable
                   ? html`<div class="config-content-callout">
-                      <div class="callout info">
+                      <div class="callout callout--info">
                         ${renderUnsupportedPathSummary(unsupportedActivePaths)}
                         <button
                           type="button"
@@ -596,7 +596,7 @@ export function renderConfig(props: ConfigProps) {
                             : nothing}
                         </span>
                         ${blurred
-                          ? html`<div class="callout info" style="margin-top: 12px">
+                          ? html`<div class="callout callout--info" style="margin-top: 12px">
                               ${t(
                                 sensitiveCount === 1
                                   ? "configView.sensitiveHidden"
@@ -619,7 +619,7 @@ export function renderConfig(props: ConfigProps) {
               })()}
       ${props.issues.length > 0
         ? html`<div class="config-content-callout">
-            <div class="callout danger">
+            <div class="callout callout--danger">
               <pre class="code-block">
 ${unsafeHTML(highlightJsonHtml(JSON.stringify(props.issues, null, 2)))}</pre>
             </div>

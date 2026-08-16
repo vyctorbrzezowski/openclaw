@@ -189,7 +189,7 @@ function renderEffectiveToolNotices(result: ToolsEffectiveResult | null) {
       ${notices.map(
         (notice) => html`
           <div
-            class="callout ${notice.severity === "warning" ? "warning" : "info"}"
+            class="callout callout--${notice.severity === "warning" ? "warn" : "info"}"
             style="margin-top: 12px"
           >
             ${notice.message}
@@ -409,19 +409,19 @@ export function renderAgentTools(params: {
 
   return html`
     ${!params.configForm
-      ? html`<div class="callout info">${t("agentTools.loadConfig")}</div>`
+      ? html`<div class="callout callout--info">${t("agentTools.loadConfig")}</div>`
       : nothing}
     ${hasAgentAllow
-      ? html`<div class="callout info">${t("agentTools.explicitAllowlist")}</div>`
+      ? html`<div class="callout callout--info">${t("agentTools.explicitAllowlist")}</div>`
       : nothing}
     ${hasGlobalAllow
-      ? html`<div class="callout info">${t("agentTools.globalAllowlist")}</div>`
+      ? html`<div class="callout callout--info">${t("agentTools.globalAllowlist")}</div>`
       : nothing}
     ${params.toolsCatalogLoading && !params.toolsCatalogResult && !params.toolsCatalogError
-      ? html`<div class="callout info">${t("agentTools.loadingCatalog")}</div>`
+      ? html`<div class="callout callout--info">${t("agentTools.loadingCatalog")}</div>`
       : nothing}
     ${params.toolsCatalogError
-      ? html`<div class="callout info">${t("agentTools.catalogFallback")}</div>`
+      ? html`<div class="callout callout--info">${t("agentTools.catalogFallback")}</div>`
       : nothing}
     ${renderSettingsSection(
       {
@@ -752,15 +752,15 @@ export function renderAgentSkills(params: {
 
   return html`
     ${!params.configForm
-      ? html`<div class="callout info">${t("agents.skillsPanel.loadConfig")}</div>`
+      ? html`<div class="callout callout--info">${t("agents.skillsPanel.loadConfig")}</div>`
       : nothing}
     ${usingAllowlist
-      ? html`<div class="callout info">${t("agents.skillsPanel.customAllowlist")}</div>`
-      : html`<div class="callout info">${t("agents.skillsPanel.allEnabled")}</div>`}
+      ? html`<div class="callout callout--info">${t("agents.skillsPanel.customAllowlist")}</div>`
+      : html`<div class="callout callout--info">${t("agents.skillsPanel.allEnabled")}</div>`}
     ${!reportReady && !params.loading
-      ? html`<div class="callout info">${t("agents.skillsPanel.loadAgent")}</div>`
+      ? html`<div class="callout callout--info">${t("agents.skillsPanel.loadAgent")}</div>`
       : nothing}
-    ${params.error ? html`<div class="callout danger">${params.error}</div>` : nothing}
+    ${params.error ? html`<div class="callout callout--danger">${params.error}</div>` : nothing}
     ${renderSettingsSection(
       {
         title: t("agents.skillsPanel.title"),

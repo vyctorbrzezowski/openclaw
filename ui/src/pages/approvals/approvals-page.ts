@@ -336,18 +336,18 @@ class ApprovalsPage extends OpenClawLightDomElement {
           ${renderDocsLink(APPROVALS_DOCS_URL, t("common.learnMore"))}
         </p>
         ${!this.connected
-          ? html`<div class="callout warn">${t("approvalHistory.offline")}</div>`
+          ? html`<div class="callout callout--warn">${t("approvalHistory.offline")}</div>`
           : nothing}
         ${this.connected && !this.approvalsAccess
           ? html`
-              <div class="callout warn" role="status">
+              <div class="callout callout--warn" role="status">
                 ${t("common.disabled")} · <code>${APPROVAL_HISTORY_REQUIRED_SCOPE}</code>
               </div>
             `
           : nothing}
         ${this.approvalsAccess && this.error
           ? html`
-              <div class="callout danger">
+              <div class="callout callout--danger">
                 ${this.error}
                 <button class="btn btn--sm" @click=${() => void this.loadPage(true)}>
                   ${t("common.retry")}

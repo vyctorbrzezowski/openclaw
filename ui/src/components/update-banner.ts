@@ -19,7 +19,9 @@ class UpdateBanner extends OpenClawLightDomContentsElement {
     return html`
       ${props.statusBanner
         ? html`<div
-            class="callout ${props.statusBanner.tone} ${props.action ? "callout--action" : ""}"
+            class="callout callout--${props.statusBanner.tone} ${props.action
+              ? "callout--action"
+              : ""}"
             role=${props.action ? "status" : "alert"}
           >
             <span class="callout__content">${props.statusBanner.text}</span>

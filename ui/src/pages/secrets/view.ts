@@ -257,7 +257,7 @@ function renderEntryDialog(props: SecretsStoreViewProps): TemplateResult | typeo
             `
           : nothing}
         ${props.formError
-          ? html`<div class="callout danger" role="alert">${props.formError}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.formError}</div>`
           : nothing}
         <div class="secrets-store-dialog__actions">
           <button class="btn primary" type="submit" ?disabled=${props.busy}>
@@ -321,12 +321,12 @@ function renderBulkDialog(props: SecretsStoreViewProps): TemplateResult | typeof
           </span>
         </label>
         ${props.bulkInvalidNames.length
-          ? html`<div class="callout danger" role="alert">
+          ? html`<div class="callout callout--danger" role="alert">
               ${t("secretsStore.badName")} ${props.bulkInvalidNames.join(", ")}
             </div>`
           : nothing}
         ${props.formError
-          ? html`<div class="callout danger" role="alert">${props.formError}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.formError}</div>`
           : nothing}
         <div class="secrets-store-dialog__actions">
           <button
@@ -370,7 +370,7 @@ export function renderSecretsStore(props: SecretsStoreViewProps): TemplateResult
     ${renderSettingsPage(
       html`
         ${props.error
-          ? html`<div class="callout danger secrets-store__message" role="alert">
+          ? html`<div class="callout callout--danger secrets-store__message" role="alert">
               <span>${props.error}</span>
               ${props.canList
                 ? html`<button class="btn btn--sm" type="button" @click=${props.onRefresh}>
@@ -381,7 +381,7 @@ export function renderSecretsStore(props: SecretsStoreViewProps): TemplateResult
           : nothing}
         ${props.notice
           ? html`<div
-              class="callout success secrets-store__message"
+              class="callout callout--success secrets-store__message"
               role="status"
               aria-live="polite"
             >

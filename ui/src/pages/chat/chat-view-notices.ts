@@ -34,11 +34,11 @@ function renderDiskSpaceNotice(diskSpace: SessionPlacementDiskSpace | undefined)
   const critical = diskSpace.status === "critical";
   return html`
     <div
-      class="callout ${critical ? "danger" : "warn"} chat-cloud-disk-space-notice"
+      class="callout callout--${critical ? "danger" : "warn"} chat-cloud-disk-space-notice"
       role=${critical ? "alert" : "status"}
     >
       <div class="chat-cloud-disk-space-notice__title">
-        <span aria-hidden="true">${icons.alertTriangle}</span>
+        <span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>
         <strong
           >${t(critical ? "chat.diskSpace.criticalTitle" : "chat.diskSpace.warningTitle")}</strong
         >

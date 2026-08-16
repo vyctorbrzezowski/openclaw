@@ -26,10 +26,13 @@ export function renderWorkspaceConflictNotice(props: {
     { count: String(count) },
   );
   return html`
-    <div class="callout warn callout--dismissible chat-workspace-conflict-notice" role="status">
+    <div
+      class="callout callout--warn callout--dismissible chat-workspace-conflict-notice"
+      role="status"
+    >
       <div class="callout__content chat-workspace-conflict-notice__content">
         <div class="chat-workspace-conflict-notice__title">
-          <span aria-hidden="true">${icons.alertTriangle}</span>
+          <span class="callout__icon" aria-hidden="true">${icons.alertTriangle}</span>
           <strong>${title}</strong>
         </div>
         <p>${t("chat.workspaceConflict.description")}</p>

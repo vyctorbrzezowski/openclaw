@@ -459,7 +459,7 @@ export function renderSessionList(params: {
       ${host.sessionData.sessionMutationError
         ? html`
             <div
-              class="sidebar-session-error callout danger callout--dismissible"
+              class="sidebar-session-error callout callout--danger callout--dismissible"
               role="alert"
               data-sidebar-session-error
             >

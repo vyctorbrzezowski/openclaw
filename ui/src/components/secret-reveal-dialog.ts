@@ -80,7 +80,7 @@ export function showSecretRevealDialog(options: SecretRevealDialogOptions): Prom
               </div>
               <div class="secret-reveal__body"><p>${options.message}</p></div>
               ${options.callout
-                ? html`<div class="callout info secret-reveal__callout">${options.callout}</div>`
+                ? html`<div class="callout callout--info secret-reveal__callout">${options.callout}</div>`
                 : nothing}
               ${options.secret
                 ? html`

@@ -45,19 +45,19 @@ export function renderChannels(props: ChannelsProps) {
   return html`
     ${renderSettingsPage(html`
       ${showingStaleSnapshot
-        ? html`<div class="callout info">${t("channels.refreshingStaleSnapshot")}</div>`
+        ? html`<div class="callout callout--info">${t("channels.refreshingStaleSnapshot")}</div>`
         : nothing}
       ${props.snapshot?.partial
         ? html`
-            <div class="callout warn">
+            <div class="callout callout--warn">
               ${t("channels.hub.partialSnapshot")}
               ${partialWarnings.length > 0 ? partialWarnings.slice(0, 3).join("; ") : ""}
             </div>
           `
         : nothing}
-      ${props.lastError ? html`<div class="callout danger">${props.lastError}</div>` : nothing}
+      ${props.lastError ? html`<div class="callout callout--danger">${props.lastError}</div>` : nothing}
       ${props.setupBlockedByDirtyConfig && props.configFormDirty
-        ? html`<div class="callout warn">${t("channels.hub.saveBeforeSetup")}</div>`
+        ? html`<div class="callout callout--warn">${t("channels.hub.saveBeforeSetup")}</div>`
         : nothing}
       ${renderChannelPairingQueue(props)}
       ${renderSettingsSection(

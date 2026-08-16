@@ -568,7 +568,7 @@ function renderMarkdownSidebar(props: MarkdownSidebarProps) {
       <div class="sidebar-content">
         ${props.error
           ? html`
-              <div class="callout danger">${props.error}</div>
+              <div class="callout callout--danger">${props.error}</div>
               ${content?.rawText?.trim()
                 ? html`
                     <button

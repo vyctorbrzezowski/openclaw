@@ -92,7 +92,7 @@ function renderTask(task: TaskSummary, props: TasksProps) {
         </div>
         ${detail ? html`<div class="list-sub">${detail}</div>` : nothing}
         ${retainedResult
-          ? html`<div class="callout warn">
+          ? html`<div class="callout callout--warn">
               ${t(dismissedDelivery ? "tasksPage.deliveryDismissed" : "tasksPage.deliveryBlocked")}
               ${recoverableDelivery
                 ? html`<div class="muted">${t("tasksPage.duplicateRisk")}</div>`
@@ -253,9 +253,9 @@ export function renderTasks(props: TasksProps) {
   return html`
     <div class="stack">
       ${!props.connected
-        ? html`<div class="callout warn">${t("tasksPage.disconnected")}</div>`
+        ? html`<div class="callout callout--warn">${t("tasksPage.disconnected")}</div>`
         : nothing}
-      ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
+      ${props.error ? html`<div class="callout callout--danger">${props.error}</div>` : nothing}
       ${renderSummaryStrip(props.tasks)}
       ${props.loading && props.tasks.length === 0
         ? html`<div class="card muted">${t("tasksPage.loading")}</div>`

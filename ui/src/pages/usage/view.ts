@@ -771,7 +771,7 @@ export function renderUsage(props: UsageProps) {
                 : nothing}
               ${queryWarnings.length > 0
                 ? html`
-                    <div class="callout warning usage-callout usage-callout--tight">
+                    <div class="callout callout--warn usage-callout usage-callout--tight">
                       ${queryWarnings.join(" · ")}
                     </div>
                   `
@@ -779,18 +779,18 @@ export function renderUsage(props: UsageProps) {
             </div>
 
             ${data.error
-              ? html`<div class="callout danger usage-callout">${data.error}</div>`
+              ? html`<div class="callout callout--danger usage-callout">${data.error}</div>`
               : nothing}
             ${cacheStatusTitle
               ? html`
-                  <div class="callout warning usage-callout usage-cache-warning">
+                  <div class="callout callout--warn usage-callout usage-cache-warning">
                     ${t("usage.cacheStatus.warning")} ${cacheStatusTitle}
                   </div>
                 `
               : nothing}
             ${data.sessionsLimitReached
               ? html`
-                  <div class="callout warning usage-callout">
+                  <div class="callout callout--warn usage-callout">
                     ${t("usage.sessions.limitReached")}
                   </div>
                 `

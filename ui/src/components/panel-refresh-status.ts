@@ -47,13 +47,13 @@ export function renderPanelRefreshStatus(params: {
   const className = params.className ? ` ${params.className}` : "";
   if (!error) {
     return html`
-      <div class="callout warn${className}" role="status">
+      <div class="callout callout--warn${className}" role="status">
         <strong>${t("common.staleData")}</strong>
       </div>
     `;
   }
   return html`
-    <div class="callout danger callout--dismissible${className}" role="alert">
+    <div class="callout callout--danger callout--dismissible${className}" role="alert">
       <span class="callout__content">
         <span>${error}</span>
         ${status.stale ? html`<br /><strong>${t("common.staleData")}</strong>` : nothing}

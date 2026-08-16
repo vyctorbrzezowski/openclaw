@@ -339,6 +339,8 @@
     corner-shape: superellipse(1.5);
   }
 
+  .callout.callout,
+  .app-toast.app-toast,
   .agent-tool-card.agent-tool-card,
   .chat-thread.chat-thread,
   .chat-bubble.chat-bubble,

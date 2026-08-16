@@ -34,7 +34,7 @@ function renderGatewayUrlConfirmation(props: GatewayUrlConfirmationProps) {
           </div>
         </div>
         <div class="exec-approval-command mono">${props.pendingGatewayUrl}</div>
-        <div class="callout danger" style="margin-top: 12px;">
+        <div class="callout callout--danger" style="margin-top: 12px;">
           ${t("channels.gatewayUrlConfirmation.warning")}
         </div>
         <div class="exec-approval-actions">

@@ -1751,7 +1751,7 @@ function renderSessionDetailsRow(params: {
                 ${t("sessionsView.loadingCheckpoints")}
               </div>`
             : checkpointError
-              ? html`<div class="callout danger" role="alert">${checkpointError}</div>`
+              ? html`<div class="callout callout--danger" role="alert">${checkpointError}</div>`
               : !hasCheckpoints || checkpointItems.length === 0
                 ? html`<div class="muted session-details-empty">
                     ${t("sessionsView.noCheckpoints")}

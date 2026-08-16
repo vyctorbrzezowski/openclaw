@@ -428,7 +428,7 @@ export function renderCron(props: CronProps) {
 function renderAdminRequired(props: CronProps) {
   return props.canManage
     ? nothing
-    : html`<div class="callout warning" role="note">${t("cron.adminRequired")}</div>`;
+    : html`<div class="callout callout--warn" role="note">${t("cron.adminRequired")}</div>`;
 }
 
 // ── List view ──

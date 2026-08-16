@@ -207,12 +207,6 @@ openclaw-chat-page {
   gap: 8px;
 }
 
-.chat-cloud-disk-space-notice__title svg {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 auto;
-}
-
 .chat-workspace-conflict-notice__content {
   display: grid;
   gap: 8px;
@@ -232,7 +226,6 @@ openclaw-chat-page {
   color: color-mix(in srgb, var(--warn) 82%, var(--text-strong));
 }
 
-.chat-workspace-conflict-notice__title svg,
 .chat-workspace-conflict-event__header svg {
   width: 17px;
   height: 17px;
@@ -2667,17 +2660,6 @@ button.chat-reply-preview--message:disabled {
 
 .agent-chat__disabled-banner--neutral {
   color: var(--text);
-}
-
-.agent-chat__disabled-banner-icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  color: color-mix(in srgb, var(--warn) 72%, var(--muted));
-}
-
-.agent-chat__disabled-banner-icon svg {
-  width: 18px;
-  height: 18px;
 }
 
 .agent-chat__disabled-banner-title {

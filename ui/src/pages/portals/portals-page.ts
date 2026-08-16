@@ -239,7 +239,7 @@ class PortalsPage extends OpenClawLightDomElement {
         ${unsupported
           ? html`<div class="portals-empty__note">${t("portalsPage.unsupported")}</div>`
           : nothing}
-        ${this.error ? html`<div class="callout danger">${this.error}</div>` : nothing}
+        ${this.error ? html`<div class="callout callout--danger">${this.error}</div>` : nothing}
       </section>
     `;
   }
@@ -287,7 +287,7 @@ class PortalsPage extends OpenClawLightDomElement {
           </button>
         </header>
         ${this.error
-          ? html`<div class="callout danger portals-preview__error">${this.error}</div>`
+          ? html`<div class="callout callout--danger portals-preview__error">${this.error}</div>`
           : nothing}
         ${probeStatus === "probing"
           ? html`

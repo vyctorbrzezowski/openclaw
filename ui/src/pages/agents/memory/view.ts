@@ -854,7 +854,7 @@ function renderAdvancedSection(props: DreamingProps) {
       ${props.dreamDiaryActionMessage
         ? html`
             <div
-              class="callout ${props.dreamDiaryActionMessage.kind === "success"
+              class="callout callout--${props.dreamDiaryActionMessage.kind === "success"
                 ? "success"
                 : "danger"}"
               role="status"

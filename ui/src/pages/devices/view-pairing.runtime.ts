@@ -149,7 +149,7 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
             : nothing}
           ${lifecycle.phase === "error"
             ? html`
-                <div class="callout danger device-pair-setup__error" role="alert">
+                <div class="callout callout--danger device-pair-setup__error" role="alert">
                   <strong
                     >${t(
                       lifecycle.source === "status"
@@ -215,7 +215,7 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
 
                 ${setup.accessDowngraded
                   ? html`
-                      <div class="callout warn device-pair-setup__access-warning" role="status">
+                      <div class="callout callout--warn device-pair-setup__access-warning" role="status">
                         <strong>${t("devices.pairing.transportLimitedTitle")}</strong>
                         <span>${t("devices.pairing.transportLimitedHint")}</span>
                       </div>
@@ -245,7 +245,7 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
 
                 ${props.pendingCount > 0
                   ? html`
-                      <div class="callout warn device-pair-setup__pending">
+                      <div class="callout callout--warn device-pair-setup__pending">
                         <span>
                           ${t("devices.pairing.pending", { count: String(props.pendingCount) })}
                         </span>

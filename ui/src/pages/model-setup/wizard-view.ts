@@ -48,7 +48,7 @@ export function renderModelSetupWizard(props: WizardViewProps): TemplateResult |
         </div>
         <div class="model-setup-wizard__body">
           ${props.refreshWarning
-            ? html`<div class="callout warning" role="alert">${props.refreshWarning}</div>`
+            ? html`<div class="callout callout--warn" role="alert">${props.refreshWarning}</div>`
             : nothing}
           ${props.state.phase === "starting"
             ? html`<div role="status">
@@ -61,10 +61,10 @@ export function renderModelSetupWizard(props: WizardViewProps): TemplateResult |
             : props.state.phase === "done"
               ? html`<div role="status">${t("modelSetup.wizard.checking")}</div>`
               : props.state.phase === "error" || props.state.phase === "cancelled"
-                ? html`<div class="callout danger" role="alert">${props.state.message}</div>`
+                ? html`<div class="callout callout--danger" role="alert">${props.state.message}</div>`
                 : html`
                     ${props.state.validationError
-                      ? html`<div class="callout danger" role="alert">
+                      ? html`<div class="callout callout--danger" role="alert">
                           ${props.state.validationError}
                         </div>`
                       : nothing}

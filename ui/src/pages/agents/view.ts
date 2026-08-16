@@ -264,7 +264,7 @@ export function renderAgents(props: AgentsProps) {
           </div>
         </div>
         ${props.error
-          ? html`<div class="callout danger" style="margin-top: 8px;">${props.error}</div>`
+          ? html`<div class="callout callout--danger" style="margin-top: 8px;">${props.error}</div>`
           : nothing}
       </section>
       <section class="agents-main">
@@ -292,7 +292,7 @@ export function renderAgents(props: AgentsProps) {
                 aria-labelledby=${`agents-tab-${props.activePanel}`}
               >
                 ${props.config.error
-                  ? html`<div class="callout danger" role="alert">${props.config.error}</div>`
+                  ? html`<div class="callout callout--danger" role="alert">${props.config.error}</div>`
                   : nothing}
                 ${props.activePanel === "overview"
                   ? keyed(

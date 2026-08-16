@@ -207,7 +207,7 @@ class ScopeUpgradeBanner extends OpenClawLightDomContentsElement {
                   )
                 : t("connection.scopeUpgrade.error", { error: state.message });
     return html`<div
-      class="callout ${state.phase === "error" || state.phase === "rejected"
+      class="callout callout--${state.phase === "error" || state.phase === "rejected"
         ? "danger"
         : "warn"} callout--action ${dismissible ? "callout--dismissible" : ""}"
       role="status"

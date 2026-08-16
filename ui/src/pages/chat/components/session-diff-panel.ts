@@ -576,7 +576,7 @@ class SessionDiffPanel extends OpenClawLightDomElement {
   private renderBody(): TemplateResult {
     if (this.diffTask.status === TaskStatus.ERROR) {
       const error = this.diffTask.error;
-      return html`<div class="callout danger">
+      return html`<div class="callout callout--danger">
         ${error instanceof Error ? error.message : String(error)}
       </div>`;
     }

@@ -144,7 +144,7 @@ export function renderWorkboard(props: WorkboardProps) {
     if (props.pluginEnablementError) {
       return html`
         <section class="workboard">
-          <div class="callout danger" role="alert">${props.pluginEnablementError}</div>
+          <div class="callout callout--danger" role="alert">${props.pluginEnablementError}</div>
           ${props.onReloadConfig
             ? html`<button class="btn" type="button" @click=${props.onReloadConfig}>
                 ${t("lazyView.retry")}
@@ -422,7 +422,7 @@ export function renderWorkboard(props: WorkboardProps) {
           </div>
         </div>
         ${renderHealthStrip(state, health, props.onRequestUpdate)}
-        ${visibleError ? html`<div class="callout danger">${visibleError}</div>` : nothing}
+        ${visibleError ? html`<div class="callout callout--danger">${visibleError}</div>` : nothing}
         ${renderDispatchSummary(state)}
         ${(filtered.length === 0 && activeFiltering) || visibleStatuses.length === 0
           ? html`

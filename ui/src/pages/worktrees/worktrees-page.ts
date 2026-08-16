@@ -440,7 +440,7 @@ class WorktreesPage extends OpenClawLightDomElement {
     `;
     const body = renderSettingsPage(
       html`
-        ${this.error ? html`<div class="callout danger">${this.error}</div>` : nothing}
+        ${this.error ? html`<div class="callout callout--danger">${this.error}</div>` : nothing}
         ${renderSettingsSection(
           { title: t("worktrees.title"), description: t("worktrees.subtitle"), actions },
           rows,

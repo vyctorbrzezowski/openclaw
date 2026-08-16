@@ -139,7 +139,7 @@ export function renderConfigForm(props: ConfigFormProps) {
   const schema = props.schema;
   const value = props.value ?? {};
   if (schemaType(schema) !== "object" || !schema.properties) {
-    return html` <div class="callout danger">${t("configForm.unsupportedSchema")}</div> `;
+    return html` <div class="callout callout--danger">${t("configForm.unsupportedSchema")}</div> `;
   }
   const unsupported = new Set(props.unsupportedPaths ?? []);
   const properties = schema.properties;

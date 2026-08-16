@@ -272,7 +272,7 @@ export function renderSkills(props: SkillsProps) {
       html`
         ${renderSkillsToolbar(props, statusCounts, filtered.length)}
         ${props.error
-          ? html`<div class="callout danger" role="alert">${props.error}</div>`
+          ? html`<div class="callout callout--danger" role="alert">${props.error}</div>`
           : nothing}
         ${renderClawHubSection(props)}
         ${filtered.length === 0
@@ -408,11 +408,11 @@ function renderClawHubSection(props: SkillsProps) {
           : nothing}
       </div>
       ${props.clawhubSearchError
-        ? html`<div class="callout danger plugins-group-message">${props.clawhubSearchError}</div>`
+        ? html`<div class="callout callout--danger plugins-group-message">${props.clawhubSearchError}</div>`
         : nothing}
       ${props.clawhubInstallMessage
         ? html`<div
-            class="callout ${props.clawhubInstallMessage.kind === "error"
+            class="callout callout--${props.clawhubInstallMessage.kind === "error"
               ? "danger"
               : "success"} plugins-group-message"
           >
@@ -534,7 +534,7 @@ function renderClawHubDetailDialog(props: SkillsProps) {
           ${props.clawhubDetailLoading
             ? html`<div class="muted">${t("common.loading")}</div>`
             : props.clawhubDetailError
-              ? html`<div class="callout danger">${props.clawhubDetailError}</div>`
+              ? html`<div class="callout callout--danger">${props.clawhubDetailError}</div>`
               : detail?.skill
                 ? html`
                     <div style="font-size: 14px; line-height: 1.5;">
@@ -740,7 +740,7 @@ function renderSkillDetail(skill: SkillStatusEntry, props: SkillsProps) {
           </div>
 
           ${message
-            ? html`<div class="callout ${message.kind === "error" ? "danger" : "success"}">
+            ? html`<div class="callout callout--${message.kind === "error" ? "danger" : "success"}">
                 ${message.message}
               </div>`
             : nothing}
@@ -819,7 +819,7 @@ function renderInstalledClawHubOverview(
     return nothing;
   }
   if (link.status === "invalid") {
-    return html`<div class="callout danger">
+    return html`<div class="callout callout--danger">
       <div style="font-weight: 600; margin-bottom: 4px;">${t("skillsPage.invalidLink")}</div>
       <div>${link.reason}</div>
     </div>`;
@@ -864,7 +864,7 @@ function renderInstalledSkillCard(skill: SkillStatusEntry, props: SkillsProps) {
   if (content === undefined) {
     const error = props.skillCardErrors[skill.skillKey];
     if (error) {
-      return html`<div class="callout danger">${error}</div>`;
+      return html`<div class="callout callout--danger">${error}</div>`;
     }
     return html`<div class="muted" style="font-size: 13px;">
       ${props.skillCardLoadingKey === skill.skillKey
