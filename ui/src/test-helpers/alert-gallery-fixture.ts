@@ -66,8 +66,8 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
     });
   }
 
-  /** Eight in a burst: past the five-card ceiling, so the oldest retire and the
-   * front card reports the overflow count. */
+  /** Seven in a burst: past the five-card ceiling, so the oldest retire and the
+   * front card reports the full overflow count. */
   private fireRapid() {
     const order: readonly (ToastTone | null)[] = [
       "info",
@@ -77,7 +77,6 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
       null,
       "warn",
       "danger",
-      "success",
     ];
     order.forEach((tone, index) => {
       globalThis.setTimeout(() => this.fire(tone), index * 60);
@@ -141,7 +140,7 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
             fire 5 mixed
           </button>
           <button class="btn btn--sm" type="button" @click=${() => this.fireRapid()}>
-            rapid fire × 8 (overflow)
+            rapid fire × 7 (overflow)
           </button>
         </div>
       </section>

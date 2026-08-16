@@ -740,8 +740,8 @@ openclaw-session-owner-chip {
   opacity: 0.7;
 }
 
-/* Beyond the third card a peeking edge is a sliver, not a card; those fold away
-   and the front card carries a count instead. */
+/* Beyond the three peeking edges a further card is a sliver, not a card; it
+   folds away and the front card carries a count instead. */
 .app-toast[data-collapsed-hidden] {
   z-index: calc(var(--z-toast) - 3);
   opacity: 0;

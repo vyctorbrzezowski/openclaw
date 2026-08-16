@@ -43,21 +43,39 @@ describe("shared toast", () => {
     ).toEqual(["Second", "First"]);
   });
 
-  it("retires the oldest card once the stack is full and counts the overflow", async () => {
-    const host = await mountHost();
-    const retired: string[] = [];
+  it.each([
+    {
+      total: 5,
+      labels: ["1st", "2nd", "3rd", "4th", "5th"],
+      front: "5th",
+      retired: [],
+      count: "+1",
+    },
+    {
+      total: 7,
+      labels: ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"],
+      front: "7th",
+      retired: ["1st", "2nd"],
+      count: "+3",
+    },
+  ])(
+    "counts every dispatched card for $total outcomes",
+    async ({ labels, front, retired: expectedRetired, count }) => {
+      const host = await mountHost();
+      const retired: string[] = [];
 
-    for (const label of ["1st", "2nd", "3rd", "4th", "5th", "6th"]) {
-      showToast({ message: label, onDismiss: (reason) => retired.push(`${label}:${reason}`) });
-    }
-    await host.updateComplete;
+      for (const label of labels) {
+        showToast({ message: label, onDismiss: (reason) => retired.push(`${label}:${reason}`) });
+      }
+      await host.updateComplete;
 
-    expect(host.querySelectorAll(".app-toast")).toHaveLength(5);
-    expect(host.querySelector(".app-toast__message")?.textContent).toBe("6th");
-    expect(retired).toEqual(["1st:replaced"]);
-    // Three cards keep a peeking edge; the rest are reported as a count.
-    expect(host.querySelector(".app-toast__count")?.textContent).toBe("+2");
-  });
+      expect(host.querySelectorAll(".app-toast")).toHaveLength(5);
+      expect(host.querySelector(".app-toast__message")?.textContent).toBe(front);
+      expect(retired).toEqual(expectedRetired.map((label) => `${label}:replaced`));
+      // Total dispatched = front + three visible edges + the counter.
+      expect(host.querySelector(".app-toast__count")?.textContent).toBe(count);
+    },
+  );
 
   it("holds every card's clock while the stack is expanded, then resumes it", async () => {
     vi.useFakeTimers();
