@@ -327,6 +327,66 @@ openclaw-modal-dialog.dialog-2xl {
   gap: 8px;
 }
 
+/* The confirming action carries one weight per theme, whichever variant a
+   dialog spells it with. Only --dialog-action-tint separates .primary from
+   .danger; every other declaration below is shared, so the two classes
+   cannot drift back into two weights. That drift is what put a quiet Delete
+   and a glowing Archive on the same dark panel, the irreversible action the
+   softer of the two — and it read that way because --accent is red in every
+   shipped theme, so the difference the eye caught was weight, not hue.
+
+   Dark takes the tonal fill: a saturated block is the brightest object on a
+   dark panel, so it outshouts the sentence it is asking about, and it has
+   nothing to compete with anyway since a modal owns the screen. Light takes
+   the solid fill, where the same block reads as weight on paper rather than
+   as light. Both are shipped treatments, each already right for one theme;
+   this only stops each from leaking into the other. */
+.dialog-footer .btn.primary {
+  --dialog-action-tint: var(--accent);
+}
+
+.dialog-footer .btn.danger {
+  --dialog-action-tint: var(--danger);
+}
+
+/* 8% and 15% are --danger-subtle and the .btn.danger hover in components.css,
+   restated as a mix so one tint drives both variants. Dark keeps the label on
+   the tint itself, the pairing the palette audit in base.css measured. */
+:root:not([data-theme-mode="light"]) .dialog-footer .btn.primary,
+:root:not([data-theme-mode="light"]) .dialog-footer .btn.danger {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--dialog-action-tint) 8%, transparent);
+  box-shadow: none;
+  color: var(--dialog-action-tint);
+}
+
+:root:not([data-theme-mode="light"]) .dialog-footer .btn.primary:hover,
+:root:not([data-theme-mode="light"]) .dialog-footer .btn.danger:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--dialog-action-tint) 15%, transparent);
+  box-shadow: none;
+}
+
+/* Hover darkens the fill rather than reaching for a per-variant hover token:
+   --danger has no solid-hover counterpart in the light palettes, and darkening
+   only raises the contrast the base.css audit measured for the resting fill.
+   20% is inside the 12-24% band the themes give --accent-glow, so the lift is
+   the same for both variants instead of one glowing and one flat. */
+:root[data-theme-mode="light"] .dialog-footer .btn.primary,
+:root[data-theme-mode="light"] .dialog-footer .btn.danger {
+  border-color: var(--dialog-action-tint);
+  background: var(--dialog-action-tint);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--dialog-action-tint) 8%, transparent);
+  color: var(--primary-foreground);
+}
+
+:root[data-theme-mode="light"] .dialog-footer .btn.primary:hover,
+:root[data-theme-mode="light"] .dialog-footer .btn.danger:hover {
+  border-color: color-mix(in srgb, var(--dialog-action-tint) 88%, black);
+  background: color-mix(in srgb, var(--dialog-action-tint) 88%, black);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--dialog-action-tint) 20%, transparent);
+}
+
 @keyframes dialog-enter {
   from {
     opacity: 0;
