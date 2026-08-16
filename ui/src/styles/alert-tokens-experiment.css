@@ -153,15 +153,34 @@
    danger callout read as a second, louder alarm. */
 .callout .btn,
 .app-toast__action {
-  border-color: transparent;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radius-full);
   background: var(--alert-x-action-bg);
   color: var(--text);
+  font-size: var(--control-ui-text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .callout .btn:hover,
-.app-toast__action:hover {
+.callout .btn:focus-visible,
+.app-toast__action:hover,
+.app-toast__action:focus-visible {
   background: var(--alert-x-neutral-border);
   color: var(--text-strong);
+}
+
+.callout .btn:active,
+.app-toast__action:active {
+  background: var(--alert-x-neutral-border);
 }
 
 /* The overflow count reports state; its neutral veil must not read as another
