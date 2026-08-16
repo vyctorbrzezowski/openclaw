@@ -392,7 +392,9 @@ export function renderLogbook(props: LogbookProps) {
           </button>
         </div>
       </header>
-      ${state.error ? html`<div class="callout callout--danger" role="alert">${state.error}</div>` : nothing}
+      ${state.error
+        ? html`<div class="callout callout--danger" role="alert">${state.error}</div>`
+        : nothing}
       <div class="logbook__layout">
         <div class="logbook__timeline">
           ${state.loading && cards.length === 0

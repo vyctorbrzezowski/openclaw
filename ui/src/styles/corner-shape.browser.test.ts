@@ -112,6 +112,30 @@ const CORNER_CASES: readonly CornerCase[] = [
     superelliptical: "12.5px",
   },
   {
+    circular: "10px",
+    markup: '<div class="sw-action-toast">Skill installed</div>',
+    selector: ".sw-action-toast",
+    superelliptical: "12.5px",
+  },
+  {
+    circular: "10px",
+    markup: '<div class="plugins-page-error">Could not load plugins</div>',
+    selector: ".plugins-page-error",
+    superelliptical: "12.5px",
+  },
+  {
+    circular: "10px",
+    markup: '<div class="approval-page__callout">Connection lost</div>',
+    selector: ".approval-page__callout",
+    superelliptical: "12.5px",
+  },
+  {
+    circular: "10px",
+    markup: '<div class="sw-error">Could not load the workshop</div>',
+    selector: ".sw-error",
+    superelliptical: "12.5px",
+  },
+  {
     // Real DOM shape from chat-composer-slash-menu.ts: .slash-menu-item is a
     // div two levels below .slash-menu (through .slash-menu__scroll and
     // .slash-menu-group), not a direct child. Item radius is panel radius
@@ -237,6 +261,12 @@ function readUiCss(): string {
     "ui/src/styles/chat/layout.css",
     "ui/src/styles/settings.css",
     "ui/src/pages/activity/run-inspector.css",
+    // Lazily imported page stylesheets whose alert surfaces opted into the
+    // corner block; their own border-radius is the circular baseline the
+    // unsupported-engine case asserts, so it has to be in the fixture.
+    "ui/src/styles/plugins.css",
+    "ui/src/styles/approval.css",
+    "ui/src/styles/skill-workshop.css",
   ]
     .map((file) => readStyleSheet(file))
     .join("\n");

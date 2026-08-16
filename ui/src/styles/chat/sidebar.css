@@ -1668,8 +1668,8 @@ openclaw-session-discussion {
   justify-content: space-between;
   gap: 10px;
   padding: 8px 10px;
-  border-bottom: 1px solid color-mix(in srgb, var(--warn) 40%, var(--border));
-  background: color-mix(in srgb, var(--warn) 10%, var(--panel));
+  border-bottom: 1px solid var(--alert-border);
+  background: var(--alert-surface);
   color: var(--text);
   font-size: var(--control-ui-text-sm);
 }

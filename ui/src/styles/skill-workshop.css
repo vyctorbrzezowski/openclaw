@@ -91,13 +91,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0 0 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  border-radius: 10px;
-  padding: 10px 12px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid var(--alert-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--alert-accent);
+  background: var(--alert-surface);
 }
 
 .sw-muted {
@@ -849,14 +849,16 @@
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-3);
   max-width: min(520px, calc(100% - 48px));
-  padding: 10px 18px;
+  /* Matches .app-toast in components.css: same padding, fill, border and
+     elevation, so the workshop's own toast is not a second toast design. */
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  color: var(--text-strong);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  background: var(--popover);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
   white-space: nowrap;
 }
 

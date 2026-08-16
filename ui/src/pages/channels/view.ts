@@ -55,7 +55,9 @@ export function renderChannels(props: ChannelsProps) {
             </div>
           `
         : nothing}
-      ${props.lastError ? html`<div class="callout callout--danger">${props.lastError}</div>` : nothing}
+      ${props.lastError
+        ? html`<div class="callout callout--danger">${props.lastError}</div>`
+        : nothing}
       ${props.setupBlockedByDirtyConfig && props.configFormDirty
         ? html`<div class="callout callout--warn">${t("channels.hub.saveBeforeSetup")}</div>`
         : nothing}

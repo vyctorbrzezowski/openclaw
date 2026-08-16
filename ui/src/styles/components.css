@@ -1512,11 +1512,14 @@ openclaw-github-link-hovercard-provider {
   gap: 7px;
   min-height: 30px;
   padding: 5px 11px;
-  border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--warn) 9%, var(--bg-elevated));
-  color: color-mix(in srgb, var(--warn) 78%, var(--text-strong));
-  font-size: 12px;
+  border: 1px solid var(--alert-border);
+  /* The one warn surface that stays fully rounded: it reads as a status chip
+     beside the topbar, not a banner. Tint and border come from the shared
+     severity block below. */
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--alert-surface), var(--bg-elevated));
+  color: var(--alert-accent);
+  font-size: var(--control-ui-text-sm);
   font-weight: 600;
 }
 
@@ -1540,23 +1543,39 @@ openclaw-github-link-hovercard-provider {
    canonical --ok/--warn/--danger/--info pair documented in base.css, so a theme
    family or light mode retints all of them at once — the reason the old
    hand-mixed gradients and raw rgba() variants drifted apart. Declared after
-   .callout and .app-toast so they win at equal specificity. */
+   .callout and .app-toast so they win at equal specificity.
+   Surfaces outside the two hosts join a tone by adding their selector here and
+   reading the trio, rather than re-deriving a tint of their own — which is how
+   the border mix drifted to seven different percentages across the app. */
 .callout--success,
-.app-toast--success {
+.app-toast--success,
+.plugins-row-message {
   --alert-accent: var(--ok);
   --alert-surface: var(--ok-subtle);
   --alert-border: color-mix(in srgb, var(--ok) 32%, var(--border));
 }
 
 .callout--warn,
-.app-toast--warn {
+.app-toast--warn,
+.plugins-row-message--warning,
+.sidebar-attention__item--warning,
+.sidebar-update-card__status--warn,
+.file-view__save-notice,
+.scope-upgrade-chip {
   --alert-accent: var(--warn);
   --alert-surface: var(--warn-subtle);
   --alert-border: color-mix(in srgb, var(--warn) 32%, var(--border));
 }
 
 .callout--danger,
-.app-toast--danger {
+.app-toast--danger,
+.plugins-page-error,
+.plugins-row-message--error,
+.approval-page__callout,
+.sw-error,
+.board-view__error,
+.sidebar-attention__item--error,
+.sidebar-update-card__status--danger {
   --alert-accent: var(--danger);
   --alert-surface: var(--danger-subtle);
   --alert-border: color-mix(in srgb, var(--danger) 32%, var(--border));

@@ -408,7 +408,9 @@ function renderClawHubSection(props: SkillsProps) {
           : nothing}
       </div>
       ${props.clawhubSearchError
-        ? html`<div class="callout callout--danger plugins-group-message">${props.clawhubSearchError}</div>`
+        ? html`<div class="callout callout--danger plugins-group-message">
+            ${props.clawhubSearchError}
+          </div>`
         : nothing}
       ${props.clawhubInstallMessage
         ? html`<div

@@ -348,7 +348,9 @@ export function renderChannelPairingPrompt(props: ChannelsProps) {
             `
           : nothing}
         ${approving && ownerMissing && !props.canAdmin
-          ? html`<div class="callout callout--warn">${t("channels.pairing.commandOwnerNeedsAdmin")}</div>`
+          ? html`<div class="callout callout--warn">
+              ${t("channels.pairing.commandOwnerNeedsAdmin")}
+            </div>`
           : nothing}
         <div class="channels-pairing-dialog__actions">
           <button

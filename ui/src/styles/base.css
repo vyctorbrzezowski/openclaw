@@ -341,6 +341,10 @@
 
   .callout.callout,
   .app-toast.app-toast,
+  .sw-action-toast.sw-action-toast,
+  .plugins-page-error.plugins-page-error,
+  .approval-page__callout.approval-page__callout,
+  .sw-error.sw-error,
   .agent-tool-card.agent-tool-card,
   .chat-thread.chat-thread,
   .chat-bubble.chat-bubble,

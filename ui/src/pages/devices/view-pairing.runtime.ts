@@ -215,7 +215,10 @@ export function renderDevicePairSetup(props: DevicePairSetupProps) {
 
                 ${setup.accessDowngraded
                   ? html`
-                      <div class="callout callout--warn device-pair-setup__access-warning" role="status">
+                      <div
+                        class="callout callout--warn device-pair-setup__access-warning"
+                        role="status"
+                      >
                         <strong>${t("devices.pairing.transportLimitedTitle")}</strong>
                         <span>${t("devices.pairing.transportLimitedHint")}</span>
                       </div>

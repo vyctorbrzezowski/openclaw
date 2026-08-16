@@ -14,12 +14,12 @@ openclaw-board-view {
 }
 
 .board-view__error {
-  background: color-mix(in srgb, var(--danger) 8%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
-  border-radius: 9px;
-  color: var(--danger);
-  font-size: 12px;
-  padding: 9px 12px;
+  background: var(--alert-surface);
+  border: 1px solid var(--alert-border);
+  border-radius: var(--radius-md);
+  color: var(--alert-accent);
+  font-size: var(--control-ui-text-sm);
+  padding: var(--space-2) var(--space-3);
 }
 
 .board-tabs {

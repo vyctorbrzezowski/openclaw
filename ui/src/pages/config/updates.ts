@@ -308,7 +308,9 @@ export function renderUpdates(props: UpdatesViewProps): TemplateResult {
       ${renderSettingsPage(
         [
           !props.canAdmin
-            ? html`<div class="callout callout--warn" role="note">${t("updates.adminRequired")}</div>`
+            ? html`<div class="callout callout--warn" role="note">
+                ${t("updates.adminRequired")}
+              </div>`
             : nothing,
           renderBuildFacts(props),
           renderSettingsSection({ title: t("updates.page.policyTitle") }, policyRows),
