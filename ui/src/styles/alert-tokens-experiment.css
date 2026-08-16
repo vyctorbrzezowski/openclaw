@@ -77,7 +77,11 @@
   --alert-x-action-bg: rgba(0, 0, 0, 0.05);
 }
 
-/* ---- the trio, repointed at the experiment's palette ---- */
+/* ---- the trio, repointed at the experiment's palette ----
+   The selector lists mirror the shipped severity block in components.css,
+   including the folded one-off surfaces: repointing only the two hosts would
+   put the plugin, approval and workshop alerts back on a different palette,
+   which is the divergence this lane just removed. */
 
 .callout {
   --alert-accent: var(--alert-x-neutral-icon);
@@ -93,21 +97,34 @@
 }
 
 .callout--success,
-.app-toast--success {
+.app-toast--success,
+.plugins-row-message {
   --alert-accent: var(--alert-x-success-icon);
   --alert-surface: var(--alert-x-success-bg);
   --alert-border: var(--alert-x-success-border);
 }
 
 .callout--warn,
-.app-toast--warn {
+.app-toast--warn,
+.plugins-row-message--warning,
+.sidebar-attention__item--warning,
+.sidebar-update-card__status--warn,
+.file-view__save-notice,
+.scope-upgrade-chip {
   --alert-accent: var(--alert-x-warn-icon);
   --alert-surface: var(--alert-x-warn-bg);
   --alert-border: var(--alert-x-warn-border);
 }
 
 .callout--danger,
-.app-toast--danger {
+.app-toast--danger,
+.plugins-page-error,
+.plugins-row-message--error,
+.approval-page__callout,
+.sw-error,
+.board-view__error,
+.sidebar-attention__item--error,
+.sidebar-update-card__status--danger {
   --alert-accent: var(--alert-x-danger-icon);
   --alert-surface: var(--alert-x-danger-bg);
   --alert-border: var(--alert-x-danger-border);
