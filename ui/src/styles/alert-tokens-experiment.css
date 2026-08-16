@@ -129,22 +129,15 @@
 
 /* ---- floating chrome ---- */
 
-/* The toast drops its outline in both themes and lets elevation do the
-   separating. Its flat tint still composites onto the opaque popover fill,
-   because a translucent card over arbitrary page content is unreadable. */
+/* The toast follows the callout's border policy: the light reference keeps a
+   soft edge, while dark lets elevation separate the floating card. Its flat
+   tint still composites onto the opaque popover fill, because a translucent
+   card over arbitrary page content is unreadable. */
 .app-toast {
   --alert-accent: var(--alert-x-neutral-icon);
-  --alert-border: transparent;
+  --alert-border: var(--alert-x-neutral-border);
 
-  border-color: transparent;
   box-shadow: var(--alert-x-toast-shadow);
-}
-
-.app-toast--info,
-.app-toast--success,
-.app-toast--warn,
-.app-toast--danger {
-  border-color: transparent;
 }
 
 /* ---- refinements ---- */
@@ -207,7 +200,7 @@
 /* A 1px border at these alphas is already a whisper; on a 2x display half a
    device pixel is the hairline the rest of the OS draws. */
 @media (-webkit-min-device-pixel-ratio: 2) {
-  :root[data-theme-mode="light"] .callout {
+  :root[data-theme-mode="light"] :is(.callout, .app-toast) {
     border-width: 0.5px;
   }
 }
@@ -228,6 +221,7 @@
 :root:not([data-theme-mode="light"])
   :is(
     .callout,
+    .app-toast,
     .plugins-page-error,
     .plugins-row-message,
     .approval-page__callout,

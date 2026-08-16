@@ -155,7 +155,7 @@ class AlertGalleryFixture extends OpenClawLightDomElement {
     const toneClass = row.tone ? ` callout--${row.tone}` : "";
     return html`
       <div class="callout${toneClass}${shape === "plain" ? "" : " callout--action"}">
-        ${shape === "icon" && row.glyph
+        ${shape !== "plain" && row.glyph
           ? html`<span class="callout__icon" aria-hidden="true">${row.glyph}</span>`
           : nothing}
         <span class="callout__content">${SAMPLE_TEXT[row.label]}</span>
