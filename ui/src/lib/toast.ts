@@ -81,6 +81,9 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
    * at the page behind. A short grace period keeps that from reading as
    * "pointer left" and collapsing the stack under the operator's cursor. */
   private collapseTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+  /** Keep the hit region at its largest expanded size while cards are removed;
+   * the pointer must leave for real before the region is allowed to shrink. */
+  private expandedRegionHeight = 0;
 
   override connectedCallback() {
     super.connectedCallback();
@@ -241,9 +244,14 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
         (height, card, depth) => height + (depth === 0 ? card.offsetHeight : COLLAPSED_STEP_PX),
         0,
       );
+    if (this.expanded) {
+      this.expandedRegionHeight = Math.max(this.expandedRegionHeight, offset);
+    } else {
+      this.expandedRegionHeight = 0;
+    }
     this.style.setProperty(
       "--app-toast-stack-height",
-      `${this.expanded ? offset : collapsedHeight}px`,
+      `${this.expanded ? this.expandedRegionHeight : collapsedHeight}px`,
     );
     this.style.setProperty("--app-toast-direction", String(direction));
     this.style.setProperty("--app-toast-step", `${direction * COLLAPSED_STEP_PX}px`);

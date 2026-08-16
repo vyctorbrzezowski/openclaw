@@ -112,12 +112,14 @@ describe("shared toast", () => {
     stack?.dispatchEvent(new Event("pointerenter"));
     await host.updateComplete;
     expect(stack?.classList.contains("app-toast-stack--expanded")).toBe(true);
+    const expandedHeight = host.style.getPropertyValue("--app-toast-stack-height");
 
     while (host.querySelector(".app-toast")) {
       host.querySelector<HTMLButtonElement>(".app-toast__dismiss")?.click();
       await host.updateComplete;
       if (host.querySelector(".app-toast")) {
         expect(host.querySelector(".app-toast-stack--expanded")).not.toBeNull();
+        expect(host.style.getPropertyValue("--app-toast-stack-height")).toBe(expandedHeight);
       }
     }
 
