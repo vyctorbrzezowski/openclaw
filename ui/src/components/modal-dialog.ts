@@ -32,10 +32,15 @@ export class OpenClawModalDialog extends OpenClawLitElement {
       display: contents;
     }
 
+    /* One backdrop for every dialog in the product. Web Awesome would
+       otherwise fall back to a flat rgb(0 0 0 / 0.25), which reads as a
+       grey film over the ivory light theme instead of a dimmed page;
+       deriving it from --bg keeps the same weight in both modes. */
     wa-dialog {
       --width: min(var(--openclaw-modal-width, 540px), calc(100vw - 48px));
       --spacing: 0;
       --backdrop-filter: blur(4px);
+      --wa-color-overlay-modal: color-mix(in srgb, var(--bg) 62%, transparent);
     }
 
     wa-dialog::part(dialog) {

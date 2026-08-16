@@ -1,0 +1,267 @@
+/* ===========================================
+   Dialog grammar
+
+   <openclaw-modal-dialog> owns the shell: backdrop, top layer,
+   focus return, Escape and light dismiss. It deliberately paints
+   nothing (`::part(dialog)` is transparent, border-0, padding-0),
+   which is why every dialog used to invent its own panel — four
+   fills, five radii, three shadows and two footer alignments across
+   the app. This file is the missing half: one surface, one header,
+   one body, one footer, for every modal in the product.
+
+   A dialog that declares its own background, border, radius or
+   shadow has left the design system. Add a modifier here instead.
+   =========================================== */
+
+/* Width scale, set on the modal host. The primitive already clamps
+   to `calc(100vw - 48px)`, so a size class carries a bare width and
+   never repeats the viewport math that used to be pasted inline at
+   every call site. */
+openclaw-modal-dialog.dialog-sm {
+  --openclaw-modal-width: 480px;
+}
+
+openclaw-modal-dialog.dialog-md {
+  --openclaw-modal-width: 540px;
+}
+
+openclaw-modal-dialog.dialog-lg {
+  --openclaw-modal-width: 640px;
+}
+
+openclaw-modal-dialog.dialog-xl {
+  --openclaw-modal-width: 880px;
+}
+
+openclaw-modal-dialog.dialog-2xl {
+  --openclaw-modal-width: 1120px;
+}
+
+/* The surface. `overflow: visible` is load-bearing: pickers and
+   popovers anchored inside a dialog (folder picker, model picker)
+   escape the panel, and the primitive keeps its own parts visible
+   for exactly that reason. The divided variant below is the one
+   that clips, because it has a scrolling body to hold to the
+   rounded corner. */
+.dialog-surface {
+  --dialog-gutter: 20px;
+
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-height: inherit;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-xl);
+  color: var(--text);
+  padding: var(--dialog-gutter);
+  animation: dialog-enter var(--duration-normal) var(--ease-out);
+}
+
+/* Header/body/footer own their own padding and are separated by
+   hairlines instead of whitespace. For wizards and long scrolling
+   readers, where the body has to scroll under a fixed title. */
+.dialog-surface--divided {
+  overflow: hidden;
+  padding: 0;
+}
+
+.dialog-surface--divided > .dialog-header {
+  padding: var(--dialog-gutter);
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-surface--divided > .dialog-body {
+  margin: 0;
+  padding: var(--dialog-gutter);
+}
+
+.dialog-surface--divided > .dialog-footer {
+  margin: 0;
+  padding: 14px var(--dialog-gutter);
+  border-top: 1px solid var(--border);
+}
+
+/* Media surfaces (lightbox, previewers) bring their own near-black
+   chrome; they still want the shell's sizing and dismissal. */
+.dialog-surface--bare {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dialog-heading {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.dialog-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--control-ui-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dialog-title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.dialog-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Header dismissal. The focus ring is inset: a dialog's close button
+   sits against the panel edge, and an outset ring there reads as the
+   button growing rather than as focus. */
+.dialog-close {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  cursor: var(--cursor-action);
+  font: inherit;
+  line-height: 1;
+}
+
+.dialog-close:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text-strong);
+}
+
+.dialog-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.dialog-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dialog-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-top: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Scroll containers are focusable for keyboard scrolling; keep that
+   ring inside the panel too. */
+.dialog-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Monospace detail block: the command under a confirmation, a URL, a
+   connect line. Bounded so a long payload scrolls instead of pushing
+   the actions off screen. */
+.dialog-code {
+  max-height: min(40dvh, 320px);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  margin-top: 12px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dialog-error {
+  margin-top: 10px;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.dialog-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Actions hug the trailing edge — the shipped majority before this
+   file existed, and where the eye already ends after reading the
+   body. DOM order stays primary-first so tab order still reaches the
+   action the dialog is asking for; the row never reorders visually,
+   so focus order and reading order agree. */
+.dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dialog-footer .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Pushes what follows it to the trailing edge, for a footer that
+   carries a secondary link beside its actions. */
+.dialog-footer__spacer {
+  margin-inline-end: auto;
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* One narrow-screen contract for every dialog: full-width stacked
+   actions, tighter gutter. Each dialog used to re-derive this. */
+@media (max-width: 640px) {
+  .dialog-surface {
+    --dialog-gutter: 16px;
+  }
+
+  .dialog-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .dialog-footer .btn {
+    justify-content: center;
+    width: 100%;
+  }
+}

@@ -71,6 +71,12 @@ const CORNER_CASES: readonly CornerCase[] = [
   },
   {
     circular: "14px",
+    markup: '<div class="dialog-surface">Dialog</div>',
+    selector: ".dialog-surface",
+    superelliptical: "17.5px",
+  },
+  {
+    circular: "14px",
     markup: '<div class="exec-approval-card">Approval</div>',
     selector: ".exec-approval-card",
     superelliptical: "17.5px",

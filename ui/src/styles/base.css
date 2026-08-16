@@ -328,6 +328,7 @@
     --openclaw-corner-radius-scale: 1.25;
   }
 
+  .dialog-surface.dialog-surface,
   .exec-approval-card.exec-approval-card,
   .exec-approval-list.exec-approval-list,
   .cmd-palette.cmd-palette,
