@@ -205,6 +205,20 @@ export function renderMessageImages(images: RenderableImageBlock[], opts?: Image
   const renderImageElement = (img: RenderableImageBlock, previewUrl: string) => {
     const title = img.alt?.trim() || t("chat.imageLightbox.untitled");
     const managed = isManagedOutgoingImageSource(img.displayUrl);
+    const markUnavailable = (event: Event) => {
+      const image = event.currentTarget;
+      if (!(image instanceof HTMLImageElement)) {
+        return;
+      }
+      image.hidden = true;
+      const button = image.closest<HTMLButtonElement>(".chat-message-image-button");
+      if (button) {
+        button.disabled = true;
+        button
+          .querySelector<HTMLElement>(".chat-message-image-unavailable")
+          ?.removeAttribute("hidden");
+      }
+    };
     return html`
       <span class="chat-image-frame ${managed ? "chat-image-frame--managed" : ""}">
         <button
@@ -219,7 +233,17 @@ export function renderMessageImages(images: RenderableImageBlock[], opts?: Image
             class="chat-message-image"
             width=${img.width ?? nothing}
             height=${img.height ?? nothing}
+            @error=${markUnavailable}
           />
+          <span class="chat-message-image-unavailable" hidden>
+            <span class="chat-message-image-unavailable__icon" aria-hidden="true"
+              >${icons.image}</span
+            >
+            <span>
+              <strong>${title}</strong>
+              <small>${t("chat.imageLightbox.loadFailed")}</small>
+            </span>
+          </span>
         </button>
         ${managed
           ? renderManagedImageActions(img, opts, () => openImage(img, previewUrl))

@@ -29,7 +29,7 @@ const MEDIA_CASES: readonly TranscriptCase[] = [
             },
             {
               type: "image",
-              url: "https://openclaw.ai/assets/pairing-expiry.png",
+              url: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iI2Y0ZjFlYyIvPjx0ZXh0IHg9IjIwIiB5PSI5NiIgZmlsbD0iIzQwM2MzNSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiPmV4cGlyeSBsb2c8L3RleHQ+PC9zdmc+",
               alt: "Expiry log",
             },
             { type: "image", url: "https://127.0.0.1:9/missing.png", alt: "Unreachable capture" },

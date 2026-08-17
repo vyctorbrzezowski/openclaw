@@ -1084,6 +1084,54 @@ openclaw-chat-page {
   transform: scale(1.02);
 }
 
+.chat-message-image-unavailable {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 300px);
+  min-width: 220px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card) 82%, var(--bg));
+  color: var(--text);
+  cursor: default;
+  text-align: left;
+}
+
+.chat-message-image-unavailable[hidden] {
+  display: none;
+}
+
+.chat-message-image-unavailable__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted);
+}
+
+.chat-message-image-unavailable__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-message-image-unavailable strong,
+.chat-message-image-unavailable small {
+  display: block;
+}
+
+.chat-message-image-unavailable strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chat-message-image-unavailable small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 /* User message images align right */
 .chat-group.user .chat-message-images {
   justify-content: flex-end;
