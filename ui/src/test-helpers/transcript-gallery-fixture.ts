@@ -27,7 +27,10 @@ import "../styles/chat.css";
 import "../components/github-link-hovercard-registration.ts";
 
 const THEME_STORAGE_KEY = "openclaw-transcript-gallery-theme";
-const requestedTheme = new URLSearchParams(location.search).get("theme");
+const params = new URLSearchParams(location.search);
+const requestedTheme = params.get("theme");
+const compareThemes = params.get("compare") === "1";
+const embeddedTheme = params.get("embedded") === "1";
 
 const embeddedGalleryStyles = html`
   <style>
@@ -284,7 +287,7 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
             <nav class="tg__bar-nav" aria-label="Artifact families">
               ${SECTIONS.map((section) => html`<a href="#${section.id}">${section.short}</a>`)}
             </nav>
-            ${requestedTheme
+            ${compareThemes || embeddedTheme
               ? nothing
               : html`
                   <div class="tg__themes">
@@ -340,11 +343,32 @@ if (!customElements.get("openclaw-transcript-gallery")) {
 
 const mount = document.querySelector<HTMLElement>("#app");
 if (mount) {
-  if (requestedTheme === "light" || requestedTheme === "dark") {
+  if (!compareThemes) {
     await i18n.setLocale("en");
     document.documentElement.lang = "en-US";
     document.documentElement.dir = "ltr";
-    applyTheme(requestedTheme, false);
+    const initialTheme =
+      requestedTheme === "light" || requestedTheme === "dark"
+        ? requestedTheme
+        : localStorage.getItem(THEME_STORAGE_KEY) === "light"
+          ? "light"
+          : "dark";
+    applyTheme(initialTheme, requestedTheme === null);
+    window.addEventListener("keydown", (event) => {
+      if (
+        event.key.toLowerCase() !== "b" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement ||
+        (event.target instanceof HTMLElement && event.target.isContentEditable)
+      ) {
+        return;
+      }
+      applyTheme(document.documentElement.dataset.themeMode === "light" ? "dark" : "light");
+    });
     document.body.classList.add("tg-embedded");
     render(
       html`${embeddedGalleryStyles}<openclaw-transcript-gallery></openclaw-transcript-gallery>`,
@@ -403,12 +427,12 @@ if (mount) {
           <iframe
             class="tg-compare__frame"
             title="Light transcript artifacts"
-            src="?theme=light"
+            src="?theme=light&embedded=1"
           ></iframe>
           <iframe
             class="tg-compare__frame"
             title="Dark transcript artifacts"
-            src="?theme=dark"
+            src="?theme=dark&embedded=1"
           ></iframe>
         </div>
       `,
