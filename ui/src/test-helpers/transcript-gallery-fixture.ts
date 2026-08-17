@@ -26,6 +26,7 @@ import "../styles/chat.css";
 import "../components/github-link-hovercard-registration.ts";
 
 const THEME_STORAGE_KEY = "openclaw-transcript-gallery-theme";
+const requestedTheme = new URLSearchParams(location.search).get("theme");
 
 const SECTIONS: readonly GallerySection[] = [
   ...TEXT_SECTIONS,
@@ -236,5 +237,89 @@ if (!customElements.get("openclaw-transcript-gallery")) {
 
 const mount = document.querySelector<HTMLElement>("#app");
 if (mount) {
-  render(html`<openclaw-transcript-gallery></openclaw-transcript-gallery>`, mount);
+  if (requestedTheme === "light" || requestedTheme === "dark") {
+    applyTheme(requestedTheme);
+    document.body.classList.add("tg-embedded");
+    render(html`<openclaw-transcript-gallery></openclaw-transcript-gallery>`, mount);
+  } else {
+    document.body.classList.add("tg-compare");
+    render(
+      html`
+        <style>
+          body.tg-compare {
+            background: linear-gradient(90deg, #faf9f7 0 50%, #0e1015 50%);
+          }
+          .tg-compare__labels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+          }
+          .tg-compare__label {
+            background: color-mix(in srgb, #faf9f7 94%, transparent);
+            border-bottom: 1px solid #e8e4dc;
+            color: #211e1a;
+            font:
+              650 12px/44px ui-sans-serif,
+              system-ui,
+              sans-serif;
+            letter-spacing: 0.08em;
+            padding-left: 24px;
+            text-transform: uppercase;
+          }
+          .tg-compare__label:last-child {
+            background: color-mix(in srgb, #0e1015 94%, transparent);
+            border-color: #1e2028;
+            color: #f4f4f5;
+          }
+          .tg-compare__grid {
+            align-items: start;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          }
+          .tg-compare__frame {
+            border: 0;
+            display: block;
+            min-height: 100vh;
+            overflow: hidden;
+            width: 100%;
+          }
+        </style>
+        <div class="tg-compare__labels" aria-hidden="true">
+          <div class="tg-compare__label">Light</div>
+          <div class="tg-compare__label">Dark</div>
+        </div>
+        <div class="tg-compare__grid">
+          <iframe
+            class="tg-compare__frame"
+            title="Light transcript artifacts"
+            src="?theme=light"
+          ></iframe>
+          <iframe
+            class="tg-compare__frame"
+            title="Dark transcript artifacts"
+            src="?theme=dark"
+          ></iframe>
+        </div>
+      `,
+      mount,
+    );
+
+    for (const frame of mount.querySelectorAll<HTMLIFrameElement>(".tg-compare__frame")) {
+      frame.addEventListener("load", () => {
+        const resize = () => {
+          const body = frame.contentDocument?.body;
+          if (body) {
+            frame.style.height = `${body.scrollHeight}px`;
+          }
+        };
+        resize();
+        const body = frame.contentDocument?.body;
+        if (body) {
+          new ResizeObserver(resize).observe(body);
+        }
+      });
+    }
+  }
 }
