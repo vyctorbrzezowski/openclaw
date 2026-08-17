@@ -40,17 +40,17 @@ const MEDIA_CASES: readonly TranscriptCase[] = [
   },
   {
     id: "media-attachments",
-    title: "Audio, video, and documents",
-    note: "The attachment card family: a voice note with waveform, a video player, a text document with preview, a PDF without one, and an attachment whose source cannot be resolved.",
+    title: "Structured attachment card states",
+    note: "Renderer coverage for structured transcript attachments: unavailable audio/video playback, document rows, and an unresolved source. Normal agent MEDIA: replies currently produce managed image/audio/video, not Markdown or PDF document cards.",
     stage: "tall",
     props: {
       messages: [
-        user("Attach the recording and the report.", 0),
+        user("Show every structured attachment state.", 0),
         {
           role: "assistant",
           timestamp: at(1),
           content: [
-            { type: "text", text: "Everything from the incident window:" },
+            { type: "text", text: "Structured attachment renderer states:" },
             {
               type: "attachment",
               attachment: {
