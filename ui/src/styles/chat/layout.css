@@ -1446,6 +1446,26 @@ openclaw-chat-video-player {
   line-height: 1.4;
 }
 
+/* An expired QR replaces the media block with a compact status card. Unlike
+   ordinary attachment rows, it owns a header plus explanatory copy, so its
+   two levels stack instead of competing for one horizontal flex line. */
+.chat-pairing-qr-expired {
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  width: min(100%, 390px);
+}
+
+.chat-pairing-qr-expired .chat-assistant-attachment-card__header {
+  justify-content: flex-start;
+  margin-bottom: 0;
+}
+
+.chat-pairing-qr-expired .chat-assistant-attachment-card__reason {
+  padding-left: 24px;
+}
+
 .chat-media-preparing {
   padding: 10px 12px;
   border-radius: var(--radius-sm);
