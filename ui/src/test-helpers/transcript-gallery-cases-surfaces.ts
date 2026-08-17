@@ -290,7 +290,7 @@ const ACTIVITY_CASES: readonly TranscriptCase[] = [
   },
   {
     id: "activity-canvas",
-    title: "Canvas and widget surfaces",
+    title: "Canvas widget — counter",
     note: "An assistant message carrying a hosted Canvas document. The card, sandboxed frame, dynamic height, actions, and interactive counter use the production widget path.",
     props: {
       canvasPluginSurfaceUrl: null,
@@ -315,6 +315,96 @@ const ACTIVITY_CASES: readonly TranscriptCase[] = [
                 sandbox: "scripts",
               },
               rawText: '{"viewId":"cv_counter","title":"Counter demo"}',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "activity-canvas-status",
+    title: "Canvas widget — compact status",
+    note: "A short hosted Canvas document. It reports a compact intrinsic height instead of inheriting the frame's 420px stylesheet floor.",
+    props: {
+      messages: [
+        user("Show gateway health at a glance.", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [
+            { type: "text", text: "Current gateway status:" },
+            {
+              type: "canvas",
+              preview: {
+                kind: "canvas",
+                surface: "assistant_message",
+                render: "url",
+                viewId: "cv_status",
+                title: "Gateway status",
+                url: "/__openclaw__/canvas/documents/cv_status/index.html",
+                preferredHeight: 140,
+                sandbox: "scripts",
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "activity-canvas-metrics",
+    title: "Canvas widget — metrics",
+    note: "A responsive metrics panel with cards and a chart, exercising a medium intrinsic height and narrow-frame reflow.",
+    props: {
+      messages: [
+        user("Summarize this run's health.", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [
+            { type: "text", text: "The run is healthy and remains within budget." },
+            {
+              type: "canvas",
+              preview: {
+                kind: "canvas",
+                surface: "assistant_message",
+                render: "url",
+                viewId: "cv_metrics",
+                title: "Run metrics",
+                url: "/__openclaw__/canvas/documents/cv_metrics/index.html",
+                preferredHeight: 340,
+                sandbox: "scripts",
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "activity-canvas-checklist",
+    title: "Canvas widget — checklist",
+    note: "An interactive checklist with native form controls and live progress inside the production sandboxed frame.",
+    props: {
+      messages: [
+        user("Make the release checklist interactive.", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [
+            { type: "text", text: "Check items off as the release moves forward." },
+            {
+              type: "canvas",
+              preview: {
+                kind: "canvas",
+                surface: "assistant_message",
+                render: "url",
+                viewId: "cv_checklist",
+                title: "Release checklist",
+                url: "/__openclaw__/canvas/documents/cv_checklist/index.html",
+                preferredHeight: 320,
+                sandbox: "scripts",
+              },
             },
           ],
         },
