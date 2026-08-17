@@ -10,6 +10,7 @@ import { html, nothing, render, type TemplateResult } from "lit";
 import { i18n } from "../i18n/index.ts";
 import { OpenClawLightDomElement } from "../lit/openclaw-element.ts";
 import { renderChat } from "../pages/chat/chat-view.ts";
+import { renderChatModelControls } from "../pages/chat/components/chat-model-controls.ts";
 import { ChatTranscriptController } from "../pages/chat/components/chat-transcript-controller.ts";
 import { SESSION_SECTIONS } from "./transcript-gallery-cases-session.ts";
 import { SURFACE_SECTIONS } from "./transcript-gallery-cases-surfaces.ts";
@@ -119,6 +120,49 @@ function sessionsFor(sessionKey: string): Record<string, unknown> {
   };
 }
 
+const GALLERY_MODEL_CATALOG = [
+  {
+    id: "claude-opus-5",
+    name: "Claude Opus 5",
+    provider: "anthropic",
+    contextWindow: 200_000,
+    reasoning: true,
+    thinkingLevels: [
+      { id: "off", label: "Off" },
+      { id: "low", label: "Low" },
+      { id: "medium", label: "Medium" },
+      { id: "high", label: "High" },
+    ],
+    thinkingDefault: "medium",
+    supportsTools: true,
+  },
+];
+
+function composerControls(sessionKey: string, sessions: Record<string, unknown>): TemplateResult {
+  return html`
+    <div class="chat-composer-model-control">
+      ${renderChatModelControls({
+        activeRunId: null,
+        agentDefaultModel: "anthropic/claude-opus-5",
+        connected: true,
+        gatewayAvailable: true,
+        loading: false,
+        modelCatalog: GALLERY_MODEL_CATALOG,
+        modelCatalogState: { hasSnapshot: true, status: "ready" },
+        modelOverrides: {},
+        modelSwitching: false,
+        modelsLoading: false,
+        sending: false,
+        sessionKey,
+        sessionsResult: sessions as never,
+        stream: null,
+        onModelSelect: () => undefined,
+        onThinkingSelect: () => undefined,
+      })}
+    </div>
+  `;
+}
+
 /**
  * Callbacks the chat pane always supplies. Their mere presence is what turns on
  * visible affordances — the reply and rewind buttons, the image lightbox
@@ -154,6 +198,7 @@ function chatProps(
   const sessionKey = (entry.props?.sessionKey as string | undefined) ?? `agent:main:${entry.id}`;
   const runActive = entry.props?.runActive === true;
   const caseProps = { ...entry.props };
+  const sessions = sessionsFor(sessionKey);
   delete caseProps.runActive;
   delete caseProps.runWorking;
   return {
@@ -184,7 +229,27 @@ function chatProps(
     runError: null,
     showThinking: true,
     showToolCalls: true,
-    sessions: sessionsFor(sessionKey),
+    sessions,
+    capabilityMenu: {
+      basePath: "",
+      skills: [],
+      skillsLoading: false,
+      skillsError: false,
+      mcpServers: [],
+      toolsEffectiveResult: null,
+      toolsEffectiveLoading: false,
+      toolsEffectiveError: false,
+      toolAccessMutationBlockedReason: null,
+      webSearchBaseEnabled: true,
+      mutationBlockedReason: null,
+      canAdmin: true,
+      adminBlockedReason: null,
+      onLoadSkills: () => undefined,
+      onPatchToolOverrides: () => undefined,
+      onNavigate: () => undefined,
+    },
+    providerUsage: { basePath: "", modelAuthStatusResult: null },
+    composerControls: composerControls(sessionKey, sessions),
     assistantName: "Molty",
     assistantAvatar: null,
     // The Control UI always knows who is signed in, and the projection keys the
