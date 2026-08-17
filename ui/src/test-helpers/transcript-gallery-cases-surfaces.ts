@@ -291,7 +291,7 @@ const ACTIVITY_CASES: readonly TranscriptCase[] = [
   {
     id: "activity-canvas",
     title: "Canvas and widget surfaces",
-    note: "An assistant message carrying a canvas preview. The frame is hosted by the mock server, so an unreachable document is expected here — the chrome around it is the artifact.",
+    note: "An assistant message carrying a hosted Canvas document. The card, sandboxed frame, dynamic height, actions, and interactive counter use the production widget path.",
     props: {
       canvasPluginSurfaceUrl: null,
       allowExternalEmbedUrls: false,
@@ -311,7 +311,7 @@ const ACTIVITY_CASES: readonly TranscriptCase[] = [
                 viewId: "cv_counter",
                 title: "Counter demo",
                 url: "/__openclaw__/canvas/documents/cv_counter/index.html",
-                preferredHeight: 320,
+                preferredHeight: 260,
                 sandbox: "scripts",
               },
               rawText: '{"viewId":"cv_counter","title":"Counter demo"}',

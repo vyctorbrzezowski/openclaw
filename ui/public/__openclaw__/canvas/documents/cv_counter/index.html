@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 24px;
+        background: transparent;
+        color: CanvasText;
+      }
+      main {
+        display: grid;
+        gap: 20px;
+        padding: 24px;
+        border: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+        border-radius: 16px;
+        background: color-mix(in srgb, Canvas 92%, CanvasText 8%);
+      }
+      p {
+        margin: 0;
+        color: color-mix(in srgb, CanvasText 68%, transparent);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      output {
+        font-size: 56px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+      }
+      button {
+        width: fit-content;
+        min-height: 44px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 10px;
+        background: #d13c3c;
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 650;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <p>Counter</p>
+        <output id="count">0</output>
+      </div>
+      <button id="increment" type="button">Increment</button>
+    </main>
+    <script>
+      const count = document.querySelector("#count");
+      document.querySelector("#increment").addEventListener("click", () => {
+        count.value = String(Number(count.value) + 1);
+      });
+      const reportHeight = () => {
+        parent.postMessage(
+          { type: "openclaw:widget-size", height: document.documentElement.scrollHeight },
+          "*",
+        );
+      };
+      new ResizeObserver(reportHeight).observe(document.body);
+      reportHeight();
+    </script>
+  </body>
+</html>

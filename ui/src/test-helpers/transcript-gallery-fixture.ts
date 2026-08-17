@@ -50,6 +50,10 @@ const embeddedGalleryStyles = html`
     .tg__stage .chat-tasks-rail__section {
       flex: none;
       overflow-y: hidden;
+      max-height: none;
+    }
+    .tg__stage .chat-tasks-rail__scroll--split > [data-tasks-section="finished"] {
+      max-height: none;
     }
   </style>
 `;
@@ -323,16 +327,14 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
       for (const stage of this.querySelectorAll<HTMLElement>(".tg__stage")) {
         const stageBounds = stage.getBoundingClientRect();
         let missingHeight = stage.scrollHeight - stage.clientHeight;
-        for (const scrollport of stage.querySelectorAll<HTMLElement>(
-          ".chat-thread, .chat-tasks-rail__scroll, .chat-tasks-rail__section",
-        )) {
+        for (const scrollport of stage.querySelectorAll<HTMLElement>(".chat-thread")) {
           missingHeight = Math.max(
             missingHeight,
             scrollport.scrollHeight - scrollport.clientHeight,
           );
         }
         for (const content of stage.querySelectorAll<HTMLElement>(
-          ".chat-thread-inner, .chat-main__conversation, .chat-tasks-rail",
+          ".chat-thread-inner, .chat-main__conversation, .chat-tasks-rail, .chat-tasks-rail__list",
         )) {
           missingHeight = Math.max(
             missingHeight,
