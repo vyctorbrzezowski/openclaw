@@ -1081,11 +1081,17 @@ function buildWorkboardMocks(baseTime: number) {
   };
 }
 
-function chatHistoryMessage(role: "assistant" | "user", text: string, timestamp: number) {
+function chatHistoryMessage(
+  role: "assistant" | "user",
+  text: string,
+  timestamp: number,
+  metadata?: Record<string, unknown>,
+) {
   return {
     content: [{ text, type: "text" }],
     role,
     timestamp,
+    ...metadata,
   };
 }
 
@@ -1120,6 +1126,48 @@ function buildScrollableChatHistory(baseTime: number): unknown[] {
   // exercise the collapsed "Worked for X" rollup at the end of the thread.
   const workTurnBase = baseTime + 37 * 60_000;
   messages.push(
+    chatHistoryMessage(
+      "user",
+      "The multiparty pass is ready. Can we tighten the reply treatment before review?",
+      workTurnBase - 120_000,
+      {
+        id: "mock-multiparty-peter",
+        __openclaw: { senderId: "profile-peter", senderName: "Peter" },
+      },
+    ),
+    chatHistoryMessage(
+      "user",
+      "Keep the human messages quiet, but make it obvious who is speaking.",
+      workTurnBase - 90_000,
+      {
+        id: "mock-multiparty-mira",
+        __openclaw: {
+          senderId: "profile-mira",
+          senderName: "Mira Chen",
+          replyToId: "mock-multiparty-peter",
+          replyToPreview: {
+            senderLabel: "Peter",
+            text: "Can we tighten the reply treatment before review?",
+          },
+        },
+      },
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "I’ll keep the identity rail clear and use a compact quote above replies.",
+      workTurnBase - 60_000,
+      {
+        id: "mock-multiparty-agent",
+        senderLabel: "Molty",
+        __openclaw: {
+          replyToId: "mock-multiparty-mira",
+          replyToPreview: {
+            senderLabel: "Mira Chen",
+            text: "Make it obvious who is speaking.",
+          },
+        },
+      },
+    ),
     chatHistoryMessage(
       "user",
       "Mock work request: refactor the render guard and rerun the suite.",

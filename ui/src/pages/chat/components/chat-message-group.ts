@@ -426,7 +426,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
             ? "workspace-conflict"
             : "other";
   const showAvatarGutter = opts.showAvatarGutter !== false;
-  const persistUserIdentity = normalizedRole === "user" && showAvatarGutter;
+  const showAuthorHeader = showAvatarGutter && normalizedRole !== "tool";
 
   // Aggregate usage/cost/model across all messages in the group
   const meta = extractGroupMeta(group, opts.contextWindow ?? null);
@@ -546,6 +546,16 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
           )
         : nothing}
       <div class="chat-group-messages">
+        ${showAuthorHeader
+          ? html`
+              <div class="chat-group-author">
+                <span class="chat-sender-name">${who}</span>
+                ${normalizedRole === "assistant"
+                  ? html`<span class="chat-group-author__role">${t("newSession.agent")}</span>`
+                  : nothing}
+              </div>
+            `
+          : nothing}
         ${replyToLabel
           ? html`
               <div class="chat-reply-attribution" title=${replyToTitle} aria-label=${replyToTitle}>
@@ -587,22 +597,29 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
       </div>
       ${normalizedRole === "tool"
         ? nothing
-        : html`<div
-            class="chat-group-footer ${persistUserIdentity
-              ? "chat-group-footer--persistent-identity"
-              : ""}"
-          >
-            <div class="chat-group-footer__meta">
-              ${isPeerGroup ? nothing : userFooterActions}
-              ${normalizedRole === "user" && !showAvatarGutter
-                ? renderChatAuthorAvatar(group.sender)
-                : nothing}
-              <span class="chat-sender-name">${who}</span>
-              ${renderMessageMeta(group.timestamp, meta)}
-            </div>
-            ${isPeerGroup
-              ? userFooterActions
-              : normalizedRole !== "user" && footerActionDetails
+        : showAuthorHeader
+          ? html`<div class="chat-group-footer chat-group-footer--actions-only">
+              ${normalizedRole === "user"
+                ? userFooterActions
+                : footerActionDetails
+                  ? html`
+                    <div
+                      class="chat-group-footer-actions"
+                      data-message-actions-for=${footerActionMessageKey ?? nothing}
+                    >
+                      ${renderMessageActionButtons(footerActionDetails, opts)}
+                    </div>
+                  `
+                  : nothing}
+            </div>`
+          : html`<div class="chat-group-footer">
+              <div class="chat-group-footer__meta">
+                ${userFooterActions}
+                ${normalizedRole === "user" ? renderChatAuthorAvatar(group.sender) : nothing}
+                <span class="chat-sender-name">${who}</span>
+                ${renderMessageMeta(group.timestamp, meta)}
+              </div>
+              ${normalizedRole !== "user" && footerActionDetails
                 ? html`
                     <div
                       class="chat-group-footer-actions"
@@ -612,7 +629,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                     </div>
                   `
                 : nothing}
-          </div>`}
+            </div>`}
     </div>
   `;
 }

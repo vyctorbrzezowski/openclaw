@@ -119,6 +119,34 @@
   align-items: flex-start;
 }
 
+.chat-group-author {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  min-height: 22px;
+  margin-bottom: 2px;
+}
+
+.chat-group.user:not(.chat-group--peer) .chat-group-author {
+  justify-content: flex-end;
+  align-self: flex-end;
+}
+
+.chat-group-author .chat-sender-name {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.chat-group-author__role {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
 .chat-group.tool {
   --chat-message-column-max: var(--chat-message-max-width, min(980px, 100%));
   display: block;
@@ -182,6 +210,10 @@
   position: var(--chat-footer-detail-position, absolute);
   opacity: var(--chat-footer-disclosure-opacity, 0);
   pointer-events: var(--chat-footer-disclosure-pointer-events, none);
+}
+
+.chat-group-footer--headed .chat-sender-name {
+  display: none;
 }
 
 .chat-group:hover .chat-group-footer--persistent-identity,
@@ -575,6 +607,15 @@ img.chat-avatar.user {
 .chat-avatar.tool {
   background: var(--secondary);
   color: var(--muted);
+}
+
+/* Conversational identities use a round portrait rail. Tool/activity rows keep
+   their existing avatar geometry and operational presentation unchanged. */
+.chat-group:not(.tool) .chat-avatar {
+  align-self: start;
+  margin-top: 1px;
+  margin-bottom: 0;
+  border-radius: 50%;
 }
 
 /* Image avatar support */

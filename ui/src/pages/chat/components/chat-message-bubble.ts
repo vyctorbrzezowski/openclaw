@@ -140,18 +140,25 @@ function renderReplyPreview(
       ? t("chat.messages.currentMessage")
       : t("chat.messages.message");
   const content = preview?.text.trim() ?? "";
+  const avatarLabel = name
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
   const resolveMissingPreview = (element?: Element) => {
     if (element && replyToId && !preview) {
       onResolveReply?.(replyToId);
     }
   };
   const body = html`
-    <span class="chat-reply-preview__icon"
+    <span class="chat-reply-preview__avatar" aria-hidden="true"
       >${navigationLoading
         ? html`<span class="session-run-spinner" aria-hidden="true"></span>`
-        : icons.messageSquare}</span
+        : avatarLabel}</span
     >
-    <span class="chat-reply-preview__label"> ${t("chat.messages.replyingTo", { name })} </span>
+    <span class="chat-reply-preview__label">${name}</span>
     ${content
       ? html`<span class="chat-reply-preview__text"
           >${truncateUtf16Safe(content, 120)}${content.length > 120 ? "..." : ""}</span
