@@ -60,6 +60,17 @@ const SECTIONS: readonly GallerySection[] = [
   ...SURFACE_SECTIONS,
 ];
 
+function sectionForHash(): GallerySection {
+  const target = location.hash.slice(1);
+  return (
+    SECTIONS.find(
+      (section) => section.id === target || section.cases.some((entry) => entry.id === target),
+    ) ?? SECTIONS[0]!
+  );
+}
+
+const ACTIVE_SECTION = sectionForHash();
+
 function applyTheme(mode: "dark" | "light", persist = true) {
   const root = document.documentElement;
   root.dataset.theme = mode;
@@ -208,9 +219,7 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
   // hostConnected/hostUpdated for controllers registered by connectedCallback,
   // and the transcript virtualizer measures its scrollport from those hooks.
   private readonly transcripts = new Map<string, ChatTranscriptController>(
-    SECTIONS.flatMap((section) =>
-      section.cases.map((entry) => [entry.id, new ChatTranscriptController(this)] as const),
-    ),
+    ACTIVE_SECTION.cases.map((entry) => [entry.id, new ChatTranscriptController(this)] as const),
   );
 
   private transcriptFor(entry: TranscriptCase): ChatTranscriptController {
@@ -281,7 +290,9 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
     return html`
       <div class="tg__stage${stageClass}">
         ${renderChat(
-          chatProps(entry, this.transcriptFor(entry), () => this.requestUpdate()) as never,
+          chatProps(entry, this.transcriptFor(entry), () => {
+            this.requestUpdate();
+          }) as never,
         )}
       </div>
     `;
@@ -318,29 +329,25 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
           </div>
         </header>
         <nav class="tg__index" aria-label="Every artifact case">
-          ${SECTIONS.flatMap((section) =>
-            section.cases.map(
-              (entry) => html` <a href="#${entry.id}">${entry.title}<i>${section.title}</i></a> `,
-            ),
+          ${ACTIVE_SECTION.cases.map(
+            (entry) => html`
+              <a href="#${entry.id}">${entry.title}<i>${ACTIVE_SECTION.title}</i></a>
+            `,
           )}
         </nav>
-        ${SECTIONS.map(
-          (section) => html`
-            <section class="tg__section" id=${section.id}>
-              <h2>${section.title}</h2>
-              <p class="tg__hint">${section.note}</p>
-              ${section.cases.map(
-                (entry) => html`
-                  <article class="tg__case" id=${entry.id}>
-                    <h3>${entry.title}<code>#${entry.id}</code></h3>
-                    <p class="tg__hint">${entry.note}</p>
-                    ${this.renderStage(entry)}
-                  </article>
-                `,
-              )}
-            </section>
-          `,
-        )}
+        <section class="tg__section" id=${ACTIVE_SECTION.id}>
+          <h2>${ACTIVE_SECTION.title}</h2>
+          <p class="tg__hint">${ACTIVE_SECTION.note}</p>
+          ${ACTIVE_SECTION.cases.map(
+            (entry) => html`
+              <article class="tg__case" id=${entry.id}>
+                <h3>${entry.title}<code>#${entry.id}</code></h3>
+                <p class="tg__hint">${entry.note}</p>
+                ${this.renderStage(entry)}
+              </article>
+            `,
+          )}
+        </section>
       </openclaw-github-link-hovercard-provider>
     `;
   }
@@ -349,6 +356,12 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
 if (!customElements.get("openclaw-transcript-gallery")) {
   customElements.define("openclaw-transcript-gallery", OpenClawTranscriptGallery);
 }
+
+window.addEventListener("hashchange", () => {
+  if (sectionForHash().id !== ACTIVE_SECTION.id) {
+    location.reload();
+  }
+});
 
 const mount = document.querySelector<HTMLElement>("#app");
 if (mount) {

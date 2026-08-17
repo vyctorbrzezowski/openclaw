@@ -14,12 +14,22 @@ import {
 const TOOL_CASES: readonly TranscriptCase[] = [
   {
     id: "tool-command",
-    title: "Command tool — succeeded",
-    note: "The bash/exec family. Collapsed row shows the tokenized command; expand for the terminal body and the remaining arguments.",
+    title: "Command activity — live",
+    note: "The active-run activity disclosure used by production chat. Its summary shows the current command with a trailing chevron; expand for the individual tool rows.",
     props: {
-      messages: [
-        user("Run the focused transcript test.", 0),
-        toolMessage({
+      runActive: true,
+      runWorking: true,
+      runId: "run-gallery",
+      messages: [user("Run the focused transcript test.", 0)],
+      toolMessages: [
+        liveToolMessage({
+          name: "read",
+          callId: "call-read-context",
+          args: { file_path: "ui/src/pages/chat/components/chat-tool-cards.ts" },
+          partial: "Loaded 830 lines",
+          minutes: 1,
+        }),
+        liveToolMessage({
           name: "bash",
           callId: "call-bash-1",
           args: {
@@ -28,11 +38,9 @@ const TOOL_CASES: readonly TranscriptCase[] = [
             workdir: "/Users/operator/Code/openclaw",
             timeout: 120_000,
           },
-          output:
-            " ✓ ui/src/pages/chat/components/chat-transcript-render.test.ts (7 tests) 812ms\n\n Test Files  1 passed (1)\n      Tests  7 passed (7)\n   Start at  09:01:44\n   Duration  2.31s",
+          partial: "Test run in progress…",
           minutes: 1,
         }),
-        assistant("All seven cases pass.", 2),
       ],
     },
   },

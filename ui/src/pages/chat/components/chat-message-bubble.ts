@@ -64,7 +64,6 @@ import {
   renderRawOutputToggle,
   renderToolCard,
   renderToolPreview,
-  recordSelectableDisclosurePointer,
   resolveCollapsedToolDetail,
   shouldToggleSelectableDisclosure,
 } from "./chat-tool-cards.ts";
@@ -467,7 +466,6 @@ export function renderGroupedMessage(
                 class="chat-tool-msg-summary"
                 type="button"
                 aria-expanded=${String(toolMessageExpanded)}
-                @pointerdown=${recordSelectableDisclosurePointer}
                 @click=${(event: MouseEvent) => {
                   if (shouldToggleSelectableDisclosure(event)) {
                     opts.onToggleToolMessageExpanded?.(toolMessageDisclosureId);

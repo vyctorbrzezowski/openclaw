@@ -13,10 +13,7 @@ import { renderChatTimestamp } from "./chat-message-timestamp.ts";
 import { renderChatPlanChecklist } from "./chat-plan-checklist.ts";
 import { renderChatQuestionSummary } from "./chat-question-card.ts";
 import type { SidebarContent } from "./chat-sidebar.ts";
-import {
-  recordSelectableDisclosurePointer,
-  shouldToggleSelectableDisclosure,
-} from "./chat-tool-cards.ts";
+import { shouldToggleSelectableDisclosure } from "./chat-tool-cards.ts";
 import { renderChatWorkingIndicator } from "./chat-working-indicator.ts";
 
 /** A contiguous run of in-flight streaming items rendered under one assistant group. */
@@ -175,7 +172,6 @@ export function renderWorkGroupSummary(
             class="chat-activity-group__summary"
             type="button"
             aria-expanded=${String(opts.expanded)}
-            @pointerdown=${recordSelectableDisclosurePointer}
             @click=${(event: MouseEvent) => {
               if (shouldToggleSelectableDisclosure(event)) {
                 opts.onToggle();
