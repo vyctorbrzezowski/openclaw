@@ -45,6 +45,7 @@ import {
 import type { SidebarContent, SidebarFullMessageLoader } from "./chat-sidebar.ts";
 import {
   isRunningToolCard,
+  recordSelectableDisclosurePointer,
   resolveToolRowText,
   shouldToggleSelectableDisclosure,
 } from "./chat-tool-cards.ts";
@@ -284,6 +285,7 @@ export function renderActivityGroup(
             type="button"
             aria-expanded=${String(activityExpanded)}
             aria-controls=${activityBodyId}
+            @pointerdown=${recordSelectableDisclosurePointer}
             @click=${(event: MouseEvent) => {
               if (shouldToggleSelectableDisclosure(event)) {
                 opts.onToggleToolMessageExpanded?.(activityDisclosureId, activityExpanded);

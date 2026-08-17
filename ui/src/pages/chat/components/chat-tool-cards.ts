@@ -37,18 +37,40 @@ type FullMessageRequest = NonNullable<
   Extract<SidebarContent, { kind: "markdown" }>["fullMessageRequest"]
 >;
 
+const disclosureSelectionAtPointerDown = new WeakMap<EventTarget, boolean>();
+
+function selectionBelongsTo(target: EventTarget | null): boolean {
+  const selection = window.getSelection();
+  return (
+    target instanceof Node &&
+    selection !== null &&
+    !selection.isCollapsed &&
+    [selection.anchorNode, selection.focusNode].some(
+      (node) => node !== null && target.contains(node),
+    )
+  );
+}
+
+export function recordSelectableDisclosurePointer(event: PointerEvent): void {
+  if (event.currentTarget) {
+    disclosureSelectionAtPointerDown.set(
+      event.currentTarget,
+      selectionBelongsTo(event.currentTarget),
+    );
+  }
+}
+
 export function shouldToggleSelectableDisclosure(event: MouseEvent): boolean {
   if (event.detail === 0) {
     return true;
   }
   const target = event.currentTarget;
-  const selection = window.getSelection();
-  if (!(target instanceof Node) || !selection || selection.isCollapsed) {
+  if (!target || !selectionBelongsTo(target)) {
     return true;
   }
-  return ![selection.anchorNode, selection.focusNode].some(
-    (node) => node !== null && target.contains(node),
-  );
+  const selectionWasAlreadyPresent = disclosureSelectionAtPointerDown.get(target) === true;
+  disclosureSelectionAtPointerDown.delete(target);
+  return selectionWasAlreadyPresent;
 }
 
 function formatToolOutputForSidebar(text: string): string {
@@ -633,6 +655,7 @@ export function renderToolCard(
         class="chat-tool-msg-summary chat-tool-row ${isRunning ? "chat-tool-row--running" : ""}"
         type="button"
         aria-expanded=${String(opts.expanded)}
+        @pointerdown=${recordSelectableDisclosurePointer}
         @click=${(event: MouseEvent) => {
           if (shouldToggleSelectableDisclosure(event)) {
             opts.onToggleExpanded(card.id);
