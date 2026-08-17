@@ -75,11 +75,11 @@ const NOTICE_CASES: readonly TranscriptCase[] = [
     stage: "short",
     props: {
       messages: [
-        user("Ping the heartbeat.", 0),
-        assistant("HEARTBEAT_OK", 1),
-        assistant("HEARTBEAT_OK", 2),
-        assistant("HEARTBEAT_OK", 3),
-        assistant("HEARTBEAT_OK", 4),
+        user("Any update from the gateway?", 0),
+        assistant("Still waiting for the gateway.", 1, { __openclaw: { id: "relay-update" } }),
+        assistant("Still waiting for the gateway.", 2, { __openclaw: { id: "relay-update" } }),
+        assistant("Still waiting for the gateway.", 3, { __openclaw: { id: "relay-update" } }),
+        assistant("Still waiting for the gateway.", 4, { __openclaw: { id: "relay-update" } }),
       ],
     },
   },
