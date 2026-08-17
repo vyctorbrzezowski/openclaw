@@ -123,7 +123,7 @@ type ReplyPreview = {
   text: string;
 };
 
-function renderReplyPreview(
+export function renderReplyPreview(
   replyTarget: NormalizedMessage["replyTarget"],
   preview: ReplyPreview | undefined,
   onOpenReply: ((replyToId: string) => void) | undefined,
@@ -256,6 +256,7 @@ export function renderGroupedMessage(
     onResolveReply?: (replyToId: string) => void;
     onOpenReply?: (replyToId: string) => void;
     replyNavigationId?: string | null;
+    replyPreviewOwnedByGroup?: boolean;
   },
   onOpenSidebar?: (content: SidebarContent) => void,
 ) {
@@ -436,19 +437,21 @@ export function renderGroupedMessage(
         data-entry-id=${opts.entryId || nothing}
         data-message-text=${actionText || nothing}
       >
-        ${renderReplyPreview(
-          normalizedMessage.replyTarget,
-          normalizedMessage.replyTarget?.kind === "id"
-            ? (opts.resolveReplyPreview?.(normalizedMessage.replyTarget.id) ??
-                normalizedMessage.replyPreview)
-            : undefined,
-          opts.onOpenReply,
-          opts.onResolveReply,
-          opts.replyNavigationId ===
-            (normalizedMessage.replyTarget?.kind === "id"
-              ? normalizedMessage.replyTarget.id
-              : null),
-        )}
+        ${opts.replyPreviewOwnedByGroup
+          ? nothing
+          : renderReplyPreview(
+              normalizedMessage.replyTarget,
+              normalizedMessage.replyTarget?.kind === "id"
+                ? (opts.resolveReplyPreview?.(normalizedMessage.replyTarget.id) ??
+                    normalizedMessage.replyPreview)
+                : undefined,
+              opts.onOpenReply,
+              opts.onResolveReply,
+              opts.replyNavigationId ===
+                (normalizedMessage.replyTarget?.kind === "id"
+                  ? normalizedMessage.replyTarget.id
+                  : null),
+            )}
         ${renderInlineToolCards(toolCards, {
           messageKey,
           sessionKey: opts.sessionKey,
@@ -483,17 +486,21 @@ export function renderGroupedMessage(
       data-entry-id=${opts.entryId || nothing}
       data-message-text=${actionText || nothing}
     >
-      ${renderReplyPreview(
-        normalizedMessage.replyTarget,
-        normalizedMessage.replyTarget?.kind === "id"
-          ? (opts.resolveReplyPreview?.(normalizedMessage.replyTarget.id) ??
-              normalizedMessage.replyPreview)
-          : undefined,
-        opts.onOpenReply,
-        opts.onResolveReply,
-        opts.replyNavigationId ===
-          (normalizedMessage.replyTarget?.kind === "id" ? normalizedMessage.replyTarget.id : null),
-      )}
+      ${opts.replyPreviewOwnedByGroup
+        ? nothing
+        : renderReplyPreview(
+            normalizedMessage.replyTarget,
+            normalizedMessage.replyTarget?.kind === "id"
+              ? (opts.resolveReplyPreview?.(normalizedMessage.replyTarget.id) ??
+                  normalizedMessage.replyPreview)
+              : undefined,
+            opts.onOpenReply,
+            opts.onResolveReply,
+            opts.replyNavigationId ===
+              (normalizedMessage.replyTarget?.kind === "id"
+                ? normalizedMessage.replyTarget.id
+                : null),
+          )}
       ${isStandaloneToolMessage
         ? html`
             <div

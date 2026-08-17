@@ -5,8 +5,10 @@ import type { ImageLightboxItem } from "../../../components/image-lightbox.ts";
 import { t } from "../../../i18n/index.ts";
 import type { BoardProvider } from "../../../lib/board/provider.ts";
 import type { MessageGroup } from "../../../lib/chat/chat-types.ts";
-import { normalizeRoleForGrouping } from "../../../lib/chat/message-normalizer.ts";
-import { formatSenderLabel } from "../../../lib/chat/sender-label.ts";
+import {
+  normalizeMessage,
+  normalizeRoleForGrouping,
+} from "../../../lib/chat/message-normalizer.ts";
 import {
   readToolApprovalReviewOutcome,
   readToolApprovalReviews,
@@ -27,7 +29,7 @@ import {
 import type { LinkFaviconFetcher } from "../link-favicon-loader.ts";
 import { workspaceResultConflictFromTranscript } from "../workspace-conflict.ts";
 import { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
-import { renderGroupedMessage } from "./chat-message-bubble.ts";
+import { renderGroupedMessage, renderReplyPreview } from "./chat-message-bubble.ts";
 import { renderRewindButton } from "./chat-message-confirmation.ts";
 import {
   renderMessageActionButtons,
@@ -184,6 +186,7 @@ function buildGroupedMessageRenderOptions(
     onResolveReply: opts.onResolveReply,
     onOpenReply: opts.onOpenReply,
     replyNavigationId: opts.replyNavigationId,
+    replyPreviewOwnedByGroup: normalizeRoleForGrouping(group.role) !== "tool",
   };
 }
 
@@ -515,18 +518,35 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
   // messages keep the accent skin.
   const senderHue =
     normalizedRole === "user" && group.sender ? resolveIdentityHue(group.sender) : null;
-  const replyToLabel =
-    normalizedRole === "assistant" ? formatSenderLabel(group.replyToSender) : null;
-  const replyToTitle = replyToLabel ? t("chat.messages.replyingTo", { name: replyToLabel }) : null;
+  const firstNormalizedMessage = normalizeMessage(group.messages[0]?.message);
+  const replyTarget = firstNormalizedMessage.replyTarget;
+  const replyToId = replyTarget?.kind === "id" ? replyTarget.id : null;
+  const replyPreview = replyToId
+    ? (opts.resolveReplyPreview?.(replyToId) ?? firstNormalizedMessage.replyPreview)
+    : undefined;
+  const hasReplyPreview = normalizedRole !== "tool" && Boolean(replyTarget);
 
   return html`
     <div
       class="chat-group ${roleClass} chat-group--with-footer${isPeerGroup
         ? " chat-group--peer"
-        : ""}${senderHue === null ? "" : " chat-group--sender-tint"}"
+        : ""}${senderHue === null ? "" : " chat-group--sender-tint"}${hasReplyPreview
+        ? " chat-group--reply"
+        : ""}"
       style=${senderHue === null ? nothing : `--chat-sender-hue: ${senderHue}`}
       data-chat-row-key=${group.key}
     >
+      ${hasReplyPreview
+        ? html`<div class="chat-group-reply-preview">
+            ${renderReplyPreview(
+              replyTarget,
+              replyPreview,
+              opts.onOpenReply,
+              opts.onResolveReply,
+              opts.replyNavigationId === replyToId,
+            )}
+          </div>`
+        : nothing}
       ${normalizedRole !== "tool" &&
       showAvatarGutter &&
       (normalizedRole !== "assistant" || opts.showAssistantAvatar !== false)
@@ -553,16 +573,6 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                 ${normalizedRole === "assistant"
                   ? html`<span class="chat-group-author__role">${t("newSession.agent")}</span>`
                   : nothing}
-              </div>
-            `
-          : nothing}
-        ${replyToLabel
-          ? html`
-              <div class="chat-reply-attribution" title=${replyToTitle} aria-label=${replyToTitle}>
-                <span class="chat-reply-attribution__icon" aria-hidden="true"
-                  >${icons.cornerDownLeft}</span
-                >
-                <span>${replyToLabel}</span>
               </div>
             `
           : nothing}
