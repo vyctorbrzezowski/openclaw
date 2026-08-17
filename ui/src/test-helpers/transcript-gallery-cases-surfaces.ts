@@ -1,28 +1,13 @@
 // Transcript artifacts whose payload is media, background work, or a surface
 // the chat view renders around the transcript. Split from the session cases so
 // neither module crosses the file-size split.
-import { html } from "lit";
-import { renderBackgroundTasksRail } from "../pages/chat/components/chat-background-tasks-render.ts";
-import { renderChatPullRequests } from "../pages/chat/components/chat-pull-requests.ts";
-import { renderChatSessionSuggestions } from "../pages/chat/components/chat-session-suggestions.ts";
-import {
-  deriveSubagentActivity,
-  renderSubagentActivity,
-} from "../pages/chat/components/chat-subagent-activity.ts";
-import { renderChatSwarmProgress } from "../pages/chat/components/chat-swarm-progress.ts";
-import { renderChatTaskSuggestionTray } from "../pages/chat/components/chat-task-suggestions.ts";
-import { renderWorkspaceConflictNotice } from "../pages/chat/components/chat-workspace-conflict.ts";
+import { deriveSubagentActivity } from "../pages/chat/components/chat-subagent-activity.ts";
 import {
   at,
   type GallerySection,
   type TranscriptCase,
   user,
 } from "./transcript-gallery-content.ts";
-
-/** Wraps a chat-view surface in the transcript's own column so widths match. */
-function stageRow(body: unknown) {
-  return html`<div class="chat-thread"><div class="chat-thread-inner">${body}</div></div>`;
-}
 
 const MEDIA_CASES: readonly TranscriptCase[] = [
   {
@@ -228,93 +213,80 @@ const SUBAGENT_TASKS = [
   },
 ] as never[];
 
+function backgroundTasks(collapsed: boolean) {
+  return {
+    sessionKey: "agent:main:identity-subagents",
+    statusRowId: "gallery-tasks-status",
+    collapsed,
+    narrowLayout: false,
+    connected: true,
+    canCancel: true,
+    loading: false,
+    error: null,
+    tasks: SUBAGENT_TASKS,
+    subagentActivity: deriveSubagentActivity({
+      tasks: SUBAGENT_TASKS,
+      sessionKey: "agent:main:identity-subagents",
+      terminalObservedAtByTask: new Map([
+        ["task-docs", at(6)],
+        ["task-discord", at(6)],
+      ]),
+      canonicalizeSessionKey: (sessionKey) => sessionKey ?? "",
+      now: at(6),
+    }),
+    taskDetails: new Map(),
+    taskDetailErrors: new Map(),
+    taskDetailLoadingIds: new Set(),
+    cancellingTaskIds: new Set(),
+    finishedCollapsed: false,
+    onToggleCollapsed: () => undefined,
+    onToggleFinished: () => undefined,
+    onRefresh: () => undefined,
+    onCancel: () => undefined,
+  };
+}
+
 const ACTIVITY_CASES: readonly TranscriptCase[] = [
   {
     id: "activity-subagents",
     title: "Sub-agent activity rows",
     note: "Live sub-agent progress: running rows with their last tool, a failed row, and a finished one carrying its diff stat.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderSubagentActivity(
-          deriveSubagentActivity({
-            tasks: SUBAGENT_TASKS,
-            sessionKey: "agent:main:identity-subagents",
-            terminalObservedAtByTask: new Map([
-              ["task-docs", Date.now()],
-              ["task-discord", Date.now()],
-            ]),
-            canonicalizeSessionKey: (sessionKey) => sessionKey ?? "",
-            now: Date.now(),
-          }),
-          () => undefined,
-        ),
-      ),
+    props: { backgroundTasks: backgroundTasks(true) },
   },
   {
     id: "activity-background-rail",
     title: "Background task rail",
     note: "The rail the chat pane pins beside the transcript, with queued, running, failed, and finished tasks.",
     stage: "tall",
-    render: () =>
-      stageRow(
-        renderBackgroundTasksRail({
-          sessionKey: "agent:main:identity-subagents",
-          statusRowId: "gallery-tasks-status",
-          collapsed: false,
-          narrowLayout: false,
-          connected: true,
-          canCancel: true,
-          loading: false,
-          error: null,
-          tasks: SUBAGENT_TASKS,
-          subagentActivity: {
-            rows: [],
-            overflowWorking: 0,
-            taskIds: new Set(),
-            nextExpiryAt: null,
-          },
-          taskDetails: new Map(),
-          taskDetailErrors: new Map(),
-          taskDetailLoadingIds: new Set(),
-          cancellingTaskIds: new Set(),
-          finishedCollapsed: false,
-          onToggleCollapsed: () => undefined,
-          onToggleFinished: () => undefined,
-          onRefresh: () => undefined,
-          onCancel: () => undefined,
-        } as never),
-      ),
+    props: { backgroundTasks: backgroundTasks(false) },
   },
   {
     id: "activity-swarm",
     title: "Swarm progress",
     note: "Per-group dots for a swarm run: queued, running, done, and failed workers.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderChatSwarmProgress({
-          sessionKey: "agent:main:identity-subagents",
-          sessions: [
-            {
-              key: "agent:main:identity-subagents",
-              swarmGroupId: "swarm-pairing",
-              status: "active",
-              hasActiveRun: true,
-            },
-            ...["done", "done", "running", "queued", "failed", "queued"].map((state, index) => ({
-              key: `agent:swarm:worker-${index}`,
-              parentSessionKey: "agent:main:identity-subagents",
-              swarmGroupId: "swarm-pairing",
-              status: state === "failed" ? "error" : state === "done" ? "idle" : "active",
-              hasActiveRun: state === "running",
-              subagentRunState: state,
-              swarmPhase: state,
-              swarmPhaseRank: index,
-            })),
-          ],
-        } as never),
-      ),
+    props: {
+      sessionKey: "agent:main:identity-subagents",
+      swarmSessions: [
+        {
+          key: "agent:main:identity-subagents",
+          swarmGroupId: "swarm-pairing",
+          status: "active",
+          hasActiveRun: true,
+        },
+        ...["done", "done", "running", "queued", "failed", "queued"].map((state, index) => ({
+          key: `agent:swarm:worker-${index}`,
+          parentSessionKey: "agent:main:identity-subagents",
+          swarmGroupId: "swarm-pairing",
+          status: state === "failed" ? "error" : state === "done" ? "idle" : "active",
+          hasActiveRun: state === "running",
+          subagentRunState: state,
+          swarmPhase: state,
+          swarmPhaseRank: index,
+        })),
+      ],
+    },
   },
   {
     id: "activity-canvas",
@@ -357,162 +329,175 @@ const AROUND_TRANSCRIPT_CASES: readonly TranscriptCase[] = [
     title: "Pull request cards",
     note: "Rendered between the transcript and the composer. Open, draft, and merged states plus a branch row with no PR yet.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderChatPullRequests({
-          pullRequests: [
-            {
-              number: 124_328,
-              owner: "openclaw",
-              repo: "openclaw",
-              branch: "brzezowski/pairing-expiry-owner",
-              title: "fix(gateway): own pairing expiry at the store",
-              url: "https://github.com/openclaw/openclaw/pull/124328",
-              state: "open",
-              additions: 4,
-              deletions: 16,
-              checks: { state: "passing", passed: 21, failed: 0, skipped: 3, running: 0 },
-              checksUrl: "https://github.com/openclaw/openclaw/pull/124328/checks",
-            },
-            {
-              number: 124_274,
-              owner: "openclaw",
-              repo: "openclaw",
-              branch: "brzezowski/hovercard-pointer-bridge",
-              title: "fix(ui): GitHub link hovercard closes before the pointer can reach it",
-              url: "https://github.com/openclaw/openclaw/pull/124274",
-              state: "draft",
-              additions: 61,
-              deletions: 9,
-              checks: { state: "pending", passed: 4, failed: 0, skipped: 0, running: 12 },
-            },
-            {
-              number: 124_312,
-              owner: "openclaw",
-              repo: "openclaw",
-              branch: "brzezowski/publication-fixtures",
-              title: "test(plugins): deduplicate publication fixtures",
-              url: "https://github.com/openclaw/openclaw/pull/124312",
-              state: "merged",
-              additions: 12,
-              deletions: 288,
-              checks: { state: "failing", passed: 18, failed: 2, skipped: 1, running: 0 },
-            },
-          ],
-          branch: {
-            owner: "openclaw",
-            repo: "openclaw",
-            branch: "brzezowski/transcript-artifact-gallery",
-            additions: 2_819,
-            deletions: 205,
-            createUrl:
-              "https://github.com/openclaw/openclaw/pull/new/brzezowski/transcript-artifact-gallery",
-          },
-          rateLimited: true,
-          expanded: true,
-          onExpand: () => undefined,
-          onDismiss: () => undefined,
-        }),
-      ),
+    props: {
+      messages: [
+        user("Show the pull requests associated with this session.", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [{ type: "text", text: "Here is the current branch state." }],
+        },
+      ],
+      pullRequests: [
+        {
+          number: 124_328,
+          owner: "openclaw",
+          repo: "openclaw",
+          branch: "brzezowski/pairing-expiry-owner",
+          title: "fix(gateway): own pairing expiry at the store",
+          url: "https://github.com/openclaw/openclaw/pull/124328",
+          state: "open",
+          additions: 4,
+          deletions: 16,
+          checks: { state: "passing", passed: 21, failed: 0, skipped: 3, running: 0 },
+          checksUrl: "https://github.com/openclaw/openclaw/pull/124328/checks",
+        },
+        {
+          number: 124_274,
+          owner: "openclaw",
+          repo: "openclaw",
+          branch: "brzezowski/hovercard-pointer-bridge",
+          title: "fix(ui): GitHub link hovercard closes before the pointer can reach it",
+          url: "https://github.com/openclaw/openclaw/pull/124274",
+          state: "draft",
+          additions: 61,
+          deletions: 9,
+          checks: { state: "pending", passed: 4, failed: 0, skipped: 0, running: 12 },
+        },
+        {
+          number: 124_312,
+          owner: "openclaw",
+          repo: "openclaw",
+          branch: "brzezowski/publication-fixtures",
+          title: "test(plugins): deduplicate publication fixtures",
+          url: "https://github.com/openclaw/openclaw/pull/124312",
+          state: "merged",
+          additions: 12,
+          deletions: 288,
+          checks: { state: "failing", passed: 18, failed: 2, skipped: 1, running: 0 },
+        },
+      ],
+      pullRequestsBranch: {
+        owner: "openclaw",
+        repo: "openclaw",
+        branch: "brzezowski/transcript-artifact-gallery",
+        additions: 2_819,
+        deletions: 205,
+        createUrl:
+          "https://github.com/openclaw/openclaw/pull/new/brzezowski/transcript-artifact-gallery",
+      },
+      pullRequestsRateLimited: true,
+      pullRequestsExpanded: true,
+      onExpandPullRequests: () => undefined,
+      onDismissPullRequest: () => undefined,
+    },
   },
   {
     id: "around-task-suggestions",
     title: "Task suggestions",
     note: "Follow-up work the agent proposes after a turn, with the start split-button and the collapsed prompt.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderChatTaskSuggestionTray({
-          taskSuggestions: [
-            {
-              id: "suggestion-worktree",
-              title: "Audit the Discord pairing path",
-              prompt:
-                "Check whether src/channels/discord/pairing.ts re-derives token expiry the way the Telegram adapter did before the store took ownership. If it does, move the check to readPairingToken and delete the local guard.",
-              tldr: "The Discord adapter may still carry the consumer-side expiry check that was just removed elsewhere.",
-              cwd: "/Users/operator/Code/openclaw",
-              sessionKey: "agent:main:pairing-audit",
-              agentId: "main",
-              createdAt: at(1),
-            },
-            {
-              id: "suggestion-docs",
-              title: "Correct the pairing window in the docs",
-              prompt:
-                "docs/gateway/device-pairing.md says pairing tokens last one hour; the shipped default is 15 minutes. Fix the page and check for the same claim in the onboarding copy.",
-              tldr: "The docs page contradicts the shipped default.",
-              cwd: "/Users/operator/Code/openclaw",
-              sessionKey: "agent:main:pairing-audit",
-              createdAt: at(2),
-            },
-          ],
-          taskSuggestionBusyIds: new Set<string>(),
-          taskSuggestionCopiedIds: new Set<string>(),
-          canAcceptTaskSuggestions: true,
-          canAcceptTaskSuggestionModes: true,
-          canDismissTaskSuggestions: true,
-          onAcceptTaskSuggestion: () => undefined,
-          onDismissTaskSuggestion: () => undefined,
-          onCopyTaskSuggestionPrompt: () => undefined,
-        }),
-      ),
+    props: {
+      messages: [
+        user("What should we do next?", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [{ type: "text", text: "I found two useful follow-up tasks." }],
+        },
+      ],
+      taskSuggestions: [
+        {
+          id: "suggestion-worktree",
+          title: "Audit the Discord pairing path",
+          prompt:
+            "Check whether src/channels/discord/pairing.ts re-derives token expiry the way the Telegram adapter did before the store took ownership. If it does, move the check to readPairingToken and delete the local guard.",
+          tldr: "The Discord adapter may still carry the consumer-side expiry check that was just removed elsewhere.",
+          cwd: "/Users/operator/Code/openclaw",
+          sessionKey: "agent:main:pairing-audit",
+          agentId: "main",
+          createdAt: at(1),
+        },
+        {
+          id: "suggestion-docs",
+          title: "Correct the pairing window in the docs",
+          prompt:
+            "docs/gateway/device-pairing.md says pairing tokens last one hour; the shipped default is 15 minutes. Fix the page and check for the same claim in the onboarding copy.",
+          tldr: "The docs page contradicts the shipped default.",
+          cwd: "/Users/operator/Code/openclaw",
+          sessionKey: "agent:main:pairing-audit",
+          createdAt: at(2),
+        },
+      ],
+      taskSuggestionBusyIds: new Set<string>(),
+      taskSuggestionCopiedIds: new Set<string>(),
+      canAcceptTaskSuggestions: true,
+      canAcceptTaskSuggestionModes: true,
+      canDismissTaskSuggestions: true,
+      onAcceptTaskSuggestion: () => undefined,
+      onDismissTaskSuggestion: () => undefined,
+      onCopyTaskSuggestionPrompt: () => undefined,
+    },
   },
   {
     id: "around-session-suggestions",
     title: "Session suggestions",
     note: "Messages a collaborator proposes into the session; the owner can send, queue, edit, or dismiss.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderChatSessionSuggestions({
-          suggestions: [
-            {
-              id: "suggestion-1",
-              sessionKey: "agent:main:pairing-audit",
-              agentId: "main",
-              author: { type: "human", id: "alice", label: "Alice Moreau" },
-              text: "Ask it to check the CLI pairing flow too — openclaw devices reads the same rows.",
-              createdAt: at(1),
-              state: "pending",
-            },
-            {
-              id: "suggestion-2",
-              sessionKey: "agent:main:pairing-audit",
-              agentId: "main",
-              author: { type: "human", id: "joaquin", label: "Joaquin De Rojas" },
-              text: "Already covered upstream.",
-              createdAt: at(2),
-              state: "dismissed",
-            },
-          ],
-          role: "owner",
-          busyIds: new Set<string>(),
-          archived: false,
-          canResolve: true,
-          onResolve: () => undefined,
-        }),
-      ),
+    props: {
+      messages: [
+        user("Review the pairing path before changing it.", 0),
+        {
+          role: "assistant",
+          timestamp: at(1),
+          content: [{ type: "text", text: "I am tracing the store and CLI consumers now." }],
+        },
+      ],
+      sessionSuggestions: [
+        {
+          id: "suggestion-1",
+          sessionKey: "agent:main:pairing-audit",
+          agentId: "main",
+          author: { type: "human", id: "alice", label: "Alice Moreau" },
+          text: "Ask it to check the CLI pairing flow too — openclaw devices reads the same rows.",
+          createdAt: at(1),
+          state: "pending",
+        },
+        {
+          id: "suggestion-2",
+          sessionKey: "agent:main:pairing-audit",
+          agentId: "main",
+          author: { type: "human", id: "joaquin", label: "Joaquin De Rojas" },
+          text: "Already covered upstream.",
+          createdAt: at(2),
+          state: "dismissed",
+        },
+      ],
+      sessionSuggestionRole: "owner",
+      sessionSuggestionBusyIds: new Set<string>(),
+      sessionSuggestionsArchived: false,
+      canResolveSessionSuggestions: true,
+      onResolveSessionSuggestion: () => undefined,
+    },
   },
   {
     id: "around-workspace-conflict-banner",
     title: "Workspace conflict banner",
     note: "The dismissible banner above the transcript, distinct from the in-transcript conflict event above.",
     stage: "short",
-    render: () =>
-      stageRow(
-        renderWorkspaceConflictNotice({
-          conflict: {
-            paths: [
-              "src/gateway/pairing-store.ts",
-              "src/gateway/pairing-route.ts",
-              "docs/gateway/device-pairing.md",
-            ],
-            stagedResultRef: "refs/openclaw/worker-results/claim-456",
-            totalCount: 3,
-          },
-          onDismiss: () => undefined,
-        }),
-      ),
+    props: {
+      messages: [user("Apply the worker result to this session.", 0)],
+      workspaceConflict: {
+        paths: [
+          "src/gateway/pairing-store.ts",
+          "src/gateway/pairing-route.ts",
+          "docs/gateway/device-pairing.md",
+        ],
+        stagedResultRef: "refs/openclaw/worker-results/claim-456",
+        totalCount: 3,
+      },
+      onDismissWorkspaceConflict: () => undefined,
+    },
   },
 ];
 

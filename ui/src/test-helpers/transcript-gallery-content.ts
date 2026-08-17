@@ -6,8 +6,6 @@
 // broken image URLs. Polishing a transcript against lorem ipsum hides exactly
 // the overflow and wrapping defects this page exists to surface.
 
-import type { TemplateResult } from "lit";
-
 export type TranscriptCase = {
   readonly id: string;
   readonly title: string;
@@ -15,10 +13,8 @@ export type TranscriptCase = {
   readonly note: string;
   /** Extra stage height for cases whose content is taller than the default. */
   readonly stage?: "short" | "tall";
-  /** ChatThreadProps overrides; omitted for template-only cases. */
+  /** ChatProps overrides applied before the case enters the production chat view. */
   readonly props?: Record<string, unknown>;
-  /** Surfaces the chat view renders around the transcript rather than inside it. */
-  readonly render?: () => TemplateResult;
 };
 
 export type GallerySection = {

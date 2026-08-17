@@ -2,13 +2,14 @@
 // Control UI chat transcript, so the operator can polish them one by one in
 // both themes without driving a live session into each state.
 //
-// Artifacts render through the real transcript pipeline (renderChatThread over
-// ChatThreadProps) rather than reconstructed markup: a second copy of the
-// bubble, grouping, and tool-card markup would drift from production within a
-// release, and conversation rhythm only exists in the real projection.
-import { html, render, type TemplateResult } from "lit";
+// Artifacts render through the real chat view rather than reconstructed markup:
+// a second copy of the pane, transcript, and surrounding surfaces would drift
+// from production within a release, and conversation rhythm only exists in the
+// real projection.
+import { html, nothing, render, type TemplateResult } from "lit";
+import { i18n } from "../i18n/index.ts";
 import { OpenClawLightDomElement } from "../lit/openclaw-element.ts";
-import { renderChatThread } from "../pages/chat/components/chat-thread.ts";
+import { renderChat } from "../pages/chat/chat-view.ts";
 import { ChatTranscriptController } from "../pages/chat/components/chat-transcript-controller.ts";
 import { SESSION_SECTIONS } from "./transcript-gallery-cases-session.ts";
 import { SURFACE_SECTIONS } from "./transcript-gallery-cases-surfaces.ts";
@@ -28,6 +29,42 @@ import "../components/github-link-hovercard-registration.ts";
 const THEME_STORAGE_KEY = "openclaw-transcript-gallery-theme";
 const requestedTheme = new URLSearchParams(location.search).get("theme");
 
+const embeddedGalleryStyles = html`
+  <style>
+    /* A production pane owns a bounded viewport and scrolls its transcript.
+       The gallery owns the document viewport instead, so every box contributes
+       its full content height and the stage border encloses the whole surface. */
+    .tg__stage,
+    .tg__stage .chat,
+    .tg__stage .chat-workbench,
+    .tg__stage .chat-workbench__main,
+    .tg__stage .chat-split-container,
+    .tg__stage .chat-main,
+    .tg__stage .chat-main__conversation-column,
+    .tg__stage .chat-main__conversation,
+    .tg__stage .chat-thread,
+    .tg__stage .chat-tasks-rail__scroll,
+    .tg__stage .chat-tasks-rail__section {
+      height: auto !important;
+      min-height: 0;
+      max-height: none;
+    }
+    .tg__stage {
+      overflow: hidden;
+    }
+    .tg__stage .chat-thread {
+      flex: none;
+      overflow-y: hidden;
+      scrollbar-gutter: auto;
+    }
+    .tg__stage .chat-tasks-rail__scroll,
+    .tg__stage .chat-tasks-rail__section {
+      flex: none;
+      overflow-y: hidden;
+    }
+  </style>
+`;
+
 const SECTIONS: readonly GallerySection[] = [
   ...TEXT_SECTIONS,
   ...TOOL_SECTIONS,
@@ -35,14 +72,18 @@ const SECTIONS: readonly GallerySection[] = [
   ...SURFACE_SECTIONS,
 ];
 
-function applyTheme(mode: "dark" | "light") {
+function applyTheme(mode: "dark" | "light", persist = true) {
   const root = document.documentElement;
   root.dataset.theme = mode;
   root.dataset.themeMode = mode;
+  root.dataset.themeResolved = mode;
   root.classList.toggle("wa-light", mode === "light");
   root.classList.toggle("wa-dark", mode === "dark");
   root.style.colorScheme = mode;
-  localStorage.setItem(THEME_STORAGE_KEY, mode);
+  root.style.setProperty("--control-ui-text-scale", "1");
+  if (persist) {
+    localStorage.setItem(THEME_STORAGE_KEY, mode);
+  }
 }
 
 /**
@@ -98,28 +139,50 @@ function transcriptCallbacks(requestUpdate: () => void): Record<string, unknown>
     onOpenSidebar: () => undefined,
     onOpenWorkspaceFile: () => undefined,
     onOpenSessionCheckpoints: () => undefined,
-    onOpenSession: () => undefined,
+    onSessionSelect: () => undefined,
     onAssistantAttachmentLoaded: () => undefined,
     onRequestOpenImage: () => 0,
     onOpenImage: () => undefined,
   };
 }
 
-/** The minimum ChatThreadProps a case must supply; every case overrides part. */
-function threadProps(entry: TranscriptCase, requestUpdate: () => void): Record<string, unknown> {
+/** The production chat-view state a case starts from; every case overrides part. */
+function chatProps(
+  entry: TranscriptCase,
+  transcript: ChatTranscriptController,
+  requestUpdate: () => void,
+): Record<string, unknown> {
   const sessionKey = (entry.props?.sessionKey as string | undefined) ?? `agent:main:${entry.id}`;
+  const runActive = entry.props?.runActive === true;
+  const caseProps = { ...entry.props };
+  delete caseProps.runActive;
+  delete caseProps.runWorking;
   return {
+    transcript,
     paneId: `gallery-${entry.id}`,
     sessionKey,
+    onSessionKeyChange: () => undefined,
+    thinkingLevel: "medium",
     basePath: "",
     localMediaPreviewRoots: [],
     loading: false,
+    sending: false,
+    canAbort: runActive,
+    onAbort: runActive ? () => undefined : undefined,
+    compactionStatus: null,
+    fallbackStatus: null,
     messages: [],
     toolMessages: [],
     streamSegments: [],
     stream: null,
     streamStartedAt: null,
     queue: [],
+    draft: "",
+    connected: true,
+    canSend: true,
+    disabledReason: null,
+    error: null,
+    runError: null,
     showThinking: true,
     showToolCalls: true,
     sessions: sessionsFor(sessionKey),
@@ -132,11 +195,20 @@ function threadProps(entry: TranscriptCase, requestUpdate: () => void): Record<s
     userId: "profile-operator",
     userName: "Riley",
     userAvatar: null,
+    agentsList: null,
+    currentAgentId: "main",
+    attachments: [],
+    onAttachmentsChange: () => undefined,
+    onRefresh: () => undefined,
+    onQueueRemove: () => undefined,
+    onQueueSteer: () => undefined,
+    onNewSession: () => undefined,
+    onAgentChange: () => undefined,
     // Each stage is its own log region; announcing 20 of them at once would
     // make the page unusable with a screen reader.
     announceTranscript: false,
     ...transcriptCallbacks(requestUpdate),
-    ...entry.props,
+    ...caseProps,
   };
 }
 
@@ -146,9 +218,7 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
   // and the transcript virtualizer measures its scrollport from those hooks.
   private readonly transcripts = new Map<string, ChatTranscriptController>(
     SECTIONS.flatMap((section) =>
-      section.cases
-        .filter((entry) => entry.render === undefined)
-        .map((entry) => [entry.id, new ChatTranscriptController(this)] as const),
+      section.cases.map((entry) => [entry.id, new ChatTranscriptController(this)] as const),
     ),
   );
 
@@ -164,14 +234,9 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
     const stageClass = entry.stage ? ` tg__stage--${entry.stage}` : "";
     return html`
       <div class="tg__stage${stageClass}">
-        <div class="chat">
-          ${entry.render
-            ? entry.render()
-            : renderChatThread(
-                threadProps(entry, () => this.requestUpdate()) as never,
-                this.transcriptFor(entry),
-              )}
-        </div>
+        ${renderChat(
+          chatProps(entry, this.transcriptFor(entry), () => this.requestUpdate()) as never,
+        )}
       </div>
     `;
   }
@@ -185,10 +250,14 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
             <nav class="tg__bar-nav" aria-label="Artifact families">
               ${SECTIONS.map((section) => html`<a href="#${section.id}">${section.short}</a>`)}
             </nav>
-            <div class="tg__themes">
-              <button type="button" @click=${() => applyTheme("light")}>Light</button>
-              <button type="button" @click=${() => applyTheme("dark")}>Dark</button>
-            </div>
+            ${requestedTheme
+              ? nothing
+              : html`
+                  <div class="tg__themes">
+                    <button type="button" @click=${() => applyTheme("light")}>Light</button>
+                    <button type="button" @click=${() => applyTheme("dark")}>Dark</button>
+                  </div>
+                `}
           </div>
         </div>
         <header class="tg__head">
@@ -238,9 +307,15 @@ if (!customElements.get("openclaw-transcript-gallery")) {
 const mount = document.querySelector<HTMLElement>("#app");
 if (mount) {
   if (requestedTheme === "light" || requestedTheme === "dark") {
-    applyTheme(requestedTheme);
+    await i18n.setLocale("en");
+    document.documentElement.lang = "en-US";
+    document.documentElement.dir = "ltr";
+    applyTheme(requestedTheme, false);
     document.body.classList.add("tg-embedded");
-    render(html`<openclaw-transcript-gallery></openclaw-transcript-gallery>`, mount);
+    render(
+      html`${embeddedGalleryStyles}<openclaw-transcript-gallery></openclaw-transcript-gallery>`,
+      mount,
+    );
   } else {
     document.body.classList.add("tg-compare");
     render(
