@@ -32,23 +32,8 @@ const requestedTheme = new URLSearchParams(location.search).get("theme");
 const embeddedGalleryStyles = html`
   <style>
     /* A production pane owns a bounded viewport and scrolls its transcript.
-       The gallery owns the document viewport instead, so every box contributes
-       its full content height and the stage border encloses the whole surface. */
-    .tg__stage,
-    .tg__stage .chat,
-    .tg__stage .chat-workbench,
-    .tg__stage .chat-workbench__main,
-    .tg__stage .chat-split-container,
-    .tg__stage .chat-main,
-    .tg__stage .chat-main__conversation-column,
-    .tg__stage .chat-main__conversation,
-    .tg__stage .chat-thread,
-    .tg__stage .chat-tasks-rail__scroll,
-    .tg__stage .chat-tasks-rail__section {
-      height: auto !important;
-      min-height: 0;
-      max-height: none;
-    }
+       The gallery starts with that real viewport so virtualization can measure,
+       then expands the stage until these scroll owners fit all their content. */
     .tg__stage {
       overflow: hidden;
     }
@@ -213,6 +198,9 @@ function chatProps(
 }
 
 class OpenClawTranscriptGallery extends OpenClawLightDomElement {
+  private expansionFrame: number | null = null;
+  private expansionObserver: ResizeObserver | null = null;
+
   // Controllers are built before the first render: Lit only drives
   // hostConnected/hostUpdated for controllers registered by connectedCallback,
   // and the transcript virtualizer measures its scrollport from those hooks.
@@ -228,6 +216,52 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
       throw new Error(`transcript gallery case is missing a controller: ${entry.id}`);
     }
     return controller;
+  }
+
+  protected override firstUpdated(): void {
+    this.scheduleStageExpansion();
+    this.expansionObserver = new ResizeObserver(() => this.scheduleStageExpansion());
+    for (const content of this.querySelectorAll(".chat-thread-inner, .chat-tasks-rail__list")) {
+      this.expansionObserver.observe(content);
+    }
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this.expansionFrame !== null) {
+      cancelAnimationFrame(this.expansionFrame);
+      this.expansionFrame = null;
+    }
+    this.expansionObserver?.disconnect();
+    this.expansionObserver = null;
+  }
+
+  private scheduleStageExpansion(): void {
+    if (this.expansionFrame !== null) {
+      return;
+    }
+    this.expansionFrame = requestAnimationFrame(() => {
+      this.expansionFrame = null;
+      let expanded = false;
+      for (const stage of this.querySelectorAll<HTMLElement>(".tg__stage")) {
+        let missingHeight = 0;
+        for (const scrollport of stage.querySelectorAll<HTMLElement>(
+          ".chat-thread, .chat-tasks-rail__scroll, .chat-tasks-rail__section",
+        )) {
+          missingHeight = Math.max(
+            missingHeight,
+            scrollport.scrollHeight - scrollport.clientHeight,
+          );
+        }
+        if (missingHeight > 1) {
+          stage.style.height = `${stage.getBoundingClientRect().height + missingHeight}px`;
+          expanded = true;
+        }
+      }
+      if (expanded) {
+        this.scheduleStageExpansion();
+      }
+    });
   }
 
   private renderStage(entry: TranscriptCase): TemplateResult {
