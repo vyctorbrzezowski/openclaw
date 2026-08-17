@@ -744,6 +744,31 @@ img.chat-avatar.chat-avatar--logo {
   padding-inline-start: 0;
 }
 
+/* Shared conversations are typographic, not bubble-based. Keep direct-chat
+   skins and operational tool surfaces unchanged. */
+.chat-thread:not(.chat-thread--direct) .chat-group:not(.tool) .chat-bubble {
+  width: auto;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chat-thread:not(.chat-thread--direct) .chat-group:not(.tool) .chat-bubble:hover,
+:root[data-theme-mode="light"]
+  .chat-thread:not(.chat-thread--direct)
+  .chat-group:not(.tool)
+  .chat-bubble:hover {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chat-thread:not(.chat-thread--direct) .chat-group.user:not(.chat-group--peer) .chat-bubble {
+  text-align: right;
+}
+
 .chat-duplicate-count {
   display: inline-flex;
   align-items: center;
