@@ -247,7 +247,8 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
       this.expansionFrame = null;
       let expanded = false;
       for (const stage of this.querySelectorAll<HTMLElement>(".tg__stage")) {
-        let missingHeight = 0;
+        const stageBounds = stage.getBoundingClientRect();
+        let missingHeight = stage.scrollHeight - stage.clientHeight;
         for (const scrollport of stage.querySelectorAll<HTMLElement>(
           ".chat-thread, .chat-tasks-rail__scroll, .chat-tasks-rail__section",
         )) {
@@ -256,8 +257,16 @@ class OpenClawTranscriptGallery extends OpenClawLightDomElement {
             scrollport.scrollHeight - scrollport.clientHeight,
           );
         }
+        for (const content of stage.querySelectorAll<HTMLElement>(
+          ".chat-thread-inner, .chat-main__conversation, .chat-tasks-rail",
+        )) {
+          missingHeight = Math.max(
+            missingHeight,
+            content.getBoundingClientRect().bottom - stageBounds.bottom,
+          );
+        }
         if (missingHeight > 1) {
-          stage.style.height = `${stage.getBoundingClientRect().height + missingHeight}px`;
+          stage.style.height = `${stageBounds.height + missingHeight}px`;
           expanded = true;
         }
       }
