@@ -2968,7 +2968,11 @@ button.chat-pr__diff {
   color: var(--muted);
   flex-shrink: 0;
   padding: 0 10px;
-  transition: all var(--duration-fast) ease;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
 /* Inside the composer the icon buttons are chrome on a shared surface: square
@@ -2981,6 +2985,24 @@ button.chat-pr__diff {
   padding: 0;
   border-radius: var(--radius-full);
   color: var(--chat-composer-secondary);
+}
+
+.agent-chat__input :is(
+  .agent-chat__input-btn,
+  .chat-controls__inline-select-trigger,
+  .chat-talk-input-picker__trigger
+):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.agent-chat__input :is(
+  .agent-chat__attach-menu[open] .agent-chat__input-btn,
+  .chat-controls__inline-select[open] > .chat-controls__inline-select-trigger,
+  .chat-talk-input-picker[open] .chat-talk-input-picker__trigger
+) {
+  background: var(--chat-composer-hover);
+  color: var(--text-strong);
 }
 
 .agent-chat__input .agent-chat__input-btn:hover:not(:disabled) {
@@ -3033,7 +3055,7 @@ button.chat-pr__diff {
 }
 
 .agent-chat__input-btn:hover:not(:disabled) {
-  color: var(--text);
+  color: var(--chat-composer-secondary, var(--muted));
   background: var(--bg-hover);
 }
 
@@ -3257,7 +3279,7 @@ button.chat-pr__diff {
 }
 
 .agent-chat__session-overrides-pill button:hover {
-  background: color-mix(in srgb, var(--text) 7%, transparent);
+  background: var(--chat-composer-hover, color-mix(in srgb, var(--text) 7%, transparent));
 }
 
 .agent-chat__session-overrides-clear svg {
@@ -3876,8 +3898,8 @@ button.chat-pr__diff {
   width: min(300px, calc(100vw - 24px));
   padding: 6px;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-elevated) 96%, var(--card));
+  border-radius: var(--menu-radius);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow-md);
   /* Same quick family as the chevron's own reveal, anchored at the bottom edge
      the menu is placed against, so the list reads as continuing out of the
