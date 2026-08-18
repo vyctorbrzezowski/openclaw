@@ -39,7 +39,7 @@ import { buildSkillWorkshopMocks } from "./control-ui-mock-skill-workshop.js";
 
 type CliOptions = {
   allowedHosts: string[];
-  fixture?: "approval" | "board" | "swarm" | "workboard";
+  fixture?: "approval" | "board" | "input-only" | "swarm" | "workboard";
   host: string;
   port: number;
 };
@@ -162,7 +162,13 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
   if (!value) {
     return undefined;
   }
-  if (value !== "approval" && value !== "board" && value !== "swarm" && value !== "workboard") {
+  if (
+    value !== "approval" &&
+    value !== "board" &&
+    value !== "input-only" &&
+    value !== "swarm" &&
+    value !== "workboard"
+  ) {
     throw new Error(`Unknown Control UI mock fixture: ${value}`);
   }
   return value;
@@ -213,6 +219,47 @@ function sessionsListResponse(sessions: unknown[], options: SessionListOptions) 
     sessions,
     totalCount: options.totalCount,
     ts: Date.now(),
+  };
+}
+
+function inputOnlyPullRequestSnapshot() {
+  return {
+    sessions: {
+      "agent:main:main": {
+        status: "ready",
+        rateLimited: false,
+        branch: {
+          owner: "openclaw",
+          repo: "openclaw",
+          branch: "brzezowski/composer-input-only",
+          additions: 486,
+          deletions: 218,
+          createUrl:
+            "https://github.com/openclaw/openclaw/compare/main...brzezowski:composer-input-only",
+        },
+        pullRequests: [
+          {
+            number: 124301,
+            owner: "openclaw",
+            repo: "openclaw",
+            branch: "brzezowski/composer-input-only",
+            title: "Restyle the multiline composer",
+            url: "https://github.com/openclaw/openclaw/pull/124301",
+            state: "draft",
+            additions: 486,
+            deletions: 218,
+            checks: {
+              state: "pending",
+              passed: 17,
+              failed: 1,
+              skipped: 2,
+              running: 3,
+            },
+            checksUrl: "https://github.com/openclaw/openclaw/pull/124301/checks",
+          },
+        ],
+      },
+    },
   };
 }
 
@@ -1389,6 +1436,24 @@ async function createChatPickerScenario(
     sessionRow("agent:main:main", "Molty", baseTime - 1_000, {
       activeRunIds: [PLAN_DEMO_RUN_ID],
       childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
+      ...(fixture === "input-only"
+        ? {
+            goal: {
+              schemaVersion: 1,
+              id: "mock-input-only-goal",
+              objective: "Ship the input-only composer redesign",
+              status: "active",
+              createdAt: baseTime - 45 * 60_000,
+              updatedAt: baseTime - 2 * 60_000,
+              tokenStart: 120_000,
+              tokenStartFresh: true,
+              tokensUsed: 50_000,
+              tokenBudget: 90_000,
+              continuationTurns: 4,
+              lastStatusNote: "Details is ready for operator review.",
+            },
+          }
+        : {}),
       hasActiveRun: true,
       totalTokens: 170_000,
       totalTokensFresh: true,
@@ -1523,6 +1588,24 @@ async function createChatPickerScenario(
     activeRunIds: [PLAN_DEMO_RUN_ID],
     hasActiveRun: true,
     key: "agent:main:main",
+    ...(fixture === "input-only"
+      ? {
+          goal: {
+            schemaVersion: 1,
+            id: "mock-input-only-goal",
+            objective: "Ship the input-only composer redesign",
+            status: "active",
+            createdAt: baseTime - 45 * 60_000,
+            updatedAt: baseTime - 2 * 60_000,
+            tokenStart: 120_000,
+            tokenStartFresh: true,
+            tokensUsed: 50_000,
+            tokenBudget: 90_000,
+            continuationTurns: 4,
+            lastStatusNote: "Details is ready for operator review.",
+          },
+        }
+      : {}),
   };
   const planInFlightRun = {
     runId: PLAN_DEMO_RUN_ID,
@@ -1608,6 +1691,15 @@ async function createChatPickerScenario(
       "chat.metadata",
       "chat.startup",
       "question.list",
+      ...(fixture === "input-only"
+        ? [
+            "controlUi.sessionPullRequests.subscribe",
+            "progressCard.get",
+            "taskSuggestions.accept",
+            "taskSuggestions.dismiss",
+            "taskSuggestions.list",
+          ]
+        : []),
       "openclaw.changes.list",
       "openclaw.chat",
       "openclaw.chat.history",
@@ -1664,6 +1756,41 @@ async function createChatPickerScenario(
     methodResponses: {
       ...buildBackgroundTasksMock(baseTime),
       ...cronMocks,
+      ...(fixture === "input-only"
+        ? {
+            "controlUi.sessionPullRequests.subscribe": { ok: true },
+            "progressCard.get": {
+              card: {
+                sessionKey: "agent:main:main",
+                revision: 7,
+                updatedAt: baseTime - 30_000,
+                markdown: "The composer now contains input controls only.",
+                steps: [
+                  { step: "Move environment into Details", status: "completed" },
+                  { step: "Move work and subagents into Details", status: "completed" },
+                  { step: "Review the operator mock", status: "in_progress" },
+                  { step: "Apply visual feedback", status: "pending" },
+                ],
+              },
+            },
+            "taskSuggestions.list": {
+              suggestions: [
+                {
+                  id: "mock-input-only-follow-up",
+                  title: "Polish the Details hierarchy",
+                  prompt: "Review the Details popover and apply the operator's visual feedback.",
+                  tldr: "Tighten spacing and hierarchy after the first review.",
+                  cwd: "/Users/peter/Projects/openclaw",
+                  sessionKey: "agent:main:main",
+                  agentId: "main",
+                  createdAt: baseTime - 60_000,
+                },
+              ],
+            },
+            "taskSuggestions.accept": { ok: true, sessionKey: "agent:main:details-polish" },
+            "taskSuggestions.dismiss": { ok: true },
+          }
+        : {}),
       "chat.history": {
         cases: [{ match: { sessionKey: "agent:main:main" }, response: planChatHistory }],
       },
@@ -2505,6 +2632,7 @@ function escapeScriptContent(script: string): string {
 function installControlUiStatefulMocks(
   custodianReplyDelayMs: number,
   chatReplyDelayMs: number,
+  pullRequestSnapshot: unknown,
 ): void {
   type MockGatewayControls = {
     deferNext: (method: string) => void;
@@ -2540,6 +2668,15 @@ function installControlUiStatefulMocks(
     }
     if (frame?.type !== "req") {
       sendOriginal(this, data);
+      return;
+    }
+
+    if (frame.method === "controlUi.sessionPullRequests.subscribe" && pullRequestSnapshot) {
+      sendOriginal(this, data);
+      window.setTimeout(
+        () => gateway.emit("controlUi.sessionPullRequests.changed", pullRequestSnapshot),
+        0,
+      );
       return;
     }
 
@@ -2655,13 +2792,17 @@ function installControlUiStatefulMocks(
   };
 }
 
-function createStatefulMockInitScript(): string {
-  return `(() => { const __name = (target) => target; (${installControlUiStatefulMocks.toString()})(${CUSTODIAN_CHAT_REPLY_DELAY_MS}, ${CHAT_SEND_REPLY_DELAY_MS}); })();`;
+function createStatefulMockInitScript(fixture?: CliOptions["fixture"]): string {
+  const pullRequestSnapshot = fixture === "input-only" ? inputOnlyPullRequestSnapshot() : null;
+  return `(() => { const __name = (target) => target; (${installControlUiStatefulMocks.toString()})(${CUSTODIAN_CHAT_REPLY_DELAY_MS}, ${CHAT_SEND_REPLY_DELAY_MS}, ${JSON.stringify(pullRequestSnapshot)}); })();`;
 }
 
-function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin {
+function createMockGatewayPlugin(
+  scenario: ControlUiMockGatewayScenario,
+  fixture?: CliOptions["fixture"],
+): Plugin {
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
-  const statefulInitScript = escapeScriptContent(createStatefulMockInitScript());
+  const statefulInitScript = escapeScriptContent(createStatefulMockInitScript(fixture));
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
   return {
     configureServer(server) {
@@ -2756,7 +2897,7 @@ const server = await createServer({
       : {}),
     include: ["lit/directives/repeat.js"],
   },
-  plugins: [createMockGatewayPlugin(scenario), createBoardFixturePlugin()],
+  plugins: [createMockGatewayPlugin(scenario, options.fixture), createBoardFixturePlugin()],
   publicDir: path.join(uiRoot, "public"),
   resolve: {
     alias: [
