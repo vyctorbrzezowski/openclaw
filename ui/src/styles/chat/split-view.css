@@ -625,6 +625,19 @@ openclaw-chat-pane {
   font-weight: 500;
 }
 
+.chat-details__section-header > span:first-child {
+  flex: 1 1 auto;
+}
+
+.chat-details__section-count {
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-details .chat-subagent-activity {
+  margin: 2px 0 6px;
+}
+
 .chat-details__row {
   display: flex;
   width: 100%;

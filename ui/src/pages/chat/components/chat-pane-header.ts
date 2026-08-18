@@ -74,6 +74,7 @@ type ChatPaneHeaderProps = {
   sessionMenuAction: TemplateResult | typeof nothing;
   environmentDetails?: TemplateResult | typeof nothing;
   workDetails?: TemplateResult | typeof nothing;
+  subagentDetails?: TemplateResult | typeof nothing;
   environmentActions?: readonly {
     id: string;
     label: string;
@@ -149,6 +150,7 @@ function renderChatDetailsPopover(props: ChatPaneHeaderProps) {
           ${(props.environmentActions ?? []).map(renderChatDetailsAction)}
         </section>
         ${props.workDetails ?? nothing}
+        ${props.subagentDetails ?? nothing}
       </div>
     </wa-popover>
   `;

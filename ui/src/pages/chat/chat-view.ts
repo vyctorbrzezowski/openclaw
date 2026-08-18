@@ -50,7 +50,6 @@ import { isImageLightboxEvent, openInlineChatImage } from "./components/chat-ima
 import type { ArtifactDownloadResolver } from "./components/chat-message-media.ts";
 import { renderChatSessionSuggestions } from "./components/chat-session-suggestions.ts";
 import type { SidebarContent, SidebarFullMessageLoader } from "./components/chat-sidebar.ts";
-import { renderChatSwarmProgress } from "./components/chat-swarm-progress.ts";
 import type { ChatTaskSuggestionTrayProps } from "./components/chat-task-suggestions.ts";
 import type { ReplyMessageAccess } from "./components/chat-thread-interactions.ts";
 import {

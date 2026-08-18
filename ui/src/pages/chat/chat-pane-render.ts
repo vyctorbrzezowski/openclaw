@@ -63,6 +63,7 @@ import { createBackgroundTasksProps } from "./components/chat-background-tasks.t
 import { detailSlotOpen, renderChatDetailSlot } from "./components/chat-detail-slot.ts";
 import { renderChatImageLightbox } from "./components/chat-image-lightbox.ts";
 import { renderChatDetailsWork } from "./components/chat-details-work.ts";
+import { renderChatDetailsSubagents } from "./components/chat-details-subagents.ts";
 import { chatPullRequestId, createPullRequestBranch } from "./components/chat-pull-requests.ts";
 import {
   createSessionWorkspaceProps,
@@ -655,6 +656,7 @@ export class ChatPane extends ChatPaneBrowserAnnotationRender {
         onAcceptTaskSuggestion: props.onAcceptTaskSuggestion,
         onDismissTaskSuggestion: props.onDismissTaskSuggestion,
       }),
+      renderChatDetailsSubagents(backgroundTasks),
     );
     const chat = renderChat({ ...props, header: board.face === "dashboard" ? nothing : header });
     // Keep this root stable across board face changes so the guarded board runtime

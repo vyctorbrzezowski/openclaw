@@ -31,6 +31,7 @@ import {
 } from "../chat-thread.ts";
 import { getToolTitlesVersion } from "../tool-titles.ts";
 import { renderBackgroundTasksStatusRow } from "./chat-background-tasks-status.ts";
+import { renderChatSwarmProgress } from "./chat-swarm-progress.ts";
 import { renderChatDivider, renderChatNotice } from "./chat-divider.ts";
 import { resolveMessageGroupSenderLabel } from "./chat-message-group.ts";
 import { resolveMessageReplyText } from "./chat-message-markdown.ts";
@@ -598,6 +599,17 @@ export function projectChatTranscript(
       kind: "content",
       key: "background-tasks",
       content: backgroundTasks,
+    });
+  }
+  const swarmProgress = renderChatSwarmProgress({
+    sessions: props.swarmSessions ?? [],
+    sessionKey: props.sessionKey,
+  });
+  if (swarmProgress !== nothing) {
+    transcriptRows.push({
+      kind: "content",
+      key: "swarm-progress",
+      content: swarmProgress,
     });
   }
   trackTranscriptRenderDependencies(state, [

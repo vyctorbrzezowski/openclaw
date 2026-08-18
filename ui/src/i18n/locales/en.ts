@@ -4748,6 +4748,8 @@ export const en: TranslationMap = {
       empty: "Session details will appear here.",
       environment: "Environment",
       work: "Work",
+      subagents: "Subagents",
+      viewAllTasks: "View all tasks",
     },
     cloudWorkerFailed: "Cloud worker failed: {error}",
     diskSpace: {
