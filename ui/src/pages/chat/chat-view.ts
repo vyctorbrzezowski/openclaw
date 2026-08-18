@@ -17,7 +17,6 @@ import type { GatewaySessionRow, SessionsListResult } from "../../api/types.ts";
 import type { ExecApprovalDecision, ExecApprovalRequest } from "../../app/exec-approval.ts";
 import type { QuestionPrompt } from "../../app/question-prompt.ts";
 import type { ChatSendShortcut } from "../../app/settings.ts";
-import { renderExecApprovalCard } from "../../components/exec-approval-card.ts";
 import { icons } from "../../components/icons.ts";
 import type { ImageLightboxItem } from "../../components/image-lightbox.ts";
 import type { SessionLinkTarget } from "../../components/markdown-session-links.ts";
@@ -48,7 +47,7 @@ import type {
 import { isChatRunWorking, renderChatComposer } from "./components/chat-composer.ts";
 import { isImageLightboxEvent, openInlineChatImage } from "./components/chat-image-lightbox.ts";
 import type { ArtifactDownloadResolver } from "./components/chat-message-media.ts";
-import { renderChatSessionSuggestions } from "./components/chat-session-suggestions.ts";
+import { renderChatThreadActivity } from "./components/chat-thread-activity.ts";
 import type { SidebarContent, SidebarFullMessageLoader } from "./components/chat-sidebar.ts";
 import type { ChatTaskSuggestionTrayProps } from "./components/chat-task-suggestions.ts";
 import type { ReplyMessageAccess } from "./components/chat-thread-interactions.ts";
@@ -286,6 +285,26 @@ export function renderChat(props: ChatProps) {
     ? (item: ImageLightboxItem) => openImage?.(item, props.onRequestOpenImage?.())
     : undefined;
   const attachmentDropHandlers = createChatAttachmentDropHandlers({ ...props, canCompose });
+  const submittedProgress = props.queue.find(
+    (item) =>
+      item.sessionKey === props.sessionKey &&
+      !item.pendingRunId &&
+      (item.sendState === "sending" || item.sendState === "waiting-model"),
+  );
+  const runWorking = isChatRunWorking(props);
+  const threadRunStatus =
+    runWorking || submittedProgress ? { phase: "in-progress" as const } : props.runStatus;
+  const runAnnouncement = runWorking
+    ? props.waitingApproval
+      ? t("chat.waitingForApproval")
+      : props.stream !== null
+        ? t("chat.composer.responding", { name: props.assistantName || "OpenClaw" })
+        : t("chat.composer.working", { name: props.assistantName || "OpenClaw" })
+    : props.runStatus?.phase === "done"
+      ? t("chat.composer.runDone")
+      : props.runStatus?.phase === "interrupted"
+        ? t("chat.composer.runInterrupted")
+        : "";
   let chatSection: HTMLElement | null = null;
   const thread = renderChatThread(
     {
@@ -355,6 +374,32 @@ export function renderChat(props: ChatProps) {
       modelSetupRequired: props.modelSetupRequired,
       onModelSetup: props.onModelSetup,
       backgroundTasks: props.backgroundTasks,
+      swarmSessions: props.swarmSessions,
+      runAnnouncement,
+      activity: renderChatThreadActivity({
+        approval: props.inlineApproval,
+        approvalBusy: props.approvalBusy,
+        approvalErrors: props.approvalErrors,
+        approvalNowMs: props.approvalNowMs,
+        onApprovalDecision: props.onApprovalDecision,
+        questions: props.gatewayQuestionPrompts,
+        onQuestionChange: props.onGatewayQuestionChange,
+        onQuestionSubmit: props.onGatewayQuestionSubmit,
+        onQuestionSkip: props.onGatewayQuestionSkip,
+        suggestions: props.sessionSuggestions,
+        suggestionRole: props.sessionSuggestionRole,
+        suggestionBusyIds: props.sessionSuggestionBusyIds,
+        suggestionsArchived: props.sessionSuggestionsArchived,
+        canResolveSuggestions: props.canResolveSessionSuggestions,
+        onResolveSuggestion: props.onResolveSessionSuggestion,
+        typingActors: props.typingActors,
+        cloudStartup: props.cloudStartup,
+        onRetryCloudStartup: props.onRetryCloudStartup,
+        runError: props.runError,
+        runStatus: threadRunStatus,
+        compactionStatus: props.compactionStatus,
+        fallbackStatus: props.fallbackStatus,
+      }),
       onFocusComposer: () =>
         chatSection
           ?.querySelector<HTMLTextAreaElement>(".agent-chat__composer-combobox > textarea")
@@ -535,31 +580,6 @@ export function renderChat(props: ChatProps) {
                 ${renderTranscriptSearch(props.paneId, requestUpdate)}
                 <div class="chat-main__conversation">
                   ${thread} ${earlierHistoryButton} ${scrollToBottomButton}
-                  ${props.inlineApproval && props.onApprovalDecision
-                    ? html`<div class="chat-inline-approval">
-                        ${renderExecApprovalCard({
-                          approval: props.inlineApproval,
-                          busy: props.approvalBusy === true,
-                          error: props.approvalErrors?.get(props.inlineApproval.id) ?? null,
-                          nowMs: props.approvalNowMs ?? Date.now(),
-                          variant: "inline",
-                          onDecision: props.onApprovalDecision,
-                        })}
-                      </div>`
-                    : nothing}
-                  ${renderChatSessionSuggestions({
-                    suggestions: props.sessionSuggestions ?? [],
-                    role: props.sessionSuggestionRole,
-                    busyIds: props.sessionSuggestionBusyIds ?? new Set(),
-                    archived: props.sessionSuggestionsArchived === true,
-                    canResolve: props.canResolveSessionSuggestions === true,
-                    onResolve: (suggestion, resolution) =>
-                      props.onResolveSessionSuggestion?.(suggestion, resolution),
-                  })}
-                  ${renderChatSwarmProgress({
-                    sessions: props.swarmSessions ?? [],
-                    sessionKey: props.sessionKey,
-                  })}
                   ${showModelSetupSplash ? nothing : chatColumnFooter}
                 </div>
               </div>

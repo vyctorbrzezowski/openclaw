@@ -168,9 +168,16 @@ function renderTranscriptShell(
         role="status"
         aria-live=${props.announceTranscript !== false ? "polite" : "off"}
         aria-atomic="true"
-        >${transcript.liveAnnouncementText}</span
+      >${transcript.liveAnnouncementText}</span
       >
-      ${transcriptContents}
+      <span
+        class="chat-run-announcement sr-only"
+        role="status"
+        aria-live=${props.announceTranscript !== false ? "polite" : "off"}
+        aria-atomic="true"
+        >${props.runAnnouncement ?? ""}</span
+      >
+      ${transcriptContents} ${props.activity ?? nothing}
     </div>
   `;
 }

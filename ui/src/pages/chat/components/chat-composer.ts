@@ -3,7 +3,6 @@ import { nothing } from "lit";
 import { loadSettings, normalizeChatSendShortcut, patchSettings } from "../../../app/settings.ts";
 import "../../../components/tooltip.ts";
 import { t } from "../../../i18n/index.ts";
-import { areUiSessionKeysEquivalent } from "../../../lib/sessions/session-key.ts";
 import { ComposerDictationController, insertComposerDictation } from "../composer-dictation.ts";
 import { ComposerMicrophonePicker } from "../composer-microphone-picker.ts";
 import { isLargePastedTextAttachment } from "./chat-attachments.ts";
@@ -39,13 +38,11 @@ import {
   consumeComposerInputIntent,
   getChatComposerState,
   hasTerminalRunStatus,
-  isCurrentSessionSubmittedProgress,
   markComposerInputIntent,
   suppressStaleSubmittedDraftReplay,
 } from "./chat-composer-state.ts";
 import type { ChatComposerProps } from "./chat-composer-types.ts";
 import { renderChatComposerView } from "./chat-composer-view.ts";
-import { createGatewayQuestionPanelProps } from "./chat-question-card.ts";
 
 export { isChatRunWorking, resetChatComposerState } from "./chat-composer-state.ts";
 
@@ -56,13 +53,6 @@ export function renderChatComposer(props: ChatComposerProps) {
   const canAbort = Boolean(props.canAbort && props.onAbort);
   const hasTerminalStatus = hasTerminalRunStatus(props.runStatus);
   const showAbortableUi = canAbort && !hasTerminalStatus;
-  const submittedProgress = props.queue.find((item) =>
-    isCurrentSessionSubmittedProgress(item, props.sessionKey, props.runStatus),
-  );
-  const composerRunStatus =
-    showAbortableUi || Boolean(submittedProgress)
-      ? { phase: "in-progress" as const }
-      : props.runStatus;
   const compactBusy =
     props.compactionStatus?.phase === "active" || props.compactionStatus?.phase === "retrying";
   const draftKey = composerDraftKey(props);
@@ -113,26 +103,6 @@ export function renderChatComposer(props: ChatComposerProps) {
   );
   const composerControls = props.composerControls ?? nothing;
   const composerLeadControl = props.composerLeadControl ?? nothing;
-  const assistantName = props.assistantName || "OpenClaw";
-  const inProgressLabel = props.waitingApproval
-    ? t("chat.waitingForApproval")
-    : submittedProgress?.sendState === "waiting-model"
-      ? t("chat.composer.preparingModel")
-      : props.stream !== null
-        ? t("chat.composer.responding", { name: assistantName })
-        : props.sending || submittedProgress
-          ? t("chat.composer.sendingMessage")
-          : t("chat.composer.working", { name: assistantName });
-  // Persistent sr-only live region: run phases are otherwise conveyed only
-  // visually (thread spark, content arriving, interrupted toast).
-  const runStatusAnnouncement =
-    composerRunStatus == null
-      ? ""
-      : composerRunStatus.phase === "in-progress"
-        ? inProgressLabel
-        : composerRunStatus.phase === "done"
-          ? t("chat.composer.runDone")
-          : t("chat.composer.runInterrupted");
   const requestUpdate = props.onRequestUpdate ?? (() => {});
   const sendShortcut = normalizeChatSendShortcut(props.sendShortcut);
   const steerNowEnabled =
@@ -140,77 +110,7 @@ export function renderChatComposer(props: ChatComposerProps) {
     sendShortcut === "enter" &&
     showAbortableUi &&
     props.followUpMode === "queue";
-  const gatewayQuestionPrompts =
-    props.gatewayQuestionPrompts?.filter(
-      (prompt) =>
-        prompt.status === "pending" &&
-        prompt.sessionKey !== undefined &&
-        areUiSessionKeysEquivalent(prompt.sessionKey, props.sessionKey),
-    ) ?? [];
-  let gatewayQuestionIndex = gatewayQuestionPrompts.findIndex(
-    (prompt) => prompt.id === state.activeGatewayQuestionId,
-  );
-  if (gatewayQuestionIndex < 0 && gatewayQuestionPrompts.length > 0) {
-    gatewayQuestionIndex = 0;
-    state.activeGatewayQuestionId = gatewayQuestionPrompts[0]?.id ?? null;
-    state.gatewayQuestionCollapsed = false;
-  } else if (gatewayQuestionPrompts.length === 0) {
-    state.activeGatewayQuestionId = null;
-    state.gatewayQuestionCollapsed = false;
-  }
-  const gatewayQuestionPrompt = gatewayQuestionPrompts[gatewayQuestionIndex];
-  const selectGatewayQuestion = (index: number) => {
-    const prompt = gatewayQuestionPrompts[index];
-    if (!prompt) {
-      return;
-    }
-    state.activeGatewayQuestionId = prompt.id;
-    state.gatewayQuestionCollapsed = false;
-    requestUpdate();
-  };
-  const questionPanelProps = gatewayQuestionPrompt
-    ? createGatewayQuestionPanelProps(gatewayQuestionPrompt, {
-        collapsed: state.gatewayQuestionCollapsed,
-        onCollapsedChange: (collapsed) => {
-          state.gatewayQuestionCollapsed = collapsed;
-          state.restoreComposerFocus = collapsed;
-          requestUpdate();
-        },
-        onChange: props.onGatewayQuestionChange,
-        onSubmit: props.onGatewayQuestionSubmit
-          ? (answers) => props.onGatewayQuestionSubmit?.(gatewayQuestionPrompt.id, answers)
-          : undefined,
-        onSkip: props.onGatewayQuestionSkip
-          ? () => props.onGatewayQuestionSkip?.(gatewayQuestionPrompt.id)
-          : undefined,
-        requestPosition:
-          gatewayQuestionPrompts.length > 1
-            ? { current: gatewayQuestionIndex + 1, total: gatewayQuestionPrompts.length }
-            : undefined,
-        onPreviousRequest: () =>
-          selectGatewayQuestion(
-            (gatewayQuestionIndex - 1 + gatewayQuestionPrompts.length) %
-              gatewayQuestionPrompts.length,
-          ),
-        onNextRequest: () =>
-          selectGatewayQuestion((gatewayQuestionIndex + 1) % gatewayQuestionPrompts.length),
-      })
-    : null;
-  const questionTakeoverActive = Boolean(questionPanelProps && !state.gatewayQuestionCollapsed);
-  if (!state.questionTakeoverActive && questionTakeoverActive) {
-    // A question can arrive mid-IME composition before compositionend commits the host draft.
-    // Commit before unmounting so the detached input cannot leave a stale shadow behind.
-    if (state.composingDraft?.key === draftKey) {
-      commitComposerDraft(props, state.composingDraft.value);
-      state.composingDraft = null;
-    }
-    state.composerComposing = false;
-  }
-  if (state.questionTakeoverActive && !questionTakeoverActive) {
-    state.restoreComposerFocus = true;
-  }
-  state.questionTakeoverActive = questionTakeoverActive;
-  const showComposer = !questionTakeoverActive;
+  const showComposer = true;
 
   const placeholder =
     !canCompose && props.disabledReason
@@ -498,10 +398,8 @@ export function renderChatComposer(props: ChatComposerProps) {
     contextNotice,
     composerControls,
     composerLeadControl,
-    runStatusAnnouncement,
     requestUpdate,
     sendShortcut,
-    questionPanelProps,
     showComposer,
     placeholder,
     handleKeyDown,
@@ -520,6 +418,5 @@ export function renderChatComposer(props: ChatComposerProps) {
     activeSlashMenuOptionLabel,
     slashMenuListboxId,
     slashMenuAnnouncementId,
-    composerRunStatus,
   });
 }

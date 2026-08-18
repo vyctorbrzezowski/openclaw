@@ -15,7 +15,6 @@ import {
   renderAttachmentPreview,
   renderChatAttachmentInputs,
 } from "./chat-attachments.ts";
-import { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
 import type { ChatRunControlsProps } from "./chat-composer-controls.ts";
 import { renderChatPrimaryActions } from "./chat-composer-controls.ts";
 import { focusComposerFromChrome } from "./chat-composer-dom.ts";
@@ -23,14 +22,7 @@ import { renderChatComposerPlusMenu } from "./chat-composer-plus-menu.ts";
 import { renderChatQueue } from "./chat-composer-queue.ts";
 import { renderSkillMenu } from "./chat-composer-skill-menu.ts";
 import { renderSlashMenu } from "./chat-composer-slash-menu.ts";
-import {
-  renderChatRunStatusIndicator,
-  renderCompactionIndicator,
-  renderFallbackIndicator,
-  type ComposerRunStatus,
-} from "./chat-composer-status.ts";
 import type { ChatComposerProps, ChatComposerState } from "./chat-composer-types.ts";
-import type { createGatewayQuestionPanelProps } from "./chat-question-card.ts";
 import { renderChatVoiceError } from "./chat-voice-activity.ts";
 
 type ChatComposerViewContext = {
@@ -42,10 +34,8 @@ type ChatComposerViewContext = {
   contextNotice: TemplateResult | typeof nothing;
   composerControls: TemplateResult | typeof nothing;
   composerLeadControl: TemplateResult | typeof nothing;
-  runStatusAnnouncement: string;
   requestUpdate: () => void;
   sendShortcut: "enter" | "modifier-enter";
-  questionPanelProps: ReturnType<typeof createGatewayQuestionPanelProps> | null;
   showComposer: boolean;
   placeholder: string;
   handleKeyDown: (event: KeyboardEvent) => void;
@@ -64,7 +54,6 @@ type ChatComposerViewContext = {
   activeSlashMenuOptionLabel: string;
   slashMenuListboxId: string;
   slashMenuAnnouncementId: string;
-  composerRunStatus: ComposerRunStatus | null | undefined;
 };
 
 export function renderChatComposerView(context: ChatComposerViewContext) {
@@ -77,10 +66,8 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
     contextNotice,
     composerControls,
     composerLeadControl,
-    runStatusAnnouncement,
     requestUpdate,
     sendShortcut,
-    questionPanelProps,
     showComposer,
     placeholder,
     handleKeyDown,
@@ -99,7 +86,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
     activeSlashMenuOptionLabel,
     slashMenuListboxId,
     slashMenuAnnouncementId,
-    composerRunStatus,
   } = context;
   const disabledBanner = props.disabledBanner
     ? html`
@@ -209,15 +195,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
         </div>`
       : nothing}
     <div class="agent-chat__composer-shell">
-      ${questionPanelProps
-        ? html`
-            <div class="agent-chat__question-dock">
-              <openclaw-chat-question-panel
-                .props=${questionPanelProps}
-              ></openclaw-chat-question-panel>
-            </div>
-          `
-        : nothing}
       ${disabledBanner} ${voiceError}
       ${showComposerInput
         ? html`<div
@@ -298,8 +275,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
                       </div>
                     `
                   : nothing}
-                ${renderFallbackIndicator(props.fallbackStatus)}
-                ${renderCompactionIndicator(props.compactionStatus)}
               </div>
 
               ${renderChatAttachmentInputs({ ...props, disabled: !canCompose })}
@@ -401,13 +376,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
                   aria-atomic="true"
                   >${activeSlashMenuOptionLabel}</span
                 >
-                <span
-                  class="agent-chat__run-status-announcement sr-only"
-                  role="status"
-                  aria-live="polite"
-                  aria-atomic="true"
-                  >${runStatusAnnouncement}</span
-                >
               </div>
             </div>
 
@@ -477,13 +445,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
                 ${composerControls !== nothing
                   ? html`
                       <div class="agent-chat__composer-controls">
-                        ${composerRunStatus?.phase === "interrupted"
-                          ? html`
-                              <div class="agent-chat__composer-run-status">
-                                ${renderChatRunStatusIndicator(composerRunStatus)}
-                              </div>
-                            `
-                          : nothing}
                         ${overrideCount > 0 && props.capabilityMenu
                           ? html`
                               <openclaw-tooltip .content=${overrideTooltip}>

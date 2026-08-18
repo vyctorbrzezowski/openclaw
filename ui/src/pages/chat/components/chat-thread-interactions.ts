@@ -124,6 +124,9 @@ export type ChatThreadProps = {
   modelSetupRequired?: boolean;
   onModelSetup?: () => void;
   backgroundTasks?: BackgroundTasksProps;
+  swarmSessions?: readonly GatewaySessionRow[];
+  activity?: TemplateResult | typeof nothing;
+  runAnnouncement?: string;
 };
 
 type TranscriptInteractionProps = Pick<

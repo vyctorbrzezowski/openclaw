@@ -4,7 +4,6 @@ import type { ApplicationCloudStartupStatus } from "../../app/cloud-session-star
 import { icons } from "../../components/icons.ts";
 import { t } from "../../i18n/index.ts";
 import { formatBytes } from "../../lib/agents/display.ts";
-import { renderCloudStartupStatus } from "./components/chat-working-indicator.ts";
 import { renderWorkspaceConflictNotice } from "./components/chat-workspace-conflict.ts";
 import type { WorkspaceResultConflict } from "./workspace-conflict.ts";
 
@@ -96,6 +95,5 @@ export function renderChatViewNotices(props: ChatViewNoticesProps) {
           </openclaw-tooltip>
         `
       : nothing}
-    ${renderCloudStartupStatus(props.cloudStartup, props.onRetryCloudStartup)}
   `;
 }
