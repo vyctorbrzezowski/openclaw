@@ -28,7 +28,11 @@ import { isActiveTask } from "../../lib/tasks/data.ts";
 import { renderBoardViewSwitch } from "./board-session-surface.ts";
 import { displayedChatSessionBranches } from "./chat-history.ts";
 import { ChatPaneDiscussion } from "./chat-pane-discussion.ts";
-import { resolveChatPaneDesktopTarget, resolveChatPanePlacement } from "./chat-pane-placement.ts";
+import {
+  resolveChatPaneDesktopTarget,
+  resolveChatPanePlacement,
+} from "./chat-pane-placement.ts";
+import { renderChatPanePlacement } from "./components/chat-pane-placement.ts";
 import { readChatSessionActionAccess } from "./chat-session-action-access.ts";
 import { renderBackgroundTasksToggle } from "./components/chat-background-tasks-render.ts";
 import type { BackgroundTasksProps } from "./components/chat-background-tasks.types.ts";
@@ -41,10 +45,17 @@ import type {
 } from "./components/chat-header-session-menu.ts";
 import {
   canRevealSessionWorkspace,
+  renderGatewayPicker,
   renderChatPaneHeader,
+  renderProjectCrumb,
   resolveChatPaneParentSession,
   resolveChatPaneWorkspace,
 } from "./components/chat-pane-header.ts";
+import {
+  chatPullRequestId,
+  createPullRequestBranch,
+  renderChatPullRequests,
+} from "./components/chat-pull-requests.ts";
 import { renderChatSessionSharing } from "./components/chat-session-sharing.ts";
 import type { SessionWorkspaceProps } from "./components/chat-session-workspace.ts";
 import { renderContinueInTerminalDialog } from "./components/continue-in-terminal-dialog.ts";
@@ -217,18 +228,6 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         ${sidePanelOpen ? icons.panelRightClose : icons.panelRightOpen}
       </button>
     </openclaw-tooltip>`;
-    const browserPanelAction = sessionWorkspace.onToggleBrowser
-      ? html`<openclaw-tooltip .content=${t("browser.toggle")}>
-          <button
-            class="btn btn--ghost btn--icon chat-icon-btn chat-browser-panel-toggle"
-            type="button"
-            aria-label=${t("browser.toggle")}
-            @click=${sessionWorkspace.onToggleBrowser}
-          >
-            ${icons.globe}
-          </button>
-        </openclaw-tooltip>`
-      : nothing;
     const backgroundTasksAction = catalog ? nothing : renderBackgroundTasksToggle(backgroundTasks);
     const sessionRailMode = this.selectedSessionRailMode(this.state?.sessionKey ?? "");
     const toggleSessionRail = () => this.requestSessionRail("toggle");
@@ -305,6 +304,15 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       active: sessionRailMode === "expanded",
       onActivate: toggleSessionRail,
     });
+    const environmentActions = panelMenuActions
+      .filter((action) => ["terminal", "browser", "desktop", "session-files"].includes(action.id))
+      .map((action) => ({
+        id: action.id,
+        label: action.label,
+        icon: action.icon,
+        value: action.badge && action.badge > 0 ? action.badge : undefined,
+        onActivate: action.onActivate,
+      }));
     const layoutMenuActions: HeaderMenuQuickAction[] = [];
     if (this.onOpenSplitView) {
       layoutMenuActions.push({
@@ -386,12 +394,74 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       canReveal,
       copiedAction: this.headerCopiedAction,
       renameDisabledReason,
-      panelActions: html`${browserPanelAction}${backgroundTasksAction}${sidePanelAction}`,
+      panelActions: html`${backgroundTasksAction}${sidePanelAction}`,
       discussionAction: nothing,
       diffAction: nothing,
       backgroundTasksAction: nothing,
       sessionRailAction: nothing,
       workspaceAction: nothing,
+      environmentDetails: html`
+        ${renderProjectCrumb(
+          {
+            workspaceRoot: workspace.root,
+            workspaceLabel: workspace.label,
+            workspaceIcon: this.resolveWorkspaceIcon(workspace.root ? row?.key : undefined),
+            branch,
+            canReveal,
+            copiedAction: this.headerCopiedAction,
+            catalog,
+            platform: this.headerPlatform,
+            onMenuAction: (action) => {
+              if (row) {
+                this.handleHeaderMenuAction(action, row, workspace.root, branch);
+              }
+            },
+            onMenuOpenChange: (open) => {
+              if (open && row) {
+                void this.loadHeaderMenuData(row, agentWorkspace, workspaceGit);
+              }
+            },
+          },
+          this.headerCopiedAction === "copy-path" || this.headerCopiedAction === "copy-branch",
+          this.headerCopiedAction === "copy-path"
+            ? t("chat.sessionHeader.copied")
+            : t("chat.sessionHeader.copyPath"),
+          this.headerCopiedAction === "copy-branch"
+            ? t("chat.sessionHeader.copied")
+            : t("chat.sessionHeader.copyBranch"),
+        )}
+        ${renderChatPanePlacement({
+          session: row,
+          placementMoving: placement.moving,
+          placementMoveDisabledReason: placement.moveDisabledReason,
+          placementReclaimDisabledReason: placement.reclaimDisabledReason,
+          onPlacementMove: () => row && void this.moveHeaderPlacement(row),
+          onPlacementReclaim: () => row && void this.reclaimHeaderPlacement(row),
+        })}
+        ${renderGatewayPicker({
+          nativeGateways: this.nativeGateways,
+          gatewaysSnapshot: this.gatewaysSnapshot,
+          onboarding: this.onboarding,
+        })}
+        ${renderChatPullRequests({
+          pullRequests: this.sessionPullRequests.filter(
+            (pullRequest) => !this.dismissedSessionPullRequestIds.has(chatPullRequestId(pullRequest)),
+          ),
+          branch: createPullRequestBranch(
+            this.sessionPullRequests,
+            this.sessionPullRequestsBranch,
+          ),
+          rateLimited: this.sessionPullRequestsRateLimited,
+          expanded: this.sessionPullRequestsExpanded,
+          onExpand: () => {
+            this.sessionPullRequestsExpanded = true;
+            this.requestUpdate();
+          },
+          onDismiss: this.dismissSessionPullRequest,
+          onOpenSessionDiff: sessionWorkspace.onOpenDiff,
+        })}
+      `,
+      environmentActions,
       presence:
         !catalog &&
         hasSessionPresenceViewers(this.presencePayload, selfId, instanceId, key, renderedOwnerId)

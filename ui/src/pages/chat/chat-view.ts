@@ -48,7 +48,6 @@ import type {
 import { isChatRunWorking, renderChatComposer } from "./components/chat-composer.ts";
 import { isImageLightboxEvent, openInlineChatImage } from "./components/chat-image-lightbox.ts";
 import type { ArtifactDownloadResolver } from "./components/chat-message-media.ts";
-import { renderChatPullRequests } from "./components/chat-pull-requests.ts";
 import { renderChatSessionSuggestions } from "./components/chat-session-suggestions.ts";
 import type { SidebarContent, SidebarFullMessageLoader } from "./components/chat-sidebar.ts";
 import { renderChatSwarmProgress } from "./components/chat-swarm-progress.ts";
@@ -551,15 +550,6 @@ export function renderChat(props: ChatProps) {
                       </div>`
                     : nothing}
                   ${renderChatTaskSuggestionTray(props)}
-                  ${renderChatPullRequests({
-                    pullRequests: props.pullRequests ?? [],
-                    branch: props.pullRequestsBranch,
-                    rateLimited: props.pullRequestsRateLimited === true,
-                    expanded: props.pullRequestsExpanded === true,
-                    onExpand: () => props.onExpandPullRequests?.(),
-                    onDismiss: (pullRequest) => props.onDismissPullRequest?.(pullRequest),
-                    onOpenSessionDiff: props.onOpenSessionDiff,
-                  })}
                   ${renderChatSessionSuggestions({
                     suggestions: props.sessionSuggestions ?? [],
                     role: props.sessionSuggestionRole,
