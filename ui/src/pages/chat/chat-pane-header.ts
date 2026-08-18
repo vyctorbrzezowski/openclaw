@@ -32,12 +32,13 @@ import { resolveChatPaneDesktopTarget, resolveChatPanePlacement } from "./chat-p
 import { readChatSessionActionAccess } from "./chat-session-action-access.ts";
 import type { BackgroundTasksProps } from "./components/chat-background-tasks.types.ts";
 import { isChatRunWorking } from "./components/chat-composer.ts";
+import { renderChatDetailsPullRequests } from "./components/chat-details-pull-requests.ts";
+import "./components/chat-header-session-menu.ts";
 import type {
   HeaderMenuAction,
   HeaderMenuActionKind,
   HeaderMenuQuickAction,
 } from "./components/chat-header-session-menu.ts";
-import "./components/chat-header-session-menu.ts";
 import {
   canRevealSessionWorkspace,
   renderGatewayPicker,
@@ -47,11 +48,7 @@ import {
   resolveChatPaneWorkspace,
 } from "./components/chat-pane-header.ts";
 import { renderChatPanePlacement } from "./components/chat-pane-placement.ts";
-import {
-  chatPullRequestId,
-  createPullRequestBranch,
-  renderChatPullRequests,
-} from "./components/chat-pull-requests.ts";
+import { chatPullRequestId, createPullRequestBranch } from "./components/chat-pull-requests.ts";
 import { renderChatSessionSharing } from "./components/chat-session-sharing.ts";
 import type { SessionWorkspaceProps } from "./components/chat-session-workspace.ts";
 import { renderContinueInTerminalDialog } from "./components/continue-in-terminal-dialog.ts";
@@ -441,19 +438,12 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
           gatewaysSnapshot: this.gatewaysSnapshot,
           onboarding: this.onboarding,
         })}
-        ${renderChatPullRequests({
+        ${renderChatDetailsPullRequests({
           pullRequests: this.sessionPullRequests.filter(
             (pullRequest) =>
               !this.dismissedSessionPullRequestIds.has(chatPullRequestId(pullRequest)),
           ),
           branch: createPullRequestBranch(this.sessionPullRequests, this.sessionPullRequestsBranch),
-          rateLimited: this.sessionPullRequestsRateLimited,
-          expanded: this.sessionPullRequestsExpanded,
-          onExpand: () => {
-            this.sessionPullRequestsExpanded = true;
-            this.requestUpdate();
-          },
-          onDismiss: this.dismissSessionPullRequest,
           onOpenSessionDiff: sessionWorkspace.onOpenDiff,
         })}
       `,
