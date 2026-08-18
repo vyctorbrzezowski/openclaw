@@ -20,6 +20,7 @@ Invariantes de produto:
 - Um estado que bloqueia input precisa continuar explicando o motivo junto ao composer. Banners de sessao arquivada, recovery e model setup nao podem virar metadata escondida.
 - Erros e avisos urgentes continuam visiveis no fluxo principal. O `Details` pode duplicar uma entrada resumida para descoberta, mas nunca ser o unico lugar de um erro acionavel.
 - Message queue e reconnect outbox pertencem ao composer: sao mensagens do operador ainda editaveis, reordenaveis ou removiveis, nao trabalho do agente. Sua integracao visual e de ownership esta fora desta branch e pertence ao agente/branch irma `composerqueue`; este plano registra apenas a classificacao e a interface esperada.
+- Menus de invocacao `/commands` e `$skills` pertencem ao composer/input. Sua implementacao, integracao visual, keyboard behavior e polish estao fora desta branch e pertencem ao agente/branch irma `composermenus`; este plano registra apenas classificacao, condicionais atuais e interface esperada.
 - O transcript nao ganha metadata de sessao. PR, CI, branch, goal e progress card saem do fluxo de conversa.
 - A migracao muda **render ownership**, nao os owners de dados e lifecycle. Subscriptions, fencing, retries, timers e persistencia permanecem onde estao ate haver razao independente para refatorar.
 
@@ -170,8 +171,8 @@ Legenda de destino:
 | Superficie atual | Owner | Condicao atual | Destino | Regra de migracao |
 | --- | --- | --- | --- | --- |
 | Textarea | `chat-composer-view.ts` | composer normal visivel | C | Permanece. |
-| Slash menu | slash owner | connected, canCompose e state visivel | C | Permanece. |
-| Skill mention menu | skill owner | connected, canCompose, caret/query validos | C | Permanece. |
+| Slash menu `/commands` | `chat-composer-slash-menu.ts` | connected, canCompose e state visivel | C | Dependencia externa: a branch irma `composermenus` preserva trigger/query, categorias, argument completion, keyboard e menu placement. Esta branch nao altera render, state, CSS ou testes desse menu. |
+| Skill invocation menu `$skills` | `chat-composer-skill-menu.ts` | connected, canCompose, caret/query validos, matches ou refresh pending, draft nao slash | C | Dependencia externa da frente `composermenus`; esta branch nao altera render, state, refresh gating, CSS ou testes desse menu. |
 | Attachments inputs/previews/paste/drop | `chat-attachments.ts` | composer visivel/lista nao vazia | C | Permanece. |
 | Reply preview | composer view | reply target | C | Permanece. |
 | Plus/capability menu | `chat-composer-plus-menu.ts` | composer visivel; capabilities nao catalog | C | Permanece. Corrigir rotulo abrangente, pois nao e apenas attachment. |
@@ -527,6 +528,27 @@ Esta branch deve:
 - manter qualquer novo Details/transcript layout desacoplado da posicao interna da queue;
 - sinalizar conflito imediatamente em vez de reimplementar a integracao.
 
+### 7.6 Composer invocation menus (dependencia externa)
+
+Ownership: agente/branch irma `composermenus`. Nao implementar nesta branch.
+
+Contrato esperado para composicao entre as branches:
+
+- `/commands` continua disponivel apenas quando connected + canCompose e preserva categorias, active descendant, argument completion e keyboard navigation;
+- `$skills` continua respeitando caret/query, escapes, matches, command refresh pending e exclusao mutua com slash text;
+- ambos continuam ancorados ao composer input e usam a linguagem visual multiline entregue pela frente dedicada;
+- refresh pending de skills continua bloqueando send para nao submeter uma invocacao ainda nao resolvida;
+- closing, selection e focus return nao podem interferir com Details, transcript activity ou retained panes.
+
+Esta branch deve:
+
+- nao editar `chat-composer-slash-menu.ts`, `chat-composer-skill-menu.ts` nem CSS/tests exclusivos desses menus;
+- nao mudar os gates `isSlashMenuVisible`/`isSkillMenuVisible`, active option IDs, announcements ou keydown ownership para fins visuais;
+- nao incluir slash/skill menu no picker polish desta frente;
+- aceitar a forma final entregue pela branch irma ao resolver stack/rebase;
+- manter o novo Details e as migracoes do transcript desacoplados dos popovers de invocacao;
+- sinalizar conflito imediatamente em vez de reimplementar os menus.
+
 ## 8. Fases de implementacao
 
 Cada fase deve ser um commit local granular. Nao abrir PR ate nova ordem.
@@ -581,12 +603,13 @@ Commit sugerido: `feat(ui): summarize subagent work in chat details`.
 
 Commit sugerido: `refactor(ui): keep agent interaction in the transcript`.
 
-### Fase 5: Composer input-only (sem queue)
+### Fase 5: Composer input-only (sem queue ou invocation menus)
 
 1. Remover progress, goal, context usage e run status restantes do composer.
 2. Manter disabled/offline/input-mode feedback.
 3. Nao tocar na integracao, semantics, CSS ou testes da message queue.
-4. Conferir apenas que o layout desta branch aceita a queue integrada fornecida pela branch irma sem sobreposicao ou duplicacao.
+4. Nao tocar em render, state, keyboard, CSS ou testes de `/commands` e `$skills`.
+5. Conferir apenas que o layout desta branch aceita queue e menus fornecidos pelas branches irmas sem sobreposicao ou duplicacao.
 
 Commit sugerido: `refactor(ui): make the chat composer input only`.
 
@@ -598,6 +621,8 @@ Commit sugerido: `refactor(ui): make the chat composer input only`.
 4. Corrigir plus label para capabilities/attachments.
 5. Ajustar attachment previews a luminance/radius do composer multiline.
 6. Manter desktop hit area minima e mobile 44px.
+
+Exclusao explicita: slash-menu e skill-menu nao participam desta fase; seu polish pertence a `composermenus`.
 
 Commit sugerido: `polish(ui): align composer input controls`.
 
@@ -626,13 +651,14 @@ Checklist no mock HMR:
 - pane retained hidden nao abre/anuncia popover;
 - idle sem Details facts nao mostra sections vazias;
 - offline com a queue fornecida pela branch irma, apenas para checar composicao visual desta frente;
+- `/commands` e `$skills` fornecidos pela branch irma, apenas para checar collision/z-index com Details e superficies movidas por esta frente;
 - active run com working/tools/approval/question/subagents/typing;
 - archived, recovery tombstone, model setup, model unavailable e shared read-only;
 - attachments, reply, dictation, Talk/camera e suggestion composer;
 - goal/progress/task suggestions;
 - PR open/draft/merged, CI passing/failing/pending, rate limited e branch-only changes;
 - disk warning/critical, workspace conflict, cloud moving/failed;
-- keyboard: Escape, Tab, Cmd/Ctrl+F e Enter send; queue edit pertence a verificacao da frente `composerqueue`;
+- keyboard: Escape, Tab, Cmd/Ctrl+F e Enter send; queue edit pertence a `composerqueue`, e navigation/selection de invocation menus pertence a `composermenus`;
 - light/dark themes e text-size setting.
 
 ## 10. Riscos e mitigacoes
@@ -659,7 +685,7 @@ Mitigacao: projection items tipados/estaveis ou bounded transcript footer sob o 
 
 Risco: remover question takeover perde composition draft, focus restore ou stale-input suppression; a branch irma pode tocar a mesma vizinhanca para integrar queue.
 
-Mitigacao: manter handlers/refs existentes; alterar somente o render placement em passos pequenos; nao editar a queue; revalidar IME apos integrar/rebasear a frente irma.
+Mitigacao: manter handlers/refs existentes; alterar somente o render placement em passos pequenos; nao editar queue ou invocation menus; revalidar IME apos integrar/rebasear as frentes irmas.
 
 ### P1: responsive collision
 
@@ -711,10 +737,12 @@ Mitigacao: nesta branch, transcript activity usa announcements atomicos e o popo
 - Sources section: depende de provenance owner canonico.
 - Persistencia de sections/open state: so depois de observar uso real.
 - Remocao do existing generic side-panel toggle: nao faz parte desta tese.
+- Implementacao/polish de `/commands` e `$skills`: pertence a branch irma `composermenus`.
 
 ## 12. Criterio de pronto da implementacao futura
 
 - Composer contem apenas input e configuracao do proximo turno; a fila de input pendente aparece integrada quando a dependencia `composerqueue` for incorporada.
+- Menus `/commands` e `$skills` permanecem input do composer e aparecem na forma entregue pela dependencia `composermenus`.
 - Transcript contem conversa, agent/tool/run activity, teammate activity e requests que exigem resposta.
 - Nenhuma faixa de goal/progress/task/PR/CI/environment/subagent detail orbita o composer.
 - Details popover abre do topo direito, agrupa facts atuais e encaminha para owners profundos existentes.
