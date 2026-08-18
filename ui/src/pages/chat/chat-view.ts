@@ -377,6 +377,7 @@ export function renderChat(props: ChatProps) {
       swarmSessions: props.swarmSessions,
       runAnnouncement,
       activity: renderChatThreadActivity({
+        sessionKey: props.sessionKey,
         approval: props.inlineApproval,
         approvalBusy: props.approvalBusy,
         approvalErrors: props.approvalErrors,

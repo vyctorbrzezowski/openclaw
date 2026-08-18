@@ -164,19 +164,17 @@ so an operator stop remains in effect until the goal is resumed.
 
 ## Control UI
 
-The web Control UI shows the goal as a compact pill above the chat composer:
-a status icon, the status label (for example `Pursuing goal`), the truncated
-objective, and a live elapsed timer.
-
-The pill carries inline controls:
+The web Control UI shows the goal in **Session details**, opened from the
+top-right chat header. Its row shows the status and objective; expanding it
+shows elapsed time, usage, the latest status note, and controls:
 
 - **Pencil** prefills the composer with `/goal edit <objective>` so the
   objective can be reworded and submitted.
 - **Pause / resume** toggles between `/goal pause` and `/goal resume` based
   on the current status.
 - **Trash** sends `/goal clear`.
-- **Chevron** expands the pill to show the full objective, the latest status
-  note, token usage, and elapsed time.
+- Expanding the row shows the full objective, latest status note, token usage,
+  and elapsed time.
 
 The action buttons are hidden while the composer cannot send (for example
 when the gateway connection is down); the expand chevron keeps working.

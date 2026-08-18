@@ -6,6 +6,7 @@ import type { QuestionPrompt } from "../../../app/question-prompt.ts";
 import { renderExecApprovalCard } from "../../../components/exec-approval-card.ts";
 import { icons } from "../../../components/icons.ts";
 import { t } from "../../../i18n/index.ts";
+import { areUiSessionKeysEquivalent } from "../../../lib/sessions/session-key.ts";
 import type { CompactionStatus, FallbackStatus } from "../tool-stream.ts";
 import { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
 import {
@@ -19,6 +20,7 @@ import { renderChatSessionSuggestions } from "./chat-session-suggestions.ts";
 import { renderCloudStartupStatus } from "./chat-working-indicator.ts";
 
 export type ChatThreadActivityProps = {
+  sessionKey: string;
   approval?: ExecApprovalRequest | null;
   approvalBusy?: boolean;
   approvalErrors?: ReadonlyMap<string, string>;
@@ -44,7 +46,12 @@ export type ChatThreadActivityProps = {
 };
 
 export function renderChatThreadActivity(props: ChatThreadActivityProps) {
-  const questions = (props.questions ?? []).filter((prompt) => prompt.status === "pending");
+  const questions = (props.questions ?? []).filter(
+    (prompt) =>
+      prompt.status === "pending" &&
+      prompt.sessionKey !== undefined &&
+      areUiSessionKeysEquivalent(prompt.sessionKey, props.sessionKey),
+  );
   return html`<div class="chat-thread-activity">
     ${renderCloudStartupStatus(props.cloudStartup, props.onRetryCloudStartup)}
     ${props.runError

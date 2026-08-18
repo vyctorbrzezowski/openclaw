@@ -73,9 +73,4 @@ An empty plan plus empty or whitespace-only Markdown also clears it. A successfu
 
 ## Where the card appears
 
-The current chat shows exactly one live card:
-
-- When the session rail is visible, the card appears in the rail.
-- At narrow widths where the rail is hidden, the card appears in the collapsible surface beside the composer.
-
-The two placements are mutually exclusive. Other sessions can show their latest card in the sidebar hovercard. All placements read the same Gateway-backed state and refresh after `progressCard.changed` notifications.
+The current chat shows the live card in **Session details**, opened from the top-right chat header. The session companion rail can also present the same card alongside its assessment. Other sessions can show their latest card in the sidebar hovercard. All placements read the same Gateway-backed state and refresh after `progressCard.changed` notifications.
