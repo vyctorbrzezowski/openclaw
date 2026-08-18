@@ -5260,6 +5260,20 @@ export const en: TranslationMap = {
         agents: "Agents",
         tools: "Tools",
       },
+      help: {
+        title: "Command guide",
+        description: "Find a command, copy its syntax, or ask your agent how to use it.",
+        searchPlaceholder: "Search commands",
+        searchLabel: "Search commands",
+        docs: "Open documentation",
+        commandList: "Commands in {category}",
+        searchResults: "Command search results",
+        noResults: "No commands match your search.",
+        copy: "Copy {command}",
+        ask: "Ask {agent} about this",
+        askPrompt:
+          "What does {command} do, when should I use it, and what arguments does it accept?",
+      },
     },
     skills: {
       menu: "Skill references",
