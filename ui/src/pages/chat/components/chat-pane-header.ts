@@ -18,6 +18,7 @@ import { renderSessionOwnerChip } from "../../../components/session-owner-chip.t
 import { isCloudWorkerPlacementState } from "../../../components/session-row-badges.ts";
 import { syncDropdownItemRadio } from "../../../components/web-awesome.ts";
 import "../../../components/tooltip.ts";
+import "../../../components/web-awesome-popover.ts";
 import "../../../components/workspace-icon.ts";
 import { t } from "../../../i18n/index.ts";
 import { formatRelativeTimestamp } from "../../../lib/format.ts";
@@ -37,6 +38,8 @@ type ChatPaneParentSession = {
 
 type ChatPaneHeaderProps = {
   paneId: string;
+  detailsId: string;
+  detailsOpen: boolean;
   narrow: boolean;
   mergedChrome: boolean;
   navDrawerOpen?: boolean;
@@ -79,6 +82,7 @@ type ChatPaneHeaderProps = {
   onRenameInput: (value: string) => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
+  onDetailsOpenChange: (open: boolean) => void;
   onMenuOpenChange: (open: boolean) => void;
   onMenuAction: (action: ChatPaneHeaderAction) => void;
   onOpenParentSession: (sessionKey: string) => void;
@@ -90,6 +94,38 @@ type ChatPaneHeaderProps = {
   onSplitRight?: (paneId: string) => void;
   onClosePane?: (paneId: string) => void;
 };
+
+function renderChatDetailsPopover(props: ChatPaneHeaderProps) {
+  const triggerId = `${props.detailsId}-trigger`;
+  return html`
+    <openclaw-tooltip .content=${t("chat.details.title")}>
+      <button
+        id=${triggerId}
+        class="btn btn--ghost btn--icon chat-icon-btn chat-details-trigger"
+        type="button"
+        aria-label=${t("chat.details.title")}
+        aria-haspopup="dialog"
+        aria-expanded=${String(props.detailsOpen)}
+      >
+        ${icons.listChecks}
+      </button>
+    </openclaw-tooltip>
+    <wa-popover
+      id=${props.detailsId}
+      class="chat-details-popover"
+      for=${triggerId}
+      placement="bottom-end"
+      without-arrow
+      @wa-show=${() => props.onDetailsOpenChange(true)}
+      @wa-hide=${() => props.onDetailsOpenChange(false)}
+    >
+      <div class="chat-details" role="dialog" aria-label=${t("chat.details.title")}>
+        <div class="chat-details__header">${t("chat.details.title")}</div>
+        <div class="chat-details__empty">${t("chat.details.empty")}</div>
+      </div>
+    </wa-popover>
+  `;
+}
 
 function revealLabel(platform: string | null): string {
   if (platform === "darwin") {
@@ -603,6 +639,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               </button>
             </openclaw-tooltip>`
           : nothing}
+        ${renderChatDetailsPopover(props)}
         ${props.sessionMenuAction}
       </div>
     </div>

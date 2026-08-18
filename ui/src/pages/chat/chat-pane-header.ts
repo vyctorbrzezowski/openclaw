@@ -363,6 +363,8 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       : null;
     const header = renderChatPaneHeader({
       paneId: this.paneId,
+      detailsId: `chat-details-${encodeURIComponent(this.presentationId)}`,
+      detailsOpen: this.headerDetailsOpen,
       narrow: this.narrow,
       mergedChrome: this.mergedChrome,
       navDrawerOpen: this.navDrawerOpen,
@@ -501,6 +503,9 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       },
       onCommitRename: () => this.commitHeaderRename(),
       onCancelRename: () => this.cancelHeaderRename(),
+      onDetailsOpenChange: (open) => {
+        this.headerDetailsOpen = open;
+      },
       onMenuOpenChange: (open) => {
         if (open && row) {
           void this.loadHeaderMenuData(row, agentWorkspace, workspaceGit);

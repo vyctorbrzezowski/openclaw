@@ -4743,6 +4743,10 @@ export const en: TranslationMap = {
     },
   },
   chat: {
+    details: {
+      title: "Session details",
+      empty: "Session details will appear here.",
+    },
     cloudWorkerFailed: "Cloud worker failed: {error}",
     diskSpace: {
       warningTitle: "Cloud session disk space is low",

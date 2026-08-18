@@ -59,6 +59,13 @@ export abstract class ChatPaneRetainedPresentation extends ChatPaneBoard {
     this.clearComposerPrefillAttention();
     this.settleResetConfirmation(false);
     this.cancelHeaderRename();
+    this.headerDetailsOpen = false;
+    const detailsPopover = this.querySelector<HTMLElement & { open: boolean }>(
+      ".chat-details-popover",
+    );
+    if (detailsPopover) {
+      detailsPopover.open = false;
+    }
     dismissConfirmedActionPopovers(this);
     resetTranscriptSession(this.presentationId, this);
     const state = this.state;
