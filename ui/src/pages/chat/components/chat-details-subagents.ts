@@ -25,7 +25,11 @@ export function renderChatDetailsSubagents(backgroundTasks: BackgroundTasksProps
         : nothing}
     </div>
     ${subagents}
-    <button class="chat-details__row" type="button" @click=${backgroundTasks.onToggleCollapsed}>
+    <button
+      class="chat-details__row"
+      type="button"
+      @click=${() => backgroundTasks.collapsed && backgroundTasks.onToggleCollapsed()}
+    >
       <span class="chat-details__row-icon" aria-hidden="true">${icons.listChecks}</span>
       <span class="chat-details__row-label">${t("chat.details.viewAllTasks")}</span>
       <span class="chat-details__row-trailing" aria-hidden="true">${icons.chevronRight}</span>

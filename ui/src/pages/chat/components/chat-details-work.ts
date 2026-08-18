@@ -12,6 +12,7 @@ export function renderChatDetailsWork(props: ChatTaskSuggestionTrayProps & {
   progressCard?: ProgressCard | null;
   canActOnGoal: boolean;
   onGoalCommand?: (command: string) => void;
+  onGoalEdit?: (goal: SessionGoal) => void;
 }) {
   const hasSuggestions = Boolean(props.taskSuggestions?.length);
   if (!props.goal && !props.progressCard && !hasSuggestions) {
@@ -19,7 +20,14 @@ export function renderChatDetailsWork(props: ChatTaskSuggestionTrayProps & {
   }
   return html`<section class="chat-details__section">
     <div class="chat-details__section-header">${t("chat.details.work")}</div>
-    ${props.goal ? renderDetailsGoal(props.goal, props.canActOnGoal, props.onGoalCommand) : nothing}
+    ${props.goal
+      ? renderDetailsGoal(
+          props.goal,
+          props.canActOnGoal,
+          props.onGoalCommand,
+          props.onGoalEdit,
+        )
+      : nothing}
     ${renderSessionProgressCard(props.progressCard, "details")}
     ${renderChatTaskSuggestionTray(props)}
   </section>`;
@@ -29,6 +37,7 @@ function renderDetailsGoal(
   goal: SessionGoal,
   canAct: boolean,
   onGoalCommand: ((command: string) => void) | undefined,
+  onGoalEdit: ((goal: SessionGoal) => void) | undefined,
 ) {
   const elapsed = formatGoalElapsed(goalElapsedMs(goal, Date.now()));
   const usage = formatGoalUsage(goal);
@@ -47,6 +56,9 @@ function renderDetailsGoal(
       <div class="chat-details__goal-meta">${usage ? `${usage} · ${elapsed}` : elapsed}</div>
       ${canAct && onGoalCommand
         ? html`<div class="chat-details__goal-actions">
+            ${goal.status !== "complete" && onGoalEdit
+              ? detailsGoalAction(t("chat.goals.edit"), icons.penLine, () => onGoalEdit(goal))
+              : nothing}
             ${goal.status === "active"
               ? detailsGoalAction(t("chat.goals.pause"), icons.pause, () =>
                   onGoalCommand("/goal pause"),

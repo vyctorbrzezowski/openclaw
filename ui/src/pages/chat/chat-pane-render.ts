@@ -646,6 +646,15 @@ export class ChatPane extends ChatPaneBrowserAnnotationRender {
         progressCard: this.progressCard.card,
         canActOnGoal: state.connected && props.canSend,
         onGoalCommand: props.onGoalCommand,
+        onGoalEdit: (goal) => {
+          state.handleChatDraftChange(`/goal edit ${goal.objective}`);
+          state.requestUpdate?.();
+          queueMicrotask(() => {
+            this.querySelector<HTMLTextAreaElement>(
+              ".agent-chat__composer-combobox > textarea",
+            )?.focus({ preventScroll: true });
+          });
+        },
         taskSuggestions: props.taskSuggestions,
         taskSuggestionBusyIds: props.taskSuggestionBusyIds,
         taskSuggestionCloudProfiles: props.taskSuggestionCloudProfiles,
