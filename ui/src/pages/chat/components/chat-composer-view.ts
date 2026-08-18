@@ -31,7 +31,6 @@ type ChatComposerViewContext = {
   canCompose: boolean;
   showAbortableUi: boolean;
   visibleDraft: string;
-  contextNotice: TemplateResult | typeof nothing;
   composerControls: TemplateResult | typeof nothing;
   composerLeadControl: TemplateResult | typeof nothing;
   requestUpdate: () => void;
@@ -63,7 +62,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
     canCompose,
     showAbortableUi,
     visibleDraft,
-    contextNotice,
     composerControls,
     composerLeadControl,
     requestUpdate,
@@ -488,7 +486,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
                       </div>
                     `
                   : nothing}
-                <div class="agent-chat__composer-meta">${contextNotice}</div>
                 <div class="agent-chat__composer-actions">
                   ${renderChatPrimaryActions(runControlsProps)}
                 </div>

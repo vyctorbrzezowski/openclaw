@@ -714,6 +714,11 @@ openclaw-chat-pane {
   margin: 4px 0 0;
 }
 
+.chat-details .context-usage {
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
 .chat-details__goal > summary {
   list-style: none;
 }

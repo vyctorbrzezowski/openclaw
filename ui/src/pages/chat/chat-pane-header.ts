@@ -89,6 +89,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
     workspaceGit: boolean,
     workDetails: TemplateResult | typeof nothing = nothing,
     subagentDetails: TemplateResult | typeof nothing = nothing,
+    usageDetails: TemplateResult | typeof nothing = nothing,
   ) {
     const board = this.resolveBoardView();
     const canChangeBoardDock = board.hasBoard && board.provider.canMutate;
@@ -466,6 +467,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       environmentActions,
       workDetails,
       subagentDetails,
+      usageDetails,
       presence:
         !catalog &&
         hasSessionPresenceViewers(this.presencePayload, selfId, instanceId, key, renderedOwnerId)

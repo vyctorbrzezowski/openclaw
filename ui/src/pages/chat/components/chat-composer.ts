@@ -6,7 +6,6 @@ import { t } from "../../../i18n/index.ts";
 import { ComposerDictationController, insertComposerDictation } from "../composer-dictation.ts";
 import { ComposerMicrophonePicker } from "../composer-microphone-picker.ts";
 import { isLargePastedTextAttachment } from "./chat-attachments.ts";
-import { renderContextNotice } from "./chat-composer-context.ts";
 import { renderMicrophonePicker, type ChatRunControlsProps } from "./chat-composer-controls.ts";
 import {
   adjustTextareaHeight,
@@ -53,8 +52,6 @@ export function renderChatComposer(props: ChatComposerProps) {
   const canAbort = Boolean(props.canAbort && props.onAbort);
   const hasTerminalStatus = hasTerminalRunStatus(props.runStatus);
   const showAbortableUi = canAbort && !hasTerminalStatus;
-  const compactBusy =
-    props.compactionStatus?.phase === "active" || props.compactionStatus?.phase === "retrying";
   const draftKey = composerDraftKey(props);
   if (state.dictationDraftKey !== null && state.dictationDraftKey !== draftKey) {
     state.dictation?.dispose();
@@ -90,16 +87,6 @@ export function renderChatComposer(props: ChatComposerProps) {
   }
   const hasVisualAttachments = (props.attachments ?? []).some(
     (attachment) => !isLargePastedTextAttachment(attachment),
-  );
-  const contextNotice = renderContextNotice(
-    props.sessions?.defaults?.contextTokens ?? null,
-    {
-      compactBusy,
-      compactDisabled: !props.connected || !canCompose || isBusy || showAbortableUi,
-      messages: props.messages,
-      onCompact: props.onCompact,
-      providerUsage: props.providerUsage,
-    },
   );
   const composerControls = props.composerControls ?? nothing;
   const composerLeadControl = props.composerLeadControl ?? nothing;
@@ -395,7 +382,6 @@ export function renderChatComposer(props: ChatComposerProps) {
     canCompose,
     showAbortableUi,
     visibleDraft,
-    contextNotice,
     composerControls,
     composerLeadControl,
     requestUpdate,

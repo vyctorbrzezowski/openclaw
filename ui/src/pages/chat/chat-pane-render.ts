@@ -64,6 +64,7 @@ import { detailSlotOpen, renderChatDetailSlot } from "./components/chat-detail-s
 import { renderChatImageLightbox } from "./components/chat-image-lightbox.ts";
 import { renderChatDetailsWork } from "./components/chat-details-work.ts";
 import { renderChatDetailsSubagents } from "./components/chat-details-subagents.ts";
+import { renderContextNotice } from "./components/chat-composer-context.ts";
 import { chatPullRequestId, createPullRequestBranch } from "./components/chat-pull-requests.ts";
 import {
   createSessionWorkspaceProps,
@@ -657,6 +658,24 @@ export class ChatPane extends ChatPaneBrowserAnnotationRender {
         onDismissTaskSuggestion: props.onDismissTaskSuggestion,
       }),
       renderChatDetailsSubagents(backgroundTasks),
+      renderContextNotice(
+        selectedSession,
+        state.sessionsResult?.defaults?.contextTokens ?? null,
+        {
+          compactBusy:
+            state.compactionStatus?.phase === "active" ||
+            state.compactionStatus?.phase === "retrying",
+          compactDisabled:
+            !state.connected ||
+            !props.canSend ||
+            props.sending ||
+            props.stream !== null ||
+            Boolean(props.canAbort),
+          messages: props.messages,
+          onCompact: props.onCompact,
+          providerUsage: props.providerUsage,
+        },
+      ),
     );
     const chat = renderChat({ ...props, header: board.face === "dashboard" ? nothing : header });
     // Keep this root stable across board face changes so the guarded board runtime

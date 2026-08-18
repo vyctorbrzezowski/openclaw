@@ -75,6 +75,7 @@ type ChatPaneHeaderProps = {
   environmentDetails?: TemplateResult | typeof nothing;
   workDetails?: TemplateResult | typeof nothing;
   subagentDetails?: TemplateResult | typeof nothing;
+  usageDetails?: TemplateResult | typeof nothing;
   environmentActions?: readonly {
     id: string;
     label: string;
@@ -148,6 +149,7 @@ function renderChatDetailsPopover(props: ChatPaneHeaderProps) {
           <div class="chat-details__section-header">${t("chat.details.environment")}</div>
           ${props.environmentDetails ?? nothing}
           ${(props.environmentActions ?? []).map(renderChatDetailsAction)}
+          ${props.usageDetails ?? nothing}
         </section>
         ${props.workDetails ?? nothing}
         ${props.subagentDetails ?? nothing}
