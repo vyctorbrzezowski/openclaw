@@ -28,20 +28,16 @@ import { isActiveTask } from "../../lib/tasks/data.ts";
 import { renderBoardViewSwitch } from "./board-session-surface.ts";
 import { displayedChatSessionBranches } from "./chat-history.ts";
 import { ChatPaneDiscussion } from "./chat-pane-discussion.ts";
-import {
-  resolveChatPaneDesktopTarget,
-  resolveChatPanePlacement,
-} from "./chat-pane-placement.ts";
-import { renderChatPanePlacement } from "./components/chat-pane-placement.ts";
+import { resolveChatPaneDesktopTarget, resolveChatPanePlacement } from "./chat-pane-placement.ts";
 import { readChatSessionActionAccess } from "./chat-session-action-access.ts";
 import type { BackgroundTasksProps } from "./components/chat-background-tasks.types.ts";
 import { isChatRunWorking } from "./components/chat-composer.ts";
-import "./components/chat-header-session-menu.ts";
 import type {
   HeaderMenuAction,
   HeaderMenuActionKind,
   HeaderMenuQuickAction,
 } from "./components/chat-header-session-menu.ts";
+import "./components/chat-header-session-menu.ts";
 import {
   canRevealSessionWorkspace,
   renderGatewayPicker,
@@ -50,6 +46,7 @@ import {
   resolveChatPaneParentSession,
   resolveChatPaneWorkspace,
 } from "./components/chat-pane-header.ts";
+import { renderChatPanePlacement } from "./components/chat-pane-placement.ts";
 import {
   chatPullRequestId,
   createPullRequestBranch,
@@ -230,7 +227,6 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         ${sidePanelOpen ? icons.panelRightClose : icons.panelRightOpen}
       </button>
     </openclaw-tooltip>`;
-    const backgroundTasksAction = catalog ? nothing : renderBackgroundTasksToggle(backgroundTasks);
     const sessionRailMode = this.selectedSessionRailMode(this.state?.sessionKey ?? "");
     const toggleSessionRail = () => this.requestSessionRail("toggle");
     const panelMenuActions: HeaderMenuQuickAction[] = [];
@@ -396,7 +392,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       canReveal,
       copiedAction: this.headerCopiedAction,
       renameDisabledReason,
-      panelActions: html`${backgroundTasksAction}${sidePanelAction}`,
+      panelActions: sidePanelAction,
       discussionAction: nothing,
       diffAction: nothing,
       backgroundTasksAction: nothing,
@@ -447,12 +443,10 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         })}
         ${renderChatPullRequests({
           pullRequests: this.sessionPullRequests.filter(
-            (pullRequest) => !this.dismissedSessionPullRequestIds.has(chatPullRequestId(pullRequest)),
+            (pullRequest) =>
+              !this.dismissedSessionPullRequestIds.has(chatPullRequestId(pullRequest)),
           ),
-          branch: createPullRequestBranch(
-            this.sessionPullRequests,
-            this.sessionPullRequestsBranch,
-          ),
+          branch: createPullRequestBranch(this.sessionPullRequests, this.sessionPullRequestsBranch),
           rateLimited: this.sessionPullRequestsRateLimited,
           expanded: this.sessionPullRequestsExpanded,
           onExpand: () => {
