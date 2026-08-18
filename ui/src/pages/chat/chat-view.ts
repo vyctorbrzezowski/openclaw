@@ -51,7 +51,6 @@ import type { ArtifactDownloadResolver } from "./components/chat-message-media.t
 import { renderChatSessionSuggestions } from "./components/chat-session-suggestions.ts";
 import type { SidebarContent, SidebarFullMessageLoader } from "./components/chat-sidebar.ts";
 import { renderChatSwarmProgress } from "./components/chat-swarm-progress.ts";
-import { renderChatTaskSuggestionTray } from "./components/chat-task-suggestions.ts";
 import type { ChatTaskSuggestionTrayProps } from "./components/chat-task-suggestions.ts";
 import type { ReplyMessageAccess } from "./components/chat-thread-interactions.ts";
 import {
@@ -549,7 +548,6 @@ export function renderChat(props: ChatProps) {
                         })}
                       </div>`
                     : nothing}
-                  ${renderChatTaskSuggestionTray(props)}
                   ${renderChatSessionSuggestions({
                     suggestions: props.sessionSuggestions ?? [],
                     role: props.sessionSuggestionRole,

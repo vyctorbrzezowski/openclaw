@@ -701,6 +701,66 @@ openclaw-chat-pane {
   margin: 4px 0 0;
 }
 
+.chat-details__goal > summary {
+  list-style: none;
+}
+
+.chat-details__goal > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-details__goal[open] .chat-details__row-trailing {
+  transform: rotate(90deg);
+}
+
+.chat-details__goal-body {
+  display: grid;
+  gap: 8px;
+  padding: 4px 8px 10px 32px;
+}
+
+.chat-details__goal-note,
+.chat-details__goal-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chat-details__goal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chat-details__goal-action {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.chat-details__goal-action svg {
+  width: 13px;
+  height: 13px;
+}
+
+.chat-details .session-progress-card--details {
+  margin: 2px 0 6px;
+  padding: 8px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.chat-details .task-suggestions {
+  margin: 4px 0 0;
+}
+
 .chat-details-trigger[aria-expanded="true"] {
   background: color-mix(in srgb, var(--text) 9%, transparent);
   color: var(--text);

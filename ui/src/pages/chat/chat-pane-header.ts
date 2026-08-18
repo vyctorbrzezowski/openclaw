@@ -1,5 +1,5 @@
 import { normalizeOptionalString } from "@openclaw/normalization-core/string-coerce";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import type { GatewaySessionRow } from "../../api/types.ts";
 import { isDesktopPanelAvailable } from "../../app/app-shell-chrome.ts";
 import { resolveControlUiAuthCandidates } from "../../app/control-ui-auth.ts";

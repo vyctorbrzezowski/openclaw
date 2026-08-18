@@ -4747,6 +4747,7 @@ export const en: TranslationMap = {
       title: "Session details",
       empty: "Session details will appear here.",
       environment: "Environment",
+      work: "Work",
     },
     cloudWorkerFailed: "Cloud worker failed: {error}",
     diskSpace: {

@@ -65,9 +65,6 @@ export function renderChatComposer(props: ChatComposerProps) {
       : props.runStatus;
   const compactBusy =
     props.compactionStatus?.phase === "active" || props.compactionStatus?.phase === "retrying";
-  const activeSession = props.sessions?.sessions?.find((row) =>
-    areUiSessionKeysEquivalent(row.key, props.sessionKey),
-  );
   const draftKey = composerDraftKey(props);
   if (state.dictationDraftKey !== null && state.dictationDraftKey !== draftKey) {
     state.dictation?.dispose();
@@ -105,7 +102,6 @@ export function renderChatComposer(props: ChatComposerProps) {
     (attachment) => !isLargePastedTextAttachment(attachment),
   );
   const contextNotice = renderContextNotice(
-    activeSession,
     props.sessions?.defaults?.contextTokens ?? null,
     {
       compactBusy,
@@ -498,7 +494,6 @@ export function renderChatComposer(props: ChatComposerProps) {
     state,
     canCompose,
     showAbortableUi,
-    activeSession,
     visibleDraft,
     contextNotice,
     composerControls,

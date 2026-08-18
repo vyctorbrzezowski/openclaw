@@ -62,6 +62,7 @@ import { renderBackgroundTasksRail } from "./components/chat-background-tasks-re
 import { createBackgroundTasksProps } from "./components/chat-background-tasks.ts";
 import { detailSlotOpen, renderChatDetailSlot } from "./components/chat-detail-slot.ts";
 import { renderChatImageLightbox } from "./components/chat-image-lightbox.ts";
+import { renderChatDetailsWork } from "./components/chat-details-work.ts";
 import { chatPullRequestId, createPullRequestBranch } from "./components/chat-pull-requests.ts";
 import {
   createSessionWorkspaceProps,
@@ -638,6 +639,22 @@ export class ChatPane extends ChatPaneBrowserAnnotationRender {
       Boolean(catalogKey),
       selectedAgent?.workspace,
       selectedAgent?.workspaceGit === true,
+      renderChatDetailsWork({
+        goal: selectedSession?.goal,
+        progressCard: this.progressCard.card,
+        canActOnGoal: state.connected && props.canSend,
+        onGoalCommand: props.onGoalCommand,
+        taskSuggestions: props.taskSuggestions,
+        taskSuggestionBusyIds: props.taskSuggestionBusyIds,
+        taskSuggestionCloudProfiles: props.taskSuggestionCloudProfiles,
+        taskSuggestionCopiedIds: props.taskSuggestionCopiedIds,
+        onCopyTaskSuggestionPrompt: props.onCopyTaskSuggestionPrompt,
+        canAcceptTaskSuggestions: props.canAcceptTaskSuggestions,
+        canAcceptTaskSuggestionModes: props.canAcceptTaskSuggestionModes,
+        canDismissTaskSuggestions: props.canDismissTaskSuggestions,
+        onAcceptTaskSuggestion: props.onAcceptTaskSuggestion,
+        onDismissTaskSuggestion: props.onDismissTaskSuggestion,
+      }),
     );
     const chat = renderChat({ ...props, header: board.face === "dashboard" ? nothing : header });
     // Keep this root stable across board face changes so the guarded board runtime

@@ -2,9 +2,7 @@ import { truncateUtf16Safe } from "@openclaw/normalization-core/utf16-slice";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { ref } from "lit/directives/ref.js";
-import type { GatewaySessionRow } from "../../../api/types.ts";
 import { icons } from "../../../components/icons.ts";
-import { renderSessionProgressCard } from "../../../components/session-progress-card.ts";
 import { t } from "../../../i18n/index.ts";
 import {
   countSessionToolOverrides,
@@ -21,12 +19,10 @@ import { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
 import type { ChatRunControlsProps } from "./chat-composer-controls.ts";
 import { renderChatPrimaryActions } from "./chat-composer-controls.ts";
 import { focusComposerFromChrome } from "./chat-composer-dom.ts";
-import { renderChatGoal } from "./chat-composer-goal.ts";
 import { renderChatComposerPlusMenu } from "./chat-composer-plus-menu.ts";
 import { renderChatQueue } from "./chat-composer-queue.ts";
 import { renderSkillMenu } from "./chat-composer-skill-menu.ts";
 import { renderSlashMenu } from "./chat-composer-slash-menu.ts";
-import { commitComposerDraft } from "./chat-composer-state.ts";
 import {
   renderChatRunStatusIndicator,
   renderCompactionIndicator,
@@ -42,7 +38,6 @@ type ChatComposerViewContext = {
   state: ChatComposerState;
   canCompose: boolean;
   showAbortableUi: boolean;
-  activeSession: GatewaySessionRow | undefined;
   visibleDraft: string;
   contextNotice: TemplateResult | typeof nothing;
   composerControls: TemplateResult | typeof nothing;
@@ -78,7 +73,6 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
     state,
     canCompose,
     showAbortableUi,
-    activeSession,
     visibleDraft,
     contextNotice,
     composerControls,
@@ -304,19 +298,8 @@ export function renderChatComposerView(context: ChatComposerViewContext) {
                       </div>
                     `
                   : nothing}
-                ${renderSessionProgressCard(props.progressCard, "composer")}
                 ${renderFallbackIndicator(props.fallbackStatus)}
                 ${renderCompactionIndicator(props.compactionStatus)}
-                ${renderChatGoal(state, activeSession?.goal, {
-                  canAct: props.connected && canCompose,
-                  onGoalCommand: props.onGoalCommand,
-                  onGoalEdit: (goal) => {
-                    commitComposerDraft(props, `/goal edit ${goal.objective}`);
-                    requestUpdate();
-                    queueMicrotask(() => state.composerTextarea?.focus({ preventScroll: true }));
-                  },
-                  requestUpdate,
-                })}
               </div>
 
               ${renderChatAttachmentInputs({ ...props, disabled: !canCompose })}
