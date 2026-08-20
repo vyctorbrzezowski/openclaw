@@ -6,6 +6,7 @@ import { installNativeTitleGuard } from "./tooltip.ts";
 type TooltipElement = HTMLElement & {
   content: string;
   openOnClick: boolean;
+  hoverOnly: boolean;
   readonly updateComplete: Promise<boolean>;
 };
 
@@ -119,6 +120,19 @@ describe("openclaw-tooltip", () => {
     expect(webAwesomeTooltip(tooltip)?.querySelector(".tooltip-content")?.textContent).toBe(
       "Single portal",
     );
+  });
+
+  it("keeps hover-only tooltips closed on focus", async () => {
+    const { tooltip, trigger } = createTooltip("Pointer help");
+    tooltip.hoverOnly = true;
+    document.body.append(tooltip);
+    await tooltip.updateComplete;
+
+    focusTrigger(trigger);
+    expectOpenCount(0);
+    hoverTrigger(trigger);
+    vi.runAllTimers();
+    expectOpenCount(1);
   });
 
   it("skins the body and removes the arrow through shared overlay tokens", async () => {
