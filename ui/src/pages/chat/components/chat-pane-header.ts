@@ -238,7 +238,16 @@ function renderSessionControls(props: ChatPaneHeaderProps) {
   }
   return html`<span class="chat-pane__session-controls">
     <span class="chat-pane__people"
-      >${owner} ${participants} ${presence}
+      >${owner === nothing
+        ? nothing
+        : html`<openclaw-tooltip
+            .content=${t(
+              ownerAttribution === "owned" ? "sessionsView.ownedBy" : "sessionsView.createdBy",
+              { name: ownerActor?.label || ownerActor?.id || "" },
+            )}
+            ><span class="chat-pane__owner-tooltip-anchor">${owner}</span></openclaw-tooltip
+          >`}
+      ${participants} ${presence}
       ${sharingControl === nothing
         ? nothing
         : html`<span class="chat-pane__sharing-anchor">${sharingControl}</span>`}</span
@@ -478,7 +487,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
   return html`
     <div class="chat-pane__header" @mousedown=${beginNativeWindowDrag}>
       ${props.mergedChrome
-        ? html`<openclaw-tooltip .content=${drawerLabel}>
+        ? html`<openclaw-tooltip .content=${drawerLabel} .hoverOnly=${true}>
             <button
               class="btn btn--ghost btn--icon chat-icon-btn chat-pane__nav-toggle"
               type="button"

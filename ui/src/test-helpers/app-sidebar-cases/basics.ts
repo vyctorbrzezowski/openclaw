@@ -240,9 +240,7 @@ describe("AppSidebar agent chip", () => {
     expect(connectionStatus?.getAttribute("aria-live")).toBe("polite");
     expect(connectionStatus?.textContent).toBe("Reconnecting…");
     expect(sidebar.querySelector(".sidebar-footer-bar__status")).toBeNull();
-    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")?.textContent).not.toContain(
-      "Offline",
-    );
+    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")).toBeNull();
 
     card?.click();
     await sidebar.updateComplete;
@@ -257,7 +255,7 @@ describe("AppSidebar agent chip", () => {
     expect(sidebar.querySelector(".sidebar-identity-card__status")?.textContent).toBe("");
   });
 
-  it("shows a working subtitle while the agent has an active run", async () => {
+  it("keeps run state out of the compact agent card", async () => {
     const gateway = createGateway({} as GatewayBrowserClient);
     const harness = createSessionsHarness("main", ["agent:main:main"]);
     const { sidebar } = await mountSidebar(gateway, harness.sessions);
@@ -282,9 +280,7 @@ describe("AppSidebar agent chip", () => {
     });
     await sidebar.updateComplete;
 
-    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")?.textContent).toContain(
-      "Working",
-    );
+    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")).toBeNull();
     // Run state uses the session spinner at the row edge without changing the Home icon.
     const spinner = sidebar.querySelector(".nav-item--home .nav-item__state .session-run-spinner");
     expect(spinner).not.toBeNull();
@@ -370,9 +366,7 @@ describe("AppSidebar agent chip", () => {
 
     // No per-agent sections: the card switcher owns agent switching now, and
     // the main session lives behind the identity card instead of the list.
-    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")?.textContent?.trim()).toBe(
-      "Main task",
-    );
+    expect(sidebar.querySelector(".sidebar-agent-card__subtitle")).toBeNull();
     expect(sidebar.querySelector(".sidebar-agent-section")).toBeNull();
     expect(sidebar.querySelectorAll(".sidebar-recent-session")).toHaveLength(0);
     expect(sidebar.querySelector(".sidebar-agent-card__menu-unread")).not.toBeNull();

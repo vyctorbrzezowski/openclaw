@@ -86,18 +86,39 @@ export const toolIcons = {
     d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.076.874.54 1.02 1.02a2.5 2.5 0 1 0 3.237-3.237c-.48-.146-.944-.505-1.02-1.02a.98.98 0 0 1 .303-.917l1.526-1.526A2.402 2.402 0 0 1 11.998 2c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.236 3.236c-.464.18-.894.527-.967 1.02Z"
   />`),
   panelLeft: strokeIcon(svg` <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M9 3v18" />`),
+    <path d="M9 3v18" stroke-linecap="round" />`),
+  panelRight: strokeIcon(svg` <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M15 3v18" stroke-linecap="round" />`),
   panelLeftClose: strokeIcon(svg` <rect x="3" y="3" width="18" height="18" rx="2" />
     <path d="M9 3v18M16 10l-3 2 3 2" />`),
   panelLeftOpen: strokeIcon(svg` <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M9 3v18M14 10l3 2-3 2" />`),
-  chevronDown: strokeIcon(svg`<path d="M6 9l6 6 6-6" />`),
-  chevronRight: strokeIcon(svg`<path d="M9 18l6-6-6-6" />`),
-  chevronLeft: strokeIcon(svg`<path d="M15 18l-6-6 6-6" />`),
-  externalLink: strokeIcon(
-    svg`<path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />`,
-  ),
-  send: strokeIcon(svg`<path d="m22 2-7 20-4-9-9-4ZM22 2 11 13" />`),
+    <path d="M9 3v18" stroke-linecap="round" />
+    <path d="M14 10l3 2-3 2" stroke-linecap="round" stroke-linejoin="round" />`),
+  chevronDown: strokeIcon(svg` <path
+    d="M6 9l6 6 6-6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />`),
+  chevronsUpDown: strokeIcon(svg`<path d="m7 15 5 5 5-5" />
+    <path d="m7 9 5-5 5 5" />`),
+  chevronRight: strokeIcon(svg` <path
+    d="M9 18l6-6-6-6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />`),
+  chevronLeft: strokeIcon(svg` <path
+    d="M15 18l-6-6 6-6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />`),
+  externalLink: strokeIcon(svg` <path
+      d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path d="M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round" />`),
+  send: strokeIcon(svg` <path d="m22 2-7 20-4-9-9-4Z" />
+    <path d="M22 2 11 13" />`),
   stop: strokeIcon(svg`<rect width="14" height="14" x="5" y="5" rx="1" />`),
   pin: strokeIcon(svg` <line x1="12" x2="12" y1="17" y2="22" />
     <path
@@ -252,6 +273,9 @@ export const toolIcons = {
   ellipsis: strokeIcon(svg` <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" />
     <circle cx="5" cy="12" r="1.25" fill="currentColor" stroke="none" />
     <circle cx="19" cy="12" r="1.25" fill="currentColor" stroke="none" />`),
+  moreHorizontalSolid: strokeIcon(svg` <circle cx="12" cy="12" r="1" fill="currentColor" />
+    <circle cx="6" cy="12" r="1" fill="currentColor" />
+    <circle cx="18" cy="12" r="1" fill="currentColor" />`),
   arrowUpDown: strokeIcon(svg`<path d="M21 16l-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16" />`),
   panelRightOpen: strokeIcon(svg` <rect x="3" y="3" width="18" height="18" rx="2" />
     <path d="M15 3v18M10 10l-3 2 3 2" />`),
