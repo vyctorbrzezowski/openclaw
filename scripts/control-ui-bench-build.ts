@@ -49,6 +49,16 @@ function writeVercelConfig(): void {
   );
 }
 
+// Composer model/runtime rows resolve provider marks through public assets at
+// runtime (controlUiPublicAssetPath); ship the icon set beside the bundle.
+function copyProviderIcons(): void {
+  fs.cpSync(
+    path.join(repoRoot, "ui", "public", "provider-icons"),
+    path.join(outDir, "provider-icons"),
+    { recursive: true },
+  );
+}
+
 function runVite(args: string[]): number {
   const result = spawnSync(viteBin, ["-c", benchConfig, ...args], {
     cwd: repoRoot,
@@ -66,6 +76,7 @@ const exitCode = preview
         return code === 0 ? 1 : code;
       }
       writeVercelConfig();
+      copyProviderIcons();
       console.log(`[control-ui-bench] output: ${path.relative(repoRoot, outDir)}`);
       console.log(
         `[control-ui-bench] update: vercel deploy ${path.relative(repoRoot, outDir)} --prod --yes`,
