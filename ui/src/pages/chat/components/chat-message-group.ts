@@ -60,7 +60,10 @@ type ActiveContinuation = {
   options: StreamGroupOptions;
 };
 
-type ReplyPreview = MessageReplyTarget & { sourceMessageId: string };
+type ReplyPreview = MessageReplyTarget & {
+  sourceMessageId: string;
+  sender?: MessageGroup["sender"];
+};
 
 type RenderMessageGroupOptions = {
   onOpenSidebar?: (content: SidebarContent) => void;

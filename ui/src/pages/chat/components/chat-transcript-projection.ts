@@ -74,7 +74,12 @@ type ChatRenderItem = ReturnType<typeof coalesceAgentRunFrames>[number];
 
 type LoadedReplySource = {
   rowKey: string;
-  preview: MessageReplyTarget & { sourceMessageId: string };
+  preview: MessageReplyTarget & {
+    sourceMessageId: string;
+    // Display labels can change independently of the stable identity seed;
+    // carry the source sender so its reply avatar cannot drift in color.
+    sender?: MessageGroup["sender"];
+  };
 };
 
 function projectResolvedReplyPreview(
@@ -102,6 +107,7 @@ function projectResolvedReplyPreview(
     messageId: sourceMessageId,
     sourceMessageId,
     senderLabel: resolveMessageGroupSenderLabel(group, props),
+    ...(normalized.sender ? { sender: normalized.sender } : {}),
     text,
   };
 }
@@ -533,6 +539,7 @@ export function projectChatTranscript(
               messageId: source.key,
               sourceMessageId,
               senderLabel,
+              ...(group.sender ? { sender: group.sender } : {}),
               text,
             },
           });

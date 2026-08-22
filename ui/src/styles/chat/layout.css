@@ -1529,8 +1529,8 @@ openclaw-chat-video-player {
   height: 20px;
   place-items: center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 46%, var(--panel));
-  color: var(--text-strong);
+  background: hsl(var(--chat-reply-avatar-hue) 48% 42%);
+  color: white;
   font-size: 8px;
   font-weight: 700;
   line-height: 1;
