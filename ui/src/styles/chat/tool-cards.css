@@ -1268,7 +1268,7 @@
 .chat-working-indicator--continuation {
   gap: 6px;
   min-height: 0;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .chat-turn-recap--continuation {

@@ -1095,6 +1095,50 @@ function chatHistoryMessage(
   };
 }
 
+type MockTranscriptToolCall = {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+  result: string;
+};
+
+function mockTranscriptToolActivity(
+  runId: string,
+  agent: { id: string; name: string },
+  timestamp: number,
+  calls: MockTranscriptToolCall[],
+): unknown[] {
+  return [
+    {
+      role: "assistant",
+      content: calls.map((call) => ({
+        type: "toolCall",
+        id: call.id,
+        name: call.name,
+        arguments: call.arguments,
+      })),
+      timestamp,
+      __openclaw: {
+        id: `${runId}-calls`,
+        idempotencyKey: runId,
+        senderId: agent.id,
+        senderName: agent.name,
+      },
+    },
+    ...calls.map((call, index) => ({
+      role: "toolResult",
+      toolCallId: call.id,
+      toolName: call.name,
+      content: [{ type: "text", text: call.result }],
+      timestamp: timestamp + (index + 1) * 2_000,
+      __openclaw: {
+        id: `${runId}-result-${index + 1}`,
+        idempotencyKey: runId,
+      },
+    })),
+  ];
+}
+
 function buildScrollableChatHistory(baseTime: number): unknown[] {
   const messages: unknown[] = [
     chatHistoryMessage(
@@ -1122,26 +1166,32 @@ function buildScrollableChatHistory(baseTime: number): unknown[] {
     );
   }
 
-  // Completed work turn: commentary + tool results ahead of the final reply
-  // exercise the collapsed "Worked for X" rollup at the end of the thread.
+  // PREWARM T7 uses the real aggregate transcript: Riley is the current
+  // viewer, while attributed participants and agents remain historical peers.
   const workTurnBase = baseTime + 37 * 60_000;
   messages.push(
+    // PR #122288: participant identity and agent reply attribution.
     chatHistoryMessage(
       "user",
-      "The multiparty pass is ready. Can we tighten the reply treatment before review?",
+      "The multiparty pass is ready for a deeper review. I want the transcript to remain easy to scan when several people answer in sequence, and I want every reply to preserve enough context without turning the thread into a wall of repeated labels.",
       workTurnBase - 120_000,
       {
-        id: "mock-multiparty-peter",
-        __openclaw: { senderId: "profile-peter", senderName: "Peter" },
+        __openclaw: {
+          id: "mock-multiparty-peter",
+          idempotencyKey: "mock-run-identity:user",
+          senderId: "profile-peter",
+          senderName: "Peter",
+        },
       },
     ),
     chatHistoryMessage(
       "user",
-      "Keep the human messages quiet, but make it obvious who is speaking.",
+      "Agreed. Keep the human messages visually quiet, but make the speaker unmistakable at the start of each turn. The quote should feel like context, the bubble should hold the actual message, and the action row should stay out of the reading path until someone needs it.",
       workTurnBase - 90_000,
       {
-        id: "mock-multiparty-mira",
         __openclaw: {
+          id: "mock-multiparty-mira",
+          idempotencyKey: "mock-run-identity:user",
           senderId: "profile-mira",
           senderName: "Mira Chen",
           replyToId: "mock-multiparty-peter",
@@ -1154,12 +1204,14 @@ function buildScrollableChatHistory(baseTime: number): unknown[] {
     ),
     chatHistoryMessage(
       "assistant",
-      "I’ll keep the identity rail clear and use a compact quote above replies.",
+      "I’ll trace the identity and reply fields through the real transcript projection first. Then I’ll compare the shared-chat presentation with the peer-stability seam so the result stays consistent when actions appear, disappear, or wrap onto another line.",
       workTurnBase - 60_000,
       {
-        id: "mock-multiparty-agent",
-        senderLabel: "Molty",
         __openclaw: {
+          id: "mock-multiparty-agent",
+          idempotencyKey: "mock-run-identity",
+          senderId: "agent-molty",
+          senderName: "Molty",
           replyToId: "mock-multiparty-mira",
           replyToPreview: {
             senderLabel: "Mira Chen",
@@ -1168,34 +1220,251 @@ function buildScrollableChatHistory(baseTime: number): unknown[] {
         },
       },
     ),
+    ...mockTranscriptToolActivity(
+      "mock-run-identity",
+      { id: "agent-molty", name: "Molty" },
+      workTurnBase - 56_000,
+      [
+        {
+          id: "mock-identity-read",
+          name: "read",
+          arguments: { path: "ui/src/pages/chat/components/chat-message-group.ts" },
+          result: "Read the shared message-group identity and reply presentation owner.",
+        },
+        {
+          id: "mock-identity-search",
+          name: "search",
+          arguments: { query: "senderLabel replyToId footer actions" },
+          result: "Found the sender, reply preview, and footer-action seams used by shared chat.",
+        },
+      ],
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "The ownership is clear now: identity belongs in one stable header, the compact quote belongs above the run, and the lower row belongs only to actions. That keeps the reading order predictable while still allowing copy, reply, and rewind controls to appear without relabeling the author.",
+      workTurnBase - 50_000,
+      {
+        __openclaw: {
+          id: "mock-run-identity-final",
+          idempotencyKey: "mock-run-identity",
+          senderId: "agent-molty",
+          senderName: "Molty",
+        },
+      },
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "I’m checking the viewer-versus-peer branch as a separate run. I’ll keep Riley’s ownership explicit, inspect the long-name wrapping path, and verify that the quote remains attached to this run rather than being repeated by each intermediate activity item.",
+      workTurnBase - 45_000,
+      {
+        __openclaw: {
+          id: "mock-multiparty-iris",
+          idempotencyKey: "mock-run-iris",
+          senderId: "agent-iris",
+          senderName: "Iris",
+          replyToId: "mock-multiparty-peter",
+          replyToPreview: {
+            senderLabel: "Peter",
+            text: "Can we tighten the reply treatment before review?",
+          },
+        },
+      },
+    ),
+    ...mockTranscriptToolActivity(
+      "mock-run-iris",
+      { id: "agent-iris", name: "Iris" },
+      workTurnBase - 43_000,
+      [
+        {
+          id: "mock-iris-profile",
+          name: "read",
+          arguments: { path: "ui/src/lib/chat/sender-label.ts" },
+          result: "Confirmed stable structured sender identity for viewer and peer attribution.",
+        },
+        {
+          id: "mock-iris-layout",
+          name: "inspect",
+          arguments: { selector: ".chat-group--peer .chat-group-author" },
+          result: "Peer header and bubble share one content column at narrow widths.",
+        },
+      ],
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "The branches remain distinct and stable. Riley resolves as the current viewer and stays right-aligned; Alexandria remains a peer with her own identity tint; and the reply preview is owned once by the run shell. Revealing actions changes only the reserved action row, so it cannot move or rename either participant.",
+      workTurnBase - 37_000,
+      {
+        __openclaw: {
+          id: "mock-run-iris-final",
+          idempotencyKey: "mock-run-iris",
+          senderId: "agent-iris",
+          senderName: "Iris",
+        },
+      },
+    ),
+    // PR #126287: current-viewer and long-name peer footers exercise action
+    // reveal independently from the reply-attribution sequence above.
     chatHistoryMessage(
       "user",
-      "Mock work request: refactor the render guard and rerun the suite.",
+      "I’m looking at the same handoff as the current viewer. My bubble should remain on the right while every peer stays on the left, and replying to Molty must not make my own identity look like another remote participant.",
+      workTurnBase - 30_000,
+      {
+        __openclaw: {
+          id: "mock-multiparty-riley",
+          idempotencyKey: "mock-run-peer-content:user",
+          senderId: "presence-riley",
+          senderName: "Riley",
+          replyToId: "mock-multiparty-agent",
+          replyToPreview: {
+            senderLabel: "Molty",
+            text: "I’ll keep the identity rail clear and use a compact quote above replies.",
+          },
+        },
+      },
+    ),
+    chatHistoryMessage(
+      "user",
+      "From the peer side, the long-name case still matters. Alexandria Montgomery-Winter should keep the same avatar, tint, and alignment before and after the action buttons become visible, even when this paragraph wraps across several lines in a narrower transcript.",
+      workTurnBase - 15_000,
+      {
+        __openclaw: {
+          id: "mock-multiparty-alexandria",
+          idempotencyKey: "mock-run-content:user",
+          senderId: "profile-alexandria",
+          senderName: "Alexandria Montgomery-Winter",
+          replyToId: "mock-multiparty-riley",
+          replyToPreview: {
+            senderLabel: "Riley",
+            text: "I’m taking the active handoff from here.",
+          },
+        },
+      },
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "I’ll exercise the richer content path and keep its activity inside this run. The acceptance shape is intentionally mixed:\n\n- paragraphs wrap without collapsing the author hierarchy;\n- lists and code stay inside the same bubble system;\n- tool activity aligns with the agent text column.\n\n```ts\nconst turn = composeRun({ identity: \"Molty\", reply: \"Alexandria\" });\n```",
+      workTurnBase - 12_000,
+      {
+        __openclaw: {
+          id: "mock-run-content-opening",
+          idempotencyKey: "mock-run-content",
+          senderId: "agent-molty",
+          senderName: "Molty",
+          replyToId: "mock-multiparty-alexandria",
+          replyToPreview: {
+            senderLabel: "Alexandria Montgomery-Winter",
+            text: "The long-name case should keep the same avatar, tint, and alignment.",
+          },
+        },
+      },
+    ),
+    ...mockTranscriptToolActivity(
+      "mock-run-content",
+      { id: "agent-molty", name: "Molty" },
+      workTurnBase - 10_000,
+      [
+        {
+          id: "mock-content-read",
+          name: "read",
+          arguments: { path: "ui/src/styles/chat/grouped.css" },
+          result: "Read bubble, author, footer, and reply spacing rules.",
+        },
+        {
+          id: "mock-content-measure",
+          name: "inspect",
+          arguments: { selector: ".chat-group-messages" },
+          result: "Measured one shared content column for text, activity, and continuation status.",
+        },
+        {
+          id: "mock-content-actions",
+          name: "read",
+          arguments: { path: "ui/src/pages/chat/components/chat-message-markdown.ts" },
+          result: "Confirmed message actions remain separate from identity and content.",
+        },
+      ],
+    ),
+    chatHistoryMessage(
+      "assistant",
+      "The rich-content pass now holds together as one readable run. The code block stays bounded by the message bubble, the list keeps a clear rhythm, and the three activity records sit between the opening analysis and this conclusion without creating a second Molty header or another copy of Alexandria’s quote.",
+      workTurnBase - 2_000,
+      {
+        __openclaw: {
+          id: "mock-run-content-final",
+          idempotencyKey: "mock-run-content",
+          senderId: "agent-molty",
+          senderName: "Molty",
+        },
+      },
+    ),
+    // Commentary + tool results ahead of the final reply exercise the
+    // completed-work presentation at the end of the thread.
+    chatHistoryMessage(
+      "user",
+      "Final handoff: keep the processing status inside the same Molty turn while the run is active. It should read as the continuation of the analysis below the activity row, not as a new anonymous event or a second agent message.",
       workTurnBase,
+      {
+        __openclaw: {
+          id: "mock-multiparty-active-request",
+          idempotencyKey: `${PLAN_DEMO_RUN_ID}:user`,
+          senderId: "presence-riley",
+          senderName: "Riley",
+          replyToId: "mock-multiparty-alexandria",
+          replyToPreview: {
+            senderLabel: "Alexandria Montgomery-Winter",
+            text: "I’m reviewing the same handoff from the peer side.",
+          },
+        },
+      },
     ),
     chatHistoryMessage(
       "assistant",
-      "Checking the guard implementation before editing.",
+      "I’m tracing the final active run now. The message, its tool activity, and the processing status all share the same authoritative run identity, so the presentation can keep one avatar, one Molty label, and one compact quote while work continues.",
       workTurnBase + 5_000,
+      {
+        __openclaw: {
+          id: "mock-multiparty-active-agent",
+          idempotencyKey: PLAN_DEMO_RUN_ID,
+          senderId: "agent-molty",
+          senderName: "Molty",
+          replyToId: "mock-multiparty-active-request",
+          replyToPreview: {
+            senderLabel: "Riley",
+            text: "Mock work request: refactor the render guard and rerun the suite.",
+          },
+        },
+      },
     ),
-    {
-      role: "toolResult",
-      toolCallId: "mock-work-read",
-      toolName: "read",
-      content: [{ type: "text", text: "Read ui/src/pages/chat/chat-thread.ts (120 lines)." }],
-      timestamp: workTurnBase + 12_000,
-    },
-    {
-      role: "toolResult",
-      toolCallId: "mock-work-exec",
-      toolName: "exec",
-      content: [{ type: "text", text: "pnpm test chat-thread — 12 passed." }],
-      timestamp: workTurnBase + 95_000,
-    },
+    ...mockTranscriptToolActivity(
+      PLAN_DEMO_RUN_ID,
+      { id: "agent-molty", name: "Molty" },
+      workTurnBase + 10_000,
+      [
+        {
+          id: "mock-work-read",
+          name: "read",
+          arguments: { path: "ui/src/pages/chat/chat-thread-grouping.ts" },
+          result: "Confirmed run identity across assistant and tool groups.",
+        },
+        {
+          id: "mock-work-inspect",
+          name: "inspect",
+          arguments: { selector: ".chat-group.assistant .chat-activity-group" },
+          result: "Tool activity shares the agent message column and vertical rhythm.",
+        },
+      ],
+    ),
     chatHistoryMessage(
       "assistant",
-      "Refactored the render guard and reran the suite; all 12 tests pass.",
-      workTurnBase + 172_000,
+      "The active presentation is now cohesive: the opening analysis leads into the tool summary, this follow-up remains in the same bubble stack, and the processing line continues underneath at the same inset. No identity or reply context is repeated inside the run.",
+      workTurnBase + 18_000,
+      {
+        __openclaw: {
+          id: "mock-multiparty-final-agent",
+          idempotencyKey: PLAN_DEMO_RUN_ID,
+          senderId: "agent-molty",
+          senderName: "Molty",
+        },
+      },
     ),
   );
 
@@ -3072,7 +3341,13 @@ function createStatefulMockInitScript(): string {
   return `(() => { const __name = (target) => target; (${installControlUiStatefulMocks.toString()})(${CUSTODIAN_CHAT_REPLY_DELAY_MS}, ${CHAT_SEND_REPLY_DELAY_MS}); })();`;
 }
 
+function createMockLocaleInitScript(): string {
+  // The app reads this stored preference before navigator.language.
+  return `localStorage.setItem("openclaw.i18n.locale", "en");`;
+}
+
 function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin {
+  const localeInitScript = escapeScriptContent(createMockLocaleInitScript());
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const statefulInitScript = escapeScriptContent(createStatefulMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
@@ -3092,7 +3367,7 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
+        `    <script data-openclaw-control-ui-mock-gateway>\n${localeInitScript}\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
       );
     },
   };
