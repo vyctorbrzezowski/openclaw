@@ -1171,11 +1171,11 @@ describe("ChatStateController render lifecycle", () => {
     const lifecycle = { invalidate: vi.fn(), afterCommit: () => () => {} };
     const first = createPageState(createPageContext(), lifecycle, {
       querySelector: () => null,
-      preferBottomSidebarDock: true,
+      splitMode: true,
     });
     const second = createPageState(createPageContext(), lifecycle, {
       querySelector: () => null,
-      preferBottomSidebarDock: true,
+      splitMode: true,
     });
 
     first.updateSidebarLayout(openSlot(first.sidebarLayout, "browser"));

@@ -606,7 +606,6 @@ export class ChatPage extends OpenClawLightDomElement {
                   ${renderChatPagePaneCell({
                     active: pane.id === layout.activePaneId,
                     chatMessagesBySession: this.messageCache,
-                    columnPaneCount: column.panes.length,
                     sessionSnapshotStore: this.snapshotStore,
                     consumedDraftData: this.consumedDraftData,
                     context: this.context,

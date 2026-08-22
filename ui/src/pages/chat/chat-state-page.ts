@@ -66,7 +66,7 @@ import { resetToolStream } from "./tool-stream.ts";
 type ChatPageElement = {
   getBoundingClientRect?: () => DOMRect;
   querySelector: (selectors: string) => Element | null;
-  preferBottomSidebarDock?: boolean;
+  splitMode?: boolean;
 };
 
 function clearImageLightbox(state: ChatPageHost) {
@@ -391,7 +391,7 @@ export function createPageState(
     const nextLayout = applySidebarDockDefault(
       previousLayout,
       requestedLayout,
-      page.preferBottomSidebarDock === true,
+      page.splitMode === true,
     );
     state.sidebarLayout = nextLayout;
     state.settings = patchSettings({
