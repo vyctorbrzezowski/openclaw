@@ -40,7 +40,7 @@ import { buildSkillWorkshopMocks } from "./control-ui-mock-skill-workshop.js";
 
 type CliOptions = {
   allowedHosts: string[];
-  fixture?: "approval" | "board" | "code-fences" | "swarm" | "workboard";
+  fixture?: "approval" | "board" | "code-fences" | "multiparty" | "swarm" | "workboard";
   host: string;
   operatorScopes?: string[];
   port: number;
@@ -174,6 +174,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "approval" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "multiparty" &&
     value !== "swarm" &&
     value !== "workboard"
   ) {
