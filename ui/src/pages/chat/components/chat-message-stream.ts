@@ -117,12 +117,11 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
   // is only the reading indicator has no timestamp and therefore no footer.
   const streamStarts = parts.flatMap((part) => (part.kind === "stream" ? [part.startedAt] : []));
   const footerStartedAt = streamStarts.length > 0 ? Math.min(...streamStarts) : null;
-  // While the agent works with nothing streamed yet the run is pure claw: no
-  // avatar next to it - the punching pincer is the whole signal. The avatar
-  // arrives with the first stream part unless the presentation opts out.
+  // Direct threads may opt out, but shared threads keep the agent identity
+  // visible while the run is working and after text begins streaming.
   const workingOnly = parts.every((part) => part.kind !== "stream");
   const avatar =
-    workingOnly || opts.showAssistantAvatar === false
+    opts.showAssistantAvatar === false
       ? nothing
       : renderChatAvatar(
           "assistant",

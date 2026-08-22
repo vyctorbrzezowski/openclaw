@@ -23,9 +23,6 @@
 }
 
 .chat-group.user.chat-group--peer {
-  /* The left-aligned identity owns the leading edge while hidden details
-     reserve their desktop footprint after it. */
-  --chat-footer-detail-position: static;
   flex-direction: row;
 }
 
@@ -56,6 +53,7 @@
   gap: 2px 10px;
   justify-content: start;
   padding-bottom: 0;
+  margin-bottom: 2px;
 }
 
 .chat-group.user.chat-group--with-footer {
@@ -239,50 +237,6 @@
   pointer-events: auto;
 }
 
-/* Shared threads keep the author name visible beside the gutter avatar. The
-   other footer details stay focusable but leave the row layout until reveal. */
-.chat-group-footer--persistent-identity {
-  position: relative;
-  opacity: var(--chat-persistent-footer-opacity, 1);
-  pointer-events: none;
-}
-
-.chat-group-footer--persistent-identity .chat-confirm-wrap,
-.chat-group-footer--persistent-identity .chat-group-timestamp,
-.chat-group-footer--persistent-identity .msg-meta,
-.chat-group-footer--persistent-identity .chat-group-footer-actions {
-  position: var(--chat-footer-detail-position, absolute);
-  opacity: var(--chat-footer-disclosure-opacity, 0);
-  pointer-events: var(--chat-footer-disclosure-pointer-events, none);
-}
-
-.chat-group-footer--headed .chat-sender-name {
-  display: none;
-}
-
-.chat-group:hover .chat-group-footer--persistent-identity,
-.chat-group:focus-within .chat-group-footer--persistent-identity,
-.chat-group-footer--persistent-identity:has(details.msg-meta[open]) {
-  pointer-events: auto;
-}
-
-.chat-group:hover .chat-group-footer--persistent-identity .chat-confirm-wrap,
-.chat-group:hover .chat-group-footer--persistent-identity .chat-group-timestamp,
-.chat-group:hover .chat-group-footer--persistent-identity .msg-meta,
-.chat-group:focus-within .chat-group-footer--persistent-identity .chat-confirm-wrap,
-.chat-group:focus-within .chat-group-footer--persistent-identity .chat-group-timestamp,
-.chat-group:focus-within .chat-group-footer--persistent-identity .msg-meta,
-.chat-group-footer--persistent-identity:has(details.msg-meta[open]) .chat-confirm-wrap,
-.chat-group-footer--persistent-identity:has(details.msg-meta[open]) .chat-group-timestamp,
-.chat-group-footer--persistent-identity:has(details.msg-meta[open]) .msg-meta,
-.chat-group:hover .chat-group-footer--persistent-identity .chat-group-footer-actions,
-.chat-group:focus-within .chat-group-footer--persistent-identity .chat-group-footer-actions,
-.chat-group-footer--persistent-identity:has(details.msg-meta[open]) .chat-group-footer-actions {
-  position: static;
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .chat-group-footer__meta {
   display: flex;
   align-items: center;
@@ -293,13 +247,6 @@
 
 .chat-group.user.chat-group--peer .chat-group-footer__meta {
   min-height: 24px;
-}
-
-/* Own-message footers are right-aligned, so hover-revealed time/actions must
-   slot in to the LEFT of the always-visible name; otherwise the name jumps
-   sideways on hover. */
-.chat-group.user:not(.chat-group--peer) .chat-group-footer--persistent-identity .chat-sender-name {
-  order: 1;
 }
 
 .chat-group-footer-actions,
@@ -788,24 +735,23 @@ img.chat-avatar.chat-avatar--logo {
   padding-inline-start: 0;
 }
 
-/* Shared conversations are typographic, not bubble-based. Keep direct-chat
-   skins and operational tool surfaces unchanged. */
-.chat-thread:not(.chat-thread--direct) .chat-group:not(.tool) .chat-bubble {
+/* Shared conversations keep identity in the avatar/header rail and content in
+   a distinct bubble. Direct-chat skins and operational tool rows stay intact. */
+.chat-thread:not(.chat-thread--direct) :where(.chat-group:not(.tool)) .chat-bubble {
   width: auto;
-  padding: 4px 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
   box-shadow: none;
 }
 
-.chat-thread:not(.chat-thread--direct) .chat-group:not(.tool) .chat-bubble:hover,
+.chat-thread:not(.chat-thread--direct) :where(.chat-group:not(.tool)) .chat-bubble:hover,
 :root[data-theme-mode="light"]
   .chat-thread:not(.chat-thread--direct)
-  .chat-group:not(.tool)
+  :where(.chat-group:not(.tool))
   .chat-bubble:hover {
-  border-color: transparent;
-  background: transparent;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
   box-shadow: none;
 }
 
@@ -844,7 +790,6 @@ img.chat-avatar.chat-avatar--logo {
   .chat-group {
     --chat-footer-disclosure-opacity: 1;
     --chat-footer-disclosure-pointer-events: auto;
-    --chat-footer-detail-position: static;
     padding-bottom: 0;
     margin-bottom: 14px;
   }
@@ -856,20 +801,11 @@ img.chat-avatar.chat-avatar--logo {
   :where(.chat-thread) .chat-group {
     --chat-footer-disclosure-opacity: 0;
     --chat-footer-disclosure-pointer-events: none;
-    --chat-footer-detail-position: absolute;
-    --chat-persistent-footer-opacity: 0;
   }
 
   :where(.chat-thread) .chat-group:is(.chat-group--meta-revealed, :focus-within) {
     --chat-footer-disclosure-opacity: 1;
     --chat-footer-disclosure-pointer-events: auto;
-    --chat-footer-detail-position: static;
-    --chat-persistent-footer-opacity: 1;
-  }
-
-  :where(.chat-thread)
-    .chat-group.user.chat-group--peer:not(.chat-group--meta-revealed, :focus-within) {
-    --chat-footer-detail-position: absolute;
   }
 
   .chat-group.user.chat-group--peer .chat-group-footer-actions {
@@ -980,7 +916,10 @@ img.chat-avatar.chat-avatar--logo {
 }
 
 :root[data-theme-mode="light"] .chat-bubble--tool-shell,
-:root[data-theme-mode="light"] .chat-group.assistant .chat-bubble {
+:root[data-theme-mode="light"]
+  .chat-thread--direct
+  .chat-group.assistant
+  .chat-bubble {
   border-color: transparent;
   background: transparent;
   box-shadow: none;

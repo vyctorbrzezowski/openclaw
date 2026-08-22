@@ -613,13 +613,13 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                 ? userFooterActions
                 : footerActionDetails
                   ? html`
-                    <div
-                      class="chat-group-footer-actions"
-                      data-message-actions-for=${footerActionMessageKey ?? nothing}
-                    >
-                      ${renderMessageActionButtons(footerActionDetails, opts)}
-                    </div>
-                  `
+                      <div
+                        class="chat-group-footer-actions"
+                        data-message-actions-for=${footerActionMessageKey ?? nothing}
+                      >
+                        ${renderMessageActionButtons(footerActionDetails, opts)}
+                      </div>
+                    `
                   : nothing}
             </div>`
           : html`<div class="chat-group-footer">
