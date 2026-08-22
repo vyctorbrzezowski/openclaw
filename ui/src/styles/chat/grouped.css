@@ -97,6 +97,64 @@
   grid-column: var(--chat-group-content-column);
   grid-row: 1;
   min-width: 0;
+  height: 16px;
+  margin-bottom: 4px;
+  padding: 0;
+  border: 0;
+  gap: 6px;
+  align-items: baseline;
+  overflow: hidden;
+  color: var(--muted);
+  line-height: 16px;
+}
+
+.chat-group.chat-group--with-footer.chat-group--reply
+  > .chat-group-reply-preview
+  .chat-reply-preview__avatar {
+  flex-basis: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.chat-group.chat-group--with-footer.chat-group--reply
+  > .chat-group-reply-preview
+  :is(.chat-reply-preview__label, .chat-reply-preview__text) {
+  color: var(--muted);
+  line-height: 16px;
+}
+
+.chat-group.chat-group--with-footer.chat-group--reply
+  > .chat-group-reply-preview
+  .chat-reply-preview__text {
+  min-width: 0;
+  opacity: 1;
+}
+
+/* Sent turns mirror the whole citation row so its mini-avatar stays beside
+   the mirrored spine instead of leaving the connector at an arbitrary edge. */
+.chat-group.user:not(.chat-group--peer).chat-group--reply > .chat-group-reply-preview {
+  justify-self: end;
+  box-sizing: border-box;
+  width: 100%;
+  text-align: right;
+}
+
+.chat-group.user:not(.chat-group--peer).chat-group--reply
+  > .chat-group-reply-preview
+  .chat-reply-preview__text {
+  order: 1;
+}
+
+.chat-group.user:not(.chat-group--peer).chat-group--reply
+  > .chat-group-reply-preview
+  .chat-reply-preview__label {
+  order: 2;
+}
+
+.chat-group.user:not(.chat-group--peer).chat-group--reply
+  > .chat-group-reply-preview
+  .chat-reply-preview__avatar {
+  order: 3;
 }
 
 .chat-group.chat-group--with-footer.chat-group--reply > .chat-avatar,
@@ -111,26 +169,24 @@
 .chat-group.chat-group--with-footer.chat-group--reply::before {
   content: "";
   position: absolute;
-  z-index: 1;
-  top: 20px;
-  /* 36px avatar + 6px: keep the connector in the 10px grid gutter, with
-     6px clearance from the avatar and 4px from the message column. */
-  left: 42px;
-  width: 25px;
-  height: 33px;
-  border-top: 1px solid color-mix(in srgb, var(--muted) 42%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--muted) 42%, transparent);
-  border-top-left-radius: 8px;
+  box-sizing: border-box;
+  top: 16px;
+  left: 17px;
+  width: 26px;
+  height: 15px;
+  border-top: 2px solid var(--border);
+  border-left: 2px solid var(--border);
+  border-top-left-radius: 6px;
   pointer-events: none;
 }
 
 .chat-group.user:not(.chat-group--peer).chat-group--reply::before {
-  right: 42px;
+  right: 17px;
   left: auto;
-  border-right: 1px solid color-mix(in srgb, var(--muted) 42%, transparent);
+  border-right: 2px solid var(--border);
   border-left: 0;
   border-top-left-radius: 0;
-  border-top-right-radius: 8px;
+  border-top-right-radius: 6px;
 }
 
 .chat-group-messages {
