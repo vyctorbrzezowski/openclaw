@@ -181,9 +181,6 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
   }
 
   private renderDockControls() {
-    if (this.narrow) {
-      return nothing;
-    }
     return renderDockDestinations({
       current: sidebarDock(this.layout),
       groupClass: "side-panel__action-group side-panel__action-group--dock",
@@ -197,7 +194,7 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
         },
         {
           dock: "right",
-          label: t("browser.dockRight"),
+          label: t("chat.sidePanel.dockSide"),
           icon: icons.panelRightOpen,
           className: "side-panel__dock-right",
         },

@@ -369,6 +369,24 @@ describe("chat sidebar region", () => {
     expect(region.callbacks?.setDock).toHaveBeenCalledWith("right");
   });
 
+  it("keeps dock-to-side separate from expansion in a narrow bottom panel", async () => {
+    const region = await createRegion(
+      setSidebarDock(openSlot({ columns: [] }, "detail"), "bottom"),
+    );
+    region.narrow = true;
+    await region.updateComplete;
+
+    const dockSide = root(region).querySelector<HTMLButtonElement>(".side-panel__dock-right");
+    const expand = root(region).querySelector<HTMLButtonElement>(".side-panel__expand");
+    expect(dockSide?.getAttribute("aria-label")).toBe("Dock to side");
+    expect(expand?.getAttribute("aria-label")).toBe("Expand");
+
+    dockSide?.click();
+    expand?.click();
+    expect(region.callbacks?.setDock).toHaveBeenCalledWith("right");
+    expect(region.callbacks?.setExpanded).toHaveBeenCalledWith(true);
+  });
+
   it("hides the runtime completely when the persisted panel state is minimized", async () => {
     const region = await createRegion({ ...openSlot({ columns: [] }, "detail"), open: false });
     expect(root(region).querySelector(".side-panel")).toBeNull();

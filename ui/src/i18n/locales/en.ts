@@ -5776,7 +5776,8 @@ export const en: TranslationMap = {
     sidePanel: {
       label: "Side panel",
       addTab: "Add side panel tab",
-      expand: "Expand side panel",
+      dockSide: "Dock to side",
+      expand: "Expand",
       restore: "Restore side panel",
       minimize: "Minimize side panel",
       resize: "Resize side panel",
