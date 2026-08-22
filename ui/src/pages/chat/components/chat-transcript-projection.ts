@@ -76,6 +76,7 @@ type LoadedReplySource = {
   rowKey: string;
   preview: MessageReplyTarget & {
     sourceMessageId: string;
+    role: string;
     // Display labels can change independently of the stable identity seed;
     // carry the source sender so its reply avatar cannot drift in color.
     sender?: MessageGroup["sender"];
@@ -106,6 +107,7 @@ function projectResolvedReplyPreview(
   return {
     messageId: sourceMessageId,
     sourceMessageId,
+    role: normalized.role,
     senderLabel: resolveMessageGroupSenderLabel(group, props),
     ...(normalized.sender ? { sender: normalized.sender } : {}),
     text,
@@ -538,6 +540,7 @@ export function projectChatTranscript(
             preview: {
               messageId: source.key,
               sourceMessageId,
+              role: group.role,
               senderLabel,
               ...(group.sender ? { sender: group.sender } : {}),
               text,

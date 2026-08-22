@@ -31,7 +31,7 @@ import {
 } from "../../../lib/chat/tool-cards.ts";
 import type { EmbedSandboxMode } from "../../../lib/chat/tool-display.ts";
 import { resolveToolDisplay } from "../../../lib/chat/tool-display.ts";
-import { resolveAvatarInitials } from "../../../lib/identity-avatar.ts";
+import { resolveAvatarInitials, resolveIdentityHue } from "../../../lib/identity-avatar.ts";
 import type { LinkFaviconFetcher } from "../link-favicon-loader.ts";
 import { workspaceResultConflictFromTranscript } from "../workspace-conflict.ts";
 import { renderAssistantAttachments } from "./chat-message-attachments.ts";
@@ -120,6 +120,7 @@ function renderInlineToolCards(
  */
 type ReplyPreview = {
   sourceMessageId?: string;
+  role?: string;
   senderLabel?: string | null;
   sender?: NormalizedMessage["sender"];
   text: string;
@@ -143,6 +144,10 @@ export function renderReplyPreview(
       : t("chat.messages.message");
   const content = preview?.text.trim() ?? "";
   const avatar = resolveAvatarInitials(preview?.sender ?? { name });
+  const senderHue =
+    preview?.sender && normalizeRoleForGrouping(preview.role ?? "") === "user"
+      ? resolveIdentityHue(preview.sender)
+      : null;
   const resolveMissingPreview = (element?: Element) => {
     if (element && replyToId && !preview) {
       onResolveReply?.(replyToId);
@@ -157,7 +162,13 @@ export function renderReplyPreview(
         ? html`<span class="session-run-spinner" aria-hidden="true"></span>`
         : avatar.initials}</span
     >
-    <span class="chat-reply-preview__label">${name}</span>
+    <span
+      class="chat-reply-preview__label${senderHue === null
+        ? ""
+        : " chat-reply-preview__label--sender-tint"}"
+      style=${senderHue === null ? nothing : `--chat-sender-hue: ${senderHue}`}
+      >${name}</span
+    >
     ${content
       ? html`<span class="chat-reply-preview__text"
           >${truncateUtf16Safe(content, 120)}${content.length > 120 ? "..." : ""}</span

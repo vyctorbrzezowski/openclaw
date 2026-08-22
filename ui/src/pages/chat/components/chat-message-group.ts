@@ -62,6 +62,7 @@ type ActiveContinuation = {
 
 type ReplyPreview = MessageReplyTarget & {
   sourceMessageId: string;
+  role?: string;
   sender?: MessageGroup["sender"];
 };
 
