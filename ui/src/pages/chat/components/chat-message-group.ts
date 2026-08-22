@@ -570,9 +570,6 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
           ? html`
               <div class="chat-group-author">
                 <span class="chat-sender-name">${who}</span>
-                ${normalizedRole === "assistant"
-                  ? html`<span class="chat-group-author__role">${t("newSession.agent")}</span>`
-                  : nothing}
               </div>
             `
           : nothing}
