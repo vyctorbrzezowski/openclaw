@@ -38,9 +38,8 @@ type TestWebKitWindow = Window & {
 type MacosTitlebarControlsState = HTMLElement & {
   navCollapsed: boolean;
   historyOnly: boolean;
-  newSessionDisabledReason?: string;
+  onToggleSidebar?: () => void;
   onOpenPalette?: () => void;
-  onOpenNewSession?: () => void;
   updateComplete: Promise<boolean>;
 };
 
@@ -192,48 +191,30 @@ describe("OpenClaw native shell", () => {
     expect(navigate).toHaveBeenCalledWith("new-session", { search: "?agent=agent%2Fa" });
   });
 
-  it("keeps the new-thread control in the native titlebar only while collapsed", async () => {
+  it("orders collapsed native titlebar actions after history without a new-session control", async () => {
+    const onToggleSidebar = vi.fn();
     const onOpenPalette = vi.fn();
-    const onOpenNewSession = vi.fn();
     const controls = document.createElement(
       "openclaw-macos-titlebar-controls",
     ) as unknown as MacosTitlebarControlsState;
-    controls.navCollapsed = false;
+    controls.navCollapsed = true;
     controls.historyOnly = false;
+    controls.onToggleSidebar = onToggleSidebar;
     controls.onOpenPalette = onOpenPalette;
-    controls.onOpenNewSession = onOpenNewSession;
     document.body.append(controls);
     await controls.updateComplete;
 
+    expect(
+      [...controls.querySelectorAll<HTMLButtonElement>("button")].map((button) =>
+        button.getAttribute("aria-label"),
+      ),
+    ).toEqual(["Back", "Forward", "Open command palette", "Expand sidebar"]);
+    expect(controls.querySelector('[aria-label="New session"]')).toBeNull();
     controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__search")?.click();
-    expect(controls.querySelector(".macos-titlebar-controls__new-session")).toBeNull();
-
-    controls.navCollapsed = true;
-    await controls.updateComplete;
-    controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__new-session")?.click();
+    controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__sidebar-toggle")?.click();
 
     expect(onOpenPalette).toHaveBeenCalledOnce();
-    expect(onOpenNewSession).toHaveBeenCalledOnce();
-    controls.remove();
-  });
-
-  it("disables the native titlebar new-session control with its access reason", async () => {
-    const onOpenNewSession = vi.fn();
-    const controls = document.createElement(
-      "openclaw-macos-titlebar-controls",
-    ) as unknown as MacosTitlebarControlsState;
-    controls.navCollapsed = true;
-    controls.newSessionDisabledReason = "Operator write access is required.";
-    controls.onOpenNewSession = onOpenNewSession;
-    document.body.append(controls);
-    await controls.updateComplete;
-
-    const button = controls.querySelector<HTMLButtonElement>(
-      ".macos-titlebar-controls__new-session",
-    );
-    expect(button?.disabled).toBe(true);
-    button?.click();
-    expect(onOpenNewSession).not.toHaveBeenCalled();
+    expect(onToggleSidebar).toHaveBeenCalledOnce();
     controls.remove();
   });
 
@@ -424,11 +405,10 @@ describe("OpenClaw native shell", () => {
 });
 
 describe("OpenClaw shell update affordance", () => {
-  it("renders floating attention and loud update states only while navigation is collapsed", async () => {
+  it("omits floating attention while preserving collapsed update states", async () => {
     const container = document.createElement("div");
     document.body.append(container);
     const shared = {
-      mobileNavLayout: false,
       onboarding: false,
       updateAvailable: {
         currentVersion: "2026.7.1",
@@ -459,7 +439,7 @@ describe("OpenClaw shell update affordance", () => {
     expect(card).not.toBeNull();
     expect(
       container.querySelector("openclaw-sidebar-attention.sidebar-attention--floating"),
-    ).not.toBeNull();
+    ).toBeNull();
     await card?.updateComplete;
     expect(card?.canUpdate).toBe(true);
     expect(card?.querySelector(".sidebar-update-card")).toBeNull();
@@ -510,7 +490,6 @@ describe("OpenClaw shell update affordance", () => {
       expect(navigationSurfaceHidden).toBe(true);
       const shared = {
         navigationSurfaceHidden,
-        mobileNavLayout: true,
         onboarding: false,
         updateAvailable: {
           currentVersion: "2026.7.1",
@@ -546,7 +525,6 @@ describe("OpenClaw shell update affordance", () => {
   it("keeps the stale-client refresh visible during onboarding", () => {
     const container = document.createElement("div");
     const shared = {
-      mobileNavLayout: false,
       onboarding: true,
       updateAvailable: null,
       updateBusy: false,
