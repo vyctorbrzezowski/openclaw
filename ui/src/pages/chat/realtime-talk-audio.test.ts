@@ -6,6 +6,11 @@ import {
   RealtimeTalkPcmOutputQueue,
 } from "./realtime-talk-audio.ts";
 
+function setHidden(hidden: boolean): void {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue(hidden ? "hidden" : "visible");
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+
 class MockAudioBufferSource {
   buffer: unknown = null;
   readonly connect = vi.fn();
@@ -52,6 +57,7 @@ describe("RealtimeTalkMediaStreamMeter", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("samples a WebRTC input stream and resets its level when stopped", () => {
@@ -93,6 +99,46 @@ describe("RealtimeTalkMediaStreamMeter", () => {
     expect(disconnectSource).toHaveBeenCalledOnce();
     expect(disconnectAnalyser).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("pauses metering while hidden and samples immediately when visible again", () => {
+    vi.useFakeTimers();
+    const close = vi.fn(async () => undefined);
+    class MockAudioContext {
+      readonly close = close;
+      createMediaStreamSource() {
+        return { connect: vi.fn(), disconnect: vi.fn() };
+      }
+      createAnalyser() {
+        return {
+          fftSize: 0,
+          smoothingTimeConstant: 0,
+          disconnect: vi.fn(),
+          getFloatTimeDomainData: (samples: Float32Array) =>
+            samples.fill(0.1 + onLevel.mock.calls.length * 0.05),
+        };
+      }
+    }
+    vi.stubGlobal("AudioContext", MockAudioContext);
+    const onLevel = vi.fn();
+    const meter = new RealtimeTalkMediaStreamMeter(onLevel);
+
+    meter.start({} as MediaStream);
+    vi.advanceTimersByTime(250);
+    const beforeHide = onLevel.mock.calls.length;
+    expect(beforeHide).toBeGreaterThan(1);
+
+    setHidden(true);
+    vi.advanceTimersByTime(1_000);
+    expect(onLevel).toHaveBeenCalledTimes(beforeHide);
+
+    setHidden(false);
+    const afterResume = onLevel.mock.calls.length;
+    expect(afterResume).toBeGreaterThan(beforeHide);
+    vi.advanceTimersByTime(100);
+    expect(onLevel).toHaveBeenCalledTimes(afterResume + 1);
+
+    meter.stop();
   });
 
   it("reclaims its interval when the initial level callback stops it", () => {

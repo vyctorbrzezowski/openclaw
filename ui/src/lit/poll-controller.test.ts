@@ -1,7 +1,12 @@
-// @vitest-environment node
+// @vitest-environment jsdom
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PollController } from "./poll-controller.ts";
+
+function setHidden(hidden: boolean): void {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue(hidden ? "hidden" : "visible");
+  document.dispatchEvent(new Event("visibilitychange"));
+}
 
 class TestHost implements ReactiveControllerHost {
   readonly controllers: ReactiveController[] = [];
@@ -32,7 +37,10 @@ class TestHost implements ReactiveControllerHost {
   }
 }
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe("PollController", () => {
   it("starts explicitly, ticks idempotently, and stops", () => {
@@ -65,5 +73,32 @@ describe("PollController", () => {
     host.disconnect();
     vi.advanceTimersByTime(500);
     expect(tick).toHaveBeenCalledOnce();
+  });
+
+  it("pauses ticks while hidden, catches up immediately on visible, and stops listening on disconnect", () => {
+    vi.useFakeTimers();
+    const host = new TestHost();
+    const tick = vi.fn();
+    const polling = new PollController(host, 1_000, tick);
+    expect(host.controllers).toContain(polling);
+
+    host.connect();
+    vi.advanceTimersByTime(1_000);
+    expect(tick).toHaveBeenCalledOnce();
+
+    setHidden(true);
+    vi.advanceTimersByTime(5_000);
+    expect(tick).toHaveBeenCalledOnce();
+
+    setHidden(false);
+    expect(tick).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(1_000);
+    expect(tick).toHaveBeenCalledTimes(3);
+
+    host.disconnect();
+    setHidden(true);
+    setHidden(false);
+    vi.advanceTimersByTime(2_000);
+    expect(tick).toHaveBeenCalledTimes(3);
   });
 });

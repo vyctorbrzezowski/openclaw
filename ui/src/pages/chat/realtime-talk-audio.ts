@@ -1,4 +1,6 @@
 // Control UI chat module implements realtime talk audio behavior.
+import { PollController } from "../../lit/poll-controller.ts";
+
 export function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunkSize = 0x8000;
@@ -139,7 +141,15 @@ export class RealtimeTalkMediaStreamMeter {
   private context: AudioContext | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private analyser: AnalyserNode | null = null;
-  private timer: ReturnType<typeof globalThis.setInterval> | null = null;
+  // Metering feeds only decorative mic-level bars, so the sample interval is
+  // gated on tab visibility; WebRTC keeps background timers unthrottled,
+  // making this gate the only brake on 10 Hz invisible sampling mid-session.
+  private readonly metering = new PollController(
+    null,
+    100,
+    () => this.publishCurrentLevel(),
+    false,
+  );
   private ownsContext = false;
   private readonly levelMeter = new RealtimeTalkAudioLevelMeter();
   private readonly samples = new Float32Array(512);
@@ -160,9 +170,9 @@ export class RealtimeTalkMediaStreamMeter {
       analyser.fftSize = this.samples.length;
       analyser.smoothingTimeConstant = 0;
       source.connect(analyser);
-      this.timer = globalThis.setInterval(() => this.publishCurrentLevel(), 100);
       // The initial level callback can synchronously stop its owning transport.
       // Own the interval first so that reentrant cleanup cannot leave it behind.
+      this.metering.start();
       this.publishCurrentLevel();
     } catch {
       // Metering is feedback only; capture must still work if Web Audio analysis
@@ -172,10 +182,7 @@ export class RealtimeTalkMediaStreamMeter {
   }
 
   stop(notify = true): void {
-    if (this.timer !== null) {
-      globalThis.clearInterval(this.timer);
-      this.timer = null;
-    }
+    this.metering.stop();
     this.source?.disconnect();
     this.source = null;
     this.analyser?.disconnect();
