@@ -191,32 +191,40 @@ describe("OpenClaw native shell", () => {
     expect(navigate).toHaveBeenCalledWith("new-session", { search: "?agent=agent%2Fa" });
   });
 
-  it("orders collapsed native titlebar actions after history without a new-session control", async () => {
-    const onToggleSidebar = vi.fn();
-    const onOpenPalette = vi.fn();
-    const controls = document.createElement(
-      "openclaw-macos-titlebar-controls",
-    ) as unknown as MacosTitlebarControlsState;
-    controls.navCollapsed = true;
-    controls.historyOnly = false;
-    controls.onToggleSidebar = onToggleSidebar;
-    controls.onOpenPalette = onOpenPalette;
-    document.body.append(controls);
-    await controls.updateComplete;
+  it.each([
+    { navCollapsed: false, toggleLabel: "Collapse sidebar" },
+    { navCollapsed: true, toggleLabel: "Expand sidebar" },
+  ])(
+    "orders $toggleLabel after titlebar history and search",
+    async ({ navCollapsed, toggleLabel }) => {
+      const onToggleSidebar = vi.fn();
+      const onOpenPalette = vi.fn();
+      const controls = document.createElement(
+        "openclaw-macos-titlebar-controls",
+      ) as unknown as MacosTitlebarControlsState;
+      controls.navCollapsed = navCollapsed;
+      controls.historyOnly = false;
+      controls.onToggleSidebar = onToggleSidebar;
+      controls.onOpenPalette = onOpenPalette;
+      document.body.append(controls);
+      await controls.updateComplete;
 
-    expect(
-      [...controls.querySelectorAll<HTMLButtonElement>("button")].map((button) =>
-        button.getAttribute("aria-label"),
-      ),
-    ).toEqual(["Back", "Forward", "Open command palette", "Expand sidebar"]);
-    expect(controls.querySelector('[aria-label="New session"]')).toBeNull();
-    controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__search")?.click();
-    controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__sidebar-toggle")?.click();
+      expect(
+        [...controls.querySelectorAll<HTMLButtonElement>("button")].map((button) =>
+          button.getAttribute("aria-label"),
+        ),
+      ).toEqual(["Back", "Forward", "Open command palette", toggleLabel]);
+      expect(controls.querySelector('[aria-label="New session"]')).toBeNull();
+      controls.querySelector<HTMLButtonElement>(".macos-titlebar-controls__search")?.click();
+      controls
+        .querySelector<HTMLButtonElement>(".macos-titlebar-controls__sidebar-toggle")
+        ?.click();
 
-    expect(onOpenPalette).toHaveBeenCalledOnce();
-    expect(onToggleSidebar).toHaveBeenCalledOnce();
-    controls.remove();
-  });
+      expect(onOpenPalette).toHaveBeenCalledOnce();
+      expect(onToggleSidebar).toHaveBeenCalledOnce();
+      controls.remove();
+    },
+  );
 
   it("retains a native new-session request until a context exists", () => {
     const navigate = vi.fn();
