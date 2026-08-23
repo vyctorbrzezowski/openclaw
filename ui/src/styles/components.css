@@ -2509,6 +2509,24 @@ openclaw-chat-session-rail {
   color: var(--danger);
 }
 
+/* Mermaid diagrams replace their code block in place; the SVG carries its own
+   theme colors, so the figure only owns sizing and overflow. */
+figure.mermaid-diagram {
+  margin-block: 1em;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  overflow-x: auto;
+}
+
+figure.mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
 /* ===========================================
    Lists
    =========================================== */

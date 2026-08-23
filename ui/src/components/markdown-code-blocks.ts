@@ -15,6 +15,7 @@ import xml from "highlight.js/lib/languages/xml";
 import yaml from "highlight.js/lib/languages/yaml";
 import { t } from "../i18n/index.ts";
 import { copyToClipboard } from "../lib/clipboard.ts";
+import { enhanceMarkdownMermaidBlocks } from "./markdown-mermaid.ts";
 import type { MarkdownRenderEnv } from "./markdown-render-options.ts";
 import { escapeMarkdownHtml, isMarkdownBlockArtText } from "./markdown-text.ts";
 
@@ -229,6 +230,7 @@ export function initializeMarkdownCodeBlocks(root: ParentNode): void {
     releaseDetachedCodeBlockNodes();
     for (const pending of roots) {
       scanMarkdownCodeBlocks(pending);
+      enhanceMarkdownMermaidBlocks(pending);
     }
   });
 }
