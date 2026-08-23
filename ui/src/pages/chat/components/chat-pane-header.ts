@@ -57,6 +57,8 @@ type ChatPaneHeaderProps = {
   workspaceLabel: string | null;
   /** Gateway-resolved project icon for the chip; absent keeps the folder glyph. */
   workspaceIcon: { routeUrl: string; authTokens: readonly string[]; authReady: boolean } | null;
+  workspaceIconAvailability: boolean | null;
+  onWorkspaceIconAvailabilityChange?: (available: boolean | null) => void;
   parentSession: ChatPaneParentSession | null;
   branch: string | null;
   branches: SessionBranch[];
@@ -179,11 +181,14 @@ function renderIdentityCrumbs(
     segments.push(parentCrumb);
   }
   segments.push(renderSessionIdentity(props));
+  const compactProjectIdentity = Boolean(
+    projectCrumb && props.workspaceIcon && props.workspaceIconAvailability !== false,
+  );
   return html`
     <div class="chat-pane__crumbs">
       ${segments.map(
         (segment, index) =>
-          html`${index > 0
+          html`${index > 0 && !(compactProjectIdentity && index === 1)
             ? html`<span class="chat-pane__crumb-sep" aria-hidden="true">/</span>`
             : nothing}${segment}`,
       )}
@@ -202,16 +207,23 @@ function renderSessionIdentity(props: ChatPaneHeaderProps) {
 }
 
 function renderSessionParticipants(props: ChatPaneHeaderProps) {
-  return props.showOwnerChip && props.session?.participants?.length
+  const participants = props.session?.participants;
+  return props.showOwnerChip && participants?.length
     ? html`<openclaw-viewer-facepile
         class="chat-pane__participants"
-        .staticUsers=${props.session.participants.map((participant) => ({
+        .staticUsers=${participants.map((participant) => ({
           id: participant.id ?? "",
           name: participant.label,
           avatarUrl: participant.avatarUrl,
           watchedSessions: [],
         }))}
-        .maxVisible=${4}
+        .staticTooltips=${participants.map(
+          (participant) =>
+            `${participant.label ?? participant.id ?? ""} · ${t(
+              participant.type === "agent" ? "newSession.agent" : "chat.sessionSharing.selected",
+            )}`,
+        )}
+        .maxVisible=${2}
         .personActivity=${props.personActivity}
         variant="session"
       ></openclaw-viewer-facepile>`
@@ -225,7 +237,12 @@ function renderSessionControls(props: ChatPaneHeaderProps) {
   const ownerActor = props.showOwnerChip ? props.session?.owner?.actor : undefined;
   const ownerAttribution = props.session?.owner?.assignedAt !== undefined ? "owned" : "created";
   const owner = renderStandalonePersonLink(
-    renderSessionOwnerChip(ownerActor, "header", ownerAttribution, props.ownerViewing),
+    renderSessionOwnerChip(
+      ownerActor,
+      "header",
+      ownerAttribution,
+      props.ownerViewing ? true : undefined,
+    ),
     ownerActor?.id ? personActivityLink(ownerActor.id, props.personActivity) : null,
   );
   if (
@@ -330,9 +347,16 @@ function renderProjectCrumb(
           workspace: props.workspaceLabel,
         })}
       >
-        ${copied ? icons.check : renderWorkspaceChipIcon(props.workspaceIcon)}<span
-          >${copied ? t("chat.sessionHeader.copied") : props.workspaceLabel}</span
-        >
+        ${copied
+          ? icons.check
+          : renderWorkspaceChipIcon(
+              props.workspaceIcon,
+              props.onWorkspaceIconAvailabilityChange,
+            )}${copied
+          ? html`<span>${t("chat.sessionHeader.copied")}</span>`
+          : props.workspaceIcon && props.workspaceIconAvailability !== false
+            ? nothing
+            : html`<span>${props.workspaceLabel}</span>`}
       </button>
       ${props.canReveal && props.workspaceRoot
         ? html`<wa-dropdown-item value="reveal">${revealLabel(props.platform)}</wa-dropdown-item>`
@@ -347,12 +371,16 @@ function renderProjectCrumb(
   `;
 }
 
-function renderWorkspaceChipIcon(icon: ChatPaneHeaderProps["workspaceIcon"]) {
+function renderWorkspaceChipIcon(
+  icon: ChatPaneHeaderProps["workspaceIcon"],
+  onAvailabilityChange: ChatPaneHeaderProps["onWorkspaceIconAvailabilityChange"],
+) {
   return icon
     ? html`<openclaw-workspace-icon
         .routeUrl=${icon.routeUrl}
         .authTokens=${icon.authTokens}
         .authReady=${icon.authReady}
+        .onAvailabilityChange=${onAvailabilityChange}
       ></openclaw-workspace-icon>`
     : icons.folder;
 }

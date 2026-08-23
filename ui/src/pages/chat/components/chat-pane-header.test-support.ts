@@ -34,6 +34,7 @@ export function mountChatPaneHeader(
     workspaceRoot: "/repo/openclaw",
     workspaceLabel: "openclaw",
     workspaceIcon: null,
+    workspaceIconAvailability: false,
     parentSession: null,
     branch: "feature/header",
     branches: [],
