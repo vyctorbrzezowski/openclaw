@@ -185,135 +185,6 @@ afterEach(() => {
 });
 
 describe("CronPage editor state sync", () => {
-  it("loads the exact routed job outside the current list and preserves the runs tab", async () => {
-    const job: CronJob = {
-      id: "routed.job",
-      name: "Routed nightly digest",
-      enabled: true,
-      createdAtMs: 0,
-      updatedAtMs: 0,
-      schedule: { kind: "every", everyMs: 60_000 },
-      sessionTarget: "isolated",
-      wakeMode: "now",
-      payload: { kind: "agentTurn", message: "digest" },
-      state: {},
-    };
-    const request = vi.fn(async (method: string) => {
-      if (method === "cron.get") {
-        return job;
-      }
-      if (method === "cron.status") {
-        return { enabled: true, jobs: 1, triggersEnabled: true };
-      }
-      if (method === "cron.list") {
-        return cronListResponse([]);
-      }
-      if (method === "cron.runs") {
-        return { entries: [], total: 0, offset: 0, hasMore: false };
-      }
-      if (method === "models.list") {
-        return { models: [] };
-      }
-      return {};
-    });
-    const context = createContext(
-      createGateway({ request } as unknown as GatewayBrowserClient, true),
-    );
-    const page = createPage(context, {
-      render: true,
-      routeData: { jobId: job.id, detailTab: "history" },
-    });
-
-    await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(job.id));
-    expect(request).toHaveBeenCalledWith("cron.get", { id: job.id });
-    expect(request).toHaveBeenCalledWith("cron.runs", expect.objectContaining({ id: job.id }));
-    expect(
-      page.querySelector('[data-test-id="cron-detail-tab-history"]')?.getAttribute("active"),
-    ).not.toBeNull();
-    expect(page.textContent).toContain(job.name);
-  });
-
-  it("pushes a canonical job URL on selection and returns to the list on Back", async () => {
-    const job: CronJob = {
-      id: "selected.job",
-      name: "Selected digest",
-      enabled: true,
-      createdAtMs: 0,
-      updatedAtMs: 0,
-      schedule: { kind: "every", everyMs: 60_000 },
-      sessionTarget: "isolated",
-      wakeMode: "now",
-      payload: { kind: "agentTurn", message: "digest" },
-      state: {},
-    };
-    const request = vi.fn(async (method: string) => {
-      if (method === "cron.list") {
-        return cronListResponse([job]);
-      }
-      if (method === "cron.status") {
-        return { enabled: true, jobs: 1, triggersEnabled: true };
-      }
-      if (method === "cron.runs") {
-        return { entries: [], total: 0, offset: 0, hasMore: false };
-      }
-      if (method === "models.list") {
-        return { models: [] };
-      }
-      return {};
-    });
-    const context = createContext(
-      createGateway({ request } as unknown as GatewayBrowserClient, true),
-    );
-    const page = createPage(context, { render: true });
-
-    await waitForCronPage(() =>
-      expect(page.querySelector('[data-test-id="cron-row-selected.job"]')).not.toBeNull(),
-    );
-    (page.querySelector('[data-test-id="cron-row-selected.job"]') as HTMLElement).click();
-    await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(job.id));
-    expect(context.navigate).toHaveBeenLastCalledWith("cron", {
-      pathname: "/automations/selected%2Ejob",
-    });
-
-    (page.querySelector('[data-test-id="cron-back"]') as HTMLButtonElement).click();
-    expect(context.navigate).toHaveBeenLastCalledWith("cron", { pathname: "/automations" });
-  });
-
-  it("renders a visible recovery link when the routed job no longer exists", async () => {
-    const request = vi.fn(async (method: string) => {
-      if (method === "cron.get") {
-        throw Object.assign(new Error("cron job not found"), {
-          details: { code: "CRON_JOB_NOT_FOUND", jobId: "missing.job" },
-        });
-      }
-      if (method === "cron.status") {
-        return { enabled: true, jobs: 0, triggersEnabled: true };
-      }
-      if (method === "cron.list") {
-        return cronListResponse([]);
-      }
-      if (method === "cron.runs") {
-        return { entries: [], total: 0, offset: 0, hasMore: false };
-      }
-      if (method === "models.list") {
-        return { models: [] };
-      }
-      return {};
-    });
-    const context = createContext(
-      createGateway({ request } as unknown as GatewayBrowserClient, true),
-    );
-    const page = createPage(context, {
-      render: true,
-      routeData: { jobId: "missing.job", detailTab: "settings" },
-    });
-
-    await waitForCronPage(() => expect(page.textContent).toContain("Automation not found"));
-    const link = page.querySelector<HTMLAnchorElement>('[data-test-id="cron-not-found-back"]');
-    expect(link?.getAttribute("href")).toBe("/automations");
-    expect(link?.textContent).toContain("All automations");
-  });
-
   it.each([
     { scenario: "an unsaved enable edit", active: false, edited: true, saved: false },
     { scenario: "an unsaved disable edit", active: true, edited: false, saved: false },
@@ -762,6 +633,138 @@ describe("CronPage editor state sync", () => {
     await removeRequested.promise;
     await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBeNull());
     await waitForCronPage(() => expect(page.cron.cronRunsScope).toBe("all"));
+  });
+
+  it("does not replace a newer route when an earlier removal finishes", async () => {
+    const removedJob: CronJob = {
+      id: "remove-me",
+      name: "Remove me",
+      enabled: true,
+      createdAtMs: 0,
+      updatedAtMs: 0,
+      schedule: { kind: "every", everyMs: 60_000 },
+      sessionTarget: "isolated",
+      wakeMode: "now",
+      payload: { kind: "agentTurn", message: "remove" },
+      state: {},
+    };
+    const nextJob = { ...removedJob, id: "next-job", name: "Next job" };
+    const removeResponse = createDeferred<unknown>();
+    let removed = false;
+    const request = vi.fn(async (method: string, params?: unknown) => {
+      if (method === "cron.get") {
+        return (params as { id: string }).id === nextJob.id ? nextJob : removedJob;
+      }
+      if (method === "cron.list") {
+        return cronListResponse(removed ? [nextJob] : [removedJob, nextJob]);
+      }
+      if (method === "cron.remove") {
+        await removeResponse.promise;
+        removed = true;
+        return {};
+      }
+      if (method === "cron.status") {
+        return { enabled: true, jobs: 2, triggersEnabled: true };
+      }
+      if (method === "cron.runs") {
+        return { entries: [], total: 0, offset: 0, hasMore: false };
+      }
+      if (method === "models.list") {
+        return { models: [] };
+      }
+      return {};
+    });
+    const gateway = createGateway({ request } as unknown as GatewayBrowserClient, true);
+    const context = createContext(gateway);
+    const page = createPage(context, {
+      render: true,
+      routeData: { kind: "job", jobId: removedJob.id, detailTab: "settings" },
+    });
+
+    await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(removedJob.id));
+    const removeButton = () =>
+      Array.from(page.querySelectorAll<HTMLButtonElement>(".cron-job-menu__item")).find(
+        (item) => item.textContent?.trim() === "Remove",
+      );
+    await waitForCronPage(() => expect(removeButton()?.disabled).toBe(false));
+    removeButton()?.click();
+    const confirmButton = () =>
+      Array.from(document.querySelectorAll<HTMLButtonElement>(".exec-approval-actions .btn")).find(
+        (button) => button.textContent?.trim() === "Remove",
+      );
+    await waitForCronPage(() => expect(confirmButton()).toBeDefined());
+    confirmButton()?.click();
+    await waitForCronPage(() =>
+      expect(request).toHaveBeenCalledWith("cron.remove", expect.anything()),
+    );
+
+    page.routeData = { kind: "job", jobId: nextJob.id, detailTab: "settings" };
+    page.requestUpdate();
+    await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(nextJob.id));
+    removeResponse.resolve({});
+    await waitForCronPage(() => expect(page.cron.cronBusy).toBe(false));
+
+    expect(context.replace).not.toHaveBeenCalled();
+  });
+
+  it("moves a clone draft to the list route and preserves it through route handoff", async () => {
+    const job: CronJob = {
+      id: "clone-source",
+      name: "Clone source",
+      enabled: true,
+      createdAtMs: 0,
+      updatedAtMs: 0,
+      schedule: { kind: "every", everyMs: 60_000 },
+      sessionTarget: "isolated",
+      wakeMode: "now",
+      payload: { kind: "agentTurn", message: "clone" },
+      state: {},
+    };
+    const request = vi.fn(async (method: string) => {
+      if (method === "cron.get") {
+        return job;
+      }
+      if (method === "cron.list") {
+        return cronListResponse([job]);
+      }
+      if (method === "cron.status") {
+        return { enabled: true, jobs: 1, triggersEnabled: true };
+      }
+      if (method === "cron.runs") {
+        return { entries: [], total: 0, offset: 0, hasMore: false };
+      }
+      if (method === "models.list") {
+        return { models: [] };
+      }
+      return {};
+    });
+    const gateway = createGateway({ request } as unknown as GatewayBrowserClient, true);
+    const context = createContext(gateway);
+    const page = createPage(context, {
+      render: true,
+      routeData: { kind: "job", jobId: job.id, detailTab: "settings" },
+    });
+
+    await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(job.id));
+    const cloneButton = () =>
+      Array.from(page.querySelectorAll<HTMLButtonElement>(".cron-job-menu__item")).find(
+        (item) => item.textContent?.trim() === "Clone",
+      );
+    await waitForCronPage(() => expect(cloneButton()).toBeDefined());
+    cloneButton()?.click();
+
+    expect(context.navigate).toHaveBeenLastCalledWith("cron", { pathname: "/automations" });
+    page.routeData = { kind: "list" };
+    page.requestUpdate();
+    await page.updateComplete;
+
+    expect(page.cron.cronCreateOpen).toBe(true);
+    expect(page.cron.cronEditingJobId).toBeNull();
+    expect(page.cron.cronForm.name).toBe("Clone source copy");
+    gateway.emitRetiredEvent({ event: "cron" } as never);
+    await waitForCronPage(() => expect(page.cron.cronLoading).toBe(false));
+    expect(page.cron.cronCreateOpen).toBe(true);
+    expect(page.cron.cronForm.name).toBe("Clone source copy");
   });
 
   it("renders read-only controls and rejects a stale admin action after a scope downgrade", async () => {

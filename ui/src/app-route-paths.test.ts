@@ -453,6 +453,32 @@ describe("Automation route paths", () => {
     expect(inferBasePathFromPathname(pathname)).toBe("/ui");
   });
 
+  it("prefers the deepest structurally valid automation route during base-path inference", () => {
+    expect(inferBasePathFromPathname("/control/cron/automations/job")).toBe("/control/cron");
+    expect(inferBasePathFromPathname("/control/automations/cron/runs")).toBe("/control");
+    expect(inferBasePathFromPathname("/control/Automations/NightlyDigest/RuNs")).toBe("/control");
+    expect(inferBasePathFromPathname("/automations/automations/job")).toBe("");
+  });
+
+  it.each([
+    "/control/automations/job/unknown",
+    "/control/automations//runs",
+    "/control/cron/job/unknown",
+    "/control/cron//runs",
+  ])("retains the mount path for rejected automation descendant %s", (pathname) => {
+    expect(inferBasePathFromPathname(pathname)).toBe("/control");
+  });
+
+  it.each([
+    "/control/chat/main/01JSESSIONA",
+    "/control/settings/agents/research/memory",
+    "/control/workboard/ops",
+    "/control/settings/memory/dreams",
+    "/control/settings/plugins/discover",
+  ])("retains existing dynamic-route mount inference for %s", (pathname) => {
+    expect(inferBasePathFromPathname(pathname)).toBe("/control");
+  });
+
   it("rejects a blank job id", () => {
     expect(() => pathForAutomation(" ")).toThrow("Invalid automation job id");
   });

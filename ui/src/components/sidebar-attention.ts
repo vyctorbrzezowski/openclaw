@@ -296,6 +296,7 @@ class SidebarAttention extends OpenClawLightDomContentsElement {
       updateSchedule: overlays?.updateSchedule ?? null,
       updateStatusBanner: overlays?.updateStatusBanner ?? null,
       now: Date.now(),
+      basePath: this.context?.basePath ?? "",
     });
   }
 

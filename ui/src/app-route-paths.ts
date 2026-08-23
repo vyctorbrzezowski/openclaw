@@ -268,7 +268,7 @@ export function routeIdFromPath(pathname: string, basePath = ""): RouteId | null
     const definition = APP_ROUTE_DEFINITIONS[routeId];
     const paths: readonly string[] =
       "aliases" in definition ? [definition.path, ...definition.aliases] : [definition.path];
-    if (paths.some((candidate) => normalizePath(candidate) === routePathKey)) {
+    if (paths.some((candidate) => candidate === routePathKey)) {
       return routeId;
     }
   }
@@ -295,7 +295,7 @@ function collectRoutePaths(): string[] {
 // hosting); accepted tradeoff: namespaces nested under a real mount prefix
 // ("/ui/settings/other/config") are not rescued here.
 function isRouteOwnedBasePath(basePath: string): boolean {
-  const routePaths = collectRoutePaths().map((path) => normalizePath(path));
+  const routePaths = collectRoutePaths();
   if (routePaths.includes(basePath)) {
     return true;
   }
@@ -322,15 +322,22 @@ export function inferBasePathFromPathname(pathname: string): string {
   if (normalizedPath === "/") {
     return "";
   }
-  const segments = normalizedPath.split("/").filter(Boolean);
+  const segments = normalizedPath.slice(1).split("/");
   const routePaths = collectRoutePaths();
+  let rejectedAutomationIndex: number | null = null;
   for (let index = 0; index < segments.length; index += 1) {
     const candidate = `/${segments.slice(index).join("/")}`;
     const routeId = routeIdFromPath(candidate);
     if (!routeId) {
       continue;
     }
-    const routePath = routePaths.find((path) => normalizePath(path) === candidate);
+    const routePath = routePaths.find((path) => path === candidate);
+    // The broad startup gate admits rejected descendants for visible recovery.
+    // Base-path inference must keep scanning until the suffix has the route grammar.
+    if (routeId === "cron" && !routePath && !/^\/[^/]+\/[^/]+(?:\/runs)?$/iu.test(candidate)) {
+      rejectedAutomationIndex ??= index;
+      continue;
+    }
     const previousSegment = segments[index - 1];
     const firstRouteSegment = (routePath ?? APP_ROUTE_DEFINITIONS[routeId].path)
       .split("/")
@@ -345,6 +352,13 @@ export function inferBasePathFromPathname(pathname: string): string {
     // Mis-inferring a route-owned base ("/settings/config" -> "/settings" via
     // the "/config" alias) rescopes stored gateway settings and asset URLs, so
     // a connected browser deep-links straight into the login gate.
+    return isRouteOwnedBasePath(basePath) ? "" : basePath;
+  }
+  if (rejectedAutomationIndex !== null) {
+    if (rejectedAutomationIndex === 0) {
+      return "";
+    }
+    const basePath = `/${segments.slice(0, rejectedAutomationIndex).join("/")}`;
     return isRouteOwnedBasePath(basePath) ? "" : basePath;
   }
   if (!isMountRoot || segments.length === 0) {

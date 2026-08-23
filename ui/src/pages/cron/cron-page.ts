@@ -67,6 +67,9 @@ class CronPage extends OpenClawLightDomElement {
   @state() private missingJobId: string | null = null;
 
   private modelSuggestionsState: CronState | null = null;
+  // Background route revalidation may update existence, but only the form
+  // owner knows whether replacing its fields would discard local input.
+  private cronFormDirty = false;
   private routeSyncKey: string | null = null;
   private routeSyncGeneration = 0;
   private readonly gateway = new GatewayPageController(this, {
@@ -122,7 +125,7 @@ class CronPage extends OpenClawLightDomElement {
             this.gateway.client &&
             event.event === "cron"
           ) {
-            void this.refreshCron({ tableFilters: true });
+            void this.refreshCron({ tableFilters: true, routedJob: true });
           }
         }),
     );
@@ -142,6 +145,7 @@ class CronPage extends OpenClawLightDomElement {
     this.agentsList = connected ? this.context.agents.state.agentsList : null;
     this.cronModelSuggestions = [];
     this.modelSuggestionsState = null;
+    this.cronFormDirty = false;
     this.missingJobId = null;
     this.routeSyncKey = null;
     this.routeSyncGeneration += 1;
@@ -160,7 +164,7 @@ class CronPage extends OpenClawLightDomElement {
     }
     if (!this.cron.cronStatus && !this.cron.cronLoading) {
       void this.refreshCron({ tableFilters: true });
-    } else if (this.routeData?.jobId) {
+    } else if (this.routeData?.kind === "job") {
       void this.syncRoutedJob();
     } else if (!this.cron.cronRuns.length && !this.cron.cronRunsLoadingMore) {
       void this.loadRuns(this.cron.cronRunsScope === "all" ? null : this.cron.cronRunsJobId);
@@ -199,25 +203,29 @@ class CronPage extends OpenClawLightDomElement {
   }
 
   private routeKey(jobId: string | null, detailTab: CronDetailTab) {
-    return `${jobId ?? ""}\u0000${detailTab}`;
+    return jobId === null ? "list\u0000" : `${jobId}\u0000${detailTab}`;
   }
 
-  private async syncRoutedJob() {
+  private async syncRoutedJob(force = false) {
     const routeData = this.routeData;
     const cronState = this.cron;
     const client = cronState.client;
     if (!routeData || !cronState.connected || !client) {
       return;
     }
-    const key = this.routeKey(routeData.jobId, routeData.detailTab);
-    if (this.routeSyncKey === key) {
+    const key =
+      routeData.kind === "job"
+        ? this.routeKey(routeData.jobId, routeData.detailTab)
+        : `${routeData.kind}\u0000${routeData.kind === "invalid" ? routeData.pathname : ""}`;
+    if (this.routeSyncKey === key && (!force || routeData.kind !== "job")) {
       return;
     }
     this.routeSyncKey = key;
     const generation = ++this.routeSyncGeneration;
-    if (!routeData.jobId) {
+    if (routeData.kind !== "job") {
       this.missingJobId = null;
       cancelCronEdit(cronState, this.context.agentSelection.state.selectedId);
+      this.cronFormDirty = false;
       cronState.cronCreateOpen = false;
       this.detailTab = "settings";
       if (cronState.cronRunsScope === "job") {
@@ -228,7 +236,7 @@ class CronPage extends OpenClawLightDomElement {
       this.requestCronUpdate(cronState);
       return;
     }
-    if (cronState.cronEditingJob?.id === routeData.jobId) {
+    if (!force && cronState.cronEditingJob?.id === routeData.jobId) {
       this.missingJobId = null;
       this.detailTab = routeData.detailTab;
       this.requestCronUpdate(cronState);
@@ -245,12 +253,18 @@ class CronPage extends OpenClawLightDomElement {
       ) {
         return;
       }
-      cancelCronEdit(cronState, this.context.agentSelection.state.selectedId);
-      cronState.cronCreateOpen = false;
       if (readCronJobNotFoundError(error)?.jobId === routeData.jobId) {
+        cancelCronEdit(cronState, this.context.agentSelection.state.selectedId);
+        this.cronFormDirty = false;
+        cronState.cronCreateOpen = false;
         this.missingJobId = routeData.jobId;
         cronState.cronError = null;
       } else {
+        if (!(force && this.cronFormDirty && cronState.cronEditingJob?.id === routeData.jobId)) {
+          cancelCronEdit(cronState, this.context.agentSelection.state.selectedId);
+          this.cronFormDirty = false;
+          cronState.cronCreateOpen = false;
+        }
         this.routeSyncKey = null;
         this.missingJobId = null;
         cronState.cronError = formatUiError(error);
@@ -267,21 +281,26 @@ class CronPage extends OpenClawLightDomElement {
     }
     this.missingJobId = null;
     cronState.cronCreateOpen = false;
-    startCronEdit(cronState, job);
+    if (!(force && this.cronFormDirty && cronState.cronEditingJob?.id === job.id)) {
+      startCronEdit(cronState, job);
+      this.cronFormDirty = false;
+    }
     this.detailTab = routeData.detailTab;
     updateCronRunsFilter(cronState, { cronRunsScope: "job" });
     cronState.cronRunsJobId = job.id;
     this.requestCronUpdate(cronState);
-    await loadCronRuns(cronState, job.id);
-    this.requestCronUpdate(cronState);
+    await this.loadRuns(job.id);
   }
 
-  private async refreshCron(options: { tableFilters: boolean }) {
+  private async refreshCron(options: { tableFilters: boolean; routedJob?: boolean }) {
     const cronState = this.cron;
     if (!cronState.connected || !cronState.client) {
       return;
     }
-    if (!this.routeData?.jobId) {
+    const routedJobId = this.routeData?.kind === "job" ? this.routeData.jobId : null;
+    if (routedJobId && cronState.cronEditingJob?.id === routedJobId) {
+      void this.loadRuns(routedJobId);
+    } else if (!routedJobId) {
       const activeCronJobId = cronState.cronRunsScope === "job" ? cronState.cronRunsJobId : null;
       void this.loadRuns(activeCronJobId);
     }
@@ -294,7 +313,7 @@ class CronPage extends OpenClawLightDomElement {
         loadCronJobsPage(current, { tableFilters: options.tableFilters }),
       ),
     ]);
-    await this.syncRoutedJob();
+    await this.syncRoutedJob(options.routedJob);
   }
 
   private loadRuns(jobId: string | null) {
@@ -344,6 +363,7 @@ class CronPage extends OpenClawLightDomElement {
       return;
     }
     this.cron.cronForm = normalizeCronFormState({ ...this.cron.cronForm, ...patch });
+    this.cronFormDirty = true;
     this.cron.cronFieldErrors = validateCronForm(this.cron.cronForm);
     this.requestCronUpdate();
   }
@@ -356,6 +376,7 @@ class CronPage extends OpenClawLightDomElement {
     this.detailTab = detailTab;
     this.cron.cronCreateOpen = false;
     startCronEdit(this.cron, job);
+    this.cronFormDirty = false;
     this.requestCronUpdate();
     void this.runCronTask(async (cronState) => {
       updateCronRunsFilter(cronState, { cronRunsScope: "job" });
@@ -375,6 +396,7 @@ class CronPage extends OpenClawLightDomElement {
       return;
     }
     cancelCronEdit(this.cron, this.context.agentSelection.state.selectedId);
+    this.cronFormDirty = false;
     this.cron.cronCreateOpen = true;
     this.detailTab = "settings";
     if (patch) {
@@ -390,8 +412,12 @@ class CronPage extends OpenClawLightDomElement {
     }
     // A clone is a prefilled create: the editor submits cron.add, not update.
     startCronClone(this.cron, job);
+    this.cronFormDirty = true;
     this.cron.cronCreateOpen = true;
     this.detailTab = "settings";
+    this.routeSyncKey = this.routeKey(null, "settings");
+    this.routeSyncGeneration += 1;
+    this.context.navigate("cron", { pathname: pathForRoute("cron", this.context.basePath) });
     this.requestCronUpdate();
   }
 
@@ -445,7 +471,14 @@ class CronPage extends OpenClawLightDomElement {
         await loadCronRuns(current, null);
       }
     });
-    if (wasSelected && this.context === context && this.cron === cronState) {
+    if (
+      wasSelected &&
+      this.context === context &&
+      this.cron === cronState &&
+      this.routeData?.kind === "job" &&
+      this.routeData.jobId === selectedJobId
+    ) {
+      this.cronFormDirty = false;
       this.routeSyncKey = this.routeKey(null, "settings");
       this.routeSyncGeneration += 1;
       this.context.replace("cron", { pathname: pathForRoute("cron", this.context.basePath) });
@@ -456,6 +489,7 @@ class CronPage extends OpenClawLightDomElement {
     this.routeSyncKey = this.routeKey(null, "settings");
     this.routeSyncGeneration += 1;
     this.missingJobId = null;
+    this.cronFormDirty = false;
     this.detailTab = "settings";
     cancelCronEdit(this.cron, this.context.agentSelection.state.selectedId);
     this.cron.cronCreateOpen = false;
@@ -470,7 +504,11 @@ class CronPage extends OpenClawLightDomElement {
 
   private submitForm(options: { runNow?: boolean } = {}) {
     this.runCronAdminTask(async (cronState) => {
+      const editingJob = cronState.cronEditingJob;
       const result = await addCronJob(cronState);
+      if (this.cron === cronState && (result.saved || cronState.cronEditingJob !== editingJob)) {
+        this.cronFormDirty = false;
+      }
       if (!result.saved) {
         return;
       }
@@ -537,7 +575,7 @@ class CronPage extends OpenClawLightDomElement {
           jobsSortBy: this.cron.cronJobsSortBy,
           jobsSortDir: this.cron.cronJobsSortDir,
           editingJob: this.cron.cronEditingJob,
-          missingJobId: this.missingJobId,
+          notFound: this.routeData?.kind === "invalid" || this.missingJobId !== null,
           createOpen: this.cron.cronCreateOpen,
           listTab: this.listTab,
           detailTab: this.detailTab,
@@ -584,7 +622,7 @@ class CronPage extends OpenClawLightDomElement {
             }
           },
           onFormChange: (patch) => this.patchForm(patch),
-          onRefresh: () => void this.refreshCron({ tableFilters: true }),
+          onRefresh: () => void this.refreshCron({ tableFilters: true, routedJob: true }),
           onSubmit: () => this.submitForm(),
           onSubmitRunNow: () => this.submitForm({ runNow: true }),
           onSelectJob: (job) => this.selectJob(job),

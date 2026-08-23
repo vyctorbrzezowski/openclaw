@@ -84,10 +84,11 @@ function approvalItems(queue: readonly ExecApprovalRequest[]) {
     updateSchedule: null,
     updateStatusBanner: null,
     now: 0,
+    basePath: "",
   }).filter((item) => item.kind === "pendingApproval");
 }
 
-function cronItems(cronJobs: readonly CronJob[], now = 0) {
+function cronItems(cronJobs: readonly CronJob[], now = 0, basePath = "") {
   return buildSidebarAttentionItems({
     cronJobs,
     modelAuthStatus: null,
@@ -96,6 +97,7 @@ function cronItems(cronJobs: readonly CronJob[], now = 0) {
     updateSchedule: null,
     updateStatusBanner: null,
     now,
+    basePath,
   });
 }
 
@@ -123,6 +125,7 @@ function authItems(agentId: string) {
     updateSchedule: null,
     updateStatusBanner: null,
     now: 0,
+    basePath: "",
   }).filter((item) => item.kind === "modelAuthExpired");
 }
 
@@ -216,6 +219,21 @@ describe("cron attention details", () => {
     }
   });
 
+  it("keeps a single-job target under the configured base path", () => {
+    const failed = cronJob("failed");
+
+    const action = cronItems([failed], 0, "/control")[0]?.action;
+
+    if (action?.kind !== "askCustodian") {
+      throw new Error("expected failed cron custodian action");
+    }
+    expect(action.alert.action?.target).toEqual({
+      kind: "navigate",
+      routeId: "cron",
+      options: { pathname: "/control/automations/failed" },
+    });
+  });
+
   it("hard-caps the model question for a large incident set", () => {
     const jobs = Array.from({ length: 100 }, (_, index) => {
       const job = cronJob(`failed-${index}`);
@@ -293,6 +311,7 @@ describe("model auth attention", () => {
       updateSchedule: null,
       updateStatusBanner: null,
       now: 0,
+      basePath: "",
     });
 
     expect(items.some((item) => item.kind === "modelAuthExpired")).toBe(true);
@@ -341,6 +360,7 @@ describe("update attention", () => {
       updateSchedule: schedule,
       updateStatusBanner: null,
       now: 0,
+      basePath: "",
       ...overrides,
     }).filter((item) => item.kind === "updateAvailable");
 

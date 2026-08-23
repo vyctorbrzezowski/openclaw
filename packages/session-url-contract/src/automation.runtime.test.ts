@@ -45,6 +45,13 @@ describe("parseControlUiAutomationPath", () => {
     });
   });
 
+  it("matches route literals case-insensitively without changing the job id", () => {
+    expect(parseControlUiAutomationPath("/AuToMaTiOnS/NightlyDigest/RuNs")).toEqual({
+      jobId: "NightlyDigest",
+      tab: "runs",
+    });
+  });
+
   it.each(["/automations/%", "/automations/job/runs/extra", "/automations/job/unknown"])(
     "rejects the malformed route %s",
     (path) => {

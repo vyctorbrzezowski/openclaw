@@ -61,6 +61,7 @@ export function buildSidebarAttentionItems(params: {
   updateSchedule: UpdateScheduleState | null;
   updateStatusBanner: ApplicationStatusBanner | null;
   now: number;
+  basePath: string;
 }): SidebarAttentionItem[] {
   const items: SidebarAttentionItem[] = [];
   const signatureOf = (ids: readonly string[]) => ids.toSorted().join("\n");
@@ -72,7 +73,7 @@ export function buildSidebarAttentionItems(params: {
       ? {
           kind: "navigate" as const,
           routeId: "cron" as const,
-          options: { pathname: pathForAutomation(job.id) },
+          options: { pathname: pathForAutomation(job.id, "settings", params.basePath) },
         }
       : { kind: "navigate" as const, routeId: "cron" as const };
   };

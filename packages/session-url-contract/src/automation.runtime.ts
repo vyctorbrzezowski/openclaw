@@ -55,12 +55,13 @@ export function parseControlUiAutomationPath(
     return null;
   }
   const segments = normalizedPath.slice(root.length + 1).split("/");
-  if (segments.length > 2 || !segments[0] || (segments[1] && segments[1] !== "runs")) {
+  const tab = segments[1]?.toLowerCase();
+  if (segments.length > 2 || !segments[0] || (tab && tab !== "runs")) {
     return null;
   }
   const jobId = decodePathSegment(segments[0]);
   if (jobId === null || !jobId.trim()) {
     return null;
   }
-  return { jobId, tab: segments[1] === "runs" ? "runs" : "settings" };
+  return { jobId, tab: tab === "runs" ? "runs" : "settings" };
 }

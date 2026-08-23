@@ -61,6 +61,56 @@ async function closeRecordedPage(recorded: Awaited<ReturnType<typeof newRecorded
 }
 
 suite.define(() => {
+  it.each([
+    { case: "malformed escape", path: "automations/%" },
+    { case: "unknown tab", path: "automations/job/unknown" },
+    { case: "empty id", path: "automations//runs" },
+    { case: "whitespace id", path: "automations/%20" },
+    { case: "legacy malformed escape", path: "cron/%" },
+    { case: "legacy unknown tab", path: "cron/job/unknown" },
+    { case: "legacy empty id", path: "cron//runs" },
+    { case: "legacy whitespace id", path: "cron/%20" },
+  ])("shows visible recovery for $case", async ({ path: routePath }) => {
+    await suite.withPage({ serviceWorkers: "block" }, async ({ page }) => {
+      const gateway = await installMockGateway(page, {
+        methodResponses: {
+          "cron.status": { enabled: true, jobs: 0, triggersEnabled: true },
+          "cron.list": {
+            jobs: [],
+            snapshotRevision: "automation-invalid-route",
+            total: 0,
+            offset: 0,
+            limit: 50,
+            hasMore: false,
+            nextOffset: null,
+          },
+          "cron.runs": { entries: [], total: 0, offset: 0, hasMore: false },
+          "models.authStatus": { providers: [], ts: 1 },
+        },
+      });
+
+      expect((await page.goto(`${suite.server.baseUrl}automations`))?.status()).toBe(200);
+      await page.evaluate((pathname) => {
+        const app = document.querySelector("openclaw-app") as HTMLElement & {
+          runtime?: {
+            context: {
+              navigate: (routeId: string, options: { pathname: string }) => void;
+            };
+          };
+        };
+        if (!app.runtime) {
+          throw new Error("OpenClaw application runtime is unavailable");
+        }
+        app.runtime.context.navigate("cron", { pathname: `/${pathname}` });
+      }, routePath);
+      await page.locator('[data-test-id="cron-not-found-back"]').waitFor();
+      expect(await page.locator('[data-panel-mode="notFound"]').textContent()).toContain(
+        "Automation not found",
+      );
+      expect(await gateway.getRequests("cron.get")).toEqual([]);
+    });
+  });
+
   it("opens the failed automation from Inbox and preserves it across reload", async () => {
     await rm(artifactDir, { force: true, recursive: true });
     const recorded = await newRecordedPage();
