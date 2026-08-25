@@ -6185,6 +6185,7 @@ describe("chat model controls", () => {
     expect(visibleOptions).toHaveLength(1);
     expect(visibleOptions[0]?.dataset.chatModelDefault).toBe("true");
   });
+
   it("groups legacy Codex model references under OpenAI", () => {
     const { state } = createChatHeaderState({
       model: "gpt-5.5",
