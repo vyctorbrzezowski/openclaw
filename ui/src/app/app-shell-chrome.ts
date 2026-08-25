@@ -20,6 +20,7 @@ import {
   TERMINAL_PANEL_TOGGLE_EVENT,
 } from "../components/panel-toggle-contract.ts";
 import { rememberSessionPanelToggle } from "../components/session-panel-toggle-buffer.ts";
+import { focusWithoutImmediateTooltip } from "../components/tooltip.ts";
 import type { BoardFace } from "../lib/board/settings.ts";
 import { canCallGatewayMethod, isGatewayMethodAdvertised } from "../lib/gateway-methods.ts";
 import {
@@ -237,7 +238,7 @@ export class ShellChromeOwner {
       target?.isConnected && target.checkVisibility()
         ? target
         : this.host.querySelector<HTMLElement>(".content");
-    resolved?.focus();
+    focusWithoutImmediateTooltip(resolved);
   }
 
   visibleNavDrawerToggle(): HTMLElement | undefined {

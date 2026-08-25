@@ -18,6 +18,9 @@ class WorkspaceIcon extends OpenClawLightDomContentsElement {
   @property({ attribute: false }) onAvailabilityChange?: (available: boolean | null) => void;
   /** Route whose bytes the browser refused to decode; keyed so a new session retries. */
   @state() private undecodableRouteUrl: string | null = null;
+  /** Route whose image has loaded; response bytes alone are not a paintable icon. */
+  @state() private loadedRouteUrl: string | null = null;
+  private preparedBlobUrl: string | null = null;
   private renderedAvailability: boolean | null = null;
   private reportedAvailability: boolean | null | undefined;
   private readonly loader = new AuthenticatedAvatarRouteLoader(
@@ -30,12 +33,15 @@ class WorkspaceIcon extends OpenClawLightDomContentsElement {
   );
 
   override disconnectedCallback() {
+    this.loadedRouteUrl = null;
+    this.preparedBlobUrl = null;
+    this.renderedAvailability = null;
     this.loader.reset();
     super.disconnectedCallback();
   }
 
-  override render() {
-    return this.loader.withActiveRoutes(() => this.renderContent());
+  protected override willUpdate() {
+    this.loader.withActiveRoutes(() => this.prepareContent());
   }
 
   override updated(changed: PropertyValues<this>) {
@@ -49,17 +55,9 @@ class WorkspaceIcon extends OpenClawLightDomContentsElement {
     }
   }
 
-  private renderContent() {
+  override render() {
     const routeUrl = this.routeUrl;
-    const canResolve = Boolean(routeUrl && this.authReady && this.undecodableRouteUrl !== routeUrl);
-    const blobUrl = canResolve && routeUrl ? this.loader.resolve(routeUrl, this.authTokens) : null;
-    this.renderedAvailability = blobUrl
-      ? true
-      : routeUrl && this.undecodableRouteUrl === routeUrl
-        ? false
-        : canResolve && routeUrl && this.loader.status(routeUrl, this.authTokens) === "missing"
-          ? false
-          : null;
+    const blobUrl = this.preparedBlobUrl;
     if (!blobUrl) {
       return icons.folder;
     }
@@ -71,10 +69,31 @@ class WorkspaceIcon extends OpenClawLightDomContentsElement {
       alt=""
       aria-hidden="true"
       decoding="async"
+      @load=${() => {
+        this.loadedRouteUrl = routeUrl;
+      }}
       @error=${() => {
+        if (this.loadedRouteUrl === routeUrl) {
+          this.loadedRouteUrl = null;
+        }
         this.undecodableRouteUrl = routeUrl;
       }}
     />`;
+  }
+
+  private prepareContent() {
+    const routeUrl = this.routeUrl;
+    const canResolve = Boolean(routeUrl && this.authReady && this.undecodableRouteUrl !== routeUrl);
+    const blobUrl = canResolve && routeUrl ? this.loader.resolve(routeUrl, this.authTokens) : null;
+    this.preparedBlobUrl = blobUrl;
+    this.renderedAvailability =
+      blobUrl && this.loadedRouteUrl === routeUrl
+        ? true
+        : routeUrl && this.undecodableRouteUrl === routeUrl
+          ? false
+          : canResolve && routeUrl && this.loader.status(routeUrl, this.authTokens) === "missing"
+            ? false
+            : null;
   }
 }
 

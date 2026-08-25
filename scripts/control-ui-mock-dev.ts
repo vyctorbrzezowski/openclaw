@@ -102,6 +102,14 @@ const MOCK_SIDEBAR_HEADER_PARTICIPANTS: readonly SessionActorFixture[] = [
   { type: "agent", id: "observability", label: "Observability and Reliability" },
   { type: "human", id: "profile-christopher", label: "Christopher Bartholomew-Wellington" },
   { type: "agent", id: "localization", label: "Internationalization Coordinator" },
+  ...Array.from(
+    { length: 12 },
+    (_value, index): SessionActorFixture => ({
+      type: index % 3 === 0 ? "agent" : "human",
+      id: `topbar-stress-participant-${index + 1}`,
+      label: `Production Load Participant ${String(index + 1).padStart(2, "0")}`,
+    }),
+  ),
 ];
 // Rows carry explicit owners the way the gateway projects createdActor fallbacks.
 const MOCK_SESSION_OWNERS: readonly SessionActorFixture[] = [MOCK_ACTOR_PETER, MOCK_ACTOR_MIRA];
@@ -113,6 +121,11 @@ const ATTENTION_FIXTURE_EXPIRES_AT = Date.parse("2099-01-01T00:00:00.000Z");
 const NARRATION_DEMO_SESSION_KEY = "agent:main:sidebar-narration-demo";
 const NARRATION_DEMO_RUN_ID = "mock-sidebar-narration-run";
 const SIDEBAR_HEADER_NO_ICON_SESSION_KEY = "agent:main:sidebar-header-no-icon";
+const SIDEBAR_HEADER_STRESS_ICON_SESSION_KEYS = new Set([
+  NARRATION_DEMO_SESSION_KEY,
+  "agent:main:topbar-stress-icon-long",
+  "agent:main:topbar-stress-icon-compact",
+]);
 const OBSERVER_DEMO_SESSION_KEY = "agent:main:session-observer-demo";
 const OBSERVER_DEMO_RUN_ID = "mock-session-observer-run";
 const PLAN_DEMO_RUN_ID = "mock-plan-run";
@@ -1194,7 +1207,10 @@ function buildConfigMocks(options: { swarmEnabled?: boolean; workboardEnabled?: 
   };
 }
 
-function buildWorkboardMocks(baseTime: number) {
+function buildWorkboardMocks(
+  baseTime: number,
+  options: { sessionKey?: string; chatDock?: "hidden" | "right"; scoped?: boolean } = {},
+) {
   const boardId = "peter-tasks";
   const card = (
     id: string,
@@ -1239,45 +1255,55 @@ function buildWorkboardMocks(baseTime: number) {
     ),
     updatedAt: baseTime,
   };
-  const sessionKey = "agent:main:workboard-proof";
+  const sessionKey = options.sessionKey ?? "agent:main:workboard-proof";
+  const boardSnapshot = {
+    sessionKey,
+    revision: 1,
+    tabs: [
+      {
+        tabId: "main",
+        title: "Workboard",
+        position: 0,
+        chatDock: options.chatDock ?? "hidden",
+      },
+    ],
+    widgets: [
+      {
+        name: "session-progress",
+        tabId: "main",
+        title: "Session progress",
+        contentKind: "plugin",
+        pluginKind: "session:progress",
+        sizeW: 6,
+        sizeH: 5,
+        position: 0,
+        grantState: "none",
+        revision: 1,
+      },
+      {
+        name: "workboard-product-operations",
+        tabId: "main",
+        title: "Product Operations",
+        contentKind: "plugin",
+        pluginKind: "workboard:board",
+        props: { boardId },
+        heightMode: "fixed",
+        sizeW: 12,
+        sizeH: 16,
+        position: 1,
+        grantState: "none",
+        revision: 1,
+      },
+    ],
+  };
   return {
     board,
     cards,
     sessionKey,
     methodResponses: {
-      "board.get": {
-        sessionKey,
-        revision: 1,
-        tabs: [{ tabId: "main", title: "Workboard", position: 0, chatDock: "hidden" }],
-        widgets: [
-          {
-            name: "session-progress",
-            tabId: "main",
-            title: "Session progress",
-            contentKind: "plugin",
-            pluginKind: "session:progress",
-            sizeW: 6,
-            sizeH: 5,
-            position: 0,
-            grantState: "none",
-            revision: 1,
-          },
-          {
-            name: "workboard-product-operations",
-            tabId: "main",
-            title: "Product Operations",
-            contentKind: "plugin",
-            pluginKind: "workboard:board",
-            props: { boardId },
-            heightMode: "fixed",
-            sizeW: 12,
-            sizeH: 16,
-            position: 1,
-            grantState: "none",
-            revision: 1,
-          },
-        ],
-      },
+      "board.get": options.scoped
+        ? { cases: [{ match: { sessionKey }, response: boardSnapshot }] }
+        : boardSnapshot,
       "workboard.boards.list": { boards: [board] },
       "workboard.cards.list": { boards: [board], cards, statuses },
       "workboard.cards.stats": { ...board, byAgent: {} },
@@ -1399,6 +1425,10 @@ async function createChatPickerScenario(
   fixture?: CliOptions["fixture"],
 ): Promise<ControlUiMockGatewayScenario> {
   const baseTime = Date.parse("2026-05-22T09:00:00.000Z");
+  const boardFixtureEnabled = fixture === "workboard" || fixture === "sidebar-header";
+  const moltyAvatarDataUrl = `data:image/svg+xml;base64,${Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse"><stop stop-color="#ffb35c"/><stop offset="1" stop-color="#e94d2f"/></linearGradient></defs><circle cx="32" cy="32" r="32" fill="url(#g)"/><path d="M17 42V22h6.5L32 33.8 40.5 22H47v20h-7V32.8l-8 10.3-8-10.3V42z" fill="#fff" fill-opacity=".94"/></svg>`,
+  ).toString("base64")}`;
   const selfProfile: UserProfile = {
     id: "presence-riley",
     displayName: "Riley",
@@ -1715,7 +1745,140 @@ async function createChatPickerScenario(
           }),
         ]
       : [];
-  const workboardMocks = buildWorkboardMocks(baseTime);
+  const sidebarHeaderStressRows =
+    fixture === "sidebar-header"
+      ? [
+          sessionRow(
+            "agent:main:topbar-stress-icon-long",
+            "Coordinate the international production release across observability, security, and customer operations",
+            baseTime - 21_000,
+            {
+              activeRunIds: ["mock-topbar-stress-icon-long-run"],
+              hasActiveRun: true,
+              participantCount: 18,
+              pinned: true,
+              spawnedCwd:
+                "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane",
+              status: "running",
+              unread: true,
+            },
+          ),
+          sessionRow(
+            "agent:main:topbar-stress-no-icon-long",
+            "Investigate a persistent transcript synchronization regression across several remote execution environments",
+            baseTime - 22_000,
+            {
+              activeRunIds: ["mock-topbar-stress-no-icon-long-run"],
+              hasActiveRun: true,
+              pinned: true,
+              spawnedCwd: "/Users/peter/Projects/legacy-monorepo-without-workspace-identity-assets",
+              status: "running",
+              unread: true,
+            },
+          ),
+          sessionRow(
+            "agent:main:topbar-stress-deep-worktree",
+            "Deep worktree release candidate verification for the production control plane",
+            baseTime - 23_000,
+            {
+              activeRunIds: ["mock-topbar-stress-worktree-run"],
+              hasActiveRun: true,
+              pinned: true,
+              spawnedCwd:
+                "/Users/peter/Worktrees/openclaw/.worktrees/feature/topbar/experiments/production-load/region/br/sao-paulo",
+              status: "running",
+              unread: true,
+              worktree: {
+                id: "wt-topbar-production-load-region-br-sao-paulo",
+                branch: "feature/topbar-production-load-region-br-sao-paulo",
+                repoRoot:
+                  "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane",
+              },
+            },
+          ),
+          sessionRow(
+            "agent:main:topbar-stress-icon-compact",
+            "Release metrics",
+            baseTime - 24_000,
+            {
+              spawnedCwd:
+                "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane",
+              unread: true,
+            },
+          ),
+          ...Array.from({ length: 9 }, (_value, index) => {
+            const ordinal = index + 1;
+            const running = index < 5;
+            return sessionRow(
+              `agent:main:topbar-stress-load-${ordinal}`,
+              `Production workload ${ordinal}: ${
+                index % 2 === 0
+                  ? "regional rollout diagnostics and operator handoff"
+                  : "gateway saturation and unread event triage"
+              }`,
+              baseTime - (25_000 + index * 1_000),
+              {
+                ...(running
+                  ? {
+                      activeRunIds: [`mock-topbar-stress-load-${ordinal}-run`],
+                      hasActiveRun: true,
+                      status: "running",
+                    }
+                  : {}),
+                participantCount: ordinal + 9,
+                spawnedCwd:
+                  index % 3 === 0
+                    ? "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane"
+                    : index % 3 === 1
+                      ? "/Users/peter/Projects/plain-project"
+                      : "/Users/peter/Work/client-platform/checkout/feature/topbar-load",
+                unread: index % 2 === 0,
+              },
+            );
+          }),
+          sessionRow(
+            "agent:main:topbar-stress-spawn-root",
+            "Nested rollout investigation",
+            baseTime - 35_000,
+            {
+              childSessions: ["agent:main:topbar-stress-spawn-child"],
+              hasActiveRun: true,
+              status: "running",
+            },
+          ),
+          sessionRow(
+            "agent:main:topbar-stress-spawn-child",
+            "Regional rollout subagent",
+            baseTime - 34_000,
+            {
+              childSessions: ["agent:main:topbar-stress-spawn-grandchild"],
+              hasActiveRun: true,
+              parentSessionKey: "agent:main:topbar-stress-spawn-root",
+              spawnedBy: "agent:main:topbar-stress-spawn-root",
+              status: "running",
+              unread: true,
+            },
+          ),
+          sessionRow(
+            "agent:main:topbar-stress-spawn-grandchild",
+            "Sao Paulo telemetry subagent",
+            baseTime - 33_000,
+            {
+              hasActiveRun: true,
+              parentSessionKey: "agent:main:topbar-stress-spawn-child",
+              spawnedBy: "agent:main:topbar-stress-spawn-child",
+              status: "running",
+              unread: true,
+            },
+          ),
+        ]
+      : [];
+  const workboardMocks = buildWorkboardMocks(
+    baseTime,
+    fixture === "sidebar-header"
+      ? { sessionKey: NARRATION_DEMO_SESSION_KEY, chatDock: "right", scoped: true }
+      : {},
+  );
   const activitySessions = buildActivitySessionRows(Date.now());
   const sessions = [
     ...activitySessions,
@@ -1747,22 +1910,36 @@ async function createChatPickerScenario(
       startedAt: baseTime - 4_000,
       status: "running",
     }),
-    sessionRow(NARRATION_DEMO_SESSION_KEY, "Sidebar narration demo", baseTime - 15_000, {
-      createdActor: MOCK_ACTOR_MIRA,
-      ...(fixture === "sidebar-header" ? { spawnedCwd: "/Users/peter/Projects/icon-project" } : {}),
-      hasActiveRun: true,
-      owner: { actor: MOCK_ACTOR_MIRA },
-      ...(fixture === "sidebar-header"
-        ? {
-            participantCount: MOCK_SIDEBAR_HEADER_PARTICIPANTS.length,
-            participants: [...MOCK_SIDEBAR_HEADER_PARTICIPANTS],
-            sharingRole: "owner",
-            visibility: "shared",
-          }
-        : {}),
-      startedAt: baseTime - 45_000,
-      status: "running",
-    }),
+    sessionRow(
+      NARRATION_DEMO_SESSION_KEY,
+      fixture === "sidebar-header"
+        ? "Coordinate the production incident review while fifteen concurrent sessions remain active"
+        : "Sidebar narration demo",
+      baseTime - 15_000,
+      {
+        ...(fixture === "sidebar-header" ? { boardFace: "dashboard" } : {}),
+        createdActor: MOCK_ACTOR_MIRA,
+        ...(fixture === "sidebar-header"
+          ? {
+              spawnedCwd:
+                "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane",
+            }
+          : {}),
+        hasActiveRun: true,
+        owner: { actor: MOCK_ACTOR_MIRA },
+        ...(fixture === "sidebar-header"
+          ? {
+              participantCount: 27,
+              participants: [...MOCK_SIDEBAR_HEADER_PARTICIPANTS],
+              sharingRole: "owner",
+              visibility: "shared",
+            }
+          : {}),
+        startedAt: baseTime - 45_000,
+        status: "running",
+      },
+    ),
+    ...sidebarHeaderStressRows,
     ...(fixture === "sidebar-header"
       ? [
           sessionRow(
@@ -1926,7 +2103,7 @@ async function createChatPickerScenario(
   const channelWizard = buildChannelWizardMocks();
   const configMocks = buildConfigMocks({
     swarmEnabled: fixture === "swarm",
-    workboardEnabled: fixture === "workboard",
+    workboardEnabled: boardFixtureEnabled,
   });
   const historyMessages =
     fixture === "code-fences"
@@ -2054,7 +2231,7 @@ async function createChatPickerScenario(
             "session.visibility.set",
           ]
         : []),
-      ...(fixture === "workboard"
+      ...(boardFixtureEnabled
         ? [
             "board.get",
             "workboard.boards.list",
@@ -2064,22 +2241,21 @@ async function createChatPickerScenario(
           ]
         : []),
     ],
-    controlUiTabs:
-      fixture === "workboard"
-        ? [
-            {
-              group: "control",
-              icon: "kanban",
-              id: "workboard",
-              label: "Workboard",
-              placement: "route:workboard",
-              pluginId: "workboard",
-            },
-          ]
-        : [],
+    controlUiTabs: boardFixtureEnabled
+      ? [
+          {
+            group: "control",
+            icon: "kanban",
+            id: "workboard",
+            label: "Workboard",
+            placement: "route:workboard",
+            pluginId: "workboard",
+          },
+        ]
+      : [],
     controlUiWidgetKinds: [
       { pluginId: "session", kind: "session:progress", label: "Session progress" },
-      ...(fixture === "workboard"
+      ...(boardFixtureEnabled
         ? [
             { pluginId: "workboard", kind: "workboard:board", label: "Workboard board" },
             { pluginId: "workboard", kind: "workboard:card", label: "Workboard card" },
@@ -2109,6 +2285,20 @@ async function createChatPickerScenario(
     methodResponses: {
       ...buildBackgroundTasksMock(baseTime),
       ...cronMocks,
+      "agents.list": {
+        agents: [
+          {
+            id: "main",
+            identity: { avatarUrl: moltyAvatarDataUrl, name: "Molty" },
+            name: "Molty",
+            workspace: "/Users/peter/Projects/openclaw",
+            workspaceGit: true,
+          },
+        ],
+        defaultId: "main",
+        mainKey: "main",
+        scope: "agent",
+      },
       "chat.history": {
         cases: [{ match: { sessionKey: "agent:main:main" }, response: planChatHistory }],
       },
@@ -2122,7 +2312,7 @@ async function createChatPickerScenario(
                 agents: [
                   {
                     id: "main",
-                    identity: { name: "Molty" },
+                    identity: { avatarUrl: moltyAvatarDataUrl, name: "Molty" },
                     name: "Molty",
                     workspace: "/Users/peter/Projects/openclaw",
                     workspaceGit: true,
@@ -2998,7 +3188,7 @@ async function createChatPickerScenario(
             },
           }
         : {}),
-      ...(fixture === "workboard" ? workboardMocks.methodResponses : {}),
+      ...(boardFixtureEnabled ? workboardMocks.methodResponses : {}),
     },
     models: modelProviders.models,
     repeatingSessionEvents: {
@@ -3300,7 +3490,7 @@ function createSidebarHeaderFixturePlugin(fixture: CliOptions["fixture"]): Plugi
           return;
         }
         const sessionKey = decodeURIComponent(pathname.slice(workspaceIconPrefix.length));
-        if (sessionKey !== NARRATION_DEMO_SESSION_KEY) {
+        if (!SIDEBAR_HEADER_STRESS_ICON_SESSION_KEYS.has(sessionKey)) {
           res.statusCode = 404;
           res.end();
           return;

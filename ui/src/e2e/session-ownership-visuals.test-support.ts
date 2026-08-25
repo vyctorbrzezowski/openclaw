@@ -48,3 +48,24 @@ export async function avatarLabelCenterDelta(row: Locator) {
     );
   });
 }
+
+export async function headerSharingControlsAreAlignedAndTouchable(page: Page) {
+  const header = page.locator(".chat-pane__header");
+  const headerControlBounds = await header.evaluate((element) => {
+    const menu = element.querySelector<HTMLElement>(".chat-header-session-menu__trigger")!;
+    const controls = element.querySelector<HTMLElement>(".chat-pane__session-controls")!;
+    return {
+      controlsLeft: controls.getBoundingClientRect().left,
+      menuRight: menu.getBoundingClientRect().right,
+    };
+  });
+  const sharingTarget = await header.locator(".chat-pane__sharing-trigger").evaluate((button) => ({
+    height: button.getBoundingClientRect().height,
+    width: button.getBoundingClientRect().width,
+  }));
+  return (
+    headerControlBounds.menuRight <= headerControlBounds.controlsLeft &&
+    sharingTarget.height >= 24 &&
+    sharingTarget.width >= 24
+  );
+}

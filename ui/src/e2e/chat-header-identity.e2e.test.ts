@@ -1,6 +1,8 @@
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { expect as expectBrowser } from "playwright/test";
 import { expect, it } from "vitest";
+import { createDeferred } from "../../../test/helpers/promise.js";
 import { controlUiBundledSettingsStorageKey } from "../test-helpers/control-ui-e2e.ts";
 import {
   captureUiProofEnabled,
@@ -216,4 +218,62 @@ suite.define(() => {
       }
     });
   }
+
+  it("keeps the project identity stable while a missing icon resolves", async () => {
+    const context = await suite.newBrowserContext({
+      locale: "en-US",
+      serviceWorkers: "block",
+      viewport: { height: 560, width: 1120 },
+    });
+    const page = await context.newPage();
+    const missingIconGate = createDeferred();
+    const missingIconResolved = createDeferred();
+    await page.route("**/__openclaw__/workspace-icon/**", async (route) => {
+      if (decodeURIComponent(route.request().url()).includes("agent:main:session-b")) {
+        await missingIconGate.promise;
+      }
+      await route.fulfill({ status: 404 });
+      if (decodeURIComponent(route.request().url()).includes("agent:main:session-b")) {
+        missingIconResolved.resolve();
+      }
+    });
+    await installMockGateway(page, {
+      methodResponses: { "sessions.list": identitySessions() },
+      sessionKey: "agent:main:session-a",
+    });
+
+    try {
+      await page.goto(`${suite.server.baseUrl}chat`);
+      const header = page.locator(".chat-pane-cache__pane--active .chat-pane__header");
+      await expect
+        .poll(() => header.locator(".chat-pane__session-title-text").textContent())
+        .toBe("Header identity trail");
+      await expect
+        .poll(() => header.locator(".chat-pane__workspace-chip span").textContent())
+        .toBe("openclaw");
+
+      await page
+        .locator(
+          '.sidebar-recent-session[data-session-key="agent:main:session-b"] a.sidebar-recent-session__link',
+        )
+        .dispatchEvent("click", { button: 0 });
+      await expect
+        .poll(() => header.locator(".chat-pane__session-title-text").textContent())
+        .toBe(LONG_TITLE);
+
+      expect(await header.locator(".chat-pane__workspace-chip span").textContent()).toBe(
+        "openclaw",
+      );
+      await expectBrowser(
+        header.locator(".chat-pane__workspace-menu + .chat-pane__crumb-sep"),
+      ).toBeVisible();
+      missingIconGate.resolve();
+      await missingIconResolved.promise;
+      expect(await header.locator(".chat-pane__workspace-chip span").textContent()).toBe(
+        "openclaw",
+      );
+    } finally {
+      await suite.closeBrowserContext(context);
+    }
+  });
 });

@@ -9,6 +9,7 @@ type TooltipElement = HTMLElement & {
   delay: number;
   openOnClick: boolean;
   hoverOnly: boolean;
+  suppressFocusUntilPointerExit: () => void;
   readonly updateComplete: Promise<boolean>;
 };
 
@@ -302,6 +303,25 @@ describe("openclaw-tooltip", () => {
 
     document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Tab" }));
     focusTrigger(trigger);
+    expectOpenCount(1);
+  });
+
+  it("rearms focus help only after the replacement trigger loses pointer or focus", async () => {
+    const provider = createProvider();
+    const { tooltip, trigger } = createTooltip("Replacement help");
+    provider.append(tooltip);
+    document.body.append(provider);
+    await tooltip.updateComplete;
+
+    tooltip.suppressFocusUntilPointerExit();
+    hoverTrigger(trigger);
+    focusTrigger(trigger);
+    vi.runAllTimers();
+    expectOpenCount(0);
+
+    dispatchMousePointer(trigger, "pointerleave");
+    hoverTrigger(trigger);
+    vi.runAllTimers();
     expectOpenCount(1);
   });
 

@@ -249,6 +249,7 @@ class Tooltip extends OpenClawLitElement {
   private closeTimer: number | null = null;
   private triggerHovered = false;
   private contentHovered = false;
+  private focusSuppressedUntilPointerExit = false;
   private describedBy: string | null = null;
   private descriptionCaptured = false;
   private descriptionElement: HTMLSpanElement | null = null;
@@ -415,7 +416,7 @@ class Tooltip extends OpenClawLitElement {
   }
 
   private readonly handlePointerEnter = (event: PointerEvent) => {
-    if (event.pointerType !== "touch") {
+    if (event.pointerType !== "touch" && !this.focusSuppressedUntilPointerExit) {
       this.triggerHovered = true;
       this.clearCloseTimer();
       this.scheduleOpen();
@@ -424,6 +425,7 @@ class Tooltip extends OpenClawLitElement {
 
   private readonly handlePointerLeave = (event: PointerEvent) => {
     if (event.pointerType !== "touch") {
+      this.focusSuppressedUntilPointerExit = false;
       this.triggerHovered = false;
       this.clearTimers(false);
       this.maybeClose();
@@ -454,6 +456,7 @@ class Tooltip extends OpenClawLitElement {
   };
   private readonly handleFocusIn = () => {
     if (
+      !this.focusSuppressedUntilPointerExit &&
       this.tooltipProvider?.focusOpensTooltip() !== false &&
       (!this.hoverOnly || this.triggerElement?.matches(":focus-visible"))
     ) {
@@ -461,6 +464,7 @@ class Tooltip extends OpenClawLitElement {
     }
   };
   private readonly handleFocusOut = (event: FocusEvent) => {
+    this.focusSuppressedUntilPointerExit = false;
     if (
       (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) ||
       this.triggerHovered ||
@@ -486,6 +490,11 @@ class Tooltip extends OpenClawLitElement {
       this.close();
     }
   };
+
+  suppressFocusUntilPointerExit() {
+    this.focusSuppressedUntilPointerExit = true;
+    this.close();
+  }
 
   private scheduleOpen() {
     if (this.disabled || this.webAwesomeTooltip?.open || this.openTimer !== null) {
@@ -701,6 +710,15 @@ class Tooltip extends OpenClawLitElement {
       </wa-tooltip>
     `;
   }
+}
+
+export function focusWithoutImmediateTooltip(trigger: HTMLElement | null | undefined) {
+  // A trigger replaced under a stationary pointer must not show help until a fresh hover.
+  const tooltip = trigger?.closest("openclaw-tooltip");
+  if (tooltip instanceof Tooltip) {
+    tooltip.suppressFocusUntilPointerExit();
+  }
+  trigger?.focus();
 }
 
 if (!customElements.get("openclaw-tooltip-provider")) {

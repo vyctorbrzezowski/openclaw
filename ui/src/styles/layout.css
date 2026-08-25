@@ -587,7 +587,7 @@ html.openclaw-native-web-chrome .sidebar-brand__search,
 .settings-sidebar__item--active {
   color: var(--text-strong);
   background: color-mix(in srgb, var(--accent-subtle) 88%, var(--bg-elevated) 12%);
-  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: transparent;
 }
 
 .settings-sidebar__item-icon {
@@ -989,10 +989,10 @@ openclaw-settings-save-indicator:empty {
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  /* 8px top pad plus the 32px row and 8px trailing space matches the 48px
-     chat header. The
+  /* 5px top pad keeps the identity row close to the sidebar chrome while the
+     independent trailing space separates it from page navigation. The
      macOS app overrides this with its 50px titlebar clearance. */
-  padding: 9px var(--sidebar-pad-x) 8px;
+  padding: 5px var(--sidebar-pad-x) 8px;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -1004,7 +1004,7 @@ openclaw-settings-save-indicator:empty {
   align-items: center;
   gap: 4px;
   min-height: 32px;
-  padding: 0 0 8px;
+  padding: 0 0 var(--space-6);
   flex-shrink: 0;
 }
 
@@ -1963,101 +1963,6 @@ openclaw-settings-save-indicator:empty {
   letter-spacing: -0.02em;
 }
 
-.viewer-facepile
-  > openclaw-tooltip:not(:first-child)
-  > .viewer-facepile__tooltip-anchor
-  .viewer-avatar,
-.viewer-facepile > openclaw-tooltip:not(:first-child) > .viewer-avatar--overflow {
-  margin-left: -5px;
-}
-
-/* Tooltip anchors need a real box. ViewerAvatar deliberately renders through a
-   display:contents host, whose own rect would otherwise resolve at the origin. */
-.viewer-facepile__tooltip-anchor {
-  display: inline-flex;
-}
-
-.viewer-facepile > .viewer-avatar:not(:first-child) {
-  margin-left: -5px;
-}
-
-.viewer-avatar > img,
-.viewer-avatar > span {
-  width: 100%;
-  height: 100%;
-}
-
-/* Two classes on purpose: `.viewer-avatar > span` below sets display and
-   outranks a lone class, which showed image + initials side by side. */
-.viewer-avatar > .viewer-avatar__fallback {
-  display: none;
-}
-
-.viewer-avatar.is-fallback > img {
-  display: none;
-}
-
-.viewer-avatar.is-fallback > .viewer-avatar__fallback {
-  display: grid;
-}
-
-.viewer-avatar > img {
-  object-fit: cover;
-}
-
-.viewer-avatar > span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.viewer-avatar--overflow {
-  background: var(--bg-elevated);
-  color: var(--muted);
-  font-size: 8px;
-  letter-spacing: 0;
-}
-
-.viewer-facepile__overflow-tooltip-owner {
-  --openclaw-tooltip-max-width: min(302px, calc(100vw - 24px));
-  --openclaw-tooltip-padding: 9px 11px;
-}
-
-.viewer-facepile__overflow-tooltip {
-  display: grid;
-  width: min(280px, calc(100vw - 46px));
-  max-height: 204px;
-  gap: 4px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.viewer-facepile__overflow-tooltip-row {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: center;
-  min-height: 22px;
-  gap: 8px;
-}
-
-.viewer-facepile__overflow-tooltip-label {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.viewer-avatar--tooltip {
-  width: 18px;
-  height: 18px;
-  border-color: var(--bg-elevated);
-  font-size: 7px;
-}
-
-.viewer-facepile--session {
-  margin-left: 1px;
-}
-
 .viewer-avatar--footer {
   width: 20px;
   height: 20px;
@@ -2069,6 +1974,23 @@ openclaw-settings-save-indicator:empty {
   height: 40px;
   border-color: color-mix(in srgb, var(--border) 72%, transparent);
   font-size: var(--control-ui-text-sm);
+}
+
+.session-owner-chip--row {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+/* Header identity is one scale: the creator matches the 18px viewer avatars it
+   shares the trail with, and drops the row variant's ring and lift so no avatar
+   in the chat header carries decoration of its own. */
+.session-owner-chip--header {
+  width: 18px;
+  height: 18px;
+  border-color: transparent;
+  box-shadow: none;
+  font-size: 9px;
 }
 
 .sidebar-recent-session__name {
@@ -2228,9 +2150,10 @@ openclaw-settings-save-indicator:empty {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-top: 12px;
-  margin: 12px 0 10px;
-  border-top: var(--rail-divider-size) solid var(--rail-divider-color);
+  padding-top: 18px;
+  margin: 18px 0 10px;
+  border-top: var(--rail-divider-size) solid
+    color-mix(in srgb, var(--rail-divider-color) 60%, transparent);
   border-radius: 0;
 }
 
@@ -3010,7 +2933,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .nav-item--active {
   color: var(--text-strong);
   background: color-mix(in srgb, var(--accent-subtle) 88%, var(--bg-elevated) 12%);
-  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: transparent;
 }
 
 .nav-item.active .nav-item__icon,
@@ -3085,7 +3008,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .sidebar-zone-entry .sidebar-recent-session.sidebar-recent-session--active {
   color: var(--text-strong);
   background: color-mix(in srgb, var(--accent-subtle) 88%, var(--bg-elevated) 12%);
-  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: transparent;
 }
 
 .sidebar-zone-entry .sidebar-recent-session__aside {
@@ -3105,7 +3028,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 /* Agent chip: identity-first entrance to the active agent. The body resumes
    the latest conversation; trailing actions create/open the menu. */
 .sidebar-agent-card {
-  --sidebar-agent-avatar-size: 30px;
+  --sidebar-agent-avatar-size: calc(var(--space-6) + 2px);
   --sidebar-agent-avatar-overhang: 4px;
 
   display: flex;

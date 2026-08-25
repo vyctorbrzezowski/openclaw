@@ -41,7 +41,6 @@ describe.skipIf(!hasBrowserLayout)("navigation surface browser layout", () => {
           <main class="content">
             ${renderFloatingUpdateCard({
               navigationSurfaceHidden: true,
-              mobileNavLayout: false,
               onboarding: false,
               updateAvailable: null,
               updateBusy: false,
@@ -132,5 +131,36 @@ describe.skipIf(!hasBrowserLayout)("navigation surface browser layout", () => {
     } finally {
       document.documentElement.classList.remove("openclaw-native-web-chrome");
     }
+  });
+
+  it("keeps the agent avatar compact and leaves two spacing steps before Home", async () => {
+    await useDesktopViewport();
+    render(
+      html`
+        <div class="sidebar">
+          <div class="sidebar-shell">
+            <div class="sidebar-brand">
+              <div class="sidebar-agent-card">
+                <button class="sidebar-agent-card__main" type="button">
+                  <span class="sidebar-agent-card__avatar">M</span>
+                  <span>Molty</span>
+                </button>
+              </div>
+            </div>
+            <nav class="sidebar-nav">
+              <a class="nav-item nav-item--home" href="#home">Home</a>
+            </nav>
+          </div>
+        </div>
+      `,
+      document.body,
+    );
+
+    const identity = document.querySelector<HTMLElement>(".sidebar-agent-card__main")!;
+    const avatar = document.querySelector<HTMLElement>(".sidebar-agent-card__avatar")!;
+    const home = document.querySelector<HTMLElement>(".nav-item--home")!;
+    expect(getComputedStyle(avatar).width).toBe("26px");
+    expect(getComputedStyle(avatar).height).toBe("26px");
+    expect(home.getBoundingClientRect().top - identity.getBoundingClientRect().bottom).toBe(24);
   });
 });

@@ -19,6 +19,7 @@ import {
   type PersonActivityRouting,
 } from "./person-activity-link.ts";
 import "./tooltip.ts";
+import "../styles/viewer-facepile.css";
 
 function normalized(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim();

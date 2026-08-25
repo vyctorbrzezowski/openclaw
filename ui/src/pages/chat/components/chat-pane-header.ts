@@ -25,7 +25,7 @@ import { syncDropdownItemRadio } from "../../../components/web-awesome.ts";
 import "../../../components/tooltip.ts";
 import "../../../components/workspace-icon.ts";
 import { t } from "../../../i18n/index.ts";
-import { formatRelativeTimestamp } from "../../../lib/format.ts";
+import { clampText, formatRelativeTimestamp } from "../../../lib/format.ts";
 import { resolveSessionDisplayName } from "../../../lib/session-display.ts";
 import {
   areUiSessionKeysEquivalent,
@@ -98,6 +98,8 @@ type ChatPaneHeaderProps = {
   onSplitRight?: (paneId: string) => void;
   onClosePane?: (paneId: string) => void;
 };
+
+const HEADER_SESSION_TITLE_MAX_CHARS = 40;
 
 function revealLabel(platform: string | null): string {
   if (platform === "darwin") {
@@ -182,7 +184,7 @@ function renderIdentityCrumbs(
   }
   segments.push(renderSessionIdentity(props));
   const compactProjectIdentity = Boolean(
-    projectCrumb && props.workspaceIcon && props.workspaceIconAvailability !== false,
+    projectCrumb && props.workspaceIcon && props.workspaceIconAvailability === true,
   );
   return html`
     <div class="chat-pane__crumbs">
@@ -301,9 +303,10 @@ function renderSessionCrumb(props: ChatPaneHeaderProps) {
       @blur=${props.onCommitRename}
     />`;
   }
+  const displayTitle = clampText(props.title, HEADER_SESSION_TITLE_MAX_CHARS);
   return props.catalog || !props.session || props.renameDisabledReason
     ? html`<span class="chat-pane__session-title" title=${props.renameDisabledReason ?? props.title}
-        ><span class="chat-pane__session-title-text">${props.title}</span></span
+        ><span class="chat-pane__session-title-text">${displayTitle}</span></span
       >`
     : html`<button
         class="chat-pane__session-title chat-pane__session-title-button"
@@ -312,7 +315,7 @@ function renderSessionCrumb(props: ChatPaneHeaderProps) {
         aria-label=${t("chat.sessionHeader.renameAria", { title: props.title })}
         @click=${props.onBeginRename}
       >
-        <span class="chat-pane__session-title-text">${props.title}</span>
+        <span class="chat-pane__session-title-text">${displayTitle}</span>
       </button>`;
 }
 
@@ -354,7 +357,7 @@ function renderProjectCrumb(
               props.onWorkspaceIconAvailabilityChange,
             )}${copied
           ? html`<span>${t("chat.sessionHeader.copied")}</span>`
-          : props.workspaceIcon && props.workspaceIconAvailability !== false
+          : props.workspaceIcon && props.workspaceIconAvailability === true
             ? nothing
             : html`<span>${props.workspaceLabel}</span>`}
       </button>

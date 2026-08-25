@@ -780,7 +780,7 @@ suite.define(() => {
     );
   });
 
-  it("keeps mobile attention in the drawer while desktop remains unchanged", async () => {
+  it("keeps attention in the sidebar and mobile drawer without a floating copy", async () => {
     await suite.withPage(
       {
         locale: "en-US",

@@ -1044,6 +1044,34 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
     }
   });
 
+  it("keeps the project identity clear of the expanded sidebar edge", async () => {
+    const page = await openBrowserPage(922, 282);
+    try {
+      const splitViewCss = readStyleSheet("ui/src/styles/chat/split-view.css");
+      await page.setContent(
+        `<!doctype html><html><head><style>${readUiCss()}\n${splitViewCss}</style></head><body>
+          <div class="shell">
+            <div class="chat-split-view__column">
+              <div class="chat-split-view__cell">
+                <div class="chat-pane-primary-column">
+                  <div class="chat-pane__header">Project identity</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </body></html>`,
+      );
+
+      expect(
+        await page
+          .locator(".chat-pane__header")
+          .evaluate((header) => Number.parseFloat(getComputedStyle(header).paddingLeft)),
+      ).toBe(12);
+    } finally {
+      await closeBrowserPage(page);
+    }
+  });
+
   it("keeps the split-pane close button reachable as the pane narrows", async () => {
     const page = await openBrowserPage(1100, 240);
     try {

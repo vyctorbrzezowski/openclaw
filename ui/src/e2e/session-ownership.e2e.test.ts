@@ -13,6 +13,7 @@ import {
 } from "./new-session-page.test-support.ts";
 import {
   avatarLabelCenterDelta,
+  headerSharingControlsAreAlignedAndTouchable,
   routeAvatarFixtures,
 } from "./session-ownership-visuals.test-support.ts";
 
@@ -258,9 +259,9 @@ suite.define(() => {
       frontSize: [18, 18],
       overlap: 8,
       reveal: 10,
-      slotWidth: 20,
+      slotWidth: 22,
       stackSize: [28, 20],
-      textGap: 4,
+      textGap: 3,
     });
     await expectBrowser(overflowRow.locator(".session-owner-stack__overflow")).toHaveText("+2");
     const rowHeights = await Promise.all([
@@ -871,25 +872,8 @@ suite.define(() => {
 
     await currentPage.goto(`${suite.server?.baseUrl ?? ""}chat`);
     await currentPage.getByText("Ready.", { exact: true }).waitFor();
-    const headerControlBounds = await currentPage
-      .locator(".chat-pane__header")
-      .evaluate((header) => {
-        const menu = header.querySelector<HTMLElement>(".chat-header-session-menu__trigger")!;
-        const controls = header.querySelector<HTMLElement>(".chat-pane__session-controls")!;
-        return {
-          controlsLeft: controls.getBoundingClientRect().left,
-          menuRight: menu.getBoundingClientRect().right,
-        };
-      });
-    expect(headerControlBounds.menuRight).toBeLessThanOrEqual(headerControlBounds.controlsLeft);
-    const sharingTrigger = currentPage.locator(".chat-pane__sharing-trigger");
-    const sharingTarget = await sharingTrigger.evaluate((button) => ({
-      height: button.getBoundingClientRect().height,
-      width: button.getBoundingClientRect().width,
-    }));
-    expect(sharingTarget.height).toBeGreaterThanOrEqual(24);
-    expect(sharingTarget.width).toBeGreaterThanOrEqual(24);
-    await sharingTrigger.click();
+    expect(await headerSharingControlsAreAlignedAndTouchable(currentPage)).toBe(true);
+    await currentPage.locator(".chat-pane__sharing-trigger").click();
     await gateway.waitForRequest("session.members.list");
     const dropdown = currentPage.locator(".chat-pane__sharing-menu");
     await dropdown.locator('wa-dropdown-item[value="member:profile-member-0"]').waitFor();

@@ -164,6 +164,36 @@ suite.define(() => {
           page.locator(".chat-pane__header").first(),
           `after-closed-${colorScheme}-crop.png`,
         );
+
+        await expand.focus();
+        await expand.press("Enter");
+        await collapse.waitFor({ state: "visible" });
+        await expect
+          .poll(() =>
+            collapse.evaluate(
+              (button) =>
+                button
+                  .closest("openclaw-tooltip")
+                  ?.shadowRoot?.querySelector("wa-tooltip")
+                  ?.hasAttribute("open") ?? false,
+            ),
+          )
+          .toBe(false);
+        await page.mouse.move(720, 700);
+        await collapse.hover();
+        await page.mouse.move(720, 700);
+        await collapse.hover();
+        await expect
+          .poll(() =>
+            collapse.evaluate(
+              (button) =>
+                button
+                  .closest("openclaw-tooltip")
+                  ?.shadowRoot?.querySelector("wa-tooltip")
+                  ?.hasAttribute("open") ?? false,
+            ),
+          )
+          .toBe(true);
       } finally {
         await suite.closeBrowserContext(context);
       }

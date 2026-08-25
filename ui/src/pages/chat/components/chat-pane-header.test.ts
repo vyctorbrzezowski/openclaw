@@ -22,12 +22,7 @@ import {
   mountChatPaneHeader,
   type ChatPaneHeaderProps,
 } from "./chat-pane-header.test-support.ts";
-import {
-  canRevealSessionWorkspace,
-  renderChatPaneHeader,
-  resolveChatPaneParentSession,
-  resolveChatPaneWorkspace,
-} from "./chat-pane-header.ts";
+import { renderChatPaneHeader } from "./chat-pane-header.ts";
 import { createSessionWorkspaceProps } from "./chat-session-workspace.ts";
 
 const containers: HTMLElement[] = [];
@@ -451,6 +446,17 @@ describe("chat pane header", () => {
     );
   });
 
+  it("caps the visible session title at 40 characters while preserving the full label", () => {
+    const title = "Production workload 1: regional rollout diagnostics and operator handoff";
+    const { container } = mountHeader({ title });
+    const titleButton = container.querySelector<HTMLButtonElement>(".chat-pane__session-title");
+    const visibleTitle = titleButton?.querySelector(".chat-pane__session-title-text")?.textContent;
+
+    expect(visibleTitle).toBe("Production workload 1: regional rollout…");
+    expect(visibleTitle).toHaveLength(40);
+    expect(titleButton?.getAttribute("aria-label")).toContain(title);
+  });
+
   it("uses a custom project icon without repeating the project name or slash", () => {
     const { container } = mountHeader({
       workspaceIconAvailability: true,
@@ -474,7 +480,7 @@ describe("chat pane header", () => {
     );
   });
 
-  it("keeps an unresolved project icon neutral without painting the fallback label", () => {
+  it("keeps the project identity visible while its icon is unresolved", () => {
     const { container } = mountHeader({
       workspaceIconAvailability: null,
       workspaceIcon: {
@@ -487,10 +493,13 @@ describe("chat pane header", () => {
 
     expect([...(crumbs?.children ?? [])].map((child) => child.className)).toEqual([
       "chat-pane__workspace-menu",
+      "chat-pane__crumb-sep",
       "chat-pane__session-identity",
     ]);
-    expect(crumbs?.querySelector(".chat-pane__crumb-sep")).toBeNull();
-    expect(crumbs?.querySelector(".chat-pane__workspace-chip")?.textContent?.trim()).toBe("");
+    expect(crumbs?.querySelector(".chat-pane__crumb-sep")?.textContent).toBe("/");
+    expect(crumbs?.querySelector(".chat-pane__workspace-chip")?.textContent?.trim()).toBe(
+      "openclaw",
+    );
   });
 
   it("places a clickable parent between the project and child session", () => {
@@ -594,8 +603,8 @@ describe("chat pane header", () => {
       ".viewer-facepile__overflow-tooltip-row",
     );
     expect(
-      [...(hiddenMemberRows ?? [])].map((row) =>
-        row.querySelector(".viewer-facepile__overflow-tooltip-label")?.textContent?.trim(),
+      [...(hiddenMemberRows ?? [])].map((memberRow) =>
+        memberRow.querySelector(".viewer-facepile__overflow-tooltip-label")?.textContent?.trim(),
       ),
     ).toEqual(["Carol · Member", "Release · Agent"]);
     expect(tooltips[2]?.querySelectorAll('openclaw-viewer-avatar[variant="tooltip"]')).toHaveLength(
@@ -869,38 +878,6 @@ describe("chat pane header", () => {
   });
 });
 
-describe("chat pane parent resolution", () => {
-  it("uses the navigation parent and its canonical display name", () => {
-    const parent = row({
-      key: "agent:main:parent",
-      label: "Release prep",
-    });
-    const controlOwner = row({
-      key: "agent:main:control-owner",
-      label: "Coordinator",
-    });
-
-    expect(
-      resolveChatPaneParentSession(
-        row({
-          key: "agent:main:child",
-          parentSessionKey: parent.key,
-          spawnedBy: controlOwner.key,
-        }),
-        [controlOwner, parent],
-      ),
-    ).toEqual({ key: parent.key, title: "Release prep" });
-  });
-
-  it("omits unresolved and self-referential parents", () => {
-    const child = row({ key: "agent:main:child", parentSessionKey: "agent:main:missing" });
-    expect(resolveChatPaneParentSession(child, [child])).toBeNull();
-    expect(
-      resolveChatPaneParentSession({ ...child, parentSessionKey: child.key }, [child]),
-    ).toBeNull();
-  });
-});
-
 describe("chat pane workspace chip icon", () => {
   async function mountChip(
     workspaceIcon: ChatPaneHeaderProps["workspaceIcon"],
@@ -971,6 +948,8 @@ describe("chat pane workspace chip icon", () => {
         },
         onWorkspaceIconAvailabilityChange,
       );
+      await element?.updateComplete;
+      element?.querySelector(".workspace-icon")?.dispatchEvent(new Event("load"));
       await element?.updateComplete;
 
       await vi.waitFor(() =>
@@ -1058,7 +1037,7 @@ describe("chat pane workspace chip icon", () => {
       .spyOn(globalThis, "fetch")
       .mockResolvedValue({ ok: false, status: 404 } as Response);
     const workspaceIcon = {
-      routeUrl: "/__openclaw__/workspace-icon/agent%3Amain%3Aone",
+      routeUrl: "/__openclaw__/workspace-icon/agent%3Amain%3Astable-missing",
       authTokens: ["token"],
       authReady: true,
     };
@@ -1113,104 +1092,5 @@ describe("chat pane workspace chip icon", () => {
       headers: { Authorization: "Bearer session-password" },
     });
     vi.restoreAllMocks();
-  });
-});
-
-describe("chat pane workspace resolution", () => {
-  it("uses worktree repo vocabulary with spawned cwd", () => {
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({
-          spawnedCwd: "/tmp/worktrees/title-bar",
-          worktree: { id: "wt-1", branch: "title-bar", repoRoot: "/src/openclaw" },
-        }),
-      }),
-    ).toEqual({ root: "/tmp/worktrees/title-bar", label: "openclaw" });
-  });
-
-  it("does not substitute the agent workspace for a missing worktree checkout", () => {
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({
-          worktree: { id: "wt-missing", branch: "feature", repoRoot: "/src/openclaw" },
-        }),
-        agentWorkspace: "/src/default-agent-workspace",
-        worktreePath: null,
-      }),
-    ).toEqual({ root: null, label: "openclaw" });
-  });
-
-  it("matches the gateway root order: spawned workspace before spawned cwd", () => {
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({
-          spawnedWorkspaceDir: "/src/openclaw",
-          spawnedCwd: "/src/openclaw/packages/nested",
-        }),
-      }),
-    ).toEqual({ root: "/src/openclaw", label: "openclaw" });
-    // execCwd is exec-node routing state; it never overrides local facts.
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({ execCwd: "/remote/stale", spawnedCwd: "/src/openclaw" }),
-      }),
-    ).toEqual({ root: "/src/openclaw", label: "openclaw" });
-  });
-
-  it("prefers exec cwd and falls back to the agent workspace", () => {
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({ execNode: "build-mac", execCwd: "/remote/build" }),
-        agentWorkspace: "/local/default",
-      }),
-    ).toEqual({ root: "/remote/build", label: "build" });
-    // Without execCwd, gateway-local facts must not stand in for a path that
-    // lives on another machine.
-    expect(
-      resolveChatPaneWorkspace({
-        session: row({ execNode: "build-mac", spawnedCwd: "/local/spawned" }),
-        agentWorkspace: "/local/default",
-        worktreePath: "/local/worktree",
-      }),
-    ).toEqual({ root: null, label: null });
-    expect(resolveChatPaneWorkspace({ session: row(), agentWorkspace: "/src/openclaw" })).toEqual({
-      root: "/src/openclaw",
-      label: "openclaw",
-    });
-  });
-
-  it("disables reveal for exec nodes, remote placement, and missing advertisement", () => {
-    expect(
-      canRevealSessionWorkspace({
-        session: row({ execNode: "build-mac", execCwd: "/remote/build" }),
-        workspaceRoot: "/remote/build",
-        methodAdvertised: true,
-        hasAdminAccess: true,
-      }),
-    ).toBe(false);
-    expect(
-      canRevealSessionWorkspace({
-        session: row({ placement: { state: "requested" } as GatewaySessionRow["placement"] }),
-        workspaceRoot: "/cloud/work",
-        methodAdvertised: true,
-        hasAdminAccess: true,
-      }),
-    ).toBe(false);
-    expect(
-      canRevealSessionWorkspace({
-        session: row(),
-        workspaceRoot: "/src/openclaw",
-        methodAdvertised: false,
-        hasAdminAccess: true,
-      }),
-    ).toBe(false);
-    expect(
-      canRevealSessionWorkspace({
-        session: row(),
-        workspaceRoot: "/src/openclaw",
-        methodAdvertised: true,
-        hasAdminAccess: false,
-      }),
-    ).toBe(false);
   });
 });
