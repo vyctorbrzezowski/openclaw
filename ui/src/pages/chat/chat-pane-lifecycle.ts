@@ -27,7 +27,6 @@ import {
 } from "../../lib/keyboard-shortcut-catalog.ts";
 import { sessionPullRequestsForGateway } from "../../lib/session-pull-requests.ts";
 import { parseCatalogSessionKey } from "../../lib/sessions/catalog-key.ts";
-import { resolveSessionKey } from "../../lib/sessions/index.ts";
 import { areUiSessionKeysEquivalent } from "../../lib/sessions/session-key.ts";
 import { invalidateChatAvatarCache, refreshChatAvatar } from "./chat-avatar.ts";
 import {
@@ -595,9 +594,7 @@ export abstract class ChatPaneLifecycle extends ChatPaneSessionCreation {
   override willUpdate(changedProperties: Map<PropertyKey, unknown>) {
     if (changedProperties.has("sessionKey") && this.state) {
       const catalogKey = parseCatalogSessionKey(this.sessionKey);
-      const nextSessionKey = catalogKey
-        ? this.sessionKey
-        : resolveSessionKey(this.sessionKey, this.context.gateway.snapshot.hello);
+      const nextSessionKey = this.resolvePaneSessionKey(this.sessionKey);
       if (nextSessionKey) {
         // Availability belongs to one activation. The replacement probe starts
         // after its transcript commit in deferSessionHydrationUntilTranscript.

@@ -571,15 +571,13 @@ export async function loadChatRoute(
         return resolved ?? notFound({ routeId: face });
       }
     }
-    const canonicalLocation = preferenceDerived
-      ? locationWithoutNavigationHints(routeLocation)
-      : null;
+    const canonicalLocation = locationWithoutNavigationHints(routeLocation);
     return {
       kind: "session",
       sessionKey,
       ...draftRouteDataFromLocation(routeLocation),
       face,
-      ...(canonicalLocation && canonicalLocation.search !== routeLocation.search
+      ...(canonicalLocation.search !== routeLocation.search
         ? { canonicalLocation, canonicalLocationSource: routeLocation }
         : {}),
     };

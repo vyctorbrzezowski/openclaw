@@ -64,6 +64,15 @@ export function runSessionNavigationIntent(
       return intent.commit();
     },
   };
+  if (
+    (activeRouteId === "chat" || activeRouteId === "dashboard") &&
+    activeRouteId !== intent.face
+  ) {
+    // Split keeps both faces mounted. An inactive face must not stage a
+    // retained-session preview and steal navigation from the active route.
+    guarded.commit();
+    return;
+  }
   if (!announceSessionNavigationIntent(guarded)) {
     guarded.commit();
   }

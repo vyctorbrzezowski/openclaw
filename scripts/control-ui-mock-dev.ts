@@ -1296,6 +1296,11 @@ function buildWorkboardMocks(
       },
     ],
   };
+  const boardSnapshotWithDock = (chatDock: "bottom" | "hidden" | "left" | "right") => ({
+    ...boardSnapshot,
+    revision: boardSnapshot.revision + 1,
+    tabs: boardSnapshot.tabs.map((tab) => ({ ...tab, chatDock })),
+  });
   return {
     board,
     cards,
@@ -1304,6 +1309,15 @@ function buildWorkboardMocks(
       "board.get": options.scoped
         ? { cases: [{ match: { sessionKey }, response: boardSnapshot }] }
         : boardSnapshot,
+      "board.update": {
+        cases: (["bottom", "hidden", "left", "right"] as const).map((chatDock) => ({
+          match: {
+            sessionKey,
+            ops: [{ kind: "tab_update", tabId: "main", chatDock }],
+          },
+          response: boardSnapshotWithDock(chatDock),
+        })),
+      },
       "workboard.boards.list": { boards: [board] },
       "workboard.cards.list": { boards: [board], cards, statuses },
       "workboard.cards.stats": { ...board, byAgent: {} },
@@ -2234,6 +2248,7 @@ async function createChatPickerScenario(
       ...(boardFixtureEnabled
         ? [
             "board.get",
+            "board.update",
             "workboard.boards.list",
             "workboard.cards.list",
             "workboard.cards.move",

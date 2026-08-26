@@ -299,6 +299,7 @@ describe("chat pane header", () => {
       backgroundTasksAction: html`<button data-action="tasks"></button>`,
       workspaceAction: html`<button data-action="workspace"></button>`,
       sessionRailAction: html`<button data-action="rail"></button>`,
+      sharingControl: html`<button data-action="sharing"></button>`,
       sessionMenuAction: html`<button data-action="session-menu"></button>`,
       onOpenSplitView: vi.fn(),
     });
@@ -309,6 +310,7 @@ describe("chat pane header", () => {
     expect(container.querySelector('[data-action="tasks"]')).toBeNull();
     expect(container.querySelector('[data-action="workspace"]')).toBeNull();
     expect(container.querySelector('[data-action="rail"]')).toBeNull();
+    expect(container.querySelector('[data-action="sharing"]')).toBeNull();
     expect(container.querySelector('[data-action="session-menu"]')).not.toBeNull();
     expect(container.querySelector(".chat-pane__nav-toggle")).not.toBeNull();
     expect(container.querySelector(".chat-pane__palette-open")).toBeNull();

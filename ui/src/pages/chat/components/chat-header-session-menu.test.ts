@@ -18,6 +18,7 @@ import "./chat-header-session-menu.ts";
 import type {
   HeaderMenuAction,
   HeaderMenuActionKind,
+  HeaderMenuEmbeddedSection,
   HeaderMenuQuickAction,
   HeaderMenuStatusAction,
 } from "./chat-header-session-menu.ts";
@@ -64,6 +65,7 @@ async function mountMenu(
     panelActions?: HeaderMenuQuickAction[];
     layoutActions?: HeaderMenuQuickAction[];
     statusActions?: HeaderMenuStatusAction[];
+    visibilitySection?: HeaderMenuEmbeddedSection | null;
     ownerOptions?: SessionOwnerOption[];
     selfOwner?: SessionOwnerOption | null;
     currentOwnerId?: string | null;
@@ -93,6 +95,7 @@ async function mountMenu(
       .panelActions=${options.panelActions ?? []}
       .layoutActions=${options.layoutActions ?? []}
       .statusActions=${options.statusActions ?? []}
+      .visibilitySection=${options.visibilitySection ?? null}
       .ownerOptions=${options.ownerOptions ?? []}
       .selfOwner=${options.selfOwner ?? null}
       .currentOwnerId=${options.currentOwnerId ?? null}
@@ -456,6 +459,39 @@ describe("chat header session menu", () => {
       kind: "assign-owner",
       owner: { type: "human", id: "profile-ada" },
     });
+  });
+
+  it("moves Visibility into a compact session-menu section", async () => {
+    const onOpen = vi.fn();
+    const onSelect = vi.fn();
+    const menu = await mountMenu({
+      compact: true,
+      visibilitySection: {
+        label: "Visibility",
+        icon: icons.users,
+        onOpen,
+        onSelect,
+        renderItems: () => html`
+          <div class="chat-pane__sharing-title">Visibility</div>
+          <wa-dropdown-item value="visibility:shared">Shared</wa-dropdown-item>
+          <div class="chat-pane__sharing-title">Members</div>
+          <wa-dropdown-item value="member:ada">Ada</wa-dropdown-item>
+        `,
+      },
+    });
+
+    expect(item(menu, "Visibility")).toBeDefined();
+    expect(menu.querySelector("[slot='submenu']")).toBeNull();
+    select(menu, "compact:open-visibility");
+    await menu.updateComplete;
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(
+      Array.from(
+        menu.querySelectorAll<MenuItemElement>(":scope > wa-dropdown > wa-dropdown-item"),
+      ).map((entry) => entry.textContent?.trim()),
+    ).toEqual(["Back", "Shared", "Ada"]);
+    select(menu, "visibility:shared");
+    expect(onSelect).toHaveBeenCalledWith("visibility:shared");
   });
 
   it("pins and disables onboarding view preferences", async () => {

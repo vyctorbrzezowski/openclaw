@@ -40,9 +40,24 @@ export type HeaderMenuStatusAction = {
   onActivate: () => void;
 };
 
+export type HeaderMenuEmbeddedSection = {
+  label: string;
+  icon: TemplateResult;
+  onOpen: () => void;
+  onSelect: (value: string) => void;
+  renderItems: () => TemplateResult;
+};
+
 const EMPTY_SETTINGS = {} as UiSettings;
 
-type CompactMenuView = "root" | "open-in" | "panels" | "layout" | "assign-owner" | "view";
+type CompactMenuView =
+  | "root"
+  | "open-in"
+  | "panels"
+  | "layout"
+  | "assign-owner"
+  | "view"
+  | "visibility";
 type MenuSelectEvent = CustomEvent<{ item: { value?: string } }> & {
   currentTarget: HTMLElement & { open: boolean };
 };
@@ -54,6 +69,7 @@ const COMPACT_MENU_VIEW_BY_VALUE: Record<string, CompactMenuView> = {
   "compact:open-open-in": "open-in",
   "compact:open-panels": "panels",
   "compact:open-view": "view",
+  "compact:open-visibility": "visibility",
 };
 
 class ChatHeaderSessionMenu extends OpenClawLightDomElement {
@@ -67,6 +83,7 @@ class ChatHeaderSessionMenu extends OpenClawLightDomElement {
   @property({ attribute: false }) panelActions: HeaderMenuQuickAction[] = [];
   @property({ attribute: false }) layoutActions: HeaderMenuQuickAction[] = [];
   @property({ attribute: false }) statusActions: HeaderMenuStatusAction[] = [];
+  @property({ attribute: false }) visibilitySection: HeaderMenuEmbeddedSection | null = null;
   @property({ attribute: false }) ownerOptions: readonly SessionOwnerOption[] = [];
   @property({ attribute: false }) selfOwner: SessionOwnerOption | null = null;
   @property({ attribute: false }) currentOwnerId: string | null = null;
@@ -100,9 +117,16 @@ class ChatHeaderSessionMenu extends OpenClawLightDomElement {
     if (compactView) {
       event.preventDefault();
       this.compactView = compactView;
+      if (compactView === "visibility") {
+        this.visibilitySection?.onOpen();
+      }
       void this.updateComplete.then(() => {
         this.querySelector<HTMLElement>("wa-dropdown-item:not([disabled])")?.focus();
       });
+      return;
+    }
+    if (this.compactView === "visibility" && this.visibilitySection) {
+      this.visibilitySection.onSelect(value);
       return;
     }
     if (value === "open-command-palette") {
@@ -314,7 +338,9 @@ class ChatHeaderSessionMenu extends OpenClawLightDomElement {
                   },
                   true,
                 )
-              : this.renderViewSubmenu(true);
+              : this.compactView === "visibility" && this.visibilitySection
+                ? this.visibilitySection.renderItems()
+                : this.renderViewSubmenu(true);
     return html`${back}${body}`;
   }
 
@@ -365,6 +391,13 @@ class ChatHeaderSessionMenu extends OpenClawLightDomElement {
         : nothing}
       ${this.renderQuickActions("panels", this.panelActions)}
       ${this.renderQuickActions("layout", this.layoutActions)}
+      ${this.compact && this.visibilitySection
+        ? this.renderCompactNavigationItem(
+            "visibility",
+            this.visibilitySection.label,
+            this.visibilitySection.icon,
+          )
+        : nothing}
       <wa-dropdown-item
         class="session-menu__item"
         value="rename"

@@ -11,8 +11,8 @@ import { readPresenceEntries } from "../../app/user-profile.ts";
 import { createGatewayConnectionLifecycle } from "../../lib/gateway-connection-lifecycle.ts";
 import { isGatewayMethodAdvertised } from "../../lib/gateway-methods.ts";
 import { parseCatalogSessionKey } from "../../lib/sessions/catalog-key.ts";
-import { resolveSessionKey } from "../../lib/sessions/index.ts";
 import {
+  areUiSessionKeysEquivalent,
   buildAgentMainSessionKey,
   canonicalUiSessionKeyForPersistence,
   isUiSelectedGlobalSessionKey,
@@ -364,14 +364,15 @@ export abstract class ChatPaneContext extends ChatPaneLifecycle {
     const catalogRouteKey = parseCatalogSessionKey(routeSessionKey);
     const canonicalRouteSessionKey =
       routeSessionKey && !catalogRouteKey
-        ? resolveSessionKey(routeSessionKey, snapshot.hello)
+        ? this.resolvePaneSessionKey(routeSessionKey)
         : null;
     if (
       routeSessionKey &&
       canonicalRouteSessionKey &&
       canonicalRouteSessionKey !== routeSessionKey &&
       this.active &&
-      this.presented
+      this.presented &&
+      areUiSessionKeysEquivalent(snapshot.sessionKey, canonicalRouteSessionKey)
     ) {
       this.onPaneSessionChange?.(this.paneId, canonicalRouteSessionKey, { replace: true });
       state.requestUpdate?.();

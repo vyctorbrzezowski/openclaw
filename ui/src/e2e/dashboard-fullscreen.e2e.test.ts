@@ -200,30 +200,29 @@ suite.define(() => {
       await page.goto(`${suite.server.baseUrl}dashboard`);
       await gateway.waitForRequest("board.get");
 
-      const fullscreen = page.locator(".board-fullscreen-button");
-      await fullscreen.waitFor();
-      expect(await fullscreen.getAttribute("aria-label")).toBe("Enter fullscreen");
-      expect(await fullscreen.getAttribute("aria-pressed")).toBe("false");
-      expect(await page.locator('wa-radio[value="split"]').getAttribute("class")).toContain(
-        "settings-segmented__btn--active",
-      );
+      const chat = page.getByRole("button", { name: "Chat", exact: true });
+      const dashboard = page.getByRole("button", { name: "Dashboard", exact: true });
+      const more = page.getByRole("button", { name: "More view actions" });
+      await more.waitFor();
+      expect(await chat.getAttribute("aria-pressed")).toBe("true");
+      expect(await dashboard.getAttribute("aria-pressed")).toBe("true");
 
-      await fullscreen.click();
-      await expect.poll(() => fullscreen.getAttribute("aria-pressed")).toBe("true");
+      await more.click();
+      await page.getByText("Enter fullscreen", { exact: true }).click();
       expect(
         await page.evaluate(() =>
           document.fullscreenElement?.classList.contains("chat-pane-primary-column"),
         ),
       ).toBe(true);
-      await page.getByRole("button", { name: "Exit fullscreen" }).click();
-      await expect.poll(() => fullscreen.getAttribute("aria-pressed")).toBe("false");
+      await more.click();
+      await page.getByText("Exit fullscreen", { exact: true }).click();
+      await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
 
-      await page.locator('wa-radio[value="dashboard"]').click();
+      await chat.click();
       await gateway.waitForRequest("board.update");
-      await expect
-        .poll(() => page.locator('wa-radio[value="dashboard"]').getAttribute("class"))
-        .toContain("settings-segmented__btn--active");
-      await page.getByRole("button", { name: "Enter fullscreen" }).waitFor();
+      await expect.poll(() => chat.getAttribute("aria-pressed")).toBe("false");
+      await expect.poll(() => dashboard.getAttribute("aria-pressed")).toBe("true");
+      await more.waitFor();
     });
   });
 

@@ -434,7 +434,10 @@ describe("AppSidebar agent chip", () => {
 
     home?.click();
     expect(setSessionKey).toHaveBeenCalledWith("agent:main:main");
-    expect(navigate).toHaveBeenCalledWith("chat", { pathname: "/chat/main" });
+    expect(navigate).toHaveBeenCalledWith("chat", {
+      pathname: "/chat/main",
+      search: `?${SESSION_NAVIGATION_KEY_PARAM}=${encodeURIComponent("agent:main:main")}`,
+    });
   });
 
   it("treats the global key as the main session under global scope", async () => {

@@ -7,6 +7,7 @@ import type { ApplicationContext } from "../../app/context.ts";
 import { createInitialUserMessageHandoff } from "../../app/initial-user-message-handoff.ts";
 import { t } from "../../i18n/index.ts";
 import { showToast } from "../../lib/toast.ts";
+import { SESSION_NAVIGATION_KEY_PARAM } from "../../lib/sessions/route-navigation.ts";
 import {
   installDialogPolyfill,
   waitForConfirmDialogActions,
@@ -647,6 +648,104 @@ describe("chat pane initialization", () => {
       "chat.startup",
       expect.objectContaining({ sessionKey: canonicalSessionKey }),
     );
+  });
+
+  it("does not let a stale route alias replace a newer gateway session", () => {
+    const client = createGatewayBrowserClientFixture({ request: vi.fn() });
+    const { pane, state } = createTestChatPane({
+      client,
+      sessions: createSessionCapabilityFixture(),
+    });
+    const canonicalSessionKey = "agent:main:main";
+    const hello = {
+      snapshot: {
+        sessionDefaults: {
+          defaultAgentId: "main",
+          mainKey: "main",
+          mainSessionKey: canonicalSessionKey,
+        },
+      },
+    } as unknown as NonNullable<ApplicationContext["gateway"]["snapshot"]["hello"]>;
+    const snapshot = {
+      ...pane.context.gateway.snapshot,
+      client,
+      phase: "connected" as const,
+      hello,
+      sessionKey: "agent:main:new-destination",
+    };
+    pane.context = {
+      ...pane.context,
+      gateway: { ...pane.context.gateway, snapshot },
+    } as unknown as ApplicationContext;
+    pane.sessionKey = "main";
+    state.sessionKey = canonicalSessionKey;
+    state.settings = {
+      sessionKey: canonicalSessionKey,
+      lastActiveSessionKey: canonicalSessionKey,
+    } as ChatPageHost["settings"];
+    state.hello = hello;
+    pane.active = true;
+    pane.presented = true;
+    const navigate = vi.fn();
+    pane.onPaneSessionChange = navigate;
+
+    pane.applyGatewaySnapshot(snapshot);
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("does not let the previous gateway session replace a carried navigation key", () => {
+    const client = createGatewayBrowserClientFixture({ request: vi.fn() });
+    const { pane, state } = createTestChatPane({
+      client,
+      sessions: createSessionCapabilityFixture(),
+    });
+    const destinationSessionKey = "agent:main:main";
+    const previousSessionKey = "agent:main:previous";
+    const hello = {
+      snapshot: {
+        sessionDefaults: {
+          defaultAgentId: "main",
+          mainKey: "main",
+          mainSessionKey: previousSessionKey,
+        },
+      },
+    } as unknown as NonNullable<ApplicationContext["gateway"]["snapshot"]["hello"]>;
+    const snapshot = {
+      ...pane.context.gateway.snapshot,
+      client,
+      phase: "connected" as const,
+      hello,
+      sessionKey: previousSessionKey,
+    };
+    pane.context = {
+      ...pane.context,
+      gateway: { ...pane.context.gateway, snapshot },
+    } as unknown as ApplicationContext;
+    pane.sessionKey = destinationSessionKey;
+    state.sessionKey = previousSessionKey;
+    state.settings = {
+      sessionKey: previousSessionKey,
+      lastActiveSessionKey: previousSessionKey,
+    } as ChatPageHost["settings"];
+    state.hello = hello;
+    pane.active = true;
+    pane.presented = true;
+    const navigate = vi.fn();
+    pane.onPaneSessionChange = navigate;
+    const previousHref = window.location.href;
+
+    try {
+      history.replaceState(
+        null,
+        "",
+        `/chat/main?${SESSION_NAVIGATION_KEY_PARAM}=${encodeURIComponent(destinationSessionKey)}`,
+      );
+      pane.applyGatewaySnapshot(snapshot);
+      expect(navigate).not.toHaveBeenCalled();
+    } finally {
+      history.replaceState(null, "", previousHref);
+    }
   });
 
   it("keeps active turn state when re-entry canonicalizes the main route alias", () => {

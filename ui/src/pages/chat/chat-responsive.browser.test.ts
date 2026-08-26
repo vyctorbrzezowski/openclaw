@@ -1108,16 +1108,15 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
                   </span>
                 </span>
               </div>
-              <div class="chat-pane__face-switch chat-pane__face-switch--split">
+              <div class="chat-pane__face-switch chat-pane__face-switch--more">
                 <div class="settings-segmented">
-                  <button class="settings-segmented__btn" type="button">Chat</button>
-                  <button class="settings-segmented__btn settings-segmented__btn--active" type="button">Split</button>
-                  <button class="settings-segmented__btn" type="button">Dashboard</button>
+                  <button class="settings-segmented__btn settings-segmented__btn--active" type="button">Chat</button>
+                  <button class="settings-segmented__btn settings-segmented__btn--active" type="button">Dashboard</button>
                 </div>
-                <wa-dropdown class="chat-pane__dock-caret">
+                <wa-dropdown class="chat-pane__board-more">
                   <button
                     slot="trigger"
-                    class="btn btn--ghost btn--icon chat-icon-btn chat-pane__dock-caret-trigger"
+                    class="btn btn--ghost btn--icon chat-icon-btn chat-pane__board-more-trigger"
                     type="button"
                   >B</button>
                 </wa-dropdown>
@@ -1146,7 +1145,7 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
       const selectors = [
         "openclaw-session-owner-chip",
         ".chat-side-panel-toggle",
-        ".chat-pane__dock-caret",
+        ".chat-pane__board-more",
         ".chat-pane__sharing-menu",
         ".chat-pane__branches-menu",
         ".chat-pane__gateway-menu",

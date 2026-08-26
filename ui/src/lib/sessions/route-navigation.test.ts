@@ -90,6 +90,24 @@ describe("sessionNavigationTarget", () => {
     });
   });
 
+  it("carries an explicit main-session navigation outside its shareable href", () => {
+    const target = sessionNavigationTarget({
+      face: "chat",
+      sessionKey: "agent:main:main",
+      fallbackAgentId: "main",
+      mainKey: "main",
+      row: { key: "agent:main:main" },
+      navigationKey: "agent:main:main",
+      carryNavigationKey: true,
+    });
+
+    expect(target.href).toBe("/chat/main");
+    expect(target.options).toEqual({
+      pathname: "/chat/main",
+      search: `?${SESSION_NAVIGATION_KEY_PARAM}=${encodeURIComponent("agent:main:main")}`,
+    });
+  });
+
   it("marks an uncached preference-derived face for in-app navigation but keeps href shareable", () => {
     const target = sessionNavigationTarget({
       face: "chat",

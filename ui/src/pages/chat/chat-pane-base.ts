@@ -209,7 +209,7 @@ export abstract class ChatPaneBase extends OpenClawLightDomElement {
       onChange: () => this.requestUpdate(),
       onError: (message) => this.publishHeaderError(message),
       buttonClass: "btn btn--ghost btn--icon chat-icon-btn board-fullscreen-button",
-      buttonSelector: ".board-fullscreen-button",
+      buttonSelector: ".chat-pane__board-more-trigger",
       iconClass: "board-fullscreen-button__icon",
       enterLabel: () => t("chat.board.enterFullscreen"),
       exitLabel: () => t("chat.board.exitFullscreen"),

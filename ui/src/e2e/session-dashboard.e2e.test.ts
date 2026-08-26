@@ -325,7 +325,7 @@ suite.define(() => {
     await expect
       .poll(async () => (await gateway.getRequests("board.get")).length, { timeout: 30_000 })
       .toBeGreaterThan(0);
-    await page.locator('wa-radio[value="dashboard"]').waitFor();
+    await page.getByRole("button", { name: "Dashboard", exact: true }).waitFor();
     await page.locator(".board-session-surface").waitFor();
 
     const preview = page.locator('.chat-tool-card__preview[data-kind="canvas"]');

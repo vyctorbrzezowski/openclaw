@@ -233,7 +233,7 @@ function renderSessionParticipants(props: ChatPaneHeaderProps) {
 }
 
 function renderSessionControls(props: ChatPaneHeaderProps) {
-  const sharingControl = props.sharingControl ?? nothing;
+  const sharingControl = props.narrow ? nothing : (props.sharingControl ?? nothing);
   const presence = props.presence ?? nothing;
   const participants = renderSessionParticipants(props);
   const ownerActor = props.showOwnerChip ? props.session?.owner?.actor : undefined;
@@ -608,12 +608,6 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
         : nothing}
       ${renderGatewayPicker(props)}
       <div class="chat-pane__actions">
-        ${compactSessionActions ? nothing : props.panelActions}
-        ${compactSessionActions ? nothing : props.discussionAction}
-        ${props.catalog || compactSessionActions
-          ? nothing
-          : html`${props.diffAction} ${props.backgroundTasksAction} ${props.workspaceAction}
-            ${props.sessionRailAction}`}
         ${props.onOpenSplitView && !compactSessionActions
           ? html`<openclaw-tooltip .content=${t("chat.splitView.open")}>
               <button
@@ -626,6 +620,12 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               </button>
             </openclaw-tooltip>`
           : nothing}
+        ${compactSessionActions ? nothing : props.panelActions}
+        ${compactSessionActions ? nothing : props.discussionAction}
+        ${props.catalog || compactSessionActions
+          ? nothing
+          : html`${props.diffAction} ${props.backgroundTasksAction} ${props.workspaceAction}
+            ${props.sessionRailAction}`}
         ${!props.narrow && props.onSplitDown
           ? html`<openclaw-tooltip .content=${t("chat.splitView.splitDown")}>
               <button

@@ -4,6 +4,31 @@ import { SESSION_NAVIGATION_INTENT_EVENT } from "../../lib/sessions/navigation-h
 import { createGateway, createSessions, mountSidebar } from "../app-sidebar.ts";
 
 describe("AppSidebar retained session navigation", () => {
+  it("commits a cross-face navigation without offering it to an inactive retained face", async () => {
+    const handleIntent = vi.fn((event: Event) => event.preventDefault());
+    window.addEventListener(SESSION_NAVIGATION_INTENT_EVENT, handleIntent);
+    const gateway = createGateway({} as GatewayBrowserClient);
+    const { sidebar } = await mountSidebar(
+      gateway,
+      createSessions("main", ["agent:main:a", "agent:main:b"]),
+    );
+    sidebar.activeRouteId = "dashboard";
+    const navigation = vi.fn();
+    sidebar.onNavigate = navigation;
+
+    try {
+      sidebar.selectSession("agent:main:b");
+
+      expect(handleIntent).not.toHaveBeenCalled();
+      expect(navigation).toHaveBeenCalledWith(
+        "chat",
+        expect.objectContaining({ pathname: "/chat/main/b" }),
+      );
+    } finally {
+      window.removeEventListener(SESSION_NAVIGATION_INTENT_EVENT, handleIntent);
+    }
+  });
+
   it("cancels a pending retained navigation when a newer session wins", async () => {
     let pendingCommit: (() => boolean) | undefined;
     const handleIntent = (event: Event) => {

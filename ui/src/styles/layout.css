@@ -1004,7 +1004,7 @@ openclaw-settings-save-indicator:empty {
   align-items: center;
   gap: 4px;
   min-height: 32px;
-  padding: 0 0 var(--space-6);
+  padding: var(--space-1) 0 var(--space-4);
   flex-shrink: 0;
 }
 
@@ -2920,8 +2920,8 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .nav-item:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--bg-hover) 84%, transparent);
-  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--accent-subtle) 48%, var(--bg-elevated) 52%);
+  border-color: transparent;
   text-decoration: none;
 }
 

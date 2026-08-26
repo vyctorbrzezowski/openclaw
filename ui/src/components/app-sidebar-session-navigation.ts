@@ -300,7 +300,7 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
     return this.sessionsStatusFilter;
   }
 
-  readonly selectSession = (sessionKey: string) => {
+  readonly selectSession = (sessionKey: string, options: { routeOwned?: boolean } = {}) => {
     const face = resolveSessionPreferredFace(this.findSidebarSessionByKey(sessionKey));
     const target = sessionNavigationTarget({
       face,
@@ -311,12 +311,18 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
       mainKey: this.sessionMainKey(),
       preferenceDerivedFace: true,
       navigationKey: sessionKey,
+      carryNavigationKey: options.routeOwned,
     });
     runSessionNavigationIntent(this, {
       commit: () => {
         this.prepareSessionNavigation(sessionKey, target.options.pathname);
+        if (options.routeOwned) {
+          this.setApplicationSession(sessionKey, this.selectedAgentIdForSessions());
+        }
         this.onNavigate?.(face, target.options);
-        this.bindLiteralSession(sessionKey, this.selectedAgentIdForSessions(), target.options);
+        if (!options.routeOwned) {
+          this.bindLiteralSession(sessionKey, this.selectedAgentIdForSessions(), target.options);
+        }
         return true;
       },
       face,
@@ -749,7 +755,9 @@ export class AppSidebarSessionNavigationElement extends AppSidebarBase {
       return;
     }
     this.clearSessionSelection();
-    this.selectSession(this.selectedAgentMainSessionKey(normalizeAgentId(agentId)));
+    this.selectSession(this.selectedAgentMainSessionKey(normalizeAgentId(agentId)), {
+      routeOwned: true,
+    });
   };
 
   isSessionChildrenExpanded(session: SidebarRecentSession): boolean {

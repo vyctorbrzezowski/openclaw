@@ -22,7 +22,11 @@ import {
   type CatalogSessionKey,
 } from "../../lib/sessions/catalog-key.ts";
 import { resolveSessionKey, scopedAgentParamsForSession } from "../../lib/sessions/index.ts";
-import { parseAgentSessionKey } from "../../lib/sessions/session-key.ts";
+import { SESSION_NAVIGATION_KEY_PARAM } from "../../lib/sessions/route-navigation.ts";
+import {
+  areUiSessionKeysEquivalent,
+  parseAgentSessionKey,
+} from "../../lib/sessions/session-key.ts";
 import { releaseChatAttachmentPayloads } from "./attachment-payload-store.ts";
 import { catalogMessageId } from "./catalog-message-id.ts";
 import { loadChatBranches } from "./chat-history.ts";
@@ -317,14 +321,26 @@ export abstract class ChatPaneSession extends ChatPaneTaskSuggestions {
     }
   }
 
+  protected resolvePaneSessionKey(sessionKey: string): string | null {
+    if (parseCatalogSessionKey(sessionKey)) {
+      return sessionKey;
+    }
+    const carriedNavigationKey = new URLSearchParams(window.location.search)
+      .get(SESSION_NAVIGATION_KEY_PARAM)
+      ?.trim();
+    // A carried key is the destination selected by the route owner. Keep it
+    // exact until the route load drops the hint instead of resolving an old alias.
+    return carriedNavigationKey && areUiSessionKeysEquivalent(carriedNavigationKey, sessionKey)
+      ? carriedNavigationKey
+      : resolveSessionKey(sessionKey, this.context.gateway.snapshot.hello);
+  }
+
   protected setPaneSessionKey(sessionKey: string): string | null {
     const state = this.state;
     if (!state) {
       return null;
     }
-    const nextSessionKey = parseCatalogSessionKey(sessionKey)
-      ? sessionKey
-      : resolveSessionKey(sessionKey, this.context.gateway.snapshot.hello);
+    const nextSessionKey = this.resolvePaneSessionKey(sessionKey);
     if (!nextSessionKey) {
       return null;
     }

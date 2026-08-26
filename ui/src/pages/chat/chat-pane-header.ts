@@ -33,13 +33,13 @@ import { displayedChatSessionBranches } from "./chat-history.ts";
 import { ChatPaneDiscussion } from "./chat-pane-discussion.ts";
 import { resolveChatPaneDesktopTarget, resolveChatPanePlacement } from "./chat-pane-placement.ts";
 import { readChatSessionActionAccess } from "./chat-session-action-access.ts";
-import { renderBackgroundTasksToggle } from "./components/chat-background-tasks-render.ts";
 import type { BackgroundTasksProps } from "./components/chat-background-tasks.types.ts";
 import { isChatRunWorking } from "./components/chat-composer.ts";
 import "./components/chat-header-session-menu.ts";
 import type {
   HeaderMenuAction,
   HeaderMenuActionKind,
+  HeaderMenuEmbeddedSection,
   HeaderMenuQuickAction,
   HeaderMenuStatusAction,
 } from "./components/chat-header-session-menu.ts";
@@ -49,7 +49,11 @@ import {
   resolveChatPaneParentSession,
   resolveChatPaneWorkspace,
 } from "./components/chat-pane-header.ts";
-import { renderChatSessionSharing } from "./components/chat-session-sharing.ts";
+import {
+  createChatSessionSharingMenuSection,
+  renderChatSessionSharing,
+  type ChatSessionSharingProps,
+} from "./components/chat-session-sharing.ts";
 import type { SessionWorkspaceProps } from "./components/chat-session-workspace.ts";
 import { renderContinueInTerminalDialog } from "./components/continue-in-terminal-dialog.ts";
 import { hasAbortableSessionRun } from "./run-lifecycle.ts";
@@ -299,19 +303,6 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         ${icons.panelRight}
       </button>
     </openclaw-tooltip>`;
-    const browserPanelAction = sessionWorkspace.onToggleBrowser
-      ? html`<openclaw-tooltip .content=${t("browser.toggle")}>
-          <button
-            class="btn btn--ghost btn--icon chat-icon-btn chat-browser-panel-toggle"
-            type="button"
-            aria-label=${t("browser.toggle")}
-            @click=${sessionWorkspace.onToggleBrowser}
-          >
-            ${icons.globe}
-          </button>
-        </openclaw-tooltip>`
-      : nothing;
-    const backgroundTasksAction = catalog ? nothing : renderBackgroundTasksToggle(backgroundTasks);
     const sessionRailMode = this.selectedSessionRailMode(this.state?.sessionKey ?? "");
     const toggleSessionRail = () => this.requestSessionRail("toggle");
     const panelMenuActions: HeaderMenuQuickAction[] = [];
@@ -440,6 +431,33 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         ) ?? null)
       : null;
     const workspaceIcon = this.resolveWorkspaceIcon(workspace.root ? row?.key : undefined);
+    const sharingProps: ChatSessionSharingProps | null = sharingMethodsSupported
+      ? {
+          session: row,
+          state: row
+            ? this.sessionSharingStates.get(this.sessionSharingCacheKey(row.key))
+            : undefined,
+          allowedVisibilities: sharingSnapshot.hello?.policy?.allowedSessionVisibilities,
+          membersAvailable: sharingReadAccess.allowed,
+          openDisabledReason: sharingOpenDisabledReason,
+          visibilityDisabledReason: sharingVisibilityAccess.allowed
+            ? undefined
+            : sharingVisibilityAccess.reason,
+          memberAddDisabledReason: sharingMemberAddAccess.allowed
+            ? undefined
+            : sharingMemberAddAccess.reason,
+          memberRemoveDisabledReason: sharingMemberRemoveAccess.allowed
+            ? undefined
+            : sharingMemberRemoveAccess.reason,
+          onOpen: () => row && void this.loadSessionSharing(row),
+          onVisibilityChange: (visibility) =>
+            row && void this.setSessionVisibility(row, visibility),
+          onMemberChange: (identityId, member) =>
+            row && void this.setSessionMember(row, identityId, member),
+        }
+      : null;
+    const visibilitySection: HeaderMenuEmbeddedSection | null =
+      this.narrow && sharingProps ? createChatSessionSharingMenuSection(sharingProps) : null;
     const header = renderChatPaneHeader({
       paneId: this.paneId,
       narrow: this.narrow,
@@ -471,7 +489,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       canReveal,
       copiedAction: this.headerCopiedAction,
       renameDisabledReason,
-      panelActions: html`${browserPanelAction}${backgroundTasksAction}${sidePanelAction}`,
+      panelActions: sidePanelAction,
       discussionAction: nothing,
       diffAction: nothing,
       backgroundTasksAction: nothing,
@@ -497,7 +515,14 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         face: board.face,
         dock: board.dock,
         canChangeDock: canChangeBoardDock,
-        fullscreenControl: board.hasBoard ? this.boardFullscreen.renderButton() : undefined,
+        fullscreenAction: board.hasBoard
+          ? {
+              active: this.boardFullscreen.active,
+              disabled: !this.boardFullscreen.available,
+              label: this.boardFullscreen.label,
+              onActivate: () => void this.boardFullscreen.toggle(),
+            }
+          : undefined,
         onSelectMode: (mode) => {
           if (mode === "chat") {
             void this.boardFullscreen.exit();
@@ -526,31 +551,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
         },
         onDockSideChange: (dock) => this.handleBoardDockChange(dock),
       }),
-      sharingControl: sharingMethodsSupported
-        ? renderChatSessionSharing({
-            session: row,
-            state: row
-              ? this.sessionSharingStates.get(this.sessionSharingCacheKey(row.key))
-              : undefined,
-            allowedVisibilities: sharingSnapshot.hello?.policy?.allowedSessionVisibilities,
-            membersAvailable: sharingReadAccess.allowed,
-            openDisabledReason: sharingOpenDisabledReason,
-            visibilityDisabledReason: sharingVisibilityAccess.allowed
-              ? undefined
-              : sharingVisibilityAccess.reason,
-            memberAddDisabledReason: sharingMemberAddAccess.allowed
-              ? undefined
-              : sharingMemberAddAccess.reason,
-            memberRemoveDisabledReason: sharingMemberRemoveAccess.allowed
-              ? undefined
-              : sharingMemberRemoveAccess.reason,
-            onOpen: () => row && void this.loadSessionSharing(row),
-            onVisibilityChange: (visibility) =>
-              row && void this.setSessionVisibility(row, visibility),
-            onMemberChange: (identityId, member) =>
-              row && void this.setSessionMember(row, identityId, member),
-          })
-        : nothing,
+      sharingControl: sharingProps ? renderChatSessionSharing(sharingProps) : nothing,
       sessionMenuAction:
         row && this.state
           ? html`<openclaw-chat-header-session-menu
@@ -567,6 +568,7 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
               .panelActions=${panelMenuActions}
               .layoutActions=${layoutMenuActions}
               .statusActions=${this.compactHeaderStatusActions()}
+              .visibilitySection=${visibilitySection}
               .ownerOptions=${ownerOptions}
               .selfOwner=${selfOwner}
               .currentOwnerId=${row.owner?.actor.id ?? null}

@@ -39,6 +39,7 @@ type ContextSessionNavigationTargetParams<TRouteId extends string> = {
   preferenceDerivedFace?: boolean;
   focusComposer?: boolean;
   navigationKey?: string;
+  carryNavigationKey?: boolean;
 };
 
 type ExplicitSessionNavigationTargetParams = {
@@ -55,6 +56,7 @@ type ExplicitSessionNavigationTargetParams = {
   preferenceDerivedFace?: boolean;
   focusComposer?: boolean;
   navigationKey?: string;
+  carryNavigationKey?: boolean;
 };
 
 type SessionNavigationTarget = {
@@ -194,9 +196,13 @@ export function sessionNavigationTarget<TRouteId extends string>(
     navigationParams.set(SESSION_COMPOSER_FOCUS_PARAM, "1");
   }
   const navigationKey = params.navigationKey?.trim() || row?.key;
-  if (navigationKey && SESSION_KEY_UUID_SUFFIX_RE.test(navigationKey)) {
+  if (
+    navigationKey &&
+    (params.carryNavigationKey || SESSION_KEY_UUID_SUFFIX_RE.test(navigationKey))
+  ) {
     // Sidebar navigation already owns the full row. Carry its key only through the
-    // in-app location so the short route never has to rediscover it from sessions.list.
+    // in-app location so short routes and the rolling Home route settle before a
+    // retained pane can restore the session that was active during navigation.
     navigationParams.set(SESSION_NAVIGATION_KEY_PARAM, navigationKey);
   }
   const serializedNavigation = navigationParams.toString();

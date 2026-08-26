@@ -900,7 +900,7 @@ openclaw-chat-pane {
   .chat-pane__actions .chat-pane__split-down,
   .chat-pane__actions .chat-pane__split-right,
   .chat-pane__header:has(.chat-pane__close-pane) .chat-side-panel-toggle,
-  .chat-pane__header:has(.chat-pane__close-pane) .chat-pane__dock-caret,
+  .chat-pane__header:has(.chat-pane__close-pane) .chat-pane__board-more,
   .chat-pane__header:has(.chat-pane__close-pane) .chat-pane__sharing-menu,
   .chat-pane__header:has(.chat-pane__close-pane) .chat-pane__branches-menu,
   .chat-pane__header:has(.chat-pane__close-pane) .chat-pane__gateway-menu,
@@ -928,6 +928,12 @@ openclaw-chat-pane {
   }
 
   .chat-pane__presence {
+    display: none;
+  }
+
+  /* Visibility and membership move into the compact session menu at this
+     width; release their facepile lane so that menu remains reachable. */
+  .chat-pane__people {
     display: none;
   }
 }

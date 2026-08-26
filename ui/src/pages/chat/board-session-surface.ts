@@ -2,7 +2,6 @@ import { html, nothing, type TemplateResult } from "lit";
 import type { GatewayBrowserClient } from "../../api/gateway.ts";
 import { ensureCustomElementDefined } from "../../app/lazy-custom-element.ts";
 import { icons } from "../../components/icons.ts";
-import { renderSettingsSegmented } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import { isMockBoardEnabled, type BoardViewCallbacks } from "../../lib/board/provider.ts";
 import type { BoardFace, BoardVisibleChatDock } from "../../lib/board/settings.ts";
@@ -57,6 +56,13 @@ export async function ensureBoardViewElement(): Promise<boolean> {
 
 type BoardViewMode = "chat" | "split" | "dashboard";
 
+export type BoardFullscreenAction = {
+  active: boolean;
+  disabled: boolean;
+  label: string;
+  onActivate: () => void;
+};
+
 function dockLabel(dock: BoardVisibleChatDock): string {
   if (dock === "left") {
     return t("chat.board.dockLeft");
@@ -72,7 +78,7 @@ export function renderBoardViewSwitch(props: {
   face: BoardFace;
   dock: BoardTab["chatDock"];
   canChangeDock: boolean;
-  fullscreenControl?: TemplateResult;
+  fullscreenAction?: BoardFullscreenAction;
   onSelectMode: (mode: BoardViewMode) => void;
   onDockSideChange: (dock: BoardVisibleChatDock) => void;
 }) {
@@ -80,70 +86,115 @@ export function renderBoardViewSwitch(props: {
     return nothing;
   }
 
-  const mode: BoardViewMode =
-    props.face === "chat" ? "chat" : props.dock === "hidden" ? "dashboard" : "split";
-  const segmented = props.canChangeDock
-    ? renderSettingsSegmented<BoardViewMode>({
-        value: mode,
-        ariaLabel: t("chat.board.faceLabel"),
-        options: [
-          { value: "chat", label: t("chat.board.chatFace") },
-          { value: "split", label: t("chat.board.splitFace") },
-          { value: "dashboard", label: t("chat.board.dashboardFace") },
-        ],
-        onChange: (value) => props.onSelectMode(value),
-      })
-    : renderSettingsSegmented<BoardFace>({
-        value: props.face,
-        ariaLabel: t("chat.board.faceLabel"),
-        options: [
-          { value: "chat", label: t("chat.board.chatFace") },
-          { value: "dashboard", label: t("chat.board.dashboardFace") },
-        ],
-        onChange: (value) => props.onSelectMode(value),
-      });
+  const mode: BoardViewMode = props.canChangeDock
+    ? props.face === "chat"
+      ? "chat"
+      : props.dock === "hidden"
+        ? "dashboard"
+        : "split"
+    : props.face;
+  const chatActive = mode !== "dashboard";
+  const dashboardActive = mode !== "chat";
+  const selectToggle = (toggle: Exclude<BoardViewMode, "split">) => {
+    if (!props.canChangeDock) {
+      if ((toggle === "chat") === chatActive) {
+        return;
+      }
+      props.onSelectMode(toggle);
+      return;
+    }
+    const nextMode: BoardViewMode =
+      toggle === "chat"
+        ? mode === "dashboard"
+          ? "split"
+          : mode === "split"
+            ? "dashboard"
+            : "chat"
+        : mode === "chat"
+          ? "split"
+          : mode === "split"
+            ? "chat"
+            : "dashboard";
+    if (nextMode !== mode) {
+      props.onSelectMode(nextMode);
+    }
+  };
   const visibleDock = props.dock === "hidden" ? null : props.dock;
-  const showDockCaret = mode === "split" && props.canChangeDock && visibleDock !== null;
+  const showDockOptions = mode === "split" && props.canChangeDock && visibleDock !== null;
+  const showMore = mode !== "chat" && props.fullscreenAction;
 
   return html`
-    <div class="chat-pane__face-switch ${showDockCaret ? "chat-pane__face-switch--split" : ""}">
-      ${segmented}
-      ${showDockCaret && visibleDock
+    <div class="chat-pane__face-switch ${showMore ? "chat-pane__face-switch--more" : ""}">
+      <div class="settings-segmented" role="group" aria-label=${t("chat.board.faceLabel")}>
+        <button
+          type="button"
+          class="settings-segmented__btn ${chatActive ? "settings-segmented__btn--active" : ""}"
+          aria-pressed=${String(chatActive)}
+          @click=${() => selectToggle("chat")}
+        >
+          ${t("chat.board.chatFace")}
+        </button>
+        <button
+          type="button"
+          class="settings-segmented__btn ${dashboardActive
+            ? "settings-segmented__btn--active"
+            : ""}"
+          aria-pressed=${String(dashboardActive)}
+          @click=${() => selectToggle("dashboard")}
+        >
+          ${t("chat.board.dashboardFace")}
+        </button>
+      </div>
+      ${showMore
         ? html`
             <wa-dropdown
-              class="chat-pane__dock-caret"
+              class="chat-pane__board-more"
               placement="bottom-end"
               @wa-select=${(event: CustomEvent<{ item: { value?: string } }>) => {
                 const value = event.detail.item.value;
                 if (value === "left" || value === "right" || value === "bottom") {
                   props.onDockSideChange(value);
+                } else if (value === "fullscreen") {
+                  props.fullscreenAction?.onActivate();
                 }
               }}
             >
               <button
                 slot="trigger"
                 type="button"
-                class="btn btn--ghost btn--icon chat-icon-btn chat-pane__dock-caret-trigger"
-                title=${dockLabel(visibleDock)}
-                aria-label=${t("chat.board.dockMenu", { dock: dockLabel(visibleDock) })}
+                class="btn btn--ghost btn--icon chat-icon-btn chat-pane__board-more-trigger"
+                aria-label=${t("chat.board.moreActions")}
               >
-                ${icons.chevronDown}
+                ${icons.moreHorizontalSolid}
               </button>
-              ${(["left", "right", "bottom"] as const).map(
-                (candidate) => html`
-                  <wa-dropdown-item
-                    value=${candidate}
-                    type="checkbox"
-                    ?checked=${candidate === visibleDock}
-                  >
-                    ${dockLabel(candidate)}
-                  </wa-dropdown-item>
-                `,
-              )}
+              ${showDockOptions && visibleDock
+                ? html`${(["left", "right", "bottom"] as const).map(
+                      (candidate) => html`
+                        <wa-dropdown-item
+                          value=${candidate}
+                          type="checkbox"
+                          ?checked=${candidate === visibleDock}
+                        >
+                          ${dockLabel(candidate)}
+                        </wa-dropdown-item>
+                      `,
+                    )}
+                    <div class="session-menu__separator" role="separator"></div>`
+                : nothing}
+              <wa-dropdown-item
+                value="fullscreen"
+                type="checkbox"
+                ?checked=${props.fullscreenAction?.active}
+                ?disabled=${props.fullscreenAction?.disabled}
+              >
+                <span slot="icon" class="session-menu__icon" aria-hidden="true"
+                  >${props.fullscreenAction?.active ? icons.minimize : icons.maximize}</span
+                >
+                ${props.fullscreenAction?.label}
+              </wa-dropdown-item>
             </wa-dropdown>
           `
         : nothing}
-      ${mode === "chat" ? nothing : props.fullscreenControl}
     </div>
   `;
 }

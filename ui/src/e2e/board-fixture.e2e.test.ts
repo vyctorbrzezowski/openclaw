@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import { once } from "node:events";
+import { mkdir } from "node:fs/promises";
 import { type AddressInfo, createServer } from "node:net";
 import path from "node:path";
 import type { Readable } from "node:stream";
@@ -16,6 +17,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const chromiumExecutablePath = resolvePlaywrightChromiumExecutablePath(chromium.executablePath());
 const chromiumAvailable = canRunPlaywrightChromium(chromiumExecutablePath);
 const allowMissingChromium = process.env.OPENCLAW_UI_E2E_ALLOW_MISSING_CHROMIUM === "1";
+const artifactRoot = process.env.OPENCLAW_UI_E2E_ARTIFACT_DIR?.trim();
 const describeStandaloneMockServer =
   chromiumAvailable || !allowMissingChromium ? describe : describe.skip;
 
@@ -26,6 +28,14 @@ type FixtureServer = {
   url: string;
   output: () => string;
 };
+
+async function capture(page: Page, fileName: string): Promise<void> {
+  if (!artifactRoot) {
+    return;
+  }
+  await mkdir(artifactRoot, { recursive: true });
+  await page.screenshot({ animations: "disabled", path: path.join(artifactRoot, fileName) });
+}
 
 async function reservePort(): Promise<number> {
   const server = createServer();
@@ -43,9 +53,12 @@ async function reservePort(): Promise<number> {
   return port;
 }
 
-async function startFixtureServer(): Promise<FixtureServer> {
+async function startFixtureServer(
+  options: { fixture?: string; pathname?: string } = {},
+): Promise<FixtureServer> {
   const port = await reservePort();
-  const url = `http://127.0.0.1:${port}/__fixtures/board/`;
+  const url = `http://127.0.0.1:${port}${options.pathname ?? "/__fixtures/board/"}`;
+  const fixtureArgs = options.fixture ? ["--fixture", options.fixture] : [];
   const child = spawn(
     process.execPath,
     [
@@ -56,6 +69,7 @@ async function startFixtureServer(): Promise<FixtureServer> {
       "127.0.0.1",
       "--port",
       String(port),
+      ...fixtureArgs,
     ],
     {
       cwd: repoRoot,
@@ -217,6 +231,130 @@ describeStandaloneMockServer("standalone Control UI mock server", () => {
       }
     });
   }
+
+  it("switches the sidebar-header fixture from Split to Dashboard", async () => {
+    const server = await startFixtureServer({
+      fixture: "sidebar-header",
+      pathname: "/dashboard/main/sidebar-narration-demo",
+    });
+    const context = await browser.newContext({ colorScheme: "dark", locale: "en-US" });
+    try {
+      const page = await context.newPage();
+      await page.goto(server.url, { waitUntil: "networkidle" });
+      const chat = page.getByRole("button", { name: "Chat", exact: true });
+      const dashboard = page.getByRole("button", { name: "Dashboard", exact: true });
+      await expect.poll(() => chat.getAttribute("aria-pressed")).toBe("true");
+      await expect.poll(() => dashboard.getAttribute("aria-pressed")).toBe("true");
+      await capture(page, "sidebar-header-split-before-click.png");
+      await page.getByRole("button", { name: "More view actions" }).click();
+      await page.getByText("Dock chat left", { exact: true }).waitFor();
+      await page.getByText("Enter fullscreen", { exact: true }).waitFor();
+      await capture(page, "sidebar-header-split-more-menu.png");
+      await chat.click();
+      await expect.poll(() => chat.getAttribute("aria-pressed")).toBe("false");
+      await expect.poll(() => dashboard.getAttribute("aria-pressed")).toBe("true");
+      await expect
+        .poll(() => page.getByText("Cannot read properties of undefined").count())
+        .toBe(0);
+      await capture(page, "sidebar-header-dashboard-after-click.png");
+    } finally {
+      await context.close();
+      await stopFixtureServer(server);
+    }
+  });
+
+  it("moves Visibility into the compact session menu and restores it when wide", async () => {
+    const server = await startFixtureServer({
+      fixture: "sidebar-header",
+      pathname: "/dashboard/main/sidebar-narration-demo",
+    });
+    const context = await browser.newContext({ colorScheme: "dark", locale: "en-US" });
+    try {
+      const page = await context.newPage();
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(server.url, { waitUntil: "networkidle" });
+      await page.locator(".chat-pane__sharing-trigger").waitFor();
+
+      await page.setViewportSize({ width: 700, height: 900 });
+      await expect.poll(() => page.locator(".chat-pane__sharing-trigger").count()).toBe(0);
+      await page.locator(".chat-header-session-menu__trigger").click();
+      await page.locator('wa-dropdown-item[value="compact:open-visibility"]').click();
+      await page.locator('wa-dropdown-item[value="visibility:shared"]').waitFor();
+      await page.getByText("Members", { exact: true }).waitFor();
+      await capture(page, "sidebar-header-narrow-visibility-menu.png");
+
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.locator(".chat-pane__sharing-trigger").waitFor();
+      await expect
+        .poll(() => page.locator('wa-dropdown-item[value="compact:open-visibility"]').count())
+        .toBe(0);
+    } finally {
+      await context.close();
+      await stopFixtureServer(server);
+    }
+  });
+
+  it("marks Home, Automations, and Plugins active while preserving sidebar rhythm", async () => {
+    const server = await startFixtureServer({
+      fixture: "sidebar-header",
+      pathname: "/dashboard/main/sidebar-narration-demo",
+    });
+    const context = await browser.newContext({ colorScheme: "dark", locale: "en-US" });
+    try {
+      const page = await context.newPage();
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(server.url, { waitUntil: "networkidle" });
+      const home = page.getByRole("link", { name: "Home", exact: true });
+      const automations = page.getByRole("link", { name: "Automations", exact: true });
+      const plugins = page.getByRole("link", { name: "Plugins", exact: true });
+
+      await home.click();
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/chat/main");
+      await expect.poll(() => home.getAttribute("aria-current")).toBe("page");
+      expect(await home.getAttribute("class")).toContain("nav-item--active");
+
+      await automations.click();
+      await expect.poll(() => automations.getAttribute("aria-current")).toBe("page");
+      await plugins.hover();
+      const colors = await page.locator(".nav-section__items").evaluate((list) => {
+        const [homeRow, automationsRow, pluginsRow] = [
+          list.querySelector<HTMLElement>(".nav-item--home"),
+          ...list.querySelectorAll<HTMLElement>(".sidebar-zone-entry > .nav-item"),
+        ];
+        const styles = [homeRow, automationsRow, pluginsRow].map((row) => getComputedStyle(row));
+        const firstSession = list.querySelector<HTMLElement>(
+          '[data-sidebar-entry^="session:"] .sidebar-recent-session',
+        );
+        const pluginsRect = pluginsRow.getBoundingClientRect();
+        const firstSessionRect = firstSession?.getBoundingClientRect();
+        return {
+          rest: styles[0]?.backgroundColor,
+          active: styles[1]?.backgroundColor,
+          hover: styles[2]?.backgroundColor,
+          heights: [homeRow, automationsRow, pluginsRow].map(
+            (row) => row.getBoundingClientRect().height,
+          ),
+          sessionGap: firstSessionRect ? firstSessionRect.top - pluginsRect.bottom : 0,
+          rowGap: getComputedStyle(list).rowGap,
+        };
+      });
+      expect(colors.active).not.toBe(colors.rest);
+      expect(colors.hover).not.toBe(colors.rest);
+      expect(colors.hover).not.toBe(colors.active);
+      expect(colors.heights.slice(0, 3)).toEqual([48, 48, 48]);
+      expect(colors.sessionGap).toBe(16);
+      expect(colors.rowGap).toBe("4px");
+
+      await plugins.click();
+      await expect.poll(() => plugins.getAttribute("aria-current")).toBe("page");
+      await home.click();
+      await expect.poll(() => home.getAttribute("aria-current")).toBe("page");
+      await capture(page, "sidebar-pages-home-active-with-sessions.png");
+    } finally {
+      await context.close();
+      await stopFixtureServer(server);
+    }
+  });
 
   it("follows live system color-scheme changes", async () => {
     const context = await browser.newContext({ colorScheme: "dark" });

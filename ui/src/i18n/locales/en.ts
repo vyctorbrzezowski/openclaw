@@ -5360,8 +5360,8 @@ export const en: TranslationMap = {
     board: {
       faceLabel: "Session face",
       chatFace: "Chat",
-      splitFace: "Split",
       dashboardFace: "Dashboard",
+      moreActions: "More view actions",
       dockMenu: "Chat dock: {dock}",
       dockLeft: "Dock chat left",
       dockRight: "Dock chat right",

@@ -97,15 +97,15 @@ describe("board session shell", () => {
   });
 
   it.each([
-    ["chat", "left", "chat"],
-    ["chat", "right", "chat"],
-    ["chat", "bottom", "chat"],
-    ["chat", "hidden", "chat"],
-    ["dashboard", "left", "split"],
-    ["dashboard", "right", "split"],
-    ["dashboard", "bottom", "split"],
-    ["dashboard", "hidden", "dashboard"],
-  ] as const)("maps %s with a %s dock to the %s mode", (face, dock, activeMode) => {
+    ["chat", "left", ["true", "false"]],
+    ["chat", "right", ["true", "false"]],
+    ["chat", "bottom", ["true", "false"]],
+    ["chat", "hidden", ["true", "false"]],
+    ["dashboard", "left", ["true", "true"]],
+    ["dashboard", "right", ["true", "true"]],
+    ["dashboard", "bottom", ["true", "true"]],
+    ["dashboard", "hidden", ["false", "true"]],
+  ] as const)("maps %s with a %s dock to the two toggle states", (face, dock, pressed) => {
     const container = createContainer();
     render(
       renderBoardViewSwitch({
@@ -119,12 +119,9 @@ describe("board session shell", () => {
       container,
     );
 
-    expect(
-      [...container.querySelectorAll("wa-radio")].map((radio) => radio.getAttribute("value")),
-    ).toEqual(["chat", "split", "dashboard"]);
-    expect(
-      container.querySelector("wa-radio.settings-segmented__btn--active")?.getAttribute("value"),
-    ).toBe(activeMode);
+    const toggles = [...container.querySelectorAll<HTMLButtonElement>("[aria-pressed]")];
+    expect(toggles.map((toggle) => toggle.textContent?.trim())).toEqual(["Chat", "Dashboard"]);
+    expect(toggles.map((toggle) => toggle.getAttribute("aria-pressed"))).toEqual(pressed);
   });
 
   it("falls back to the two face options when dock changes are unavailable", () => {
@@ -142,56 +139,76 @@ describe("board session shell", () => {
     );
 
     expect(
-      [...container.querySelectorAll("wa-radio")].map((radio) => radio.getAttribute("value")),
-    ).toEqual(["chat", "dashboard"]);
-    expect(
-      container.querySelector("wa-radio.settings-segmented__btn--active")?.getAttribute("value"),
-    ).toBe("dashboard");
+      [...container.querySelectorAll<HTMLButtonElement>("[aria-pressed]")].map((toggle) => [
+        toggle.textContent?.trim(),
+        toggle.getAttribute("aria-pressed"),
+      ]),
+    ).toEqual([
+      ["Chat", "false"],
+      ["Dashboard", "true"],
+    ]);
     expect(container.querySelector("wa-dropdown")).toBeNull();
   });
 
   it.each([
-    ["chat", "right", true, false],
-    ["dashboard", "right", true, true],
-    ["dashboard", "hidden", true, false],
-    ["dashboard", "right", false, false],
+    ["chat", "right", true, []],
+    ["dashboard", "right", true, ["left", "right", "bottom", "fullscreen"]],
+    ["dashboard", "hidden", true, ["fullscreen"]],
+    ["dashboard", "right", false, ["fullscreen"]],
   ] as const)(
-    "shows the dock caret for face=%s dock=%s canChangeDock=%s: %s",
-    (face, dock, canChangeDock, hasCaret) => {
+    "renders the More actions for face=%s dock=%s canChangeDock=%s",
+    (face, dock, canChangeDock, expectedItems) => {
       const container = createContainer();
       const onDockSideChange = vi.fn();
+      const onFullscreen = vi.fn();
       render(
         renderBoardViewSwitch({
           hasBoard: true,
           face,
           dock,
           canChangeDock,
+          fullscreenAction: {
+            active: false,
+            disabled: false,
+            label: "Enter fullscreen",
+            onActivate: onFullscreen,
+          },
           onSelectMode: () => {},
           onDockSideChange,
         }),
         container,
       );
 
-      const dropdown = container.querySelector("wa-dropdown.chat-pane__dock-caret");
-      expect(dropdown !== null).toBe(hasCaret);
+      const dropdown = container.querySelector("wa-dropdown.chat-pane__board-more");
+      expect(dropdown !== null).toBe(expectedItems.length > 0);
       if (!dropdown) {
         return;
       }
       const items = [...dropdown.querySelectorAll("wa-dropdown-item")];
-      expect(items.map((item) => item.getAttribute("value"))).toEqual(["left", "right", "bottom"]);
-      expect(items.find((item) => item.hasAttribute("checked"))?.getAttribute("value")).toBe(
-        "right",
-      );
+      expect(items.map((item) => item.getAttribute("value"))).toEqual(expectedItems);
+      if (expectedItems.includes("right")) {
+        expect(items.find((item) => item.hasAttribute("checked"))?.getAttribute("value")).toBe(
+          "right",
+        );
+      }
       const left = dropdown.querySelector('wa-dropdown-item[value="left"]');
-      Reflect.set(left ?? {}, "value", "left");
+      if (left) {
+        Reflect.set(left, "value", "left");
+        dropdown.dispatchEvent(
+          new CustomEvent("wa-select", { bubbles: true, detail: { item: left } }),
+        );
+        expect(onDockSideChange).toHaveBeenCalledWith("left");
+      }
+      const fullscreen = dropdown.querySelector('wa-dropdown-item[value="fullscreen"]');
+      Reflect.set(fullscreen ?? {}, "value", "fullscreen");
       dropdown.dispatchEvent(
-        new CustomEvent("wa-select", { bubbles: true, detail: { item: left } }),
+        new CustomEvent("wa-select", { bubbles: true, detail: { item: fullscreen } }),
       );
-      expect(onDockSideChange).toHaveBeenCalledWith("left");
+      expect(onFullscreen).toHaveBeenCalledOnce();
     },
   );
 
-  it("emits the selected view mode", () => {
+  it("uses the two toggles to enter split and keeps the last active face on", () => {
     const container = createContainer();
     const onSelectMode = vi.fn();
     render(
@@ -206,13 +223,36 @@ describe("board session shell", () => {
       container,
     );
 
-    const group = container.querySelector<HTMLElement & { value: string }>("wa-radio-group");
-    if (group) {
-      group.value = "split";
-      group.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
+    const [chat, dashboard] = container.querySelectorAll<HTMLButtonElement>("[aria-pressed]");
+    chat?.click();
+    expect(onSelectMode).not.toHaveBeenCalled();
+    dashboard?.click();
     expect(onSelectMode).toHaveBeenCalledWith("split");
+  });
+
+  it.each([
+    ["chat", "dashboard"],
+    ["dashboard", "chat"],
+  ] as const)("turns off %s from split by selecting %s-only", (toggle, expectedMode) => {
+    const container = createContainer();
+    const onSelectMode = vi.fn();
+    render(
+      renderBoardViewSwitch({
+        hasBoard: true,
+        face: "dashboard",
+        dock: "right",
+        canChangeDock: true,
+        onSelectMode,
+        onDockSideChange: () => {},
+      }),
+      container,
+    );
+
+    const button = [...container.querySelectorAll<HTMLButtonElement>("[aria-pressed]")].find(
+      (candidate) => candidate.textContent?.trim().toLowerCase() === toggle,
+    );
+    button?.click();
+    expect(onSelectMode).toHaveBeenCalledWith(expectedMode);
   });
 
   it.each(["left", "right", "bottom"] as const)("lays out the %s dock", (dock) => {

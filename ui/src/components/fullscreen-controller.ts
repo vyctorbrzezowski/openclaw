@@ -42,12 +42,8 @@ export class FullscreenController implements ReactiveController {
   }
 
   renderButton(): TemplateResult {
-    const supported = this.supported();
-    const label = this.active
-      ? this.options.exitLabel()
-      : supported
-        ? this.options.enterLabel()
-        : this.options.unavailableLabel();
+    const supported = this.available;
+    const label = this.label;
     return html`<openclaw-tooltip .content=${label}>
       <button
         class=${this.options.buttonClass}
@@ -62,6 +58,18 @@ export class FullscreenController implements ReactiveController {
         </span>
       </button>
     </openclaw-tooltip>`;
+  }
+
+  get available(): boolean {
+    return this.supported();
+  }
+
+  get label(): string {
+    return this.active
+      ? this.options.exitLabel()
+      : this.available
+        ? this.options.enterLabel()
+        : this.options.unavailableLabel();
   }
 
   async exit(): Promise<void> {
@@ -100,7 +108,7 @@ export class FullscreenController implements ReactiveController {
     }
   }
 
-  private async toggle(): Promise<void> {
+  async toggle(): Promise<void> {
     this.setError(null);
     if (this.active) {
       await this.exit();
