@@ -51,6 +51,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "mobile-transcript"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -354,6 +355,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "mobile-transcript" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1369,6 +1371,166 @@ function buildCodeFenceChatHistory(baseTime: number): unknown[] {
   ];
 }
 
+function buildMobileTranscriptChatHistory(baseTime: number): unknown[] {
+  const message = (
+    role: "assistant" | "user",
+    content: unknown,
+    runId: string,
+    id: string,
+    seq: number,
+  ) => ({
+    role,
+    content,
+    timestamp: baseTime + seq * 60_000,
+    __openclaw: role === "user" ? { id, idempotencyKey: `${runId}:user`, seq } : { id, runId, seq },
+  });
+  const imageMessage = expectDefined(
+    buildChatAttachmentHistory(baseTime + 8 * 60_000)[0],
+    "mobile transcript image fixture",
+  );
+  const toolRunId = "mobile-transcript-tools";
+
+  return [
+    message(
+      "user",
+      [{ type: "text", text: "Can you make this transcript easier to scan?" }],
+      "mobile-transcript-short",
+      "mobile-short-user",
+      1,
+    ),
+    message(
+      "assistant",
+      [{ type: "text", text: "Yes — I’ll start with rhythm and hierarchy." }],
+      "mobile-transcript-short",
+      "mobile-short-assistant",
+      2,
+    ),
+    message(
+      "user",
+      [
+        {
+          type: "text",
+          text: "On a narrow phone screen, long messages should remain comfortable to read without turning into an edge-to-edge wall of text. Keep the conversation dense enough to scan, but leave enough breathing room between turns that sender changes, timestamps, and attached work are immediately obvious.",
+        },
+      ],
+      "mobile-transcript-long",
+      "mobile-long-user",
+      3,
+    ),
+    message(
+      "assistant",
+      [
+        {
+          type: "text",
+          text: "I’ll tune the mobile transcript around three things:\n\n- a readable line length inside each bubble\n- unmistakable separation between turns\n- compact metadata that never competes with the message\n\nThat keeps a long reply calm while preserving the quick conversational rhythm of shorter messages.",
+        },
+      ],
+      "mobile-transcript-long",
+      "mobile-long-assistant",
+      4,
+    ),
+    message(
+      "user",
+      [{ type: "text", text: "Include a code sample too." }],
+      "mobile-transcript-code",
+      "mobile-code-user",
+      5,
+    ),
+    message(
+      "assistant",
+      [
+        {
+          type: "text",
+          text: 'Here’s a compact example:\n\n```ts\nconst transcript = messages\n  .filter((message) => message.visible)\n  .map((message) => ({\n    ...message,\n    density: "comfortable",\n  }));\n```\n\nThe code block should scroll on its own instead of widening the conversation.',
+        },
+      ],
+      "mobile-transcript-code",
+      "mobile-code-assistant",
+      6,
+    ),
+    message(
+      "user",
+      [{ type: "text", text: "And show a pair of image attachments." }],
+      "mobile-transcript-images",
+      "mobile-images-user",
+      7,
+    ),
+    imageMessage,
+    message(
+      "user",
+      [{ type: "text", text: "Now inspect the transcript styles and apply a focused adjustment." }],
+      toolRunId,
+      "mobile-tools-user",
+      9,
+    ),
+    message(
+      "assistant",
+      [{ type: "text", text: "I’m checking the current mobile rules before changing anything." }],
+      toolRunId,
+      "mobile-tools-commentary",
+      10,
+    ),
+    message(
+      "assistant",
+      [
+        {
+          type: "toolCall",
+          id: "mobile-read-styles",
+          name: "read",
+          arguments: { path: "ui/src/styles/chat/message-layout.css", offset: 1, limit: 180 },
+        },
+        {
+          type: "toolCall",
+          id: "mobile-apply-patch",
+          name: "apply_patch",
+          arguments: {
+            input:
+              "*** Begin Patch\n*** Update File: ui/src/styles/chat/message-layout.css\n@@\n-.chat-group { gap: 12px; }\n+.chat-group { gap: 10px; }\n*** End Patch",
+          },
+        },
+      ],
+      toolRunId,
+      "mobile-tools-calls",
+      11,
+    ),
+    {
+      role: "toolResult",
+      toolCallId: "mobile-read-styles",
+      toolName: "read",
+      content: [{ type: "text", text: "Read 180 lines from message-layout.css." }],
+      timestamp: baseTime + 12 * 60_000,
+      __openclaw: { id: "mobile-read-result", runId: toolRunId, seq: 12 },
+    },
+    {
+      role: "toolResult",
+      toolCallId: "mobile-apply-patch",
+      toolName: "apply_patch",
+      content: [{ type: "text", text: "Applied focused transcript spacing patch." }],
+      timestamp: baseTime + 13 * 60_000,
+      __openclaw: { id: "mobile-patch-result", runId: toolRunId, seq: 13 },
+    },
+    message(
+      "assistant",
+      [{ type: "text", text: "The focused spacing adjustment is applied." }],
+      toolRunId,
+      "mobile-tools-final",
+      14,
+    ),
+    message(
+      "user",
+      [
+        {
+          type: "text",
+          text: "Keep going — I want to see how an active streaming response settles at the bottom of the mobile transcript.",
+        },
+      ],
+      "mobile-transcript-live",
+      "mobile-live-user",
+      15,
+    ),
+  ];
+}
+
 function searchPrefixes(term: string): string[] {
   return Array.from({ length: term.length }, (_value, index) => term.slice(0, index + 1));
 }
@@ -1891,7 +2053,9 @@ async function createChatPickerScenario(
       ? buildChatAttachmentHistory(baseTime)
       : fixture === "code-fences"
         ? buildCodeFenceChatHistory(baseTime)
-        : buildScrollableChatHistory(baseTime);
+        : fixture === "mobile-transcript"
+          ? buildMobileTranscriptChatHistory(baseTime)
+          : buildScrollableChatHistory(baseTime);
   const planSessionInfo = {
     activeRunIds: [PLAN_DEMO_RUN_ID],
     hasActiveRun: true,
@@ -1899,7 +2063,11 @@ async function createChatPickerScenario(
   };
   const planInFlightRun = {
     runId: PLAN_DEMO_RUN_ID,
-    text: "",
+    text:
+      fixture === "mobile-transcript"
+        ? "I’m refining the last few mobile details now — checking bubble width, timestamp contrast, attachment wrapping, and the active-response rhythm"
+        : "",
+    startedAt: fixture === "mobile-transcript" ? baseTime + 15 * 60_000 : undefined,
     plan: {
       explanation: "Keep the Control UI change focused",
       steps: [
@@ -2941,6 +3109,22 @@ async function createChatPickerScenario(
     repeatingSessionEvents: {
       intervalMs: 3_000,
       events: [
+        ...(fixture === "mobile-transcript"
+          ? [
+              {
+                event: "agent" as const,
+                payload: {
+                  data: {
+                    replace: true,
+                    text: "I’m refining the last few mobile details now — checking bubble width, timestamp contrast, attachment wrapping, and the active-response rhythm…",
+                  },
+                  runId: PLAN_DEMO_RUN_ID,
+                  sessionKey: "agent:main:main",
+                  stream: "assistant",
+                },
+              },
+            ]
+          : []),
         {
           event: "session.observer",
           payload: {
@@ -3313,7 +3497,9 @@ const server = await createServer({
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
-    ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
+    ...(options.fixture === "attachments" || options.fixture === "mobile-transcript"
+      ? [createChatAttachmentFixturePlugin()]
+      : []),
   ],
   publicDir: path.join(uiRoot, "public"),
   resolve: {

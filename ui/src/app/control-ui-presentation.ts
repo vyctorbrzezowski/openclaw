@@ -17,6 +17,43 @@ const ACCENT_CSS_VARIABLES = [
 let operatorSeamColor: string | undefined;
 let userAccentOverride: string | undefined;
 
+function resolveCssColor(value: string): string {
+  const probe = document.createElement("span");
+  probe.hidden = true;
+  probe.style.color = value;
+  (document.body ?? document.documentElement).append(probe);
+  const resolved = getComputedStyle(probe).color.trim();
+  probe.remove();
+  return resolved || value;
+}
+
+export function syncControlUiSystemChrome(options: { dimmed?: boolean } = {}): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const root = document.documentElement;
+  const computedStyle = getComputedStyle(root);
+  const pageBackground = computedStyle.getPropertyValue("--bg").trim();
+  const narrow = globalThis.matchMedia?.("(max-width: 768px)").matches === true;
+  const background = narrow
+    ? computedStyle.getPropertyValue("--bg-content").trim() || pageBackground
+    : pageBackground;
+  if (!background) {
+    return;
+  }
+  const drawerOpen =
+    options.dimmed ?? Boolean(document.querySelector(".shell--mobile-nav.shell--nav-drawer-open"));
+  const systemChromeBackground =
+    narrow && drawerOpen
+      ? resolveCssColor(`color-mix(in srgb, ${background} 56%, black 44%)`)
+      : background;
+  root.style.setProperty("--control-ui-system-chrome-background", systemChromeBackground);
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = systemChromeBackground;
+    meta.removeAttribute("media");
+  }
+}
+
 export function applyControlUiAccent(userAccent?: string): void {
   userAccentOverride = userAccent;
   const root = document.documentElement;

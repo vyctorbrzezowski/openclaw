@@ -30,6 +30,7 @@ import { readSessionMethodAccess } from "../lib/session-method-access.ts";
 import { isTerminalAvailable } from "../lib/terminal-availability.ts";
 import type { ShellRouteState } from "./app-host-route-state.ts";
 import type { ApplicationContext, ApplicationNavigationOptions } from "./context.ts";
+import { syncControlUiSystemChrome } from "./control-ui-presentation.ts";
 import {
   DEBUG_OVERLAY_ELEMENT,
   isOptionalElementDefined,
@@ -66,6 +67,24 @@ type KeyboardShortcutsDialogElement = HTMLElement & {
   isOpen: boolean;
   toggle: () => void;
 };
+
+const NAV_DRAWER_SWIPE_MIN_DISTANCE_PX = 48;
+const NAV_DRAWER_SWIPE_MAX_DURATION_MS = 500;
+const NAV_DRAWER_SWIPE_LOCK_DISTANCE_PX = 10;
+const NAV_DRAWER_SWIPE_DIRECTION_RATIO = 1.5;
+const NAV_DRAWER_SWIPE_MEDIA_QUERY = "(max-width: 768px)";
+
+type NavDrawerSwipe = {
+  identifier: number;
+  startX: number;
+  startY: number;
+  startedAt: number;
+  lockedHorizontal: boolean;
+};
+
+function isNarrowMobileViewport(): boolean {
+  return globalThis.matchMedia?.(NAV_DRAWER_SWIPE_MEDIA_QUERY).matches === true;
+}
 
 export function isBrowserPanelAvailable(
   snapshot: ApplicationContext["gateway"]["snapshot"],
@@ -121,6 +140,7 @@ export interface ShellChromeHost extends HTMLElement {
 
 export class ShellChromeOwner {
   private pendingLazyAction = readLazyShellAction();
+  private navDrawerSwipe: NavDrawerSwipe | null = null;
 
   constructor(private readonly host: ShellChromeHost) {}
 
@@ -156,10 +176,16 @@ export class ShellChromeOwner {
     window.addEventListener(DESKTOP_PANEL_TOGGLE_EVENT, this.handleDeferredDesktopToggle);
     window.addEventListener(CUSTODIAN_PANEL_TOGGLE_EVENT, this.handleDeferredCustodianToggle);
     window.addEventListener(SHELL_APPROVALS_OPEN_EVENT, this.handleApprovalsOpen);
+    host.addEventListener("touchstart", this.handleTranscriptNavSwipeStart, { passive: true });
+    host.addEventListener("touchend", this.handleTranscriptNavSwipeEnd, { passive: true });
+    host.addEventListener("touchcancel", this.handleTranscriptNavSwipeCancel, { passive: true });
   }
 
   disconnect(): void {
     const host = this.host;
+    if (host.navDrawerOpen) {
+      syncControlUiSystemChrome({ dimmed: false });
+    }
     host.removeEventListener(COMMAND_PALETTE_TARGET_EVENT, this.handleCommandPaletteTarget);
     window.removeEventListener(COMMAND_PALETTE_OPEN_EVENT, this.handleCommandPaletteOpen);
     window.removeEventListener(SHELL_NAV_DRAWER_TOGGLE_EVENT, this.handleShellNavDrawerToggle);
@@ -183,7 +209,136 @@ export class ShellChromeOwner {
     window.removeEventListener(DESKTOP_PANEL_TOGGLE_EVENT, this.handleDeferredDesktopToggle);
     window.removeEventListener(CUSTODIAN_PANEL_TOGGLE_EVENT, this.handleDeferredCustodianToggle);
     window.removeEventListener(SHELL_APPROVALS_OPEN_EVENT, this.handleApprovalsOpen);
+    host.removeEventListener("touchstart", this.handleTranscriptNavSwipeStart);
+    host.removeEventListener("touchend", this.handleTranscriptNavSwipeEnd);
+    host.removeEventListener("touchcancel", this.handleTranscriptNavSwipeCancel);
+    this.clearTranscriptNavSwipe();
   }
+
+  private clearTranscriptNavSwipe(): void {
+    this.host.removeEventListener("touchmove", this.handleTranscriptNavSwipeMove);
+    this.navDrawerSwipe = null;
+  }
+
+  private readonly handleTranscriptNavSwipeStart = (event: TouchEvent): void => {
+    this.clearTranscriptNavSwipe();
+    const host = this.host;
+    if (
+      !isMobileNavLayout() ||
+      !isNarrowMobileViewport() ||
+      host.navDrawerOpen ||
+      host.onboardingMode ||
+      event.touches.length !== 1
+    ) {
+      return;
+    }
+    const path = event.composedPath();
+    const thread = path.find(
+      (target): target is HTMLElement =>
+        target instanceof HTMLElement && target.classList.contains("chat-thread"),
+    );
+    if (!thread) {
+      return;
+    }
+    const blockedTarget = path.some(
+      (target) =>
+        target instanceof Element &&
+        target !== thread &&
+        target.matches(
+          "a, button, input, textarea, select, pre, [role='slider'], [contenteditable]:not([contenteditable='false'])",
+        ),
+    );
+    if (blockedTarget) {
+      return;
+    }
+    const touch = event.touches[0];
+    this.navDrawerSwipe = {
+      identifier: touch.identifier,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startedAt: performance.now(),
+      lockedHorizontal: false,
+    };
+    host.addEventListener("touchmove", this.handleTranscriptNavSwipeMove, { passive: false });
+  };
+
+  private readonly handleTranscriptNavSwipeMove = (event: TouchEvent): void => {
+    const swipe = this.navDrawerSwipe;
+    if (!swipe || event.touches.length !== 1) {
+      this.clearTranscriptNavSwipe();
+      return;
+    }
+    const touch = Array.from(event.touches).find(
+      (candidate) => candidate.identifier === swipe.identifier,
+    );
+    if (!touch || performance.now() - swipe.startedAt > NAV_DRAWER_SWIPE_MAX_DURATION_MS) {
+      this.clearTranscriptNavSwipe();
+      return;
+    }
+    const deltaX = touch.clientX - swipe.startX;
+    const deltaY = touch.clientY - swipe.startY;
+    if (swipe.lockedHorizontal) {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      if (deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX) {
+        this.clearTranscriptNavSwipe();
+        this.toggleNavigationSurface();
+      }
+      return;
+    }
+    const distanceX = Math.abs(deltaX);
+    const distanceY = Math.abs(deltaY);
+    if (Math.max(distanceX, distanceY) < NAV_DRAWER_SWIPE_LOCK_DISTANCE_PX) {
+      return;
+    }
+    if (deltaX > 0 && distanceX >= distanceY * NAV_DRAWER_SWIPE_DIRECTION_RATIO) {
+      swipe.lockedHorizontal = true;
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      if (deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX) {
+        this.clearTranscriptNavSwipe();
+        this.toggleNavigationSurface();
+      }
+      return;
+    }
+    this.clearTranscriptNavSwipe();
+  };
+
+  private readonly handleTranscriptNavSwipeEnd = (event: TouchEvent): void => {
+    const swipe = this.navDrawerSwipe;
+    this.clearTranscriptNavSwipe();
+    if (
+      !swipe ||
+      !swipe.lockedHorizontal ||
+      !isMobileNavLayout() ||
+      !isNarrowMobileViewport() ||
+      this.host.navDrawerOpen
+    ) {
+      return;
+    }
+    const touch = Array.from(event.changedTouches).find(
+      (candidate) => candidate.identifier === swipe.identifier,
+    );
+    if (!touch) {
+      return;
+    }
+    const deltaX = touch.clientX - swipe.startX;
+    const deltaY = touch.clientY - swipe.startY;
+    const duration = performance.now() - swipe.startedAt;
+    if (
+      duration <= NAV_DRAWER_SWIPE_MAX_DURATION_MS &&
+      deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX &&
+      deltaX >= Math.abs(deltaY) * NAV_DRAWER_SWIPE_DIRECTION_RATIO
+    ) {
+      this.toggleNavigationSurface();
+    }
+  };
+
+  private readonly handleTranscriptNavSwipeCancel = (): void => {
+    this.clearTranscriptNavSwipe();
+  };
 
   toggleNavigationSurface(trigger?: HTMLElement): void {
     const host = this.host;
@@ -198,6 +353,7 @@ export class ShellChromeOwner {
         return;
       }
       host.navDrawerTrigger = trigger ?? host.querySelector<HTMLElement>(".topbar-nav-toggle");
+      syncControlUiSystemChrome({ dimmed: true });
       host.navDrawerOpen = true;
       return;
     }
@@ -237,6 +393,7 @@ export class ShellChromeOwner {
     const host = this.host;
     if (host.navDrawerOpen) {
       this.dismissSidebarTransientMenus();
+      syncControlUiSystemChrome({ dimmed: false });
     }
     const trigger = options.restoreFocus ? host.navDrawerTrigger : null;
     const returnFocusTarget =

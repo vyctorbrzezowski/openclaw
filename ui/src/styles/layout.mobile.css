@@ -152,6 +152,30 @@ html:not(.openclaw-native-macos):not(.openclaw-native-nav):not(.openclaw-native-
   display: none;
 }
 
+.shell--mobile-nav::after {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  visibility: hidden;
+  background: rgb(0 0 0 / 44%);
+  opacity: 0;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition:
+    opacity 160ms var(--shell-focus-ease),
+    visibility 0s linear 160ms;
+}
+
+.shell--mobile-nav.shell--nav-drawer-open::after {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 240ms var(--shell-focus-ease),
+    visibility 0s;
+}
+
 .shell--mobile-nav.shell--nav-drawer-open .shell-nav,
 .shell--mobile-nav.shell--nav-collapsed.shell--nav-drawer-open .shell-nav {
   transform: translateX(0);
@@ -315,11 +339,12 @@ html.openclaw-native-macos body .shell--mobile-nav .topnav-shell__actions {
   .shell--mobile-nav .shell-nav,
   .shell--mobile-nav.shell--nav-collapsed .shell-nav {
     width: min(92vw, 320px);
+    box-shadow: none;
   }
 
   .shell--mobile-nav .sidebar-shell {
     --sidebar-pad-x: 14px;
-    padding: 16px var(--sidebar-pad-x) 12px;
+    padding: 8px var(--sidebar-pad-x) max(2px, var(--safe-area-bottom));
   }
 
   .shell--mobile-nav .nav-item {
