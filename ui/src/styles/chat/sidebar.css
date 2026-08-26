@@ -70,6 +70,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   overflow: hidden;
+  animation: dashboard-enter 0.3s var(--ease-out);
 }
 
 /* Header-to-transcript blend. It stops one thread gutter short of both pane

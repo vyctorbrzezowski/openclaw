@@ -992,15 +992,6 @@ openclaw-chat-pane {
     opacity: 0;
   }
 
-  .chat-pane__presence {
-    display: none;
-  }
-
-  /* Visibility and membership move into the compact session menu at this
-     width; release their facepile lane so that menu remains reachable. */
-  .chat-pane__people {
-    display: none;
-  }
 }
 
 .chat-header-session-menu--compact .session-menu__item {
