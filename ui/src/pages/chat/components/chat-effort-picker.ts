@@ -192,6 +192,9 @@ export function renderChatEffortPicker(params: ChatEffortPickerParams) {
               >
                 <span class="chat-controls__effort-brain-outline">${icons.brain}</span>
                 <span class="chat-controls__effort-brain-fill">${icons.brain}</span>
+                ${params.fastMode.active
+                  ? html`<span class="chat-controls__effort-fast-badge">${icons.zap}</span>`
+                  : nothing}
               </span>
             `
           : nothing}

@@ -1697,25 +1697,11 @@ async function createChatPickerScenario(
       : [];
   const workboardMocks = buildWorkboardMocks(baseTime);
   const activitySessions = buildActivitySessionRows(Date.now());
-  const sessions = [
-    ...activitySessions,
-    ...(fixture === "workboard"
-      ? [
-          sessionRow(workboardMocks.sessionKey, "Product operations dashboard", baseTime, {
-            boardFace: "dashboard",
-            pinned: true,
-          }),
-        ]
-      : []),
-    sessionRow(fixture === "main-mock" ? "main" : "agent:main:main", "Molty", baseTime - 1_000, {
-      activeRunIds: [PLAN_DEMO_RUN_ID],
-      childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
-      hasActiveRun: true,
-      totalTokens: 170_000,
-      totalTokensFresh: true,
-    }),
-    ...swarmChildRows,
-    sessionRow(OBSERVER_DEMO_SESSION_KEY, "Session observer demo", baseTime - 3_000, {
+  const observerSessionInfo = sessionRow(
+    OBSERVER_DEMO_SESSION_KEY,
+    "Session observer demo",
+    baseTime - 3_000,
+    {
       activeRunIds: [OBSERVER_DEMO_RUN_ID],
       hasActiveRun: true,
       lastReadAt: baseTime + 2_000,
@@ -1728,7 +1714,28 @@ async function createChatPickerScenario(
       },
       startedAt: baseTime - 4_000,
       status: "running",
+    },
+  );
+  const sessions = [
+    ...activitySessions,
+    ...(fixture === "workboard"
+      ? [
+          sessionRow(workboardMocks.sessionKey, "Product operations dashboard", baseTime, {
+            boardFace: "dashboard",
+            pinned: true,
+          }),
+        ]
+      : []),
+    sessionRow(fixture === "main-mock" ? "main" : "agent:main:main", "Molty", baseTime - 1_000, {
+      ...(fixture === "main-mock"
+        ? { effectiveFastMode: true, effectiveFastModeSource: "session", fastMode: true }
+        : { activeRunIds: [PLAN_DEMO_RUN_ID], hasActiveRun: true }),
+      childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
+      totalTokens: 170_000,
+      totalTokensFresh: true,
     }),
+    ...swarmChildRows,
+    observerSessionInfo,
     sessionRow(NARRATION_DEMO_SESSION_KEY, "Sidebar narration demo", baseTime - 15_000, {
       createdActor: MOCK_ACTOR_MIRA,
       hasActiveRun: true,
@@ -1920,6 +1927,17 @@ async function createChatPickerScenario(
     inFlightRun: planInFlightRun,
     thinkingLevel: null,
   };
+  const observerChatHistory = {
+    messages: historyMessages,
+    sessionId: "control-ui-observer-demo-session",
+    sessionInfo: observerSessionInfo,
+    inFlightRun: {
+      runId: OBSERVER_DEMO_RUN_ID,
+      startedAt: baseTime - 4_000,
+      text: "",
+    },
+    thinkingLevel: null,
+  };
   const custodianHistory = {
     turns: [
       {
@@ -2047,6 +2065,9 @@ async function createChatPickerScenario(
     // The mock rows span several owners; advertise the multi-identity policy
     // so people-aware UI (People sort, Person grouping) is exercisable here.
     hasMultipleSessionSharingIdentities: true,
+    ...(fixture === "main-mock"
+      ? { allowedSessionVisibilities: ["shared", "read-only", "suggest", "draft"] }
+      : {}),
     historyMessages,
     // Lights up the footer facepile and who's-online roster; the email-only
     // entry keeps the roster's no-display-name row exercised.
@@ -2064,7 +2085,10 @@ async function createChatPickerScenario(
       ...buildBackgroundTasksMock(baseTime),
       ...cronMocks,
       "chat.history": {
-        cases: [{ match: { sessionKey: "agent:main:main" }, response: planChatHistory }],
+        cases: [
+          { match: { sessionKey: "agent:main:main" }, response: planChatHistory },
+          { match: { sessionKey: OBSERVER_DEMO_SESSION_KEY }, response: observerChatHistory },
+        ],
       },
       "chat.startup": {
         cases: [
@@ -2072,6 +2096,27 @@ async function createChatPickerScenario(
             match: { sessionKey: "agent:main:main" },
             response: {
               ...planChatHistory,
+              agentsList: {
+                agents: [
+                  {
+                    id: "main",
+                    identity: { name: "Molty" },
+                    name: "Molty",
+                    workspace: "/Users/peter/Projects/openclaw",
+                    workspaceGit: true,
+                  },
+                ],
+                defaultId: "main",
+                mainKey: "main",
+                scope: "agent",
+              },
+              metadata: { models: modelProviders.models },
+            },
+          },
+          {
+            match: { sessionKey: OBSERVER_DEMO_SESSION_KEY },
+            response: {
+              ...observerChatHistory,
               agentsList: {
                 agents: [
                   {
