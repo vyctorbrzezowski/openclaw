@@ -942,9 +942,8 @@
 }
 
 .workboard-card__signals {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
-  overflow: hidden;
 }
 
 .workboard-card__action-menu {
