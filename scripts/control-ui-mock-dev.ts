@@ -51,6 +51,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "main-mock"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -354,6 +355,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "main-mock" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1705,7 +1707,7 @@ async function createChatPickerScenario(
           }),
         ]
       : []),
-    sessionRow("agent:main:main", "Molty", baseTime - 1_000, {
+    sessionRow(fixture === "main-mock" ? "main" : "agent:main:main", "Molty", baseTime - 1_000, {
       activeRunIds: [PLAN_DEMO_RUN_ID],
       childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
       hasActiveRun: true,
@@ -2098,7 +2100,10 @@ async function createChatPickerScenario(
         transports: ["webrtc", "provider-websocket", "gateway-relay", "managed-room"],
         brains: ["agent-consult", "direct-tools", "none"],
         speech: { providers: [] },
-        transcription: { providers: [] },
+        transcription:
+          fixture === "main-mock"
+            ? { ready: true, activeProvider: "mock", providers: [] }
+            : { providers: [] },
         realtime: {
           ready: true,
           activeProvider: "openai",
@@ -2146,6 +2151,17 @@ async function createChatPickerScenario(
           ],
         },
       },
+      ...(fixture === "main-mock"
+        ? {
+            "talk.session.create": {
+              sessionId: "main-mock-dictation",
+              transcriptionSessionId: "main-mock-dictation",
+              audio: { inputEncoding: "g711_ulaw", inputSampleRateHz: 8000 },
+            },
+            "talk.session.appendAudio": {},
+            "talk.session.close": {},
+          }
+        : {}),
       // Custom session group catalog so the sidebar's category zone (and its
       // drag-reordering against built-in sections) is exercised in the mock.
       "sessions.groups.list": { groups: [{ name: "Research", position: 0 }] },
