@@ -67,7 +67,6 @@
 .workboard-card__chips,
 .workboard-card__signals,
 .workboard-card__top,
-.workboard-layout-controls,
 .workboard-layout-toggle,
 .workboard-labels {
   display: flex;
@@ -79,18 +78,6 @@
 .workboard-toolbar__filters {
   flex: 1;
   min-width: 260px;
-}
-
-.workboard-refresh-status {
-  color: var(--muted);
-  font-size: 0.76rem;
-  line-height: 1.2;
-  min-width: 104px;
-  white-space: nowrap;
-}
-
-.workboard-refresh-status--error {
-  color: var(--danger);
 }
 
 .workboard-health {
@@ -175,15 +162,7 @@
 }
 
 .workboard-layout-toggle {
-  gap: 4px;
-  padding: 2px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: var(--workboard-control-radius);
-  background: color-mix(in srgb, var(--bg-elevated) 42%, transparent);
-}
-
-.workboard-layout-controls {
-  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .workboard .input {
@@ -241,9 +220,31 @@
   opacity: 1;
 }
 
-.workboard-toolbar__filters .input[type="search"] {
-  width: min(420px, 100%);
-  min-width: min(280px, 100%);
+.workboard-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(240px, 100%);
+}
+
+.workboard-search > span {
+  position: absolute;
+  left: var(--space-2);
+  z-index: 1;
+  display: inline-flex;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.workboard-search svg {
+  width: 14px;
+  height: 14px;
+}
+
+.workboard-toolbar__filters .workboard-search .input[type="search"] {
+  width: 100%;
+  min-width: 0;
+  padding-left: var(--space-7);
 }
 
 .workboard-toggle {
@@ -373,19 +374,158 @@
   --wa-form-control-activated-color: var(--accent);
 }
 
-.workboard-select--toolbar {
-  width: min(176px, 100%);
-  max-width: 176px;
+.workboard-filter-popover {
+  --max-width: min(320px, calc(100vw - var(--space-8)));
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.workboard-agent-select--toolbar {
-  width: min(236px, 100%);
-  max-width: 236px;
+.workboard-filter-popover::part(body) {
+  padding: 0;
 }
 
-.workboard-select--toolbar-board {
-  width: min(224px, 100%);
-  max-width: 224px;
+.workboard-filter-popover__panel {
+  display: grid;
+  gap: var(--space-3);
+  width: min(320px, calc(100vw - var(--space-8)));
+  max-height: min(640px, calc(100vh - var(--space-8)));
+  overflow-y: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-elevated) 96%, var(--bg) 4%);
+  box-shadow: var(--overlay-shadow);
+}
+
+.workboard-filter-section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.workboard-filter-section__label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.workboard-filter-section__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.workboard-filter-section--view .workboard-filter-section__options,
+.workboard-filter-section--agent .workboard-filter-section__options,
+.workboard-filter-section--board .workboard-filter-section__options {
+  grid-template-columns: 1fr;
+}
+
+.workboard-filter-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-7);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.workboard-filter-option:hover,
+.workboard-filter-option:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.workboard-filter-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 56%, transparent);
+  outline-offset: 1px;
+}
+
+.workboard-filter-option.active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-hover));
+  color: var(--text);
+}
+
+.workboard-filter-option:disabled {
+  opacity: 0.46;
+}
+
+.workboard-filter-option small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.workboard-filter-option__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.workboard-filter-option__copy .workboard-board-glyph {
+  width: var(--space-5);
+  height: var(--space-5);
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  font-size: 0.62rem;
+}
+
+.workboard-filter-option__agent {
+  display: inline-grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.workboard-filter-option__agent svg {
+  width: 12px;
+  height: 12px;
+}
+
+.workboard-filter-option svg {
+  width: 13px;
+  height: 13px;
+}
+
+.workboard-filter-trigger {
+  gap: var(--space-2);
+}
+
+.workboard-filter-trigger__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--space-5);
+  height: var(--space-5);
+  border-radius: var(--radius-full);
+  padding-inline: var(--space-1);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.workboard-archive-toggle {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.workboard-refresh--error {
+  color: var(--danger);
 }
 
 .workboard-agent-select {
@@ -401,9 +541,6 @@
   font-weight: 600;
 }
 
-.workboard-agent-select--toolbar .agent-select__trigger {
-  height: var(--workboard-control-height);
-}
 .workboard-select::part(form-control-label) {
   position: absolute;
   width: 1px;
@@ -533,7 +670,8 @@
   --workboard-column-accent: color-mix(in srgb, var(--accent) 30%, transparent);
 
   min-height: 0;
-  background: transparent;
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--panel-strong) 52%, var(--bg) 48%);
   border: 0;
   border-radius: var(--radius-md);
   display: flex;
@@ -560,7 +698,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   min-height: var(--space-8);
-  padding: 0 var(--space-1) var(--space-2);
+  padding: 0 0 var(--space-2);
   border-bottom: 0;
   box-shadow: none;
 }
@@ -670,7 +808,7 @@
   width: 100%;
   min-height: 100%;
   border: 0;
-  padding: 10px 0;
+  padding: var(--space-2) 0;
   background: transparent;
   box-shadow: none;
   color: color-mix(in srgb, var(--text) 72%, var(--muted));
@@ -740,7 +878,7 @@
 .workboard-column__cards {
   flex: 1;
   min-height: 0;
-  padding: 0 var(--space-1) var(--space-2);
+  padding: 0;
   display: grid;
   /* Pin implicit rows to content height so an overflowing column scrolls instead
      of squeezing cards, which collapsed their line-clamped titles to 0px. */
@@ -1090,19 +1228,19 @@
   width: 100%;
 }
 
-.workboard-card__move-icon {
+.workboard-card__move-chevron {
   position: absolute;
-  left: 7px;
+  right: 7px;
   display: inline-flex;
   pointer-events: none;
 }
 
-.workboard-card__move-icon svg {
-  width: 14px;
-  height: 14px;
+.workboard-card__move-chevron svg {
+  width: 13px;
+  height: 13px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.5px;
+  stroke-width: 2px;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -1112,21 +1250,11 @@
   width: 100%;
   max-width: 112px;
   min-width: 0;
-  padding: 0 22px 0 25px;
+  padding: 0 28px 0 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   appearance: none;
   background-color: var(--bg-elevated);
-  background-image:
-    linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position:
-    calc(100% - 13px) 50%,
-    calc(100% - 8px) 50%;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
   color: var(--muted);
   font-size: 12px;
   font-weight: 500;
@@ -1281,7 +1409,7 @@
 
 .workboard-board--compact .workboard-column__cards {
   gap: var(--space-3);
-  padding: 0 var(--space-1) var(--space-2);
+  padding: 0;
 }
 
 .workboard-board--compact .workboard-card {
@@ -1681,8 +1809,6 @@ openclaw-workboard-card-dashboard {
 
   .workboard-toolbar__filters .input[type="search"],
   .workboard-toolbar__filters .input,
-  .workboard-select--toolbar,
-  .workboard-agent-select--toolbar,
   .workboard-draft__meta .input {
     width: 100%;
     max-width: none;
@@ -1728,7 +1854,7 @@ openclaw-workboard-card-dashboard {
 
   .workboard-column__rail {
     min-height: 44px;
-    padding: 0 11px;
+    padding: 0;
     writing-mode: horizontal-tb;
   }
 

@@ -1,9 +1,10 @@
 import { html, nothing } from "lit";
-import "../../components/agent-select-registration.ts";
 import { icons } from "../../components/icons.ts";
 import { renderLoadingState } from "../../components/loading-state.ts";
 import "../../components/modal-dialog.ts";
 import "../../components/tooltip.ts";
+import "../../components/web-awesome-popover.ts";
+import { renderWorkboardBoardGlyph } from "../../components/workboard-board-glyph.ts";
 import { t } from "../../i18n/index.ts";
 import "../../styles/workboard.css";
 import {
@@ -41,7 +42,7 @@ import {
   matchesFilter,
   type WorkboardProps,
 } from "./view-helpers.ts";
-import { renderWorkboardSelect, type WorkboardSelectOption } from "./workboard-select.ts";
+import type { WorkboardSelectOption } from "./workboard-select.ts";
 
 function renderDispatchSummary(state: WorkboardUiState) {
   const summary = state.lastDispatchSummary;
@@ -102,22 +103,13 @@ function renderHealthStrip(
   `;
 }
 
-function renderRefreshStatus(state: WorkboardUiState) {
+function refreshStatusLabel(state: WorkboardUiState) {
   if (state.lastRefreshAt) {
-    return html`<span
-      class="workboard-refresh-status ${state.lastRefreshError
-        ? "workboard-refresh-status--error"
-        : ""}"
-      title=${state.lastRefreshError ? t("workboard.refreshError") : ""}
-    >
-      ${t("workboard.lastRefreshed", { time: formatRefreshTime(state.lastRefreshAt) })}
-    </span>`;
+    return state.lastRefreshError
+      ? t("workboard.refreshError")
+      : t("workboard.lastRefreshed", { time: formatRefreshTime(state.lastRefreshAt) });
   }
-  return state.lastRefreshError
-    ? html`<span class="workboard-refresh-status workboard-refresh-status--error">
-        ${t("workboard.refreshError")}
-      </span>`
-    : nothing;
+  return state.lastRefreshError ? t("workboard.refreshError") : "";
 }
 
 const viewPresetOptions: Array<{ value: WorkboardUiState["viewPreset"]; labelKey: string }> = [
@@ -132,16 +124,73 @@ const viewPresetOptions: Array<{ value: WorkboardUiState["viewPreset"]; labelKey
   { value: "recently_done", labelKey: "workboard.viewRecentlyDone" },
 ];
 
-const layoutOptions = [
-  ["compact", "workboard.layoutCompact", icons.layoutCompact],
-  ["comfortable", "workboard.layoutComfortable", icons.layoutComfortable],
-] as const;
-
 const emptyColumnModeOptions = [
   ["show", "workboard.showEmptyColumns"],
   ["collapse", "workboard.collapseEmptyColumns"],
   ["hide", "workboard.hideEmptyColumns"],
 ] as const;
+
+const workboardFilterPopoverTriggerId = "workboard-filter-popover-trigger";
+
+function setFilterPopoverExpanded(event: Event, expanded: boolean) {
+  if (event.currentTarget instanceof Element) {
+    event.currentTarget.previousElementSibling?.setAttribute("aria-expanded", String(expanded));
+  }
+}
+
+function renderFilterSection<Value extends string>(params: {
+  label: string;
+  value: Value;
+  options: readonly WorkboardSelectOption<Value>[];
+  className?: string;
+  onChange: (value: Value) => void;
+}) {
+  return html`
+    <div class="workboard-filter-section ${params.className ?? ""}">
+      <span class="workboard-filter-section__label">${params.label}</span>
+      <div class="workboard-filter-section__options" role="group" aria-label=${params.label}>
+        ${params.options.map(
+          (option) => html`
+            <button
+              class="workboard-filter-option ${option.value === params.value ? "active" : ""}"
+              type="button"
+              aria-pressed=${option.value === params.value}
+              ?disabled=${option.disabled}
+              @click=${() => {
+                params.onChange(option.value);
+              }}
+            >
+              <span class="workboard-filter-option__copy">
+                ${option.boardId
+                  ? renderWorkboardBoardGlyph({
+                      id: option.boardId,
+                      name: option.label,
+                      icon: option.icon,
+                      color: option.color,
+                    })
+                  : params.className?.includes("--agent")
+                    ? html`<span class="workboard-filter-option__agent" aria-hidden="true">
+                        ${option.icon === "users"
+                          ? icons.users
+                          : option.icon === "bot"
+                            ? icons.bot
+                            : option.label.slice(0, 1).toUpperCase()}
+                      </span>`
+                    : nothing}
+                <span>${option.label}</span>
+              </span>
+              ${option.description
+                ? html`<small>${option.description}</small>`
+                : option.value === params.value
+                  ? icons.check
+                  : nothing}
+            </button>
+          `,
+        )}
+      </div>
+    </div>
+  `;
+}
 
 export function renderWorkboard(props: WorkboardProps) {
   const state = getWorkboardState(props.host);
@@ -246,152 +295,175 @@ export function renderWorkboard(props: WorkboardProps) {
   ];
   const emptyColumnOptions: Array<WorkboardSelectOption<WorkboardUiState["emptyColumnMode"]>> =
     emptyColumnModeOptions.map(([value, labelKey]) => ({ value, label: t(labelKey) }));
-  const agentSelectOptions = agentOptions.map((option) => ({
+  const agentFilterOptions: WorkboardSelectOption[] = agentOptions.map((option) => ({
     value: option.id,
     label: option.label,
     description: option.description,
-    agent:
-      option.id === "all" || option.id === "default"
-        ? undefined
-        : (props.agentsList?.agents.find((agent) => agent.id === option.id) ?? { id: option.id }),
-    icon: option.id === "all" ? icons.users : option.id === "default" ? icons.bot : undefined,
+    icon: option.id === "all" ? "users" : option.id === "default" ? "bot" : undefined,
   }));
+  const activeFilterCount = [
+    state.viewPreset !== "all",
+    state.priorityFilter !== "all",
+    props.showAgentFilter !== false && state.agentFilter !== "all",
+    boardOptions.length >= 3 && activeBoardFilter !== WORKBOARD_ALL_BOARDS_FILTER,
+    state.showArchived,
+    state.emptyColumnMode !== "show",
+  ].filter(Boolean).length;
+  const nextLayoutLabel =
+    state.layout === "compact" ? t("workboard.layoutComfortable") : t("workboard.layoutCompact");
+  const refreshStatus = state.loading ? t("common.refreshing") : refreshStatusLabel(state);
   const dialogOpen = state.draftOpen || Boolean(getVisibleDetailCard(state));
   return html`
     <section class="workboard">
       <div class="workboard-main" ?inert=${dialogOpen} aria-hidden=${dialogOpen ? "true" : nothing}>
         <div class="workboard-toolbar">
           <div class="workboard-toolbar__filters">
-            <input
-              class="input"
-              type="search"
-              title=${t("workboard.searchPlaceholder")}
-              placeholder=${t("workboard.searchPlaceholder")}
-              .value=${state.query}
-              @input=${(event: InputEvent) => {
-                state.query = (event.currentTarget as HTMLInputElement).value;
-                props.onRequestUpdate?.();
-              }}
-            />
-            ${renderWorkboardSelect({
-              value: state.viewPreset,
-              options: viewOptions,
-              label: t("workboard.viewPreset"),
-              onChange: (value) => {
-                state.viewPreset = value;
-              },
-              requestUpdate: props.onRequestUpdate,
-              className: "workboard-select--toolbar",
-              showLabel: false,
-            })}
-            ${renderWorkboardSelect({
-              value: state.priorityFilter,
-              options: priorityOptions,
-              label: t("workboard.allPriorities"),
-              onChange: (value) => {
-                state.priorityFilter = value;
-              },
-              requestUpdate: props.onRequestUpdate,
-              className: "workboard-select--toolbar",
-              showLabel: false,
-            })}
-            ${boardOptions.length >= 3
-              ? renderWorkboardSelect({
-                  value: activeBoardFilter,
-                  options: boardOptions,
-                  label: t("workboard.boardFilter"),
-                  onChange: (value) => {
-                    state.boardFilter = value;
-                    props.onBoardFilterChange?.(value);
-                  },
-                  requestUpdate: props.onRequestUpdate,
-                  className: "workboard-select--toolbar workboard-select--toolbar-board",
-                  showLabel: false,
-                })
-              : nothing}
-            ${props.showAgentFilter !== false
-              ? html`
-                  <openclaw-agent-select
-                    class="workboard-agent-select workboard-agent-select--toolbar"
-                    .options=${agentSelectOptions}
-                    .value=${state.agentFilter}
-                    .accessibleLabel=${t("workboard.agentFilter")}
-                    .onSelect=${(value: string) => {
-                      const option = agentOptions.find((candidate) => candidate.id === value);
-                      if (option) {
-                        state.agentFilter = option.id;
-                        props.onRequestUpdate?.();
-                      }
-                    }}
-                  ></openclaw-agent-select>
-                `
-              : nothing}
+            <label class="workboard-search">
+              <span aria-hidden="true">${icons.search}</span>
+              <input
+                class="input"
+                type="search"
+                title=${t("workboard.searchPlaceholder")}
+                placeholder=${t("workboard.searchPlaceholder")}
+                .value=${state.query}
+                @input=${(event: InputEvent) => {
+                  state.query = (event.currentTarget as HTMLInputElement).value;
+                  props.onRequestUpdate?.();
+                }}
+              />
+            </label>
             <button
-              class="btn workboard-archive-toggle ${state.showArchived ? "active" : ""}"
+              id=${workboardFilterPopoverTriggerId}
+              class="btn workboard-filter-trigger ${activeFilterCount > 0 ? "active" : ""}"
               type="button"
-              aria-pressed=${state.showArchived}
-              @click=${() => {
-                state.showArchived = !state.showArchived;
-                props.onRequestUpdate?.();
-              }}
+              aria-label=${activeFilterCount > 0
+                ? t("workboard.filtersActive", { count: String(activeFilterCount) })
+                : t("workboard.filters")}
+              aria-haspopup="dialog"
+              aria-expanded="false"
             >
-              ${state.showArchived ? icons.eye : icons.eyeOff}
-              ${state.showArchived
-                ? t("workboard.hideArchivedShort")
-                : t("workboard.showArchivedShort")}
+              ${icons.listFilter}<span>${t("workboard.filters")}</span>
+              ${activeFilterCount > 0
+                ? html`<span class="workboard-filter-trigger__count">${activeFilterCount}</span>`
+                : nothing}
             </button>
-            <div class="workboard-layout-controls">
-              <div class="workboard-layout-toggle" role="group" aria-label=${t("workboard.layout")}>
-                ${layoutOptions.map(
-                  ([layout, labelKey, icon]) => html`
-                    <openclaw-tooltip .content=${t(labelKey)}>
-                      <button
-                        class="btn btn--icon ${state.layout === layout ? "active" : ""}"
-                        type="button"
-                        aria-label=${t(labelKey)}
-                        aria-pressed=${state.layout === layout}
-                        @click=${() => {
-                          state.layout = layout;
-                          props.onRequestUpdate?.();
-                        }}
-                      >
-                        ${icon}
-                      </button>
-                    </openclaw-tooltip>
-                  `,
-                )}
+            <wa-popover
+              class="workboard-filter-popover"
+              for=${workboardFilterPopoverTriggerId}
+              placement="bottom-start"
+              without-arrow
+              @wa-show=${(event: Event) => setFilterPopoverExpanded(event, true)}
+              @wa-hide=${(event: Event) => setFilterPopoverExpanded(event, false)}
+            >
+              <div class="workboard-filter-popover__panel">
+                ${renderFilterSection({
+                  value: state.viewPreset,
+                  options: viewOptions,
+                  label: t("workboard.viewPreset"),
+                  onChange: (value) => {
+                    state.viewPreset = value;
+                    props.onRequestUpdate?.();
+                  },
+                  className: "workboard-filter-section--view",
+                })}
+                ${renderFilterSection({
+                  value: state.priorityFilter,
+                  options: priorityOptions,
+                  label: t("workboard.allPriorities"),
+                  onChange: (value) => {
+                    state.priorityFilter = value;
+                    props.onRequestUpdate?.();
+                  },
+                  className: "workboard-filter-section--priority",
+                })}
+                ${boardOptions.length >= 3
+                  ? renderFilterSection({
+                      value: activeBoardFilter,
+                      options: boardOptions,
+                      label: t("workboard.boardFilter"),
+                      onChange: (value) => {
+                        state.boardFilter = value;
+                        props.onBoardFilterChange?.(value);
+                        props.onRequestUpdate?.();
+                      },
+                      className: "workboard-filter-section--board",
+                    })
+                  : nothing}
+                ${props.showAgentFilter !== false
+                  ? renderFilterSection({
+                      value: state.agentFilter,
+                      options: agentFilterOptions,
+                      label: t("workboard.agentFilter"),
+                      onChange: (value) => {
+                        state.agentFilter = value;
+                        props.onRequestUpdate?.();
+                      },
+                      className: "workboard-filter-section--agent",
+                    })
+                  : nothing}
+                ${renderFilterSection({
+                  value: state.emptyColumnMode,
+                  options: emptyColumnOptions,
+                  label: t("workboard.emptyColumns"),
+                  onChange: (value) => {
+                    state.emptyColumnMode = value;
+                    state.expandedEmptyStatuses.clear();
+                    props.onRequestUpdate?.();
+                  },
+                  className: "workboard-filter-section--empty-columns",
+                })}
+                <button
+                  class="btn workboard-archive-toggle ${state.showArchived ? "active" : ""}"
+                  type="button"
+                  aria-pressed=${state.showArchived}
+                  @click=${() => {
+                    state.showArchived = !state.showArchived;
+                    props.onRequestUpdate?.();
+                  }}
+                >
+                  ${state.showArchived ? icons.eye : icons.eyeOff}
+                  ${state.showArchived
+                    ? t("workboard.hideArchivedShort")
+                    : t("workboard.showArchivedShort")}
+                </button>
               </div>
-              ${renderRefreshStatus(state)}
-            </div>
-            ${renderWorkboardSelect({
-              value: state.emptyColumnMode,
-              options: emptyColumnOptions,
-              label: t("workboard.emptyColumns"),
-              onChange: (value) => {
-                state.emptyColumnMode = value;
-                state.expandedEmptyStatuses.clear();
-              },
-              requestUpdate: props.onRequestUpdate,
-              className: "workboard-select--toolbar workboard-select--empty-columns",
-              showLabel: false,
-            })}
+            </wa-popover>
+            <openclaw-tooltip .content=${nextLayoutLabel}>
+              <button
+                class="btn btn--icon workboard-layout-toggle"
+                type="button"
+                aria-label=${t("workboard.switchLayout", { layout: nextLayoutLabel })}
+                @click=${() => {
+                  state.layout = state.layout === "compact" ? "comfortable" : "compact";
+                  props.onRequestUpdate?.();
+                }}
+              >
+                ${state.layout === "compact" ? icons.layoutCompact : icons.layoutComfortable}
+              </button>
+            </openclaw-tooltip>
           </div>
           <div class="workboard-toolbar__actions">
-            <button
-              class="btn"
-              type="button"
-              ?disabled=${state.loading || state.dispatching || workboardHasActiveWrites(state)}
-              @click=${() =>
-                refreshWorkboard({
-                  host: props.host,
-                  client: props.client,
-                  requestUpdate: props.onRequestUpdate,
-                  source: "manual",
-                  refreshDiagnostics: props.canWrite !== false,
-                })}
-            >
-              ${state.loading ? t("common.refreshing") : t("common.refresh")}
-            </button>
+            <openclaw-tooltip .content=${refreshStatus || t("common.refresh")}>
+              <button
+                class="btn btn--icon workboard-refresh ${state.lastRefreshError
+                  ? "workboard-refresh--error"
+                  : ""}"
+                type="button"
+                aria-label=${state.loading ? t("common.refreshing") : t("common.refresh")}
+                aria-busy=${state.loading}
+                ?disabled=${state.loading || state.dispatching || workboardHasActiveWrites(state)}
+                @click=${() =>
+                  refreshWorkboard({
+                    host: props.host,
+                    client: props.client,
+                    requestUpdate: props.onRequestUpdate,
+                    source: "manual",
+                    refreshDiagnostics: props.canWrite !== false,
+                  })}
+              >
+                ${icons.refresh}
+              </button>
+            </openclaw-tooltip>
             ${writable
               ? html`
                   <button

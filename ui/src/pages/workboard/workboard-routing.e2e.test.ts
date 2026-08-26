@@ -114,7 +114,10 @@ suite.define(() => {
       const headerGlyph = page.locator(".workboard-board-glyph--header");
       await expect.poll(() => headerGlyph.textContent()).toContain("⚙");
       await expect.poll(() => headerGlyph.getAttribute("style")).toContain("#22c55e");
-      await page.locator(".workboard-select--toolbar-board").waitFor();
+      const filterTrigger = page.locator(".workboard-filter-trigger");
+      await filterTrigger.click();
+      await page.locator(".workboard-filter-section--board").waitFor();
+      await filterTrigger.click();
       if (captureUiProofEnabled) {
         await page.screenshot({
           fullPage: true,

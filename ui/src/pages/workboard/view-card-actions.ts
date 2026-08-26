@@ -70,7 +70,6 @@ export function renderCardMoveControl(
       class="workboard-card__move ${options.wide ? "workboard-card__move--wide" : ""}"
       title=${t("workboard.fieldStatus")}
     >
-      <span class="workboard-card__move-icon" aria-hidden="true">${icons.cornerDownRight}</span>
       <select
         class="workboard-card__move-select"
         aria-keyshortcuts="ArrowLeft ArrowRight"
@@ -112,6 +111,7 @@ export function renderCardMoveControl(
           </option>`,
         )}
       </select>
+      <span class="workboard-card__move-chevron" aria-hidden="true">${icons.chevronDown}</span>
     </label>
   `;
 }

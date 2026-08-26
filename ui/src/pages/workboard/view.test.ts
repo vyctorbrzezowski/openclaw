@@ -97,15 +97,6 @@ function changeWorkboardSelect(select: Element | null | undefined, value: string
   Reflect.deleteProperty(control, "value");
 }
 
-function selectWorkboardAgent(select: Element | null | undefined, value: string) {
-  const control = select as
-    | (HTMLElement & { onSelect: (value: string) => void })
-    | null
-    | undefined;
-  expect(control).not.toBeNull();
-  control?.onSelect(value);
-}
-
 describe("nextWorkboardCardPosition", () => {
   const opsCard = createWorkboardCard({
     metadata: { automation: { boardId: "ops" } },
@@ -296,7 +287,7 @@ describe("renderWorkboard", () => {
     state.loading = true;
     renderView();
 
-    expect(buttonByText(container, "Refreshing")?.disabled).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>(".workboard-refresh")?.disabled).toBe(true);
   });
 
   it("renders lifecycle refresh errors without replacing generic errors", () => {
@@ -328,7 +319,7 @@ describe("renderWorkboard", () => {
     state.loading = false;
     renderView();
 
-    expect(buttonByText(container, "Refresh")?.disabled).toBe(true);
+    expect(buttonByLabel(container, "Refresh")?.disabled).toBe(true);
 
     state.draftSaving = false;
     state.dispatching = true;
@@ -338,7 +329,7 @@ describe("renderWorkboard", () => {
 
     renderView();
 
-    expect(buttonByText(container, "Refresh")?.disabled).toBe(true);
+    expect(buttonByLabel(container, "Refresh")?.disabled).toBe(true);
   });
 
   it("disables card-write controls while dispatch is running", () => {
@@ -478,19 +469,21 @@ describe("renderWorkboard", () => {
     expect(detailText).toMatch(/\d+:\d\d/);
   });
 
-  it("keeps the last updated timestamp stable next to density controls while refreshing", () => {
+  it("keeps refresh context accessible while loading", () => {
     const { state, container, renderView } = createWorkboardView();
     state.loading = true;
     state.lastRefreshAt = new Date("2026-06-03T18:47:00Z").getTime();
     state.lastRefreshStartedAt = Date.now();
     renderView();
 
-    const layoutControls = container.querySelector(".workboard-layout-controls");
-    expect(layoutControls?.querySelector(".workboard-layout-toggle")).toBeTruthy();
-    expect(layoutControls?.querySelector(".workboard-refresh-status")?.textContent).toContain(
-      "Updated",
-    );
-    expect(layoutControls?.textContent).not.toContain("Refreshing");
+    expect(container.querySelector(".workboard-layout-toggle")).toBeTruthy();
+    expect(
+      container.querySelector<HTMLElement & { content: string }>(
+        ".workboard-toolbar__actions openclaw-tooltip",
+      )?.content,
+    ).toContain("Refreshing");
+    expect(container.querySelector(".workboard-refresh")?.getAttribute("aria-busy")).toBe("true");
+    expect(container.querySelector(".workboard-refresh")?.textContent).not.toContain("Refreshing");
   });
 
   it("renders board columns and preloaded cards", () => {
@@ -840,9 +833,9 @@ describe("renderWorkboard", () => {
     expect(container.querySelector(".workboard-empty-state")?.textContent).toContain(
       "No cards match this view",
     );
-    const viewSelect = container.querySelector(".workboard-toolbar__filters .workboard-select");
+    const viewSelect = container.querySelector(".workboard-filter-section--view");
     const runningOption = [
-      ...(viewSelect?.querySelectorAll<HTMLElement & { disabled: boolean }>("wa-option") ?? []),
+      ...(viewSelect?.querySelectorAll<HTMLButtonElement>("button") ?? []),
     ].find((option) => option.textContent?.includes("Running"));
     expect(runningOption?.disabled).toBe(true);
     expect(runningOption?.textContent).toContain("0 cards");
@@ -867,8 +860,8 @@ describe("renderWorkboard", () => {
     );
   });
 
-  it("uses the same Web Awesome select control for Workboard toolbar filters", () => {
-    const { container, renderView } = createWorkboardView({
+  it("groups all Workboard filters in one popover", () => {
+    const { state, container, renderView } = createWorkboardView({
       agentsList: {
         defaultId: "main",
         mainKey: "agent:main:main",
@@ -879,22 +872,40 @@ describe("renderWorkboard", () => {
     renderView();
 
     const toolbarFilters = container.querySelector(".workboard-toolbar__filters");
-    expect(toolbarFilters?.querySelectorAll(".workboard-select--toolbar")).toHaveLength(3);
+    expect(toolbarFilters?.querySelectorAll(".workboard-filter-trigger")).toHaveLength(1);
+    expect(toolbarFilters?.querySelectorAll(".workboard-filter-popover")).toHaveLength(1);
+    expect(toolbarFilters?.querySelectorAll(".workboard-filter-section")).toHaveLength(4);
     expect(toolbarFilters?.querySelectorAll("select")).toHaveLength(0);
     expect(toolbarFilters?.textContent).toContain("All cards");
     expect(toolbarFilters?.textContent).toContain("All priorities");
-    expect(
-      toolbarFilters
-        ?.querySelector<HTMLElement & { options: Array<{ label: string }> }>(
-          ".workboard-agent-select--toolbar",
-        )
-        ?.options.map((option) => option.label),
-    ).toContain("All agents");
-    const priorityFilter = toolbarFilters?.querySelectorAll(".workboard-select--toolbar").item(1);
+    expect(toolbarFilters?.textContent).toContain("All agents");
+    const priorityFilter = toolbarFilters?.querySelector(".workboard-filter-section--priority");
     expect(priorityFilter?.textContent).toContain("Low");
     expect(priorityFilter?.textContent).toContain("Normal");
     expect(priorityFilter?.textContent).toContain("High");
     expect(priorityFilter?.textContent).toContain("Urgent");
+
+    expect(toolbarFilters?.querySelector(".workboard-filter-trigger__count")).toBeNull();
+    state.priorityFilter = "high";
+    state.emptyColumnMode = "collapse";
+    renderView();
+    expect(container.querySelector(".workboard-filter-trigger__count")?.textContent).toBe("2");
+    expect(buttonByLabel(container, "Filters, 2 active")).not.toBeNull();
+  });
+
+  it("toggles card density with one icon control", () => {
+    const { state, container, renderView } = createWorkboardView({
+      onRequestUpdate: () => undefined,
+    });
+    renderView();
+
+    const densityToggle = buttonByLabel(container, "Switch to Comfortable card density");
+    expect(container.querySelectorAll(".workboard-layout-toggle")).toHaveLength(1);
+    densityToggle?.click();
+    expect(state.layout).toBe("comfortable");
+
+    renderView();
+    expect(buttonByLabel(container, "Switch to Compact card density")).not.toBeNull();
   });
 
   it("filters cards to the global agent scope and hides the secondary agent filter", () => {
@@ -932,33 +943,26 @@ describe("renderWorkboard", () => {
 
     expect(container.textContent).toContain("Writer card");
     expect(container.textContent).not.toContain("Ops card");
-    expect(container.querySelectorAll(".workboard-select--toolbar")).toHaveLength(3);
+    expect(container.querySelectorAll(".workboard-filter-section")).toHaveLength(3);
   });
 
-  it("uses labelled controls for Workboard filters", () => {
+  it("uses labelled option groups for Workboard filters", () => {
     const { container, renderView } = createWorkboardView();
     renderView();
 
-    const selects = [
-      ...container.querySelectorAll<HTMLElement & { value: string }>(
-        ".workboard-toolbar__filters > wa-select",
-      ),
+    const groups = [
+      ...container.querySelectorAll('.workboard-filter-section__options[role="group"]'),
     ];
-    expect(selects).toHaveLength(3);
-    expect(selects.map((select) => select.querySelector('[slot="label"]')?.textContent)).toEqual([
+    expect(groups).toHaveLength(4);
+    expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual([
       "Workboard view",
       "All priorities",
+      "Filter by agent",
       "Empty columns",
     ]);
     expect(
-      selects.map((select) => select.querySelector("wa-option[selected]")?.getAttribute("value")),
-    ).toEqual(["all", "all", "show"]);
-    const agentSelect = container.querySelector<
-      HTMLElement & { accessibleLabel: string; value: string }
-    >(".workboard-agent-select--toolbar");
-    expect(agentSelect?.accessibleLabel).toBe("Filter by agent");
-    expect(agentSelect?.value).toBe("all");
-    expect(container.querySelector(".workboard-select__trigger")).toBeNull();
+      container.querySelectorAll('.workboard-filter-option[aria-pressed="true"]'),
+    ).toHaveLength(4);
   });
 
   it("supports showing, collapsing, and hiding empty columns", () => {
@@ -974,8 +978,10 @@ describe("renderWorkboard", () => {
     expect(container.querySelectorAll(".workboard-column")).toHaveLength(9);
     expect(container.querySelector(".workboard-column--collapsed")).toBeNull();
 
-    const emptyColumns = container.querySelector(".workboard-select--empty-columns");
-    changeWorkboardSelect(emptyColumns, "collapse");
+    buttonByText(
+      container.querySelector(".workboard-filter-section--empty-columns")!,
+      "Collapse empty",
+    )?.click();
     renderView();
 
     expect(state.emptyColumnMode).toBe("collapse");
@@ -996,7 +1002,10 @@ describe("renderWorkboard", () => {
     renderView();
     expect(state.collapsedStatuses).not.toContain("todo");
 
-    changeWorkboardSelect(emptyColumns, "hide");
+    buttonByText(
+      container.querySelector(".workboard-filter-section--empty-columns")!,
+      "Hide empty",
+    )?.click();
     renderView();
 
     expect(state.emptyColumnMode).toBe("hide");
@@ -1101,6 +1110,8 @@ describe("renderWorkboard", () => {
 
     const moveSelect = actions!.querySelector<HTMLSelectElement>(".workboard-card__move-select");
     expect(moveSelect?.getAttribute("aria-label")).toBe("Status: Detail parity");
+    expect(actions?.querySelector(".workboard-card__move-icon")).toBeNull();
+    expect(actions?.querySelector(".workboard-card__move-chevron svg")).not.toBeNull();
     expect([...moveSelect!.options].map((option) => option.textContent?.trim())).toContain(
       "Review",
     );
@@ -2120,12 +2131,12 @@ describe("renderWorkboard", () => {
       },
     ];
     renderView();
-    const boardFilter = container.querySelector(".workboard-select--toolbar-board");
+    const boardFilter = container.querySelector(".workboard-filter-section--board");
     expect(boardFilter?.textContent).toContain("Default board");
     expect(boardFilter?.textContent).toContain("Operations (ops)");
     expect(boardFilter?.textContent).toContain("Old work (archive)");
 
-    changeWorkboardSelect(boardFilter, "ops");
+    buttonByText(boardFilter!, "Operations (ops)")?.click();
     renderView();
 
     expect(onBoardFilterChange).toHaveBeenCalledWith("ops");
@@ -2133,7 +2144,7 @@ describe("renderWorkboard", () => {
     expect(container.textContent).toContain("Ops work");
   });
 
-  it("shows the board switcher at two boards with icon, color, and fallback glyphs", () => {
+  it("shows the board switcher at two boards", () => {
     const { state, container, renderView } = createWorkboardView();
     state.boards = [
       { id: "default", total: 0, active: 0, archived: 0, byStatus: {} },
@@ -2150,15 +2161,10 @@ describe("renderWorkboard", () => {
     ];
     renderView();
 
-    const boardFilter = container.querySelector(".workboard-select--toolbar-board");
+    const boardFilter = container.querySelector(".workboard-filter-section--board");
     expect(boardFilter).not.toBeNull();
-    const defaultGlyph = boardFilter?.querySelector(
-      'wa-option[value="default"] .workboard-board-glyph',
-    );
-    const opsGlyph = boardFilter?.querySelector('wa-option[value="ops"] .workboard-board-glyph');
-    expect(defaultGlyph?.textContent?.trim()).toBe("D");
-    expect(opsGlyph?.textContent?.trim()).toBe("⚙");
-    expect(opsGlyph?.getAttribute("style")).toContain("#22c55e");
+    expect(boardFilter?.textContent).toContain("Default board");
+    expect(boardFilter?.textContent).toContain("Operations (ops)");
   });
 
   it("keeps a deleted routed board filtered instead of exposing every board", () => {
@@ -2225,39 +2231,33 @@ describe("renderWorkboard", () => {
     ];
     renderView();
 
-    const agentFilter = container.querySelector<
-      HTMLElement & { options: Array<{ label: string }>; value: string }
-    >(".workboard-agent-select--toolbar");
-    expect(agentFilter?.options.map((option) => option.label)).toEqual([
+    const agentFilter = container.querySelector(".workboard-filter-section--agent");
+    for (const label of [
       "All agents",
       "Unassigned (uses Main)",
       "Main (default)",
       "Ops",
       "workboard-dispatcher (not configured)",
-    ]);
+    ]) {
+      expect(agentFilter?.textContent).toContain(label);
+    }
 
-    selectWorkboardAgent(agentFilter, "ops");
+    buttonByText(agentFilter!, "Ops")?.click();
     renderView();
 
     expect(container.textContent).not.toContain("Main work");
     expect(container.textContent).toContain("Ops work");
-    expect(
-      container.querySelector<HTMLElement & { value: string }>(".workboard-agent-select--toolbar")
-        ?.value,
-    ).toBe("ops");
+    expect(state.agentFilter).toBe("ops");
 
-    selectWorkboardAgent(
-      container.querySelector(".workboard-agent-select--toolbar"),
+    buttonByText(
+      container.querySelector(".workboard-filter-section--agent")!,
       "workboard-dispatcher",
-    );
+    )?.click();
     renderView();
 
     expect(container.textContent).not.toContain("Ops work");
     expect(container.textContent).toContain("Dispatcher work");
-    expect(
-      container.querySelector<HTMLElement & { value: string }>(".workboard-agent-select--toolbar")
-        ?.value,
-    ).toBe("workboard-dispatcher");
+    expect(state.agentFilter).toBe("workboard-dispatcher");
   });
 
   it("limits assignment choices to configured agents and preserves an unknown current assignee", () => {

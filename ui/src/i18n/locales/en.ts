@@ -4135,6 +4135,7 @@ export const en: TranslationMap = {
     layout: "Card layout",
     layoutCompact: "Compact card density",
     layoutComfortable: "Comfortable card density",
+    switchLayout: "Switch to {layout}",
     dispatch: "Dispatch ready work",
     dispatchSummary:
       "Dispatch complete: started {started}, promoted {promoted}, blocked {blocked}, reclaimed {reclaimed}, orchestrated {orchestrated}, failures {failures}.",
@@ -4193,6 +4194,8 @@ export const en: TranslationMap = {
     labelsPlaceholder: "ui, docs",
     searchPlaceholder: "Search cards",
     allPriorities: "All priorities",
+    filters: "Filters",
+    filtersActive: "Filters, {count} active",
     emptyColumns: "Empty columns",
     showEmptyColumns: "Show all",
     collapseEmptyColumns: "Collapse empty",
