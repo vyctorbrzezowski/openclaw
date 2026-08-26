@@ -34,7 +34,7 @@ describeControlUiE2e("Control UI chat file links", () => {
     await server?.close();
   });
 
-  it("shows the Review panel before a clicked file finishes loading", async () => {
+  it("opens Files before a clicked chat file finishes loading", async () => {
     const context = await browser.newContext({
       recordVideo: { dir: artifactDir, size: { height: 900, width: 1280 } },
       viewport: { height: 900, width: 1280 },
@@ -71,6 +71,11 @@ describeControlUiE2e("Control UI chat file links", () => {
       await gateway.waitForRequest("sessions.files.get");
 
       await page.locator(".side-panel").waitFor({ state: "visible" });
+      const filesTab = page.locator(".side-panel wa-tab").filter({ hasText: "Files" });
+      await expect.poll(() => filesTab.getAttribute("active")).not.toBeNull();
+      expect(await page.locator(".side-panel wa-tab").filter({ hasText: "Review" }).count()).toBe(
+        0,
+      );
       expect(await page.locator(".sidebar-file-view").count()).toBe(0);
       await page.screenshot({ path: path.join(artifactDir, "latency-panel-before-file.png") });
 
@@ -171,8 +176,12 @@ describeControlUiE2e("Control UI chat file links", () => {
 
       await fileView.getByRole("button", { name: "Show in Files" }).click();
       await expect
-        .poll(async () => (await gateway.getRequests("sessions.files.list"))[0]?.params)
-        .toMatchObject({ path: "packages/app" });
+        .poll(async () =>
+          (await gateway.getRequests("sessions.files.list")).some(
+            (request) => (request.params as { path?: unknown }).path === "packages/app",
+          ),
+        )
+        .toBe(true);
       const browserRow = page
         .locator(".chat-workspace-rail__browser .chat-workspace-rail__file")
         .filter({ hasText: "README.md" });
@@ -274,11 +283,6 @@ describeControlUiE2e("Control UI chat file links", () => {
           .filter({ hasText: filePath });
         await fileRow.locator(".chat-workspace-rail__file-open").click();
       };
-      const closePreview = async () => {
-        await page.getByRole("button", { name: "Close Review" }).click();
-        await page.locator("openclaw-chat-detail-panel").waitFor({ state: "detached" });
-      };
-
       await page.goto(`${server.baseUrl}chat`);
       await openChatSidePanelType(page, "Files");
       await page.getByRole("complementary", { name: "Session workspace" }).waitFor();
@@ -289,7 +293,6 @@ describeControlUiE2e("Control UI chat file links", () => {
         "Exact-head workspace preview proof.",
       );
       await page.screenshot({ path: path.join(artifactDir, "04-text-preview.png") });
-      await closePreview();
 
       await openPreview("openclaw.png");
       const image = page.locator('.chat-tool-card__preview[data-kind="image"] img');
@@ -304,7 +307,6 @@ describeControlUiE2e("Control UI chat file links", () => {
         )
         .toBe(true);
       await page.screenshot({ path: path.join(artifactDir, "05-png-preview.png") });
-      await closePreview();
 
       await openPreview("unsupported-binary.bmp");
       const fallback = page.locator(".sidebar-markdown-shell");

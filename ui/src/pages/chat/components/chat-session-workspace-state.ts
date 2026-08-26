@@ -79,6 +79,7 @@ function createSessionWorkspaceState(
     list: null,
     loading: false,
     pendingReload: false,
+    previewContent: null,
     sessionKey: state.sessionKey,
   };
 }
@@ -166,6 +167,10 @@ export function loadSessionWorkspace(
       };
       if (
         workspace.activeId &&
+        // A chat-linked file need not appear in the current browser page. Keep its
+        // selection while its request or preview owns the Files surface.
+        !workspace.openRequest &&
+        !workspace.previewContent &&
         !fileItems.some((file) => `file:${file.path}` === workspace.activeId) &&
         !browserItems.some((entry) => `file:${entry.path}` === workspace.activeId) &&
         !artifactItems.some((artifact) => `artifact:${artifact.id}` === workspace.activeId)

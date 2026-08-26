@@ -110,7 +110,24 @@ export abstract class ChatPaneLayoutRender extends ChatPaneBrowserAnnotationRend
       desktopAvailable,
       hasBoard: board.hasBoard,
       chat,
-      workspace: renderSessionWorkspaceRail(sessionWorkspace, { embedded: true }),
+      workspace: html`<div class="chat-workspace-panel">
+        <div class="chat-workspace-panel__list">
+          ${renderSessionWorkspaceRail(sessionWorkspace, { embedded: true })}
+        </div>
+        ${sessionWorkspace.previewContent
+          ? html`<div class="chat-workspace-panel__preview">
+              ${renderChatDetailSlot({
+                backgroundTasks,
+                chat: chatProps,
+                content: sessionWorkspace.previewContent,
+                host: state,
+                layout: sidebarLayout,
+                transcript: this.taskSidebarTranscript,
+                onClose: () => closePanelSlot("workspace"),
+              })}
+            </div>`
+          : nothing}
+      </div>`,
       tasks: renderBackgroundTasksRail(backgroundTasks, { embedded: true }),
       detailOpen: this.presented && sidebarLayout.open === true && detailSlotOpen(sidebarLayout),
       renderDetail: (content) =>

@@ -46,6 +46,7 @@ type CliOptions = {
     | "approval"
     | "board"
     | "code-fences"
+    | "files-panel"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -348,6 +349,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "approval" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "files-panel" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1362,6 +1364,26 @@ function buildCodeFenceChatHistory(baseTime: number): unknown[] {
   ];
 }
 
+function buildFilesPanelChatHistory(baseTime: number): unknown[] {
+  return [
+    chatHistoryMessage(
+      "user",
+      "Show me the files you prepared so I can inspect them beside this chat.",
+      baseTime,
+    ),
+    chatHistoryMessage(
+      "assistant",
+      [
+        "I prepared a small multi-format workspace for the Files panel demo.",
+        "",
+        "Start with `sample.ts:3`, then compare `sample.css`, `sample.md`, `sample.json`, `sample.sh`, and `sample.png`.",
+        "Each link should open Files with that row selected. Use the side-panel + menu to add Review and inspect the session diff without moving these file previews into Review.",
+      ].join("\n"),
+      baseTime + 30_000,
+    ),
+  ];
+}
+
 function searchPrefixes(term: string): string[] {
   return Array.from({ length: term.length }, (_value, index) => term.slice(0, index + 1));
 }
@@ -1456,42 +1478,115 @@ async function createChatPickerScenario(
       },
     })),
   );
-  const sessionFiles = [
-    {
-      kind: "modified",
-      missing: false,
-      name: "chat.ts",
-      path: "ui/src/ui/views/chat.ts",
-      size: 48320,
-      updatedAtMs: baseTime - 20_000,
-    },
-    {
-      kind: "modified",
-      missing: false,
-      name: "sidebar.css",
-      path: "ui/src/styles/chat/sidebar.css",
-      size: 18840,
-      updatedAtMs: baseTime - 18_000,
-    },
-    {
-      kind: "read",
-      missing: false,
-      name: "artifacts.ts",
-      path: "src/gateway/server-methods/artifacts.ts",
-      size: 21876,
-      updatedAtMs: baseTime - 300_000,
-    },
-    {
-      kind: "read",
-      missing: false,
-      name: "sessions.ts",
-      path: "packages/gateway-protocol/src/schema/sessions.ts",
-      size: 16542,
-      updatedAtMs: baseTime - 420_000,
-    },
-  ];
+  const sessionFiles =
+    fixture === "files-panel"
+      ? [
+          {
+            kind: "modified" as const,
+            missing: false,
+            name: "sample.ts",
+            path: "sample.ts",
+            size: 186,
+            updatedAtMs: baseTime - 20_000,
+          },
+          {
+            kind: "modified" as const,
+            missing: false,
+            name: "sample.css",
+            path: "sample.css",
+            size: 164,
+            updatedAtMs: baseTime - 18_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "sample.md",
+            path: "sample.md",
+            size: 152,
+            updatedAtMs: baseTime - 90_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "sample.json",
+            path: "sample.json",
+            size: 118,
+            updatedAtMs: baseTime - 120_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "sample.sh",
+            path: "sample.sh",
+            size: 96,
+            updatedAtMs: baseTime - 180_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "sample.png",
+            path: "sample.png",
+            size: 359,
+            updatedAtMs: baseTime - 210_000,
+          },
+        ]
+      : [
+          {
+            kind: "modified" as const,
+            missing: false,
+            name: "chat.ts",
+            path: "ui/src/ui/views/chat.ts",
+            size: 48320,
+            updatedAtMs: baseTime - 20_000,
+          },
+          {
+            kind: "modified" as const,
+            missing: false,
+            name: "sidebar.css",
+            path: "ui/src/styles/chat/sidebar.css",
+            size: 18840,
+            updatedAtMs: baseTime - 18_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "artifacts.ts",
+            path: "src/gateway/server-methods/artifacts.ts",
+            size: 21876,
+            updatedAtMs: baseTime - 300_000,
+          },
+          {
+            kind: "read" as const,
+            missing: false,
+            name: "sessions.ts",
+            path: "packages/gateway-protocol/src/schema/sessions.ts",
+            size: 16542,
+            updatedAtMs: baseTime - 420_000,
+          },
+        ];
   const sessionWorkspaceRoot = repoRoot;
   const sessionFileContentByPath = new Map([
+    [
+      "sample.ts",
+      "type Panel = 'Files' | 'Review';\n\nexport function openFile(name: string): Panel {\n  console.log(`Opening ${name}`);\n  return 'Files';\n}\n",
+    ],
+    [
+      "sample.css",
+      ".files-panel-demo {\n  display: grid;\n  grid-template-columns: 168px minmax(0, 1fr);\n  border-inline-start: 1px solid var(--border);\n}\n",
+    ],
+    [
+      "sample.md",
+      "# Files panel demo\n\nChat file links open the **Files** tab.\n\nReview remains available for session diffs.\n",
+    ],
+    [
+      "sample.json",
+      '{\n  "surface": "Files",\n  "selected": "sample.json",\n  "reviewOwns": ["diff", "task"]\n}\n',
+    ],
+    ["sample.sh", "#!/bin/sh\nset -eu\nprintf 'Files panel fixture ready\\n'\n"],
+    [
+      "sample.png",
+      "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAYAAABOzvzpAAAACXBIWXMAAAPoAAAD6AG1e1JrAAABGUlEQVRoge1aWw6EIAzkVvUK7XX2AntKOIB/+ziBH92A4Crx04jSIZmEEBPt0JapxQUZdAMe1HO11gF8Rr3uNoZLn8YvJDBpEFIvVBHAfRu+7w30J2DNiB0UAtjW7i9ewJTgLBq/gGmVBO0SQO0/pBF8Sw8Ynw+dvu+EOG/1Ha7Vi6fPS8uIc3ME1AMECDxAEQKCHKBIgoJTQHEMCnSA3kYIjVnSnj2OktDuSEl7OgkHSGgHAgQhoC0UWD1QCwhqAUUtIKgFFLWAoBZQ1AJyo1og3F0H+NQytvlb3Lf0gEs0Rjg2RxsRcBW4+VYI2W2Ph7RgkYDsAWG5IWKIhLz7YZ0ECwk9h8Ps9tuQd3sPRYYSuvCKYst+rvsBvFHHfh2Vho8AAAAASUVORK5CYII=",
+    ],
     [
       "ui/src/ui/views/chat.ts",
       'function renderSessionWorkspaceRail() {\n  return html`<aside class="chat-workspace-rail">...</aside>`;\n}\n',
@@ -1523,7 +1618,7 @@ async function createChatPickerScenario(
   ]);
   const sessionFileCases = [
     {
-      match: { sessionKey: "agent:alpha" },
+      match: fixture === "files-panel" ? {} : { sessionKey: "agent:main:main" },
       response: {
         browser: {
           entries: [
@@ -1559,26 +1654,49 @@ async function createChatPickerScenario(
           path: "",
         },
         files: sessionFiles,
+        gitCheckout: fixture === "files-panel",
         root: sessionWorkspaceRoot,
         sessionKey: "agent:main:main",
       },
     },
   ];
-  const sessionFileGetCases = sessionFiles.map((file) => ({
-    match: { sessionKey: "agent:alpha", path: file.path },
-    response: {
-      file: {
-        ...file,
-        content: sessionFileContentByPath.get(file.path) ?? "",
-        // Fake CAS token so the file panel offers edit mode against the mock.
-        hash: mockFileHash(sessionFileContentByPath.get(file.path) ?? ""),
+  const sessionFileMimeTypeByPath = new Map([
+    ["sample.ts", "text/typescript"],
+    ["sample.css", "text/css"],
+    ["sample.md", "text/markdown"],
+    ["sample.json", "application/json"],
+    ["sample.sh", "text/x-shellscript"],
+    ["sample.png", "image/png"],
+  ]);
+  const sessionFileGetCases = sessionFiles.map((file) => {
+    const content = sessionFileContentByPath.get(file.path) ?? "";
+    const isImage = file.path === "sample.png";
+    return {
+      match:
+        fixture === "files-panel"
+          ? { path: file.path }
+          : { sessionKey: "agent:main:main", path: file.path },
+      response: {
+        file: {
+          ...file,
+          content,
+          contentEncoding: isImage ? "base64" : "utf8",
+          // Fake CAS token so text files offer edit mode against the mock.
+          hash: mockFileHash(content),
+          mimeType: sessionFileMimeTypeByPath.get(file.path),
+          previewKind: isImage ? "image" : "text",
+          workspacePath: file.path,
+        },
+        root: sessionWorkspaceRoot,
+        sessionKey: "agent:main:main",
       },
-      root: sessionWorkspaceRoot,
-      sessionKey: "agent:main:main",
-    },
-  }));
+    };
+  });
   const sessionFileSetCases = sessionFiles.map((file) => ({
-    match: { sessionKey: "agent:alpha", path: file.path },
+    match:
+      fixture === "files-panel"
+        ? { path: file.path }
+        : { sessionKey: "agent:main:main", path: file.path },
     response: {
       file: {
         ...file,
@@ -1880,9 +1998,11 @@ async function createChatPickerScenario(
     workboardEnabled: fixture === "workboard",
   });
   const historyMessages =
-    fixture === "code-fences"
-      ? buildCodeFenceChatHistory(baseTime)
-      : buildScrollableChatHistory(baseTime);
+    fixture === "files-panel"
+      ? buildFilesPanelChatHistory(baseTime)
+      : fixture === "code-fences"
+        ? buildCodeFenceChatHistory(baseTime)
+        : buildScrollableChatHistory(baseTime);
   const planSessionInfo = {
     activeRunIds: [PLAN_DEMO_RUN_ID],
     hasActiveRun: true,
@@ -1996,6 +2116,9 @@ async function createChatPickerScenario(
       "sessions.create",
       "system.info",
       "terminal.open",
+      ...(fixture === "files-panel"
+        ? ["artifacts.list", "sessions.files.get", "sessions.files.list"]
+        : []),
       ...(updateFixture ? ["update.hold", "update.run", "update.status"] : []),
       ...(fixture === "workboard"
         ? [
@@ -2734,7 +2857,7 @@ async function createChatPickerScenario(
       "sessions.files.list": {
         cases: [
           {
-            match: { sessionKey: "agent:alpha", path: "ui" },
+            match: { sessionKey: "agent:main:main", path: "ui" },
             response: {
               browser: {
                 entries: [
@@ -2762,7 +2885,7 @@ async function createChatPickerScenario(
             },
           },
           {
-            match: { sessionKey: "agent:alpha", search: "chat" },
+            match: { sessionKey: "agent:main:main", search: "chat" },
             response: {
               browser: {
                 entries: [
@@ -2796,7 +2919,7 @@ async function createChatPickerScenario(
       "artifacts.list": {
         cases: [
           {
-            match: { sessionKey: "agent:alpha" },
+            match: fixture === "files-panel" ? {} : { sessionKey: "agent:main:main" },
             response: { artifacts: [lobsterArtifact] },
           },
         ],
@@ -2804,7 +2927,10 @@ async function createChatPickerScenario(
       "artifacts.download": {
         cases: [
           {
-            match: { sessionKey: "agent:alpha", artifactId: lobsterArtifact.id },
+            match:
+              fixture === "files-panel"
+                ? { artifactId: lobsterArtifact.id }
+                : { sessionKey: "agent:main:main", artifactId: lobsterArtifact.id },
             response: {
               artifact: lobsterArtifact,
               data: Buffer.from(lobsterSvg, "utf8").toString("base64"),

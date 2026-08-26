@@ -403,25 +403,29 @@ export function createPageState(
     });
     renderLifecycle.invalidate();
   };
-  state.handleOpenSidebar = (content) => {
-    let opened = openSlot(state.sidebarLayout, "detail");
-    const detailPanel = opened.columns
+  const presentSidebarSlot = (slot: "detail" | "workspace") => {
+    let opened = openSlot(state.sidebarLayout, slot);
+    const panel = opened.columns
       .flatMap((column) => column.panels)
-      .find((panel) => panel.slot === "detail");
-    if (detailPanel) {
-      opened = activatePanel(opened, detailPanel.id);
+      .find((candidate) => candidate.slot === slot);
+    if (panel) {
+      opened = activatePanel(opened, panel.id);
     }
     const availableWidth = page.getBoundingClientRect?.().width ?? 0;
     const fitted =
       availableWidth > 0 && availableWidth >= SIDEBAR_NARROW_BREAKPOINT_PX
         ? (fitSidebarLayout(opened, availableWidth) ?? opened)
         : opened;
-    state.sidebarContent = content;
     state.updateSidebarLayout(fitted);
-    if (detailPanel) {
-      state.updateSidebarActivePanel(detailPanel.id);
+    if (panel) {
+      state.updateSidebarActivePanel(panel.id);
     }
   };
+  state.handleOpenSidebar = (content) => {
+    state.sidebarContent = content;
+    presentSidebarSlot("detail");
+  };
+  state.handleOpenWorkspaceSidebar = () => presentSidebarSlot("workspace");
   state.handleCloseSidebar = () => {
     state.updateSidebarLayout(closeSlot(state.sidebarLayout, "detail"));
   };

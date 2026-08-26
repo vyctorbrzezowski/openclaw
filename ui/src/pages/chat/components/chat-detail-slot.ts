@@ -32,6 +32,7 @@ export function renderChatDetailSlot(params: {
   host: ChatPageHost;
   layout: SidebarLayout;
   transcript: ChatTranscriptController;
+  onClose?: () => void;
 }): TemplateResult {
   const { content, host } = params;
   const taskDetailHost: TaskDetailHost = host;
@@ -71,7 +72,7 @@ export function renderChatDetailSlot(params: {
       .onOpenImage=${(item: Parameters<typeof host.handleOpenImage>[0]) =>
         host.handleOpenImage(item, host.beginImageOpen())}
       .embedded=${true}
-      @chat-detail-panel-close=${() => host.handleCloseSidebar()}
+      @chat-detail-panel-close=${params.onClose ?? (() => host.handleCloseSidebar())}
     ></openclaw-chat-detail-panel>`
   );
 }

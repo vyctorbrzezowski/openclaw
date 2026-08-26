@@ -190,7 +190,8 @@ function openWorkspaceItem<T>(
     if (!state.client || !state.connected) {
       return;
     }
-    state.handleOpenSidebar(null);
+    workspace.previewContent = null;
+    state.handleOpenWorkspaceSidebar();
     workspace.error = null;
     try {
       const result = await load();
@@ -202,13 +203,16 @@ function openWorkspaceItem<T>(
         return;
       }
       if (isCurrentWorkspaceOpenRequest(state, workspace, request, itemId)) {
-        openSessionCheckoutSidebar(state, content);
+        workspace.previewContent = content;
       }
     } catch (error) {
       if (isCurrentWorkspaceOpenRequest(state, workspace, request, itemId)) {
         workspace.error = formatUiError(error);
       }
     } finally {
+      if (workspace.openRequest === request) {
+        delete workspace.openRequest;
+      }
       requestWorkspaceUpdate(state);
     }
   })();
@@ -465,6 +469,7 @@ export function createSessionWorkspaceProps(
     loading: workspace.loading,
     error: workspace.error,
     activeId: workspace.activeId,
+    previewContent: workspace.previewContent,
     dock: workspace.dock,
     narrowLayout: options?.narrowLayout === true,
     onToggleCollapsed: () => toggleSessionWorkspace(state),

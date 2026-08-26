@@ -11,6 +11,7 @@ export type SessionWorkspaceProps = {
   loading: boolean;
   error: string | null;
   activeId: string | null;
+  previewContent: SidebarContent | null;
   dock: ChatWorkspaceDock;
   /** Pane too narrow for a side rail: presentation forces the bottom dock
    * (the persisted dock preference still applies once the pane widens). */
@@ -46,6 +47,7 @@ export type SessionWorkspaceState = {
   loading: boolean;
   openRequest?: object;
   pendingReload: boolean;
+  previewContent: SidebarContent | null;
   sessionKey: string;
 };
 
@@ -68,6 +70,7 @@ export type SessionWorkspaceHost = {
   sidebarContent: SidebarContent | null;
   requestUpdate?: () => void;
   handleOpenSidebar: (content: SidebarContent | null) => void;
+  handleOpenWorkspaceSidebar: () => void;
 };
 
 /** Agent owning the pane's current session: explicit key scope first, then the

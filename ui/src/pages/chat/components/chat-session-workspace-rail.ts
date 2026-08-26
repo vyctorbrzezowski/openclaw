@@ -1,4 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
+import { fileKindForPath, type FileKind } from "../../../components/file-kind.ts";
 import { icons } from "../../../components/icons.ts";
 import "../../../components/tooltip.ts";
 import { t } from "../../../i18n/index.ts";
@@ -9,6 +10,21 @@ import {
   KEYBOARD_SHORTCUT_COMBOS,
 } from "../../../lib/keyboard-shortcut-catalog.ts";
 import type { SessionWorkspaceProps } from "./chat-session-workspace-types.ts";
+
+const WORKSPACE_FILE_ICONS: Record<FileKind, TemplateResult> = {
+  code: icons.fileCode,
+  component: icons.layoutGrid,
+  data: icons.braces,
+  file: icons.fileText,
+  image: icons.image,
+  markdown: icons.book,
+  package: icons.box,
+  shell: icons.terminal,
+};
+
+function workspaceFileIcon(path: string): TemplateResult {
+  return WORKSPACE_FILE_ICONS[fileKindForPath(path)];
+}
 
 function formatWorkspaceFileSize(file: { size?: number }): string {
   const size = file.size;
@@ -188,7 +204,9 @@ export function renderSessionWorkspaceRail(
                     type="button"
                     @click=${() => sessionWorkspace.onOpenFile(file.path, "session")}
                   >
-                    <span class="chat-workspace-rail__file-icon">${icons.fileText}</span>
+                    <span class="chat-workspace-rail__file-icon"
+                      >${workspaceFileIcon(file.path)}</span
+                    >
                     <span class="chat-workspace-rail__file-main">
                       <openclaw-tooltip .content=${file.path || file.name}>
                         <span class="chat-workspace-rail__file-name"
@@ -298,7 +316,9 @@ export function renderSessionWorkspaceRail(
                           : sessionWorkspace.onOpenFile(entry.path, "workspace")}
                     >
                       <span class="chat-workspace-rail__file-icon"
-                        >${entry.kind === "directory" ? icons.folder : icons.fileText}</span
+                        >${entry.kind === "directory"
+                          ? icons.folder
+                          : workspaceFileIcon(entry.path)}</span
                       >
                       <span class="chat-workspace-rail__file-main">
                         <openclaw-tooltip .content=${entry.path || entry.name}>
