@@ -192,14 +192,14 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
         {
           dock: "bottom",
           label: t("browser.dockBottom"),
-          icon: icons.panelBottomOpen,
-          className: "side-panel__dock-bottom",
+          icon: icons.layoutBottomBar,
+          className: "side-panel__dock-bottom side-panel__dock-bottom-toggle",
         },
         {
           dock: "right",
           label: t("browser.dockRight"),
-          icon: icons.panelRightOpen,
-          className: "side-panel__dock-right",
+          icon: icons.layoutBottomBarFilled,
+          className: "side-panel__dock-right side-panel__dock-bottom-toggle is-active",
         },
       ],
       onSelect: (dock) => this.callbacks?.setDock(dock),
@@ -216,7 +216,6 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
             ${panelActions}
           </span>`
         : nothing}
-      ${this.renderDockControls()}
       <span class="side-panel__action-group side-panel__action-group--layout">
         <openclaw-tooltip .content=${expandLabel}>
           <button
@@ -226,10 +225,12 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
             aria-label=${expandLabel}
             @click=${() => this.callbacks?.setExpanded(this.layout.expanded !== true)}
           >
-            ${this.layout.expanded ? icons.minimize : icons.maximize}
+            ${icons.selector}
           </button>
         </openclaw-tooltip>
       </span>
+      ${this.renderDockControls()}
+      <span class="side-panel__global-actions-spacer" aria-hidden="true"></span>
     </div>`;
   }
 

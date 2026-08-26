@@ -281,8 +281,8 @@ suite.define(() => {
         })
         .toBe(true);
       await expect.poll(() => splitEntry.count()).toBe(0);
-      // The pane header owns one side-panel toggle; individual tools live in its tab strip.
-      await expect.poll(() => headers.first().locator(".chat-side-panel-toggle").count()).toBe(1);
+      // The active pane contributes one fixed side-panel toggle; tools stay in the tab strip.
+      await expect.poll(() => page.locator(".chat-side-panel-toggle").count()).toBe(1);
       await expect.poll(() => page.locator(".chat-workspace-rail").count()).toBe(0);
 
       const cells = page.locator(".chat-split-view__cell");

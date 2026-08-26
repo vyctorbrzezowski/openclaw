@@ -101,6 +101,34 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
     this.requestUpdate();
   }
 
+  protected renderFixedPaneActions(sidebarLayout?: SidebarLayout) {
+    if (!this.active) {
+      return nothing;
+    }
+    const layout = sidebarLayout ?? this.state?.sidebarLayout;
+    const sidePanelOpen = layout?.open === true;
+    const toggleSidePanel = () => this.setChatSidePanelOpen(!sidePanelOpen, sidebarLayout);
+    return html`<div class="chat-pane__actions chat-pane__fixed-actions">
+      <openclaw-tooltip
+        .content=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
+      >
+        <button
+          class="btn btn--ghost btn--icon chat-icon-btn chat-side-panel-toggle ${sidePanelOpen
+            ? "is-active"
+            : ""}"
+          type="button"
+          aria-label=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
+          aria-expanded=${String(sidePanelOpen)}
+          aria-pressed=${String(sidePanelOpen)}
+          data-state=${sidePanelOpen ? "open" : "closed"}
+          @click=${toggleSidePanel}
+        >
+          ${sidePanelOpen ? icons.layoutSidebarRightFilled : icons.layoutSidebarRight}
+        </button>
+      </openclaw-tooltip>
+    </div>`;
+  }
+
   private compactHeaderStatusActions(): HeaderMenuStatusAction[] {
     if (!this.narrow) {
       return [];
@@ -289,24 +317,6 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
     const openDesktopPanel = sessionWorkspace.onToggleDesktop ?? (() => undefined);
     const discussion = this.resolveSessionDiscussionAction();
     const sidePanelOpen = (sidebarLayout ?? this.state?.sidebarLayout)?.open === true;
-    const toggleSidePanel = () => this.setChatSidePanelOpen(!sidePanelOpen, sidebarLayout);
-    const sidePanelAction = html`<openclaw-tooltip
-      .content=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
-    >
-      <button
-        class="btn btn--ghost btn--icon chat-icon-btn chat-side-panel-toggle ${sidePanelOpen
-          ? "active"
-          : ""}"
-        type="button"
-        aria-label=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
-        aria-expanded=${String(sidePanelOpen)}
-        aria-pressed=${String(sidePanelOpen)}
-        data-state=${sidePanelOpen ? "open" : "closed"}
-        @click=${toggleSidePanel}
-      >
-        ${icons.panelRight}
-      </button>
-    </openclaw-tooltip>`;
     const sessionRailMode = this.selectedSessionRailMode(this.state?.sessionKey ?? "");
     const toggleSessionRail = () => this.requestSessionRail("toggle");
     const panelMenuActions: HeaderMenuQuickAction[] = [];
@@ -493,7 +503,10 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       canReveal,
       copiedAction: this.headerCopiedAction,
       renameDisabledReason,
-      panelActions: sidePanelAction,
+      panelActions: nothing,
+      fixedActionSpacer: sidePanelOpen
+        ? nothing
+        : html`<span class="chat-pane__fixed-actions-reserve" aria-hidden="true"></span>`,
       discussionAction: nothing,
       diffAction: nothing,
       backgroundTasksAction: nothing,

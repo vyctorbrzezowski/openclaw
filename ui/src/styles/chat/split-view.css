@@ -1,4 +1,7 @@
 openclaw-chat-pane {
+  --chat-pane-fixed-actions-width: 28px;
+  --chat-pane-fixed-actions-inset: 6px;
+
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
@@ -184,13 +187,15 @@ openclaw-chat-pane {
    every segment, so the project icon and 14px labels centre on
    a single line and a future parent-session segment inherits it for free. */
 .chat-pane__crumbs {
+  --chat-pane-crumb-gap: 8px;
+
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
   /* Both interactive segments pull their 5px hover padding back out of flow, so
      this gap is the separator's actual optical air on each side. */
-  gap: 8px;
+  gap: var(--chat-pane-crumb-gap);
 }
 
 /* Renaming needs the row's spare width, which the trail must pass through:
@@ -376,9 +381,16 @@ openclaw-chat-pane {
 .chat-pane__crumb-sep {
   display: inline-flex;
   flex: 0 0 auto;
+  max-width: 1ch;
+  overflow: hidden;
   color: var(--muted);
   font-size: 14px;
   line-height: 1;
+  opacity: 1;
+  transition:
+    max-width var(--duration-fast) var(--ease-out),
+    margin var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
 /* The title hugs its text so the segments after it stay adjacent (the trail's
@@ -732,6 +744,7 @@ openclaw-chat-pane {
   font-size: 14px;
   font-weight: 500;
   cursor: var(--cursor-action);
+  transition: gap var(--duration-fast) var(--ease-out);
 }
 
 .chat-pane__workspace-chip:hover,
@@ -742,10 +755,15 @@ openclaw-chat-pane {
 }
 
 .chat-pane__workspace-chip span {
+  max-width: 180px;
   min-width: 0;
   overflow: hidden;
+  opacity: 1;
   white-space: nowrap;
   text-overflow: ellipsis;
+  transition:
+    max-width var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
 .chat-pane__presence {
@@ -763,6 +781,50 @@ openclaw-chat-pane {
      action cluster stays pinned to the right edge (and doubles as the
      native window-drag surface between chip and actions). */
   margin-left: auto;
+}
+
+.chat-pane__fixed-actions {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 45;
+  box-sizing: border-box;
+  width: calc(
+    var(--chat-pane-fixed-actions-width) + var(--chat-pane-fixed-actions-inset) +
+      var(--safe-area-right)
+  );
+  height: var(--openclaw-native-titlebar-height, 48px);
+  justify-content: flex-end;
+  padding-right: calc(var(--chat-pane-fixed-actions-inset) + var(--safe-area-right));
+  pointer-events: none;
+}
+
+.chat-pane__fixed-actions .chat-icon-btn {
+  pointer-events: auto;
+}
+
+.chat-pane__actions.chat-pane__fixed-actions .chat-side-panel-toggle > svg {
+  width: 19px;
+  height: 19px;
+}
+
+.chat-pane__actions .chat-icon-btn.chat-open-split-view > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.chat-pane__fixed-actions .chat-side-panel-toggle.is-active {
+  border-color: transparent;
+  background: var(--bg-hover);
+  box-shadow: none;
+  color: var(--text);
+}
+
+.chat-pane__fixed-actions-reserve {
+  width: var(--chat-pane-fixed-actions-width);
+  height: 1px;
+  flex: 0 0 var(--chat-pane-fixed-actions-width);
+  pointer-events: none;
 }
 
 /* One box model for every action, whatever wraps it. A custom element defaults
@@ -914,16 +976,20 @@ openclaw-chat-pane {
 @container (max-width: 480px) {
   .chat-pane__workspace-chip {
     max-width: none;
+    gap: 0;
   }
 
   .chat-pane__workspace-chip span {
-    display: none;
+    max-width: 0;
+    opacity: 0;
   }
 
   /* The project name is gone at this width, so the separator would trail an
      icon-only pill and read as punctuation with nothing on its left. */
   .chat-pane__workspace-menu + .chat-pane__crumb-sep {
-    display: none;
+    max-width: 0;
+    margin-inline: calc(var(--chat-pane-crumb-gap) / -2);
+    opacity: 0;
   }
 
   .chat-pane__presence {

@@ -310,7 +310,7 @@ describeControlUiE2e("Board split transcript restore", () => {
       (element) => element.getBoundingClientRect().width,
     );
 
-    await sidePanel.getByRole("button", { name: "Close", exact: true }).click();
+    await headerToggle.click();
 
     await expect.poll(() => sidePanel.count()).toBe(0);
     await expect

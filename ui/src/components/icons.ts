@@ -7,6 +7,51 @@ import { strokeIcon, toolIcons } from "./icons-tools.ts";
 
 export const icons = {
   // Navigation icons
+  // Tabler layout-sidebar-right (MIT).
+  layoutSidebarRight: strokeIcon(
+    svg`<path
+        d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2l0-12"
+        stroke-width="2"
+      />
+      <path d="M15 4v16" stroke-width="2" />`,
+  ),
+  // Tabler layout-sidebar-right-filled (MIT).
+  layoutSidebarRightFilled: strokeIcon(
+    svg`<path
+      d="M6 21a3 3 0 0 1-3-3v-12a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3zm8-16h-8a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8z"
+      fill="currentColor"
+      stroke="none"
+    />`,
+  ),
+  // Tabler layout-bottombar (MIT).
+  layoutBottomBar: strokeIcon(
+    svg`<path
+        d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2l0-12"
+        stroke-width="2"
+      />
+      <path d="M4 15h16" stroke-width="2" />`,
+  ),
+  // Tabler layout-bottombar-filled (MIT).
+  layoutBottomBarFilled: strokeIcon(
+    svg`<path
+      d="M18 3a3 3 0 0 1 2.995 2.824l.005.176v12a3 3 0 0 1-2.824 2.995l-.176.005h-12a3 3 0 0 1-2.995-2.824l-.005-.176v-12a3 3 0 0 1 2.824-2.995l.176-.005h12zm0 2h-12a1 1 0 0 0-.993.883l-.007.117v9h14v-9a1 1 0 0 0-.883-.993l-.117-.007z"
+      fill="currentColor"
+      stroke="none"
+    />`,
+  ),
+  // Tabler selector (MIT).
+  selector: strokeIcon(
+    svg`<path d="M8 9l4-4 4 4" stroke-width="1.5" />
+      <path d="M16 15l-4 4-4-4" stroke-width="1.5" />`,
+  ),
+  // Tabler layout-columns (MIT).
+  layoutColumns: strokeIcon(
+    svg`<path
+        d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2l0-12"
+        stroke-width="2"
+      />
+      <path d="M12 4v16" stroke-width="2" />`,
+  ),
   messageSquare: strokeIcon(svg` <path
     d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
   />`),

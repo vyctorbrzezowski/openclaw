@@ -68,6 +68,7 @@ type ChatPaneHeaderProps = {
   copiedAction: ChatPaneHeaderAction | null;
   renameDisabledReason?: string;
   panelActions: TemplateResult | typeof nothing;
+  fixedActionSpacer?: TemplateResult | typeof nothing;
   discussionAction: TemplateResult | typeof nothing;
   diffAction: TemplateResult | typeof nothing;
   backgroundTasksAction: TemplateResult | typeof nothing;
@@ -616,7 +617,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
                 aria-label=${t("chat.splitView.open")}
                 @click=${props.onOpenSplitView}
               >
-                ${icons.columns2}
+                ${icons.layoutColumns}
               </button>
             </openclaw-tooltip>`
           : nothing}
@@ -674,6 +675,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               </button>
             </openclaw-tooltip>`
           : nothing}
+        ${props.fixedActionSpacer ?? nothing}
       </div>
     </div>
   `;

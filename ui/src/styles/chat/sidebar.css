@@ -624,6 +624,29 @@ openclaw-chat-sidebar-region,
   gap: var(--rail-header-action-gap);
 }
 
+.side-panel__expand > svg {
+  width: 19px;
+  height: 19px;
+  transform: rotate(45deg) scale(1.15);
+}
+
+.side-panel__dock-bottom-toggle > svg {
+  width: 19px;
+  height: 19px;
+}
+
+.side-panel__dock-bottom-toggle.is-active {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.side-panel__global-actions-spacer {
+  width: var(--chat-pane-fixed-actions-width);
+  height: 1px;
+  flex: 0 0 var(--chat-pane-fixed-actions-width);
+  pointer-events: none;
+}
+
 .side-panel__body,
 .side-panel__panel {
   display: flex;

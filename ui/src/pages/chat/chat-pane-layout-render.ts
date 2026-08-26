@@ -164,7 +164,7 @@ export abstract class ChatPaneLayoutRender extends ChatPaneBrowserAnnotationRend
       primary,
       requestUpdate: state.requestUpdate!,
     });
-    return html`${content}${renderChatImageLightbox(
+    return html`${content}${this.renderFixedPaneActions(sidebarLayout)}${renderChatImageLightbox(
       state.imageLightbox,
       state.handleCloseImage,
     )}${this.renderResetConfirmation()}`;
