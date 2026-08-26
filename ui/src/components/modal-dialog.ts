@@ -96,50 +96,6 @@ export class OpenClawModalDialog extends OpenClawLitElement {
       border-radius: 0;
     }
 
-    :host(.nav-drawer) wa-dialog {
-      --width: min(86vw, 320px);
-    }
-
-    :host(.nav-drawer) wa-dialog::part(dialog) {
-      max-width: min(86vw, 320px);
-      margin: 0 auto 0 0;
-    }
-
-    :host(.nav-drawer) wa-dialog::part(body) {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    ::slotted(.shell-nav-modal__content) {
-      display: flex;
-      flex: 1 1 auto;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
-      min-width: 0;
-    }
-
-    @keyframes openclaw-nav-drawer-slide {
-      from {
-        transform: translateX(-100%);
-      }
-
-      to {
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes openclaw-nav-drawer-fade {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
     @media (max-width: 640px) {
       wa-dialog {
         --width: min(var(--openclaw-modal-width, 540px), calc(100vw - 24px));
@@ -153,31 +109,6 @@ export class OpenClawModalDialog extends OpenClawLitElement {
 
     @media (max-width: 768px),
       (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
-      :host(.nav-drawer) wa-dialog {
-        --openclaw-nav-drawer-inset-top: max(8px, var(--safe-area-top, 0px));
-        --openclaw-nav-drawer-inset-bottom: max(8px, var(--safe-area-bottom, 0px));
-        --openclaw-modal-backdrop-filter: none;
-        --wa-color-overlay-modal: transparent;
-        --show-duration: 240ms;
-        --hide-duration: 160ms;
-      }
-
-      :host(.nav-drawer) wa-dialog::part(dialog) {
-        height: calc(
-          100dvh - var(--openclaw-nav-drawer-inset-top) - var(--openclaw-nav-drawer-inset-bottom)
-        );
-        max-height: calc(
-          100dvh - var(--openclaw-nav-drawer-inset-top) - var(--openclaw-nav-drawer-inset-bottom)
-        );
-        margin-block: var(--openclaw-nav-drawer-inset-top) var(--openclaw-nav-drawer-inset-bottom);
-        margin-inline: 0 auto;
-        overflow: hidden;
-        border-radius: 0 22px 22px 0;
-        box-shadow: 0 16px 48px color-mix(in srgb, black 30%, transparent);
-        animation-name: openclaw-nav-drawer-slide;
-        animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-      }
-
       :host(.mobile-edge-to-edge) wa-dialog {
         --width: 100vw;
       }
@@ -193,18 +124,6 @@ export class OpenClawModalDialog extends OpenClawLitElement {
 
       :host(.mobile-edge-to-edge) wa-dialog::part(body) {
         height: 100%;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) and (max-width: 768px),
-      (prefers-reduced-motion: reduce) and (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
-      :host(.nav-drawer) wa-dialog {
-        --show-duration: 120ms;
-        --hide-duration: 100ms;
-      }
-
-      :host(.nav-drawer) wa-dialog::part(dialog) {
-        animation-name: openclaw-nav-drawer-fade;
       }
     }
   `;

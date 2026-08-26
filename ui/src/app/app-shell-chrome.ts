@@ -9,7 +9,6 @@ import {
   type CommandPaletteTargetDetail,
   type ShellNavDrawerToggleDetail,
 } from "../components/command-palette-contract.ts";
-import type { OpenClawModalDialog } from "../components/modal-dialog.ts";
 import {
   BROWSER_PANEL_TOGGLE_EVENT,
   CUSTODIAN_PANEL_TOGGLE_EVENT,
@@ -30,7 +29,6 @@ import { readSessionMethodAccess } from "../lib/session-method-access.ts";
 import { isTerminalAvailable } from "../lib/terminal-availability.ts";
 import type { ShellRouteState } from "./app-host-route-state.ts";
 import type { ApplicationContext, ApplicationNavigationOptions } from "./context.ts";
-import { syncControlUiSystemChrome } from "./control-ui-presentation.ts";
 import {
   DEBUG_OVERLAY_ELEMENT,
   isOptionalElementDefined,
@@ -68,18 +66,29 @@ type KeyboardShortcutsDialogElement = HTMLElement & {
   toggle: () => void;
 };
 
-const NAV_DRAWER_SWIPE_MIN_DISTANCE_PX = 48;
+const NAV_DRAWER_SWIPE_MIN_OPEN_DISTANCE_PX = 44;
+const NAV_DRAWER_SWIPE_OPEN_RATIO = 0.15;
+const NAV_DRAWER_SWIPE_MIN_FLICK_DISTANCE_PX = 32;
+const NAV_DRAWER_SWIPE_MIN_FLICK_VELOCITY = 0.32;
 const NAV_DRAWER_SWIPE_MAX_DURATION_MS = 500;
-const NAV_DRAWER_SWIPE_LOCK_DISTANCE_PX = 10;
-const NAV_DRAWER_SWIPE_DIRECTION_RATIO = 1.5;
+const NAV_DRAWER_SWIPE_LOCK_DISTANCE_PX = 7;
+const NAV_DRAWER_SWIPE_DIRECTION_RATIO = 1.25;
 const NAV_DRAWER_SWIPE_MEDIA_QUERY = "(max-width: 768px)";
+const NAV_DRAWER_FOCUSABLE_SELECTOR =
+  "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
 type NavDrawerSwipe = {
   identifier: number;
   startX: number;
   startY: number;
   startedAt: number;
+  lastX: number;
+  lastMovedAt: number;
+  recentVelocityX: number;
   lockedHorizontal: boolean;
+  drawerWidth: number;
+  drawer: HTMLElement | null;
+  backdrop: HTMLElement | null;
 };
 
 function isNarrowMobileViewport(): boolean {
@@ -141,6 +150,11 @@ export interface ShellChromeHost extends HTMLElement {
 export class ShellChromeOwner {
   private pendingLazyAction = readLazyShellAction();
   private navDrawerSwipe: NavDrawerSwipe | null = null;
+  private navDrawerSwipeFrame: number | null = null;
+  private navDrawerSwipeDeltaX = 0;
+  private navDrawerSettleGeneration = 0;
+  private navDrawerSettling = false;
+  private navDrawerSettleCleanup: (() => void) | null = null;
 
   constructor(private readonly host: ShellChromeHost) {}
 
@@ -177,15 +191,13 @@ export class ShellChromeOwner {
     window.addEventListener(CUSTODIAN_PANEL_TOGGLE_EVENT, this.handleDeferredCustodianToggle);
     window.addEventListener(SHELL_APPROVALS_OPEN_EVENT, this.handleApprovalsOpen);
     host.addEventListener("touchstart", this.handleTranscriptNavSwipeStart, { passive: true });
+    host.addEventListener("touchmove", this.handleTranscriptNavSwipeMove, { passive: false });
     host.addEventListener("touchend", this.handleTranscriptNavSwipeEnd, { passive: true });
     host.addEventListener("touchcancel", this.handleTranscriptNavSwipeCancel, { passive: true });
   }
 
   disconnect(): void {
     const host = this.host;
-    if (host.navDrawerOpen) {
-      syncControlUiSystemChrome({ dimmed: false });
-    }
     host.removeEventListener(COMMAND_PALETTE_TARGET_EVENT, this.handleCommandPaletteTarget);
     window.removeEventListener(COMMAND_PALETTE_OPEN_EVENT, this.handleCommandPaletteOpen);
     window.removeEventListener(SHELL_NAV_DRAWER_TOGGLE_EVENT, this.handleShellNavDrawerToggle);
@@ -210,17 +222,173 @@ export class ShellChromeOwner {
     window.removeEventListener(CUSTODIAN_PANEL_TOGGLE_EVENT, this.handleDeferredCustodianToggle);
     window.removeEventListener(SHELL_APPROVALS_OPEN_EVENT, this.handleApprovalsOpen);
     host.removeEventListener("touchstart", this.handleTranscriptNavSwipeStart);
+    host.removeEventListener("touchmove", this.handleTranscriptNavSwipeMove);
     host.removeEventListener("touchend", this.handleTranscriptNavSwipeEnd);
     host.removeEventListener("touchcancel", this.handleTranscriptNavSwipeCancel);
     this.clearTranscriptNavSwipe();
   }
 
-  private clearTranscriptNavSwipe(): void {
-    this.host.removeEventListener("touchmove", this.handleTranscriptNavSwipeMove);
+  private clearTranscriptNavSwipe(options: { preservePresentation?: boolean } = {}): void {
+    if (this.navDrawerSwipeFrame !== null) {
+      cancelAnimationFrame(this.navDrawerSwipeFrame);
+      this.navDrawerSwipeFrame = null;
+    }
     this.navDrawerSwipe = null;
+    if (options.preservePresentation) {
+      return;
+    }
+    this.resetNavigationDrawerGesturePresentation();
+  }
+
+  private resetNavigationDrawerGesturePresentation(): void {
+    this.navDrawerSettleGeneration += 1;
+    this.navDrawerSettleCleanup?.();
+    this.navDrawerSettleCleanup = null;
+    this.navDrawerSettling = false;
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    const backdrop = this.host.querySelector<HTMLElement>(".shell-nav-backdrop");
+    drawer?.removeAttribute("data-nav-drawer-dragging");
+    drawer?.removeAttribute("data-nav-drawer-settling");
+    drawer?.style.removeProperty("transform");
+    drawer?.style.removeProperty("opacity");
+    drawer?.style.removeProperty("transition-duration");
+    backdrop?.removeAttribute("data-nav-drawer-dragging");
+    backdrop?.removeAttribute("data-nav-drawer-settling");
+    backdrop?.style.removeProperty("visibility");
+    backdrop?.style.removeProperty("opacity");
+    backdrop?.style.removeProperty("transition-duration");
+  }
+
+  private updateTranscriptNavDrawer(swipe: NavDrawerSwipe, deltaX: number): void {
+    this.navDrawerSwipeDeltaX = deltaX;
+    if (this.navDrawerSwipeFrame !== null) {
+      return;
+    }
+    this.navDrawerSwipeFrame = requestAnimationFrame(() => {
+      this.navDrawerSwipeFrame = null;
+      if (this.navDrawerSwipe === swipe) {
+        this.paintTranscriptNavDrawer(swipe, this.navDrawerSwipeDeltaX);
+      }
+    });
+  }
+
+  private paintTranscriptNavDrawer(swipe: NavDrawerSwipe, deltaX: number): void {
+    const drawer = swipe.drawer ?? this.host.querySelector<HTMLElement>(".shell-nav");
+    const backdrop =
+      swipe.backdrop ?? this.host.querySelector<HTMLElement>(".shell-nav-backdrop");
+    if (!drawer || !backdrop) {
+      return;
+    }
+    swipe.drawer = drawer;
+    swipe.backdrop = backdrop;
+    if (swipe.drawerWidth === 0) {
+      this.navDrawerSettleGeneration += 1;
+      swipe.drawerWidth = drawer.getBoundingClientRect().width;
+      drawer.setAttribute("data-nav-drawer-dragging", "");
+      backdrop.setAttribute("data-nav-drawer-dragging", "");
+    }
+    const width = swipe.drawerWidth;
+    const reveal = Math.min(width, Math.max(0, deltaX));
+    drawer.style.transform = `translateX(${reveal - width}px)`;
+    drawer.style.opacity = "1";
+    backdrop.style.visibility = "visible";
+    backdrop.style.opacity = String(width > 0 ? reveal / width : 0);
+  }
+
+  private flushTranscriptNavDrawer(swipe: NavDrawerSwipe, deltaX: number): void {
+    if (this.navDrawerSwipeFrame !== null) {
+      cancelAnimationFrame(this.navDrawerSwipeFrame);
+      this.navDrawerSwipeFrame = null;
+    }
+    this.paintTranscriptNavDrawer(swipe, deltaX);
+  }
+
+  private settleTranscriptNavDrawer(open: boolean, onFinish?: () => void): boolean {
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    const backdrop = this.host.querySelector<HTMLElement>(".shell-nav-backdrop");
+    if (!drawer || !backdrop) {
+      return false;
+    }
+    this.navDrawerSettleCleanup?.();
+    this.navDrawerSettleCleanup = null;
+    const generation = ++this.navDrawerSettleGeneration;
+    this.navDrawerSettling = true;
+    drawer.setAttribute("data-nav-drawer-settling", "");
+    backdrop.setAttribute("data-nav-drawer-settling", "");
+    drawer.removeAttribute("data-nav-drawer-dragging");
+    backdrop.removeAttribute("data-nav-drawer-dragging");
+    drawer.style.removeProperty("transition-duration");
+    backdrop.style.removeProperty("transition-duration");
+    // Safari needs the partial drag state committed before it will interpolate
+    // the inline transform to the drawer's final resting position.
+    void drawer.offsetWidth;
+    requestAnimationFrame(() => {
+      if (generation !== this.navDrawerSettleGeneration) {
+        return;
+      }
+      let finished = false;
+      let fallbackTimer: number | undefined;
+      let handleTransitionEnd: (event: TransitionEvent) => void;
+      const cleanup = () => {
+        drawer.removeEventListener("transitionend", handleTransitionEnd);
+        if (fallbackTimer !== undefined) {
+          globalThis.clearTimeout(fallbackTimer);
+        }
+        drawer.removeAttribute("data-nav-drawer-settling");
+        backdrop.removeAttribute("data-nav-drawer-settling");
+      };
+      const finish = () => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        cleanup();
+        if (this.navDrawerSettleCleanup === cancel) {
+          this.navDrawerSettleCleanup = null;
+        }
+        if (generation !== this.navDrawerSettleGeneration) {
+          return;
+        }
+        if (onFinish) {
+          onFinish();
+        } else {
+          this.resetNavigationDrawerGesturePresentation();
+        }
+      };
+      const cancel = () => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        cleanup();
+      };
+      handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.target === drawer && event.propertyName === "transform") {
+          finish();
+        }
+      };
+      drawer.addEventListener("transitionend", handleTransitionEnd);
+      this.navDrawerSettleCleanup = cancel;
+      drawer.style.transform = open ? "translateX(0)" : "translateX(-100%)";
+      drawer.style.opacity = open ? "1" : "0";
+      backdrop.style.opacity = open ? "1" : "0";
+      fallbackTimer = globalThis.setTimeout(finish, 240);
+    });
+    return true;
+  }
+
+  private cancelTranscriptNavSwipe(): void {
+    const wasDragging = this.navDrawerSwipe?.lockedHorizontal === true;
+    this.clearTranscriptNavSwipe({ preservePresentation: wasDragging });
+    if (wasDragging) {
+      this.settleTranscriptNavDrawer(false);
+    }
   }
 
   private readonly handleTranscriptNavSwipeStart = (event: TouchEvent): void => {
+    if (this.navDrawerSettling) {
+      return;
+    }
     this.clearTranscriptNavSwipe();
     const host = this.host;
     if (
@@ -252,39 +420,54 @@ export class ShellChromeOwner {
       return;
     }
     const touch = event.touches[0];
+    const startedAt = performance.now();
     this.navDrawerSwipe = {
       identifier: touch.identifier,
       startX: touch.clientX,
       startY: touch.clientY,
-      startedAt: performance.now(),
+      startedAt,
+      lastX: touch.clientX,
+      lastMovedAt: startedAt,
+      recentVelocityX: 0,
       lockedHorizontal: false,
+      drawerWidth: 0,
+      drawer: null,
+      backdrop: null,
     };
-    host.addEventListener("touchmove", this.handleTranscriptNavSwipeMove, { passive: false });
   };
 
   private readonly handleTranscriptNavSwipeMove = (event: TouchEvent): void => {
     const swipe = this.navDrawerSwipe;
-    if (!swipe || event.touches.length !== 1) {
-      this.clearTranscriptNavSwipe();
+    if (!swipe) {
       return;
     }
     const touch = Array.from(event.touches).find(
       (candidate) => candidate.identifier === swipe.identifier,
     );
-    if (!touch || performance.now() - swipe.startedAt > NAV_DRAWER_SWIPE_MAX_DURATION_MS) {
-      this.clearTranscriptNavSwipe();
+    if (
+      event.touches.length !== 1 ||
+      !touch ||
+      (!swipe.lockedHorizontal &&
+        performance.now() - swipe.startedAt > NAV_DRAWER_SWIPE_MAX_DURATION_MS)
+    ) {
+      this.cancelTranscriptNavSwipe();
       return;
     }
     const deltaX = touch.clientX - swipe.startX;
     const deltaY = touch.clientY - swipe.startY;
+    const movedAt = performance.now();
+    const elapsedSinceMove = movedAt - swipe.lastMovedAt;
+    if (elapsedSinceMove > 0) {
+      const sampleVelocityX = (touch.clientX - swipe.lastX) / elapsedSinceMove;
+      swipe.recentVelocityX = swipe.recentVelocityX * 0.35 + sampleVelocityX * 0.65;
+      swipe.lastX = touch.clientX;
+      swipe.lastMovedAt = movedAt;
+    }
     if (swipe.lockedHorizontal) {
       if (event.cancelable) {
         event.preventDefault();
       }
-      if (deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX) {
-        this.clearTranscriptNavSwipe();
-        this.toggleNavigationSurface();
-      }
+      this.updateTranscriptNavDrawer(swipe, deltaX);
       return;
     }
     const distanceX = Math.abs(deltaX);
@@ -297,50 +480,58 @@ export class ShellChromeOwner {
       if (event.cancelable) {
         event.preventDefault();
       }
-      if (deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX) {
-        this.clearTranscriptNavSwipe();
-        this.toggleNavigationSurface();
-      }
+      this.updateTranscriptNavDrawer(swipe, deltaX);
       return;
     }
-    this.clearTranscriptNavSwipe();
+    if (
+      deltaX <= -NAV_DRAWER_SWIPE_LOCK_DISTANCE_PX ||
+      distanceY >= distanceX * NAV_DRAWER_SWIPE_DIRECTION_RATIO
+    ) {
+      this.clearTranscriptNavSwipe();
+    }
   };
 
   private readonly handleTranscriptNavSwipeEnd = (event: TouchEvent): void => {
     const swipe = this.navDrawerSwipe;
-    this.clearTranscriptNavSwipe();
+    const touch = swipe
+      ? Array.from(event.changedTouches).find(
+          (candidate) => candidate.identifier === swipe.identifier,
+        )
+      : undefined;
     if (
       !swipe ||
+      !touch ||
       !swipe.lockedHorizontal ||
       !isMobileNavLayout() ||
       !isNarrowMobileViewport() ||
       this.host.navDrawerOpen
     ) {
-      return;
-    }
-    const touch = Array.from(event.changedTouches).find(
-      (candidate) => candidate.identifier === swipe.identifier,
-    );
-    if (!touch) {
+      this.clearTranscriptNavSwipe();
       return;
     }
     const deltaX = touch.clientX - swipe.startX;
-    const deltaY = touch.clientY - swipe.startY;
-    const duration = performance.now() - swipe.startedAt;
-    if (
-      duration <= NAV_DRAWER_SWIPE_MAX_DURATION_MS &&
-      deltaX >= NAV_DRAWER_SWIPE_MIN_DISTANCE_PX &&
-      deltaX >= Math.abs(deltaY) * NAV_DRAWER_SWIPE_DIRECTION_RATIO
-    ) {
-      this.toggleNavigationSurface();
+    this.flushTranscriptNavDrawer(swipe, deltaX);
+    const shouldOpen =
+      deltaX >=
+        Math.max(
+          NAV_DRAWER_SWIPE_MIN_OPEN_DISTANCE_PX,
+          swipe.drawerWidth * NAV_DRAWER_SWIPE_OPEN_RATIO,
+        ) ||
+      (deltaX >= NAV_DRAWER_SWIPE_MIN_FLICK_DISTANCE_PX &&
+        swipe.recentVelocityX >= NAV_DRAWER_SWIPE_MIN_FLICK_VELOCITY);
+    this.clearTranscriptNavSwipe({ preservePresentation: true });
+    if (shouldOpen) {
+      this.toggleNavigationSurface(undefined, true);
+    } else {
+      this.settleTranscriptNavDrawer(false);
     }
   };
 
   private readonly handleTranscriptNavSwipeCancel = (): void => {
-    this.clearTranscriptNavSwipe();
+    this.cancelTranscriptNavSwipe();
   };
 
-  toggleNavigationSurface(trigger?: HTMLElement): void {
+  toggleNavigationSurface(trigger?: HTMLElement, settleFromSwipe = false): void {
     const host = this.host;
     const context = host.context;
     // Desktop settings takeover has no app nav; its mobile drawer still owns navigation.
@@ -352,9 +543,40 @@ export class ShellChromeOwner {
         host.closeNavDrawer({ restoreFocus: true });
         return;
       }
-      host.navDrawerTrigger = trigger ?? host.querySelector<HTMLElement>(".topbar-nav-toggle");
-      syncControlUiSystemChrome({ dimmed: true });
+      host.navDrawerTrigger = trigger ?? this.visibleNavDrawerToggle() ?? null;
+      // Modalizing the shell triggers a broad Lit update. Let the compositor
+      // finish the swipe snap first so Safari cannot stall halfway through it.
+      if (
+        settleFromSwipe &&
+        this.settleTranscriptNavDrawer(true, () => {
+          if (!host.isConnected || !isMobileNavLayout() || !isNarrowMobileViewport()) {
+            this.resetNavigationDrawerGesturePresentation();
+            return;
+          }
+          host.navDrawerOpen = true;
+          void host.updateComplete.then(() => {
+            if (
+              !host.isConnected ||
+              !host.navDrawerOpen ||
+              !isMobileNavLayout() ||
+              !isNarrowMobileViewport()
+            ) {
+              this.resetNavigationDrawerGesturePresentation();
+              return;
+            }
+            this.resetNavigationDrawerGesturePresentation();
+            this.moveToastHostToNavigationDrawer();
+            this.focusNavigationDrawer();
+          });
+        })
+      ) {
+        return;
+      }
       host.navDrawerOpen = true;
+      void host.updateComplete.then(() => {
+        this.moveToastHostToNavigationDrawer();
+        this.focusNavigationDrawer();
+      });
       return;
     }
     // A responsive handoff expands this shell without overwriting the desktop preference.
@@ -383,6 +605,61 @@ export class ShellChromeOwner {
     resolved?.focus();
   }
 
+  private navigationDrawerFocusableElements(): HTMLElement[] {
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    if (!drawer) {
+      return [];
+    }
+    return [...drawer.querySelectorAll<HTMLElement>(NAV_DRAWER_FOCUSABLE_SELECTOR)].filter(
+      (candidate) => candidate.checkVisibility(),
+    );
+  }
+
+  private focusNavigationDrawer(): void {
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    const target = this.navigationDrawerFocusableElements()[0] ?? drawer;
+    target?.focus({ preventScroll: true });
+  }
+
+  private moveToastHostToNavigationDrawer(): void {
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    const toastHost = this.host.querySelector<HTMLElement>("openclaw-toast-host");
+    if (drawer && toastHost && toastHost.parentElement !== drawer) {
+      drawer.moveBefore(toastHost, null);
+    }
+  }
+
+  private restoreToastHostToShell(): void {
+    const shell = this.host.querySelector<HTMLElement>(".shell");
+    const toastHost = this.host.querySelector<HTMLElement>("openclaw-toast-host");
+    if (shell && toastHost && toastHost.parentElement !== shell) {
+      shell.moveBefore(toastHost, null);
+    }
+  }
+
+  private trapNavigationDrawerFocus(event: KeyboardEvent): void {
+    const drawer = this.host.querySelector<HTMLElement>(".shell-nav");
+    if (!drawer) {
+      return;
+    }
+    const focusable = this.navigationDrawerFocusableElements();
+    if (focusable.length === 0) {
+      event.preventDefault();
+      drawer.focus({ preventScroll: true });
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable.at(-1)!;
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || !drawer.contains(active))) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && (active === last || !drawer.contains(active))) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
+  }
+
   visibleNavDrawerToggle(): HTMLElement | undefined {
     return [
       ...this.host.querySelectorAll<HTMLElement>(".topbar-nav-toggle, .chat-pane__nav-toggle"),
@@ -393,18 +670,10 @@ export class ShellChromeOwner {
     const host = this.host;
     if (host.navDrawerOpen) {
       this.dismissSidebarTransientMenus();
-      syncControlUiSystemChrome({ dimmed: false });
+      this.resetNavigationDrawerGesturePresentation();
+      this.restoreToastHostToShell();
     }
     const trigger = options.restoreFocus ? host.navDrawerTrigger : null;
-    const returnFocusTarget =
-      options.restoreFocus && trigger?.isConnected && trigger.checkVisibility()
-        ? trigger
-        : options.restoreFocus
-          ? host.querySelector<HTMLElement>(".content")
-          : null;
-    host
-      .querySelector<OpenClawModalDialog>("openclaw-modal-dialog.nav-drawer")
-      ?.setReturnFocusTarget(returnFocusTarget ?? null);
     host.navDrawerOpen = false;
     host.navDrawerTrigger = null;
     if (options.restoreFocus) {
@@ -567,6 +836,15 @@ export class ShellChromeOwner {
       return;
     }
     if (event.defaultPrevented) {
+      return;
+    }
+    if (host.navDrawerOpen && isMobileNavLayout()) {
+      if (matchesShortcutCombo(KEYBOARD_SHORTCUT_COMBOS.escape, event)) {
+        event.preventDefault();
+        host.closeNavDrawer({ restoreFocus: true });
+      } else if (event.key === "Tab") {
+        this.trapNavigationDrawerFocus(event);
+      }
       return;
     }
     if (matchesShortcutCombo(KEYBOARD_SHORTCUT_COMBOS.keyboardShortcuts, event)) {

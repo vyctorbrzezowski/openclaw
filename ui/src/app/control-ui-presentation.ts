@@ -17,17 +17,7 @@ const ACCENT_CSS_VARIABLES = [
 let operatorSeamColor: string | undefined;
 let userAccentOverride: string | undefined;
 
-function resolveCssColor(value: string): string {
-  const probe = document.createElement("span");
-  probe.hidden = true;
-  probe.style.color = value;
-  (document.body ?? document.documentElement).append(probe);
-  const resolved = getComputedStyle(probe).color.trim();
-  probe.remove();
-  return resolved || value;
-}
-
-export function syncControlUiSystemChrome(options: { dimmed?: boolean } = {}): void {
+export function syncControlUiSystemChrome(): void {
   if (typeof document === "undefined") {
     return;
   }
@@ -41,15 +31,9 @@ export function syncControlUiSystemChrome(options: { dimmed?: boolean } = {}): v
   if (!background) {
     return;
   }
-  const drawerOpen =
-    options.dimmed ?? Boolean(document.querySelector(".shell--mobile-nav.shell--nav-drawer-open"));
-  const systemChromeBackground =
-    narrow && drawerOpen
-      ? resolveCssColor(`color-mix(in srgb, ${background} 56%, black 44%)`)
-      : background;
-  root.style.setProperty("--control-ui-system-chrome-background", systemChromeBackground);
+  root.style.setProperty("--control-ui-system-chrome-background", background);
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    meta.content = systemChromeBackground;
+    meta.content = background;
     meta.removeAttribute("media");
   }
 }

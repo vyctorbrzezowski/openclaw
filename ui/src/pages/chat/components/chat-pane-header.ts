@@ -267,7 +267,7 @@ function renderProjectCrumb(
     >
       <button
         slot="trigger"
-        class="chat-pane__workspace-chip"
+        class=${`chat-pane__workspace-chip${!copied && !props.workspaceIcon ? " chat-pane__workspace-chip--fallback-icon" : ""}`}
         type="button"
         title=${props.workspaceRoot ?? props.workspaceLabel}
         aria-label=${t("chat.sessionHeader.workspaceAria", {
