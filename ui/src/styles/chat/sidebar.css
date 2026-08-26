@@ -624,11 +624,6 @@ openclaw-chat-sidebar-region,
   gap: var(--rail-header-action-gap);
 }
 
-.side-panel__action-group--close {
-  padding-left: 5px;
-  border-left: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
-}
-
 .side-panel__body,
 .side-panel__panel {
   display: flex;

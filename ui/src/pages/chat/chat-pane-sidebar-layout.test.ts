@@ -28,7 +28,6 @@ function callbacks() {
     resizePanel: vi.fn(),
     setDock: vi.fn(),
     setExpanded: vi.fn(),
-    setOpen: vi.fn(),
   };
 }
 
@@ -175,7 +174,6 @@ describe("chat pane sidebar layout", () => {
       hideBoard: vi.fn(),
       forgetDiscussionUrl: vi.fn(),
       resizePanel: vi.fn(),
-      setPanelOpen: vi.fn(),
     }).activatePanel(chatPanel!.id);
 
     expect(updateSidebarLayout).toHaveBeenCalledWith(

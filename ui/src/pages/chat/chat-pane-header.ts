@@ -294,10 +294,14 @@ export abstract class ChatPaneHeader extends ChatPaneDiscussion {
       .content=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
     >
       <button
-        class="btn btn--ghost btn--icon chat-icon-btn chat-side-panel-toggle"
+        class="btn btn--ghost btn--icon chat-icon-btn chat-side-panel-toggle ${sidePanelOpen
+          ? "active"
+          : ""}"
         type="button"
         aria-label=${t(sidePanelOpen ? "chat.sidePanel.minimize" : "chat.sidePanel.label")}
         aria-expanded=${String(sidePanelOpen)}
+        aria-pressed=${String(sidePanelOpen)}
+        data-state=${sidePanelOpen ? "open" : "closed"}
         @click=${toggleSidePanel}
       >
         ${icons.panelRight}

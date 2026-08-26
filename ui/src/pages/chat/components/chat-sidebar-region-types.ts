@@ -25,5 +25,4 @@ export type SidebarRegionCallbacks = {
   resizePanel: (columnId: string, size: number) => void;
   setDock: (dock: SidebarDock) => void;
   setExpanded: (expanded: boolean) => void;
-  setOpen: (open: boolean) => void;
 };

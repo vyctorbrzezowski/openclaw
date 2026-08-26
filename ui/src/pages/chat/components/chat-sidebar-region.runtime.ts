@@ -230,18 +230,6 @@ class ChatSidebarRegion extends OpenClawLightDomElement {
           </button>
         </openclaw-tooltip>
       </span>
-      <span class="side-panel__action-group side-panel__action-group--close">
-        <openclaw-tooltip .content=${t("common.close")}>
-          <button
-            class="rail-header__action side-panel__minimize"
-            type="button"
-            aria-label=${t("common.close")}
-            @click=${() => this.callbacks?.setOpen(false)}
-          >
-            ${icons.x}
-          </button>
-        </openclaw-tooltip>
-      </span>
     </div>`;
   }
 

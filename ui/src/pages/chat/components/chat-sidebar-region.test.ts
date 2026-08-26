@@ -36,7 +36,6 @@ async function createRegion(layout: SidebarLayout = openSlot({ columns: [] }, "d
     resizePanel: vi.fn(),
     setDock: vi.fn(),
     setExpanded: vi.fn(),
-    setOpen: vi.fn(),
   };
   region.availableWidth = 1_200;
   const primary = document.createElement("div");
@@ -307,12 +306,11 @@ describe("chat sidebar region", () => {
     expect(browserEmptyItem?.querySelector('path[d="M2 12h20"]')).not.toBeNull();
   });
 
-  it("expands, restores, and minimizes without closing tabs", async () => {
+  it("expands and restores without a competing panel close control", async () => {
     const region = await createRegion();
     root(region).querySelector<HTMLButtonElement>(".side-panel__expand")?.click();
-    root(region).querySelector<HTMLButtonElement>(".side-panel__minimize")?.click();
     expect(region.callbacks?.setExpanded).toHaveBeenCalledWith(true);
-    expect(region.callbacks?.setOpen).toHaveBeenCalledWith(false);
+    expect(root(region).querySelector(".side-panel__minimize")).toBeNull();
 
     region.layout = setSidebarExpanded(region.layout, true);
     await region.updateComplete;
@@ -320,13 +318,12 @@ describe("chat sidebar region", () => {
     expect(region.callbacks?.setExpanded).toHaveBeenLastCalledWith(false);
   });
 
-  it("offers expand and minimize controls in the no-tabs selector", async () => {
+  it("offers expand without a panel-level close in the no-tabs selector", async () => {
     const region = await createRegion({ columns: [], open: true });
     expect(root(region).querySelector<HTMLElement>(".side-panel")?.style.width).toBe("480px");
     root(region).querySelector<HTMLButtonElement>(".side-panel__expand")?.click();
-    root(region).querySelector<HTMLButtonElement>(".side-panel__minimize")?.click();
     expect(region.callbacks?.setExpanded).toHaveBeenCalledWith(true);
-    expect(region.callbacks?.setOpen).toHaveBeenCalledWith(false);
+    expect(root(region).querySelector(".side-panel__minimize")).toBeNull();
   });
 
   it("uses one inherited divider and reports bounded panel width", async () => {

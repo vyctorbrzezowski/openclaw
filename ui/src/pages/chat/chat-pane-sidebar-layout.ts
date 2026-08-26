@@ -107,7 +107,6 @@ export function sidebarRegionCallbacks(params: {
   hideBoard: () => void;
   forgetDiscussionUrl: () => void;
   resizePanel: (columnId: string, size: number) => void;
-  setPanelOpen: (open: boolean) => void;
 }): SidebarRegionCallbacks {
   const { layout, state } = params;
   return {
@@ -131,7 +130,6 @@ export function sidebarRegionCallbacks(params: {
     resizePanel: params.resizePanel,
     setDock: (dock) => state.updateSidebarLayout(setSidebarDock(layout, dock)),
     setExpanded: (expanded) => state.updateSidebarLayout(setSidebarExpanded(layout, expanded)),
-    setOpen: params.setPanelOpen,
   };
 }
 

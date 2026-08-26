@@ -152,11 +152,7 @@ suite.define(() => {
         await expect
           .poll(() => visiblePane.locator('[data-progress-card-placement="rail"]').count())
           .toBe(0);
-        await visiblePane.locator(".side-panel__minimize").evaluate((button) => {
-          if (button instanceof HTMLElement) {
-            button.click();
-          }
-        });
+        await visiblePane.locator(".chat-side-panel-toggle").click();
         await expect.poll(() => visiblePane.locator(".session-progress-card").count()).toBe(1);
         await expect
           .poll(() => visiblePane.locator('[data-progress-card-placement="composer"]').isVisible())
