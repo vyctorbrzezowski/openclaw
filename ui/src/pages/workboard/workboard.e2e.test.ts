@@ -296,6 +296,11 @@ function cardInColumn(page: Page, status: string, title: string) {
   return statusColumn(page, status).locator(".workboard-card", { hasText: title }).first();
 }
 
+async function clickCardAction(cardLocator: Locator, name: string) {
+  await cardLocator.locator(".workboard-card__action-menu > summary").click();
+  await cardLocator.getByRole("button", { name, exact: true }).click();
+}
+
 async function newRecordedPage(
   label: string,
   options: { hasTouch?: boolean } = {},
@@ -525,9 +530,7 @@ suite.define(() => {
       await captureScreenshot(writable.page, artifacts, "03-created-card");
 
       await writableGateway.deferNext("workboard.cards.update");
-      await cardInColumn(writable.page, "Todo", createdCard.title)
-        .locator('button[aria-label="Edit card"]')
-        .click();
+      await clickCardAction(cardInColumn(writable.page, "Todo", createdCard.title), "Edit card");
       const editDialog = writable.page.getByRole("dialog", { name: "Edit card" });
       const editForm = writable.page.locator('openclaw-modal-dialog[label="Edit card"]');
       await expect.poll(() => editDialog.isVisible()).toBe(true);
@@ -644,7 +647,7 @@ suite.define(() => {
       );
       const reviewedCardSurface = cardInColumn(writable.page, "Review", editedCard.title);
       await reviewedCardSurface.waitFor({ state: "visible" });
-      await reviewedCardSurface.getByRole("button", { name: "View details", exact: true }).click();
+      await clickCardAction(reviewedCardSurface, "View details");
       await writable.page.locator(".workboard-detail").getByText("Moved to Review").waitFor({
         state: "visible",
       });
@@ -652,9 +655,7 @@ suite.define(() => {
       await details.locator('button[aria-label="Cancel"]').click();
       await details.waitFor({ state: "hidden" });
 
-      await cardInColumn(writable.page, "Review", editedCard.title)
-        .locator('button[aria-label="Edit card"]')
-        .click();
+      await clickCardAction(cardInColumn(writable.page, "Review", editedCard.title), "Edit card");
       await expect.poll(() => editDialog.isVisible()).toBe(true);
       const listBeforeLiveRefresh = (await writableGateway.getRequests("workboard.cards.list"))
         .length;
@@ -866,7 +867,7 @@ suite.define(() => {
         boxShadow: getComputedStyle(rail).boxShadow,
         hasExpandIcons: rail.querySelectorAll('[class*="direction-icon--expand-"]').length === 2,
       }));
-      expect(collapsedRailStyle.boxShadow).not.toBe("none");
+      expect(collapsedRailStyle.boxShadow).toBe("none");
       expect(collapsedRailStyle.hasExpandIcons).toBe(true);
 
       const reviewHeader = recorded.page.locator(

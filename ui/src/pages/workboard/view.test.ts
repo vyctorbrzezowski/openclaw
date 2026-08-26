@@ -390,7 +390,7 @@ describe("renderWorkboard", () => {
     ).toBe(true);
   });
 
-  it("renders stable card action slots and top updated timestamps", () => {
+  it("groups card actions behind a menu and keeps top updated timestamps", () => {
     const { state, container, renderView } = createWorkboardView({
       sessions: [
         {
@@ -438,18 +438,9 @@ describe("renderWorkboard", () => {
       );
       expect(card.querySelector(".workboard-card__updated-icon svg")).toBeTruthy();
       expect(card.querySelector(".workboard-card__top > .workboard-card__updated")).toBeTruthy();
-      expect(
-        card.querySelector(".workboard-card__chips")?.previousElementSibling?.className,
-      ).toContain("workboard-card__top");
-      expect(
-        card.querySelectorAll(".workboard-card__quick-actions .workboard-card__action-slot"),
-      ).toHaveLength(3);
-      expect(
-        card.querySelectorAll(".workboard-card__actions-primary .workboard-card__action-slot"),
-      ).toHaveLength(3);
-      expect(
-        card.querySelectorAll(".workboard-card__actions > .workboard-card__action-slot"),
-      ).toHaveLength(2);
+      expect(card.querySelector(".workboard-card__action-menu > summary")).not.toBeNull();
+      expect(card.querySelector(".workboard-card__metadata")?.children).toHaveLength(2);
+      expect(card.querySelector(".workboard-card__meta")).toBeNull();
     }
     expect(container.querySelector(".workboard-agent-chip")?.textContent).toContain(
       "workboard-dispatcher",
@@ -1312,7 +1303,7 @@ describe("renderWorkboard", () => {
     const startButtons = [
       ...container.querySelectorAll<HTMLButtonElement>(".workboard-card__start"),
     ];
-    expect(startButtons.map((button) => button.textContent?.trim())).toEqual([""]);
+    expect(startButtons.map((button) => button.textContent?.trim())).toEqual(["Start"]);
     expect(startButtons.map((button) => button.getAttribute("aria-label"))).toEqual([
       "Run default agent",
     ]);
@@ -1405,7 +1396,7 @@ describe("renderWorkboard", () => {
     const startButtons = [
       ...container.querySelectorAll<HTMLButtonElement>(".workboard-card__start"),
     ];
-    expect(startButtons.map((button) => button.textContent?.trim())).toEqual([""]);
+    expect(startButtons.map((button) => button.textContent?.trim())).toEqual(["Start"]);
     expect(startButtons.map((button) => button.getAttribute("aria-label"))).toEqual([
       "Run default agent",
     ]);

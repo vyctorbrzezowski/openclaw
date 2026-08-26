@@ -116,16 +116,6 @@ export function renderCardMoveControl(
   `;
 }
 
-export function renderCardActionSlot(content: TemplateResult | typeof nothing) {
-  return html`
-    <span class="workboard-card__action-slot">
-      ${content === nothing
-        ? html`<span class="workboard-card__action-placeholder" aria-hidden="true"></span>`
-        : content}
-    </span>
-  `;
-}
-
 export function getCardActionState(props: WorkboardProps, card: WorkboardCard) {
   const state = getWorkboardState(props.host);
   const task = state.tasksByCardId.get(card.id);

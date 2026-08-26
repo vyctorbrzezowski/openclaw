@@ -22,7 +22,6 @@ import { cardAgentLabel } from "./agent-filter.ts";
 import {
   getCardActionState,
   renderArchiveCardAction,
-  renderCardActionSlot,
   renderCardMoveControl,
   renderDeleteCardAction,
   renderEditCardAction,
@@ -146,8 +145,17 @@ function renderCompactBadges(card: WorkboardCard, task?: WorkboardTaskSummary) {
 
 function isCardActionTarget(event: Event): boolean {
   return event.target instanceof Element
-    ? Boolean(event.target.closest("button, a, input, select, textarea"))
+    ? Boolean(event.target.closest("button, a, input, select, textarea, details"))
     : false;
+}
+
+function closeCardActions(event: MouseEvent) {
+  if (!(event.target instanceof Element) || !event.target.closest("button")) {
+    return;
+  }
+  if (event.currentTarget instanceof Element) {
+    event.currentTarget.closest("details")?.removeAttribute("open");
+  }
 }
 
 function renderAgentChip(props: WorkboardProps, card: WorkboardCard) {
@@ -233,50 +241,53 @@ function renderCard(props: WorkboardProps, card: WorkboardCard, surface: Workboa
     ? workboardCardMatchesHealthKey(card, state.activeHealthHighlight, props.sessions, task)
     : false;
   const dependencies = getWorkboardDependencyState(card, state.cards);
-  const topStartAction =
+  const startAction =
     !widget && showStartControls
-      ? renderStartExecutionButton(props, card, null, "autonomous", { iconOnly: true })
+      ? renderStartExecutionButton(props, card, null, "autonomous")
       : nothing;
-  const topEditAction =
-    !widget && writable && !archived
-      ? renderEditCardAction(props, card, { iconOnly: true })
-      : nothing;
-  const topArchiveAction =
-    !widget && writable
-      ? renderArchiveCardAction(props, card, busy, archived, { iconOnly: true })
-      : nothing;
+  const editAction = !widget && writable && !archived ? renderEditCardAction(props, card) : nothing;
+  const archiveAction =
+    !widget && writable ? renderArchiveCardAction(props, card, busy, archived) : nothing;
   const detailAction = widget
     ? nothing
     : html`
-        <openclaw-tooltip .content=${t("workboard.viewDetails")}>
-          <button
-            class="btn btn--icon workboard-card__icon"
-            aria-label=${t("workboard.viewDetails")}
-            aria-haspopup="dialog"
-            aria-expanded=${state.detailCardId === card.id ? "true" : "false"}
-            aria-controls=${workboardCardDetailDrawerId}
-            @click=${() => {
-              openCardDetails(state, card);
-              props.onRequestUpdate?.();
-            }}
-          >
-            ${icons.panelRightOpen}
-          </button>
-        </openclaw-tooltip>
+        <button
+          class="btn"
+          type="button"
+          aria-label=${t("workboard.viewDetails")}
+          aria-haspopup="dialog"
+          aria-expanded=${state.detailCardId === card.id ? "true" : "false"}
+          aria-controls=${workboardCardDetailDrawerId}
+          @click=${() => {
+            openCardDetails(state, card);
+            props.onRequestUpdate?.();
+          }}
+        >
+          ${icons.panelRightOpen}<span>${t("workboard.viewDetails")}</span>
+        </button>
       `;
-  const sessionAction = widget
-    ? nothing
-    : renderOpenSessionCardAction(props, linkedSessionKey, { iconOnly: true });
+  const sessionAction = widget ? nothing : renderOpenSessionCardAction(props, linkedSessionKey);
   const stopAction =
     !widget && writable && (linkedSessionKey ? live : activeTask)
-      ? renderStopCardAction(props, card, busy, { iconOnly: true })
+      ? renderStopCardAction(props, card, busy)
       : nothing;
   const moveAction =
     !archived && (writable || widget)
       ? renderCardMoveControl(props, card, busy || !writable, { wide: widget })
       : nothing;
-  const deleteAction =
-    !widget && writable ? renderDeleteCardAction(props, card, busy, { iconOnly: true }) : nothing;
+  const deleteAction = !widget && writable ? renderDeleteCardAction(props, card, busy) : nothing;
+  const actionsMenu =
+    !widget && (writable || linkedSessionKey)
+      ? html`
+          <details class="workboard-card__action-menu">
+            <summary aria-label=${t("workboard.cardActions")}>${icons.moreHorizontal}</summary>
+            <div class="workboard-card__action-menu-panel" @click=${closeCardActions}>
+              ${detailAction} ${startAction} ${editAction} ${archiveAction} ${sessionAction}
+              ${stopAction} ${deleteAction}
+            </div>
+          </details>
+        `
+      : nothing;
   return html`
     <article
       class="workboard-card priority-${card.priority} ${busy
@@ -332,44 +343,37 @@ function renderCard(props: WorkboardProps, card: WorkboardCard, surface: Workboa
           <span class="workboard-card__updated-icon" aria-hidden="true">${icons.clock}</span>
           <span>${formatUpdatedTime(card.updatedAt)}</span>
         </div>
-        <div class="workboard-card__quick-actions">
-          ${renderCardActionSlot(topStartAction)} ${renderCardActionSlot(topEditAction)}
-          ${renderCardActionSlot(topArchiveAction)}
-        </div>
-      </div>
-      <div class="workboard-card__chips">
-        <span class="workboard-card__priority">${formatPriorityLabel(card.priority)}</span>
-        ${renderAgentChip(props, card)}
-        ${archived
-          ? html`<span class="workboard-card__archived">${t("workboard.archived")}</span>`
-          : nothing}
-        ${live ? html`<span class="workboard-live">${t("workboard.live")}</span>` : nothing}
+        ${actionsMenu}
       </div>
       <h3>${card.title}</h3>
-      ${card.notes ? html`<p>${card.notes}</p>` : nothing} ${renderLifecycle(card, props, task)}
-      ${renderDependencyBadges(dependencies)}
-      ${card.labels.length
-        ? html`<div class="workboard-labels">
-            ${card.labels.map((label) => html`<span>${label}</span>`)}
-          </div>`
-        : nothing}
-      ${renderCompactBadges(card, task)}
-      <div class="workboard-card__meta">
-        <span>${linkedSessionKey ?? t("workboard.noLinkedSession")}</span>
+      ${card.notes ? html`<p>${card.notes}</p>` : nothing}
+      <div class="workboard-card__metadata">
+        <div class="workboard-card__chips">
+          <span class="workboard-card__priority">${formatPriorityLabel(card.priority)}</span>
+          ${renderAgentChip(props, card)}
+          ${archived
+            ? html`<span class="workboard-card__archived">${t("workboard.archived")}</span>`
+            : nothing}
+          ${live ? html`<span class="workboard-live">${t("workboard.live")}</span>` : nothing}
+        </div>
+        <div class="workboard-card__signals">
+          ${renderLifecycle(card, props, task)} ${renderDependencyBadges(dependencies)}
+          ${card.labels.length
+            ? html`<div class="workboard-labels">
+                ${card.labels.map((label) => html`<span>${label}</span>`)}
+              </div>`
+            : nothing}
+          ${renderCompactBadges(card, task)}
+        </div>
       </div>
       ${renderEvents(card)}
       ${widget
         ? html`<div class="workboard-card__actions workboard-card__actions--widget">
             ${moveAction}
           </div>`
-        : html`<div class="workboard-card__actions">
-            ${renderCardActionSlot(detailAction)}
-            <div class="workboard-card__actions-primary">
-              ${renderCardActionSlot(sessionAction)} ${renderCardActionSlot(stopAction)}
-              ${renderCardActionSlot(moveAction)}
-            </div>
-            ${renderCardActionSlot(deleteAction)}
-          </div>`}
+        : moveAction === nothing
+          ? nothing
+          : html`<div class="workboard-card__actions">${moveAction}</div>`}
     </article>
   `;
 }

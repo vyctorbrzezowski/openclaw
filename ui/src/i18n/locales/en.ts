@@ -4060,6 +4060,7 @@ export const en: TranslationMap = {
     unarchiveCard: "Restore from archive",
     archived: "Archived",
     deleteCard: "Delete card",
+    cardActions: "Card actions",
     viewDetails: "View details",
     detailTitle: "Card details",
     detailTask: "Gateway task",
