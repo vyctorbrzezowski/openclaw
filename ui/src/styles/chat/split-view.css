@@ -187,34 +187,166 @@ openclaw-chat-pane {
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
-  /* Inter's visible glyph mass sits slightly below the 28px action glyphs even
-     when their CSS boxes share a center. Lift the whole trail as one optical
-     unit so project icon, labels, and separator meet the chrome centerline. */
-  transform: translateY(-1px);
   /* Both interactive segments pull their 5px hover padding back out of flow, so
      this gap is the separator's actual optical air on each side. */
   gap: 6px;
 }
 
-/* These groups become the two mobile identity rows. They stay transparent to
-   the desktop flex trail so its existing one-line geometry is unchanged. */
-.chat-pane__project-row,
-.chat-pane__session-trail {
-  display: contents;
-}
-
 /* Renaming needs the row's spare width, which the trail must pass through:
    without this the input is trapped inside a shrink-only container. */
-.chat-pane__crumbs:has(.chat-pane__session-title-input) {
+.chat-pane__crumbs:has(.chat-pane__session-title-input),
+.chat-pane__session-identity:has(.chat-pane__session-title-input) {
   flex: 1 1 auto;
+}
+
+.chat-pane__session-identity,
+.chat-pane__session-controls,
+.chat-pane__session-menu-anchor,
+.chat-pane__session-menu-anchor > openclaw-chat-header-session-menu,
+.chat-pane__sharing-anchor {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.chat-pane__session-menu-anchor,
+.chat-pane__session-menu-anchor > openclaw-chat-header-session-menu {
+  width: 28px;
+  height: 28px;
+}
+
+.chat-pane__session-identity {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 5px;
+}
+
+.chat-pane__session-controls {
+  gap: 4px;
+  margin-inline-start: 6px;
+}
+
+.chat-pane__people {
+  --chat-pane-people-z-avatar: 0;
+  --chat-pane-people-z-control: 1;
+  --chat-pane-people-z-hover: 2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.chat-pane__people
+  :is(
+    .session-owner-chip--header,
+    .viewer-facepile .viewer-avatar--session,
+    .viewer-facepile .viewer-avatar--overflow
+  ) {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--chat-surface);
+  box-shadow: none;
+}
+
+.chat-pane__people > openclaw-viewer-facepile:not(:first-child) .viewer-facepile {
+  margin-inline-start: -8px;
+}
+
+.chat-pane__people
+  .viewer-facepile
+  > openclaw-tooltip:not(:first-child)
+  > .viewer-facepile__tooltip-anchor
+  .viewer-avatar,
+.chat-pane__people
+  .viewer-facepile
+  > openclaw-tooltip:not(:first-child)
+  > .viewer-avatar--overflow {
+  margin-inline-start: -8px;
+}
+
+.chat-pane__people .viewer-avatar--overflow {
+  background: var(--bg-elevated);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.chat-pane__people .chat-pane__sharing-anchor {
+  position: relative;
+  z-index: var(--chat-pane-people-z-control);
+  margin-inline-start: 6px;
+}
+
+.chat-pane__people > :not(.chat-pane__sharing-anchor) {
+  position: relative;
+  z-index: var(--chat-pane-people-z-avatar);
+}
+
+.chat-pane__people .chat-pane__sharing-anchor button.chat-pane__sharing-trigger {
+  position: relative;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--chat-surface);
+  color: var(--muted);
+}
+
+.chat-pane__people .chat-pane__sharing-trigger::before {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed currentColor;
+  border-radius: inherit;
+  opacity: 0.32;
+  content: "";
+  pointer-events: none;
+}
+
+.chat-pane__sharing-trigger-icon,
+.chat-pane__sharing-tooltip-anchor {
+  display: inline-flex;
+}
+
+.chat-pane__sharing-trigger-icon > svg {
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  stroke-width: 1.5px;
+}
+
+.chat-pane__people .chat-pane__sharing-menu .chat-pane__sharing-trigger:is(:hover, :focus-visible),
+.chat-pane__people .chat-pane__sharing-menu[open] .chat-pane__sharing-trigger {
+  background:
+    linear-gradient(color-mix(in srgb, var(--text) 7%, transparent), transparent),
+    var(--chat-surface);
+  color: var(--text);
+}
+
+.chat-pane__people .chat-pane__sharing-trigger:is(:hover, :focus-visible)::before,
+.chat-pane__people .chat-pane__sharing-menu[open] .chat-pane__sharing-trigger::before {
+  border-style: solid;
+  color: var(--muted);
+  opacity: 0.48;
+}
+
+.chat-pane__session-menu-anchor {
+  transform: translateY(1px);
+}
+
+.chat-header-session-menu[open] .chat-header-session-menu__trigger {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text);
 }
 
 /* House separator treatment: an aria-hidden glyph tinted with --muted, spacing
    from the row gap, no size or color of its own beyond matching the title. */
 .chat-pane__crumb-sep {
+  display: inline-flex;
   flex: 0 0 auto;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1;
 }
 
 /* The title hugs its text so the segments after it stay adjacent (the trail's
@@ -225,7 +357,8 @@ openclaw-chat-pane {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .chat-pane__session-title-button,
@@ -259,7 +392,7 @@ openclaw-chat-pane {
   min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   cursor: var(--cursor-action);
 }
 
@@ -293,7 +426,7 @@ openclaw-chat-pane {
   background: var(--panel);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   outline: none;
   user-select: text;
   -webkit-user-select: text;
@@ -318,8 +451,8 @@ openclaw-chat-pane {
 
 .chat-pane__incognito svg,
 .chat-pane__workspace-chip svg {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   /* Lucide outline icons: without this the paths render browser-default
      black fill, which reads as a solid dark blob on the chip. */
   fill: none;
@@ -341,8 +474,8 @@ openclaw-chat-pane {
 }
 
 .chat-pane__workspace-chip .workspace-icon {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
   border-radius: 2px;
   object-fit: contain;
@@ -563,7 +696,8 @@ openclaw-chat-pane {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: var(--cursor-action);
 }
 
@@ -756,7 +890,7 @@ openclaw-chat-pane {
 
   /* The project name is gone at this width, so the separator would trail an
      icon-only pill and read as punctuation with nothing on its left. */
-  .chat-pane__project-row + .chat-pane__session-trail > .chat-pane__crumb-sep:first-child {
+  .chat-pane__workspace-menu + .chat-pane__crumb-sep {
     display: none;
   }
 
@@ -854,7 +988,10 @@ openclaw-chat-pane {
    the web-control calculation with their actual window chrome. */
 .shell {
   --shell-attention-width: 0px;
-  --shell-titlebar-inset: calc(var(--shell-chrome-safe-area-left) + var(--shell-attention-width));
+  --shell-titlebar-inset: max(
+    10px,
+    calc(var(--shell-chrome-safe-area-left) + var(--shell-attention-width))
+  );
 }
 
 html.openclaw-native-macos .shell:not(.shell--mobile-nav) {

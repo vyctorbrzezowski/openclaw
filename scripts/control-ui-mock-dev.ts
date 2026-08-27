@@ -55,6 +55,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "sidebar-header"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -85,6 +86,35 @@ const MOCK_ACTOR_MIRA: SessionActorFixture = {
   id: "profile-mira",
   label: "Mira",
 };
+const MOCK_ACTOR_PATRICIA: SessionActorFixture = {
+  type: "human",
+  id: "profile-patricia",
+  label: "Patricia",
+};
+const MOCK_SIDEBAR_HEADER_PARTICIPANTS: readonly SessionActorFixture[] = [
+  MOCK_ACTOR_PETER,
+  { type: "agent", id: "research", label: "Research" },
+  { type: "human", id: "profile-victor", label: "Victor Brzezowski" },
+  {
+    type: "human",
+    id: "profile-email-stress",
+    label: "victor.brzezowski+openclaw-maintainer@example-collaboration.test",
+  },
+  MOCK_ACTOR_PATRICIA,
+  { type: "agent", id: "release", label: "Release" },
+  { type: "human", id: "profile-alexandra", label: "Alexandra Montgomery-Sinclair" },
+  { type: "agent", id: "observability", label: "Observability and Reliability" },
+  { type: "human", id: "profile-christopher", label: "Christopher Bartholomew-Wellington" },
+  { type: "agent", id: "localization", label: "Internationalization Coordinator" },
+  ...Array.from(
+    { length: 12 },
+    (_value, index): SessionActorFixture => ({
+      type: index % 3 === 0 ? "agent" : "human",
+      id: `topbar-participant-${index + 1}`,
+      label: `Production Load Participant ${String(index + 1).padStart(2, "0")}`,
+    }),
+  ),
+];
 // Rows carry explicit owners the way the gateway projects createdActor fallbacks.
 const MOCK_SESSION_OWNERS: readonly SessionActorFixture[] = [MOCK_ACTOR_PETER, MOCK_ACTOR_MIRA];
 
@@ -358,6 +388,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "sidebar-header" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1732,13 +1763,30 @@ async function createChatPickerScenario(
       startedAt: baseTime - 4_000,
       status: "running",
     }),
-    sessionRow(NARRATION_DEMO_SESSION_KEY, "Sidebar narration demo", baseTime - 15_000, {
-      createdActor: MOCK_ACTOR_MIRA,
-      hasActiveRun: true,
-      owner: { actor: MOCK_ACTOR_MIRA },
-      startedAt: baseTime - 45_000,
-      status: "running",
-    }),
+    sessionRow(
+      NARRATION_DEMO_SESSION_KEY,
+      fixture === "sidebar-header"
+        ? "Coordinate the production incident review while fifteen concurrent sessions remain active"
+        : "Sidebar narration demo",
+      baseTime - 15_000,
+      {
+        createdActor: MOCK_ACTOR_MIRA,
+        ...(fixture === "sidebar-header"
+          ? {
+              participantCount: 27,
+              participants: [...MOCK_SIDEBAR_HEADER_PARTICIPANTS],
+              sharingRole: "owner",
+              spawnedCwd:
+                "/Users/peter/Projects/openclaw-observability-collaboration-production-control-plane",
+              visibility: "shared",
+            }
+          : {}),
+        hasActiveRun: true,
+        owner: { actor: MOCK_ACTOR_MIRA },
+        startedAt: baseTime - 45_000,
+        status: "running",
+      },
+    ),
     sessionRow("agent:main:tax-research", "Tax filing research", baseTime - 60_000, {
       hasActiveRun: true,
       status: "running",
@@ -2011,6 +2059,14 @@ async function createChatPickerScenario(
       "system.info",
       "terminal.open",
       ...(updateFixture ? ["update.hold", "update.run", "update.status"] : []),
+      ...(fixture === "sidebar-header"
+        ? [
+            "session.members.add",
+            "session.members.listEvidence",
+            "session.members.remove",
+            "session.visibility.set",
+          ]
+        : []),
       ...(fixture === "workboard"
         ? [
             "board.get",
@@ -2972,6 +3028,21 @@ async function createChatPickerScenario(
         ],
       },
       "sessions.search": { results: [] },
+      ...(fixture === "sidebar-header"
+        ? {
+            "session.members.listEvidence": {
+              sessionKey: NARRATION_DEMO_SESSION_KEY,
+              owner: MOCK_ACTOR_MIRA,
+              members: [
+                { identityId: MOCK_ACTOR_PETER.id, addedBy: MOCK_ACTOR_MIRA.id, addedAt: 1 },
+                { identityId: MOCK_ACTOR_PATRICIA.id, addedBy: MOCK_ACTOR_MIRA.id, addedAt: 2 },
+              ],
+              identities: [MOCK_ACTOR_MIRA, ...MOCK_SIDEBAR_HEADER_PARTICIPANTS],
+              role: "owner",
+              allowedVisibilities: ["shared", "read-only", "suggest", "draft"],
+            },
+          }
+        : {}),
       ...(fixture === "workboard" ? workboardMocks.methodResponses : {}),
     },
     models: modelProviders.models,
@@ -3039,7 +3110,12 @@ async function createChatPickerScenario(
       ],
     },
     sessionArchiveFiltering: true,
-    sessionKey: fixture === "workboard" ? workboardMocks.sessionKey : "agent:main:main",
+    sessionKey:
+      fixture === "workboard"
+        ? workboardMocks.sessionKey
+        : fixture === "sidebar-header"
+          ? NARRATION_DEMO_SESSION_KEY
+          : "agent:main:main",
     workspace: "/Users/peter/Projects/openclaw",
     workspaceGit: true,
   };
@@ -3293,6 +3369,36 @@ function createBoardFixturePlugin(): Plugin {
   };
 }
 
+function createSidebarHeaderFixturePlugin(fixture: CliOptions["fixture"]): Plugin {
+  const workspaceIconPrefix = "/__openclaw__/workspace-icon/";
+  const projectIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#5b8def"/><path d="M9 22V10h7.2c4.3 0 6.8 2.1 6.8 6s-2.5 6-6.8 6H9Zm5-4h2.1c1.8 0 2.9-.7 2.9-2s-1.1-2-2.9-2H14v4Z" fill="white"/></svg>`;
+  return {
+    name: "openclaw-control-ui-sidebar-header-fixture",
+    configureServer(server) {
+      if (fixture !== "sidebar-header") {
+        return;
+      }
+      server.middlewares.use((req, res, next) => {
+        const pathname = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
+        if (!pathname.startsWith(workspaceIconPrefix)) {
+          next();
+          return;
+        }
+        const sessionKey = decodeURIComponent(pathname.slice(workspaceIconPrefix.length));
+        if (sessionKey !== NARRATION_DEMO_SESSION_KEY) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        }
+        res.statusCode = 200;
+        res.setHeader("cache-control", "no-store");
+        res.setHeader("content-type", "image/svg+xml; charset=utf-8");
+        res.end(projectIcon);
+      });
+    },
+  };
+}
+
 function hostForUrl(boundAddress: string, requestedHost: string): string {
   const host = boundAddress === "0.0.0.0" || boundAddress === "::" ? requestedHost : boundAddress;
   const reachableHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
@@ -3350,6 +3456,7 @@ const server = await createServer({
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
+    createSidebarHeaderFixturePlugin(options.fixture),
     ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
   ],
   publicDir: path.join(uiRoot, "public"),

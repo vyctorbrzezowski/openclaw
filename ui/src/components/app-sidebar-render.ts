@@ -3,7 +3,6 @@ import { repeat } from "lit/directives/repeat.js";
 import type { GatewayControlUiPluginTab } from "../api/gateway.ts";
 import {
   serializeSidebarEntry,
-  type NavigationRouteId,
   type SidebarZoneEntry,
 } from "../app-navigation.ts";
 import { isRouteId, isSessionRouteId } from "../app-route-paths.ts";
@@ -48,6 +47,10 @@ import {
 import { renderSessionGlyph, renderSessionUnreadBadge } from "./session-glyph.ts";
 import { renderSessionRowBadges, renderSidebarConnectionStatus } from "./session-row-badges.ts";
 import { formatSidebarBuildSubtitle } from "./sidebar-build-chip-format.ts";
+
+const PALETTE_SHORTCUT = /Mac|iP(hone|ad|od)/i.test(globalThis.navigator?.platform ?? "")
+  ? "⌘K"
+  : "Ctrl K";
 
 type AppSidebarRenderHost = AppSidebarSessionNavigationElement & {
   activePluginTabId: string;
@@ -127,7 +130,6 @@ export function renderAppSidebarBrand(host: AppSidebarRenderHost) {
         .authToken=${avatarAuthToken}
         .avatarAuthReady=${avatarAuthReady}
         .avatarText=${cardAvatarText}
-        .subtitle=${host.agentChipSubtitle(cardAgentId)}
         .environment=${host.sessionDataContext?.config?.current?.environment ?? null}
         .menuOpen=${host.sidebarMenus.agentMenuPosition !== null}
         .menuUnread=${menuUnread}
@@ -160,6 +162,30 @@ export function renderAppSidebarBrand(host: AppSidebarRenderHost) {
             ?disabled=${!newSessionAccess.allowed}
           >
             ${icons.plus}
+          </button>
+        </openclaw-tooltip>
+        <openclaw-tooltip .content=${`${t("chat.openCommandPalette")} (${PALETTE_SHORTCUT})`}>
+          <button
+            class="sidebar-brand__icon sidebar-brand__search"
+            type="button"
+            ?disabled=${!host.onOpenPalette}
+            @click=${() => host.onOpenPalette?.()}
+            aria-label=${t("chat.openCommandPalette")}
+          >
+            ${icons.search}
+          </button>
+        </openclaw-tooltip>
+        <openclaw-tooltip .content=${`${t("nav.collapse")} (⌘B)`}>
+          <button
+            class="sidebar-brand__icon sidebar-brand__collapse"
+            type="button"
+            ?disabled=${!host.onToggleSidebar}
+            @click=${({ currentTarget }: MouseEvent) =>
+              currentTarget instanceof HTMLElement && host.onToggleSidebar?.(currentTarget)}
+            aria-label=${t("nav.collapse")}
+            aria-expanded="true"
+          >
+            ${icons.panelLeft}
           </button>
         </openclaw-tooltip>
       </div>
@@ -388,7 +414,7 @@ export function renderAppSidebarFooterBar(host: AppSidebarRenderHost) {
       ? `${gateway.name}${gatewayPrimaryTag ? `, ${gatewayPrimaryTag}` : ""}`
       : buildSubtitle;
   return html`
-    <div class="sidebar-footer-bar sidebar-footer-bar--one-action">
+    <div class="sidebar-footer-bar">
       <button
         type="button"
         class="sidebar-identity-card"
@@ -413,7 +439,6 @@ export function renderAppSidebarFooterBar(host: AppSidebarRenderHost) {
             onRetry: () => host.onRetryConnect?.(),
           })
         : nothing}
-      <span class="sidebar-footer-actions">${renderAppSidebarAttention(host)}</span>
     </div>
   `;
 }
@@ -509,12 +534,4 @@ function renderWorkboardBoard(
       onNavigate: (pathname) => host.onNavigate?.("workboard", { pathname }),
     }) ?? nothing
   );
-}
-
-function renderAppSidebarAttention(host: AppSidebarRenderHost) {
-  return html`<openclaw-sidebar-attention
-    .activeRouteId=${host.activeRouteId}
-    .onNavigate=${(routeId: NavigationRouteId) => host.onNavigate?.(routeId)}
-    .watchUpdateProgress=${host.watchUpdateProgress}
-  ></openclaw-sidebar-attention>`;
 }

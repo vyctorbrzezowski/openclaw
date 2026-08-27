@@ -370,6 +370,9 @@ export const icons = {
   moreHorizontal: strokeIcon(svg` <circle cx="5" cy="12" r="1" />
     <circle cx="12" cy="12" r="1" />
     <circle cx="19" cy="12" r="1" />`),
+  moreHorizontalSolid: strokeIcon(svg` <circle cx="6" cy="12" r="1" fill="currentColor" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+    <circle cx="18" cy="12" r="1" fill="currentColor" />`),
   ...toolIcons,
 } as const;
 

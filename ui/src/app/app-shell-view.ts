@@ -8,7 +8,6 @@ import type {
 } from "../components/app-sidebar-workboard.ts";
 import { icons } from "../components/icons.ts";
 import { renderLazyElementModal } from "../components/lazy-view-error.ts";
-import { CUSTODIAN_PANEL_TOGGLE_EVENT } from "../components/panel-toggle-contract.ts";
 import {
   renderLazySettingsSidebar,
   type SettingsSidebarModule,
@@ -364,6 +363,8 @@ export function renderApplicationShell(host: ShellViewHost) {
       devGitBranch: config.devGitBranch,
       watchUpdateProgress,
       onOpenApprovals: () => host.openApprovals(),
+      onOpenPalette: () => host.openPalette(),
+      onToggleSidebar: (trigger?: HTMLElement) => host.toggleNavigationSurface(trigger),
       onRetryConnect: () => context.gateway.connect(),
       onOpenNewSession: openNewSession,
       onUpdateSidebarEntries: (entries: string[]) =>
@@ -496,11 +497,12 @@ export function renderApplicationShell(host: ShellViewHost) {
         .onOpenPalette=${() => host.openPalette()}
         .onToggleDrawer=${(trigger: HTMLElement) => host.toggleNavigationSurface(trigger)}
       ></openclaw-app-topbar>
-      ${!onboarding && !settingsTakeover && !mobileNavLayout
+      ${navCollapsed && !onboarding && !settingsTakeover && !mobileNavLayout
         ? html`
             <div class="shell-chrome-controls">
               <openclaw-tooltip
                 .content=${`${t(navCollapsed ? "nav.expand" : "nav.collapse")} (${formatKeyboardShortcutCombo(KEYBOARD_SHORTCUT_COMBOS.toggleSidebar)})`}
+                .hoverOnly=${true}
               >
                 <button
                   type="button"
@@ -510,53 +512,14 @@ export function renderApplicationShell(host: ShellViewHost) {
                   data-env-avatar=${navCollapsed && config.environment
                     ? config.assistantIdentity.name.charAt(0)
                     : nothing}
-                  @click=${() => host.toggleNavigationSurface()}
+                  @click=${({ currentTarget }: MouseEvent) =>
+                    currentTarget instanceof HTMLElement &&
+                    host.toggleNavigationSurface(currentTarget)}
                 >
-                  ${navCollapsed ? icons.panelLeftOpen : icons.panelLeftClose}
+                  ${icons.panelLeft}
                 </button>
               </openclaw-tooltip>
-              ${navCollapsed
-                ? html`<openclaw-tooltip
-                    .content=${newSessionAccess.allowed
-                      ? t("chat.runControls.newSession")
-                      : newSessionAccess.reason}
-                  >
-                    <button
-                      type="button"
-                      class="shell-chrome-controls__button shell-chrome-controls__new-thread"
-                      aria-label=${t("chat.runControls.newSession")}
-                      ?disabled=${!newSessionAccess.allowed}
-                      @click=${() => openNewSession(selectedAgentId)}
-                    >
-                      ${icons.plus}
-                    </button>
-                  </openclaw-tooltip>`
-                : nothing}
-              <openclaw-tooltip
-                .content=${`${t("chat.openCommandPalette")} (${formatKeyboardShortcutCombo(KEYBOARD_SHORTCUT_COMBOS.commandPalette)})`}
-              >
-                <button
-                  type="button"
-                  class="shell-chrome-controls__button shell-chrome-controls__search"
-                  aria-label=${t("chat.openCommandPalette")}
-                  @click=${() => host.openPalette()}
-                >
-                  ${icons.search}
-                </button>
-              </openclaw-tooltip>
-              ${navCollapsed && custodianPanelAvailable
-                ? html`<openclaw-tooltip .content=${t("nav.askOpenClaw")}>
-                    <button
-                      type="button"
-                      class="shell-chrome-controls__button shell-chrome-controls__custodian"
-                      aria-label=${t("nav.askOpenClaw")}
-                      @click=${() =>
-                        window.dispatchEvent(new CustomEvent(CUSTODIAN_PANEL_TOGGLE_EVENT))}
-                    >
-                      ${icons.lobster}
-                    </button>
-                  </openclaw-tooltip>`
-                : nothing}
+              <span class="shell-chrome-controls__separator" aria-hidden="true"></span>
             </div>
           `
         : nothing}

@@ -10,14 +10,17 @@
   --shell-chrome-controls-inset: 10px;
   --shell-chrome-control-size: 32px;
   --shell-chrome-controls-gap: 4px;
+  --shell-chrome-icon-size: 18px;
+  --shell-chrome-icon-stroke-width: 1.75px;
+  --shell-chrome-plus-icon-size: 19px;
+  --shell-chrome-plus-icon-stroke-width: 2px;
+  --shell-chrome-controls-collapsed-width: calc(var(--shell-chrome-control-size) + 10px);
   /* Settings takeover and the main sidebar share the same bottom divider geometry. */
   --shell-sidebar-footer-height: 53px;
   --shell-native-titlebar-controls-inset: 92px;
   --shell-native-titlebar-controls-width: 156px;
-  /* Collapsed navigation adds new-thread to the two persistent controls.
-     Optional controls contribute only while they are actually mounted. */
-  --shell-controls-width: 104px;
-  --shell-chrome-safe-area-left: calc(var(--shell-controls-width) - 18px);
+  /* Expanded navigation owns these controls in its header. */
+  --shell-chrome-safe-area-left: 0px;
   /* Desktop has no topbar row — the sidebar owns navigation. Narrow viewports
      (layout.mobile.css) and the chat split toolbar restore the row height. */
   --shell-topbar-height: 0px;
@@ -95,9 +98,9 @@
 .shell--nav-collapsed {
   grid-template-columns: 0 minmax(0, 1fr);
   --shell-nav-width: 0px;
-  /* The collapsed strip shows all three base controls, so unlike the expanded
-     safe edge this keeps the complete collapsed width. */
-  --shell-chrome-safe-area-left: calc(var(--shell-controls-width) + 18px);
+  --shell-chrome-safe-area-left: calc(
+    var(--shell-chrome-controls-inset) + var(--shell-chrome-controls-collapsed-width) + 8px
+  );
 }
 
 /* Drawer shells keep the nav mounted offscreen; desktop collapse removes it. */
@@ -105,11 +108,10 @@
   display: none;
 }
 
-/* Web shell controls mirror the native Mac titlebar strip. On native macOS
-   hosts without the full strip, they sit below the AppKit drag region. */
+/* Collapsed-shell recovery control. */
 .shell-chrome-controls {
   position: fixed;
-  top: 10px;
+  top: 8px;
   left: calc(var(--shell-nav-width) + var(--shell-chrome-controls-inset));
   z-index: 45;
   display: flex;
@@ -142,13 +144,10 @@
   width: var(--shell-chrome-control-size);
   height: var(--shell-chrome-control-size);
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border: none;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  background: transparent;
   color: var(--muted);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .shell-chrome-controls__button:hover:not(:disabled) {
@@ -166,8 +165,8 @@
 }
 
 .shell-chrome-controls__button svg {
-  width: 17px;
-  height: 17px;
+  width: var(--shell-chrome-icon-size);
+  height: var(--shell-chrome-icon-size);
   stroke: currentColor;
   fill: none;
   stroke-width: 1.5px;
@@ -175,8 +174,11 @@
   stroke-linejoin: round;
 }
 
-.shell:has(.shell-chrome-controls__custodian) {
-  --shell-controls-width: 140px;
+.shell-chrome-controls__separator {
+  width: 1px;
+  height: 18px;
+  margin-left: 2px;
+  background: color-mix(in srgb, var(--border-strong) 58%, transparent);
 }
 
 .shell--mobile-nav .shell-chrome-controls {
@@ -215,6 +217,14 @@ html.openclaw-native-nav .topbar .topbar-nav-toggle {
 
 /* Web-chrome hosts provide this entire cluster in the native titlebar. */
 html.openclaw-native-web-chrome .shell-chrome-controls {
+  display: none;
+}
+
+html.openclaw-native-nav .sidebar-brand__collapse,
+html.openclaw-native-web-chrome .sidebar-brand__collapse,
+html.openclaw-native-web-chrome .sidebar-brand__search,
+.shell--mobile-nav .sidebar-brand__collapse,
+.shell--mobile-nav .sidebar-brand__search {
   display: none;
 }
 
@@ -988,7 +998,7 @@ openclaw-settings-save-indicator:empty {
 }
 
 .sidebar-shell {
-  --sidebar-pad-x: 10px;
+  --sidebar-pad-x: 8px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1006,25 +1016,27 @@ openclaw-settings-save-indicator:empty {
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 8px 12px;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 0 8px;
   flex-shrink: 0;
 }
 
 .sidebar-brand__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   flex: 0 0 auto;
+  margin-inline-start: auto;
+  margin-inline-end: 6px;
 }
 
 .sidebar-brand__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
   border-radius: var(--radius-md);
@@ -1052,11 +1064,11 @@ openclaw-settings-save-indicator:empty {
 }
 
 .sidebar-brand__icon svg {
-  width: 16px;
-  height: 16px;
+  width: var(--shell-chrome-icon-size);
+  height: var(--shell-chrome-icon-size);
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.7px;
+  stroke-width: var(--shell-chrome-icon-stroke-width);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -1068,7 +1080,12 @@ openclaw-settings-save-indicator:empty {
   color: var(--text);
 }
 
-.sidebar-brand__new-thread svg,
+.sidebar-brand__new-thread svg {
+  width: var(--shell-chrome-plus-icon-size);
+  height: var(--shell-chrome-plus-icon-size);
+  stroke-width: var(--shell-chrome-plus-icon-stroke-width);
+}
+
 .sidebar-footer-bar__custodian svg {
   width: 18px;
   height: 18px;
@@ -1993,6 +2010,42 @@ openclaw-settings-save-indicator:empty {
   color: var(--muted);
   font-size: 8px;
   letter-spacing: 0;
+}
+
+.viewer-facepile__overflow-tooltip-owner {
+  --openclaw-tooltip-max-width: min(302px, calc(100vw - 24px));
+  --openclaw-tooltip-padding: 9px 11px;
+}
+
+.viewer-facepile__overflow-tooltip {
+  display: grid;
+  width: min(280px, calc(100vw - 46px));
+  max-height: 204px;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.viewer-facepile__overflow-tooltip-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  min-height: 22px;
+  gap: 8px;
+}
+
+.viewer-facepile__overflow-tooltip-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.viewer-avatar--tooltip {
+  width: 18px;
+  height: 18px;
+  border-color: var(--bg-elevated);
+  font-size: 7px;
 }
 
 .viewer-facepile--session {
@@ -3065,6 +3118,9 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 /* Footer agent chip: identity-first entrance to the active agent. The body
    resumes the latest conversation; trailing actions create/open the menu. */
 .sidebar-agent-card {
+  --sidebar-agent-avatar-size: 26px;
+  --sidebar-agent-avatar-overhang: 4px;
+
   display: flex;
   align-items: center;
   min-width: 0;
@@ -3074,10 +3130,13 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 .sidebar-agent-card__main {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1 1 auto;
+  gap: 6px;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
-  padding: 4px 6px;
+  min-height: 32px;
+  padding: 0 6px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -3102,15 +3161,20 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: var(--sidebar-agent-avatar-size);
+  height: var(--sidebar-agent-avatar-size);
   flex: none;
+  margin-inline-start: calc(-1 * var(--sidebar-agent-avatar-overhang));
   border-radius: var(--radius-full);
   background: var(--secondary);
   color: var(--secondary-foreground);
-  font-size: 19px;
-  font-weight: 600;
+}
+
+.sidebar-agent-card__avatar-text {
+  font-size: 14px;
+  font-weight: 500;
   line-height: 1;
+  transform: translateY(-0.25px);
 }
 
 .sidebar-agent-card__avatar img {
@@ -3126,28 +3190,42 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .sidebar-agent-card__text {
   display: flex;
-  flex-direction: column;
+  flex: 0 1 auto;
   min-width: 0;
-  gap: 1px;
 }
 
 .sidebar-agent-card__name {
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: hidden;
+  min-width: 0;
   color: var(--text-strong);
-  font-size: var(--control-ui-text-md);
-  font-weight: 650;
+  font-size: calc(14px * var(--control-ui-text-scale));
+  font-weight: 600;
   line-height: 1.2;
-  text-overflow: ellipsis;
+}
+
+.sidebar-agent-card__name-text {
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
+}
+
+.sidebar-agent-card__name-text--overflow {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 18px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 18px), transparent);
+}
+
+.sidebar-agent-card__name-text--overflow:dir(rtl) {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - 18px), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - 18px), transparent);
 }
 
 .sidebar-agent-card__chevron {
   display: inline-flex;
   flex: none;
   color: var(--muted);
+  opacity: 0.72;
 }
 
 .sidebar-agent-card__chevron svg {
@@ -3158,22 +3236,6 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   stroke-width: 1.5px;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.sidebar-agent-card__subtitle {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--control-ui-text-xs);
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-agent-card__subtitle-row {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 5px;
 }
 
 .sidebar-agent-card__menu-unread {
@@ -3276,21 +3338,6 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
   gap: 4px;
   min-height: 44px;
   padding: 3px 8px;
-}
-
-.sidebar-footer-bar--one-action {
-  padding-inline-end: 44px;
-}
-
-.sidebar-footer-actions {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-end: 8px;
-  display: flex;
-  height: 32px;
-  align-items: center;
-  gap: 8px;
-  transform: translateY(-50%);
 }
 
 openclaw-sidebar-attention {

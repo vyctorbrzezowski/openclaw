@@ -25,7 +25,7 @@ import { syncDropdownItemRadio } from "../../../components/web-awesome.ts";
 import "../../../components/tooltip.ts";
 import "../../../components/workspace-icon.ts";
 import { t } from "../../../i18n/index.ts";
-import { formatRelativeTimestamp } from "../../../lib/format.ts";
+import { clampText, formatRelativeTimestamp } from "../../../lib/format.ts";
 import { resolveSessionDisplayName } from "../../../lib/session-display.ts";
 import {
   areUiSessionKeysEquivalent,
@@ -34,6 +34,8 @@ import {
 import { renderChatPanePlacement } from "./chat-pane-placement.ts";
 
 export type ChatPaneHeaderAction = "reveal" | "copy-path" | "copy-branch";
+
+const HEADER_SESSION_TITLE_MAX_CHARS = 40;
 
 type ChatPaneParentSession = {
   key: string;
@@ -173,21 +175,90 @@ function renderIdentityCrumbs(
   copyBranchLabel: string,
 ) {
   const projectCrumb = renderProjectCrumb(props, copied, copyPathLabel, copyBranchLabel);
+  const segments: TemplateResult[] = projectCrumb ? [projectCrumb] : [];
   const parentCrumb = renderParentSessionCrumb(props);
+  if (parentCrumb) {
+    segments.push(parentCrumb);
+  }
+  segments.push(renderSessionIdentity(props));
+  const compactProjectIdentity = Boolean(projectCrumb && props.workspaceIcon);
   return html`
     <div class="chat-pane__crumbs">
-      ${projectCrumb ? html`<div class="chat-pane__project-row">${projectCrumb}</div>` : nothing}
-      <div class="chat-pane__session-trail">
-        ${projectCrumb
-          ? html`<span class="chat-pane__crumb-sep" aria-hidden="true">/</span>`
-          : nothing}
-        ${parentCrumb
-          ? html`${parentCrumb}<span class="chat-pane__crumb-sep" aria-hidden="true">/</span>`
-          : nothing}
-        ${renderSessionCrumb(props)}
-      </div>
+      ${segments.map(
+        (segment, index) =>
+          html`${index > 0 && !(compactProjectIdentity && index === 1)
+            ? html`<span class="chat-pane__crumb-sep" aria-hidden="true">/</span>`
+            : nothing}${segment}`,
+      )}
+      ${renderSessionControls(props)}
     </div>
   `;
+}
+
+function renderSessionIdentity(props: ChatPaneHeaderProps) {
+  return html`<span class="chat-pane__session-identity">
+    ${renderSessionCrumb(props)}
+    ${props.sessionMenuAction === nothing
+      ? nothing
+      : html`<span class="chat-pane__session-menu-anchor">${props.sessionMenuAction}</span>`}
+  </span>`;
+}
+
+function renderSessionParticipants(props: ChatPaneHeaderProps) {
+  const participants = props.session?.participants;
+  return props.showOwnerChip && participants?.length
+    ? html`<openclaw-viewer-facepile
+        class="chat-pane__participants"
+        .staticUsers=${participants.map((participant) => ({
+          id: participant.id ?? "",
+          name: participant.label,
+          avatarUrl: participant.avatarUrl,
+          watchedSessions: [],
+        }))}
+        .staticTooltips=${participants.map(
+          (participant) =>
+            `${participant.label ?? participant.id ?? ""} · ${t(
+              participant.type === "agent" ? "newSession.agent" : "chat.sessionSharing.selected",
+            )}`,
+        )}
+        .maxVisible=${2}
+        .personActivity=${props.personActivity}
+        variant="session"
+      ></openclaw-viewer-facepile>`
+    : nothing;
+}
+
+function renderSessionControls(props: ChatPaneHeaderProps) {
+  const sharingControl = props.sharingControl ?? nothing;
+  const presence = props.presence ?? nothing;
+  const participants = renderSessionParticipants(props);
+  const ownerActor = props.showOwnerChip ? props.session?.owner?.actor : undefined;
+  const ownerAttribution = props.session?.owner?.assignedAt !== undefined ? "owned" : "created";
+  const owner = renderStandalonePersonLink(
+    renderSessionOwnerChip(
+      ownerActor,
+      "header",
+      ownerAttribution,
+      props.ownerViewing ? true : undefined,
+    ),
+    ownerActor?.id ? personActivityLink(ownerActor.id, props.personActivity) : null,
+  );
+  if (
+    sharingControl === nothing &&
+    !ownerActor?.id &&
+    participants === nothing &&
+    presence === nothing
+  ) {
+    return nothing;
+  }
+  return html`<span class="chat-pane__session-controls">
+    <span class="chat-pane__people"
+      >${owner} ${participants} ${presence}
+      ${sharingControl === nothing
+        ? nothing
+        : html`<span class="chat-pane__sharing-anchor">${sharingControl}</span>`}</span
+    >
+  </span>`;
 }
 
 function renderParentSessionCrumb(props: ChatPaneHeaderProps): TemplateResult | null {
@@ -208,6 +279,7 @@ function renderParentSessionCrumb(props: ChatPaneHeaderProps): TemplateResult | 
 }
 
 function renderSessionCrumb(props: ChatPaneHeaderProps) {
+  const visibleTitle = clampText(props.title, HEADER_SESSION_TITLE_MAX_CHARS);
   if (props.editing) {
     return html`<input
       class="chat-pane__session-title-input"
@@ -230,7 +302,7 @@ function renderSessionCrumb(props: ChatPaneHeaderProps) {
   }
   return props.catalog || !props.session || props.renameDisabledReason
     ? html`<span class="chat-pane__session-title" title=${props.renameDisabledReason ?? props.title}
-        ><span class="chat-pane__session-title-text">${props.title}</span></span
+        ><span class="chat-pane__session-title-text">${visibleTitle}</span></span
       >`
     : html`<button
         class="chat-pane__session-title chat-pane__session-title-button"
@@ -239,7 +311,7 @@ function renderSessionCrumb(props: ChatPaneHeaderProps) {
         aria-label=${t("chat.sessionHeader.renameAria", { title: props.title })}
         @click=${props.onBeginRename}
       >
-        <span class="chat-pane__session-title-text">${props.title}</span>
+        <span class="chat-pane__session-title-text">${visibleTitle}</span>
       </button>`;
 }
 
@@ -267,16 +339,18 @@ function renderProjectCrumb(
     >
       <button
         slot="trigger"
-        class=${`chat-pane__workspace-chip${!copied && !props.workspaceIcon ? " chat-pane__workspace-chip--fallback-icon" : ""}`}
+        class="chat-pane__workspace-chip"
         type="button"
         title=${props.workspaceRoot ?? props.workspaceLabel}
         aria-label=${t("chat.sessionHeader.workspaceAria", {
           workspace: props.workspaceLabel,
         })}
       >
-        ${copied ? icons.check : renderWorkspaceChipIcon(props.workspaceIcon)}<span
-          >${copied ? t("chat.sessionHeader.copied") : props.workspaceLabel}</span
-        >
+        ${copied ? icons.check : renderWorkspaceChipIcon(props.workspaceIcon)}${copied
+          ? html`<span>${t("chat.sessionHeader.copied")}</span>`
+          : props.workspaceIcon
+            ? nothing
+            : html`<span>${props.workspaceLabel}</span>`}
       </button>
       ${props.canReveal && props.workspaceRoot
         ? html`<wa-dropdown-item value="reveal">${revealLabel(props.platform)}</wa-dropdown-item>`
@@ -450,33 +524,7 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
           >`
         : nothing}
       ${renderIdentityCrumbs(props, copied, copyPathLabel, copyBranchLabel)}
-      ${renderStandalonePersonLink(
-        renderSessionOwnerChip(
-          props.showOwnerChip ? props.session?.owner?.actor : undefined,
-          "header",
-          props.session?.owner?.assignedAt !== undefined ? "owned" : "created",
-          props.ownerViewing,
-        ),
-        props.showOwnerChip
-          ? personActivityLink(props.session?.owner?.actor.id, props.personActivity)
-          : null,
-      )}
-      ${props.showOwnerChip && props.session?.participants?.length
-        ? html`<openclaw-viewer-facepile
-            class="chat-pane__participants"
-            .staticUsers=${props.session.participants.map((participant) => ({
-              id: participant.id ?? "",
-              name: participant.label,
-              avatarUrl: participant.avatarUrl,
-              watchedSessions: [],
-            }))}
-            .maxVisible=${4}
-            .personActivity=${props.personActivity}
-            variant="session"
-          ></openclaw-viewer-facepile>`
-        : nothing}
-      ${renderChatPanePlacement(props)} ${props.presence ?? nothing} ${props.faceControl ?? nothing}
-      ${props.sharingControl ?? nothing}
+      ${renderChatPanePlacement(props)} ${props.faceControl ?? nothing}
       ${!props.catalog && props.branches.length > 1
         ? html`
             <openclaw-tooltip
@@ -613,7 +661,6 @@ export function renderChatPaneHeader(props: ChatPaneHeaderProps) {
               </button>
             </openclaw-tooltip>`
           : nothing}
-        ${props.sessionMenuAction}
       </div>
     </div>
   `;

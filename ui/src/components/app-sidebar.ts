@@ -13,7 +13,6 @@ import { BoardAvailabilityController } from "../lib/board/availability-controlle
 import { isGatewayMethodAdvertised } from "../lib/gateway-methods.ts";
 import "./session-menu.ts";
 import "./sidebar-agent-card.ts";
-import "./sidebar-attention.ts";
 import { createIdleImport } from "../lib/idle-import.ts";
 import "./theme-mode-toggle.ts";
 import "./tooltip.ts";
