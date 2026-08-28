@@ -10,6 +10,8 @@ type ChromeFixtureSection = {
   requiredSelectors?: readonly string[];
 };
 
+const comparisonViewportMinHeight = 420;
+
 const sections: readonly ChromeFixtureSection[] = [
   {
     id: "activity",
@@ -351,7 +353,7 @@ function syncComparisonHeight(article: HTMLElement) {
   const currentHeight =
     Number.parseFloat(getComputedStyle(article).getPropertyValue("--chrome-comparison-height")) ||
     0;
-  const height = Math.max(currentHeight, afterHeight, beforeHeight);
+  const height = Math.max(comparisonViewportMinHeight, currentHeight, afterHeight, beforeHeight);
   if (height > 0) {
     article.style.setProperty("--chrome-comparison-height", `${Math.ceil(height)}px`);
   }

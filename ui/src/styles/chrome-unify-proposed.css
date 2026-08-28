@@ -36,7 +36,7 @@
 
 .chrome-proposal__comparison-stage,
 .chrome-proposal__comparison-panel {
-  min-height: var(--chrome-comparison-height, 240px);
+  min-height: var(--chrome-comparison-height, 420px);
 }
 
 .chrome-proposal__comparison-panel[hidden] {
@@ -44,6 +44,7 @@
 }
 
 .chrome-proposal__comparison-frame {
+  height: var(--chrome-comparison-height, 420px) !important;
   min-height: 0;
 }
 
