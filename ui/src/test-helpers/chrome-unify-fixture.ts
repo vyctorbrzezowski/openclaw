@@ -425,6 +425,145 @@ function mountProposalComparisons() {
   }
 }
 
+function filterProposalItems(article: HTMLElement) {
+  const rows = [...article.querySelectorAll<HTMLElement>("[data-proposal-item]")];
+  if (rows.length === 0) {
+    return;
+  }
+  const query =
+    article.querySelector<HTMLInputElement>("[data-proposal-search]")?.value.trim().toLowerCase() ??
+    "";
+  const status = article.querySelector<HTMLSelectElement>("[data-proposal-status]")?.value ?? "all";
+  let visible = 0;
+  for (const row of rows) {
+    const matchesQuery = !query || row.textContent?.toLowerCase().includes(query);
+    const matchesStatus = status === "all" || row.dataset.status === status;
+    row.hidden = !(matchesQuery && matchesStatus);
+    if (!row.hidden) {
+      visible += 1;
+    }
+  }
+  const count = article.querySelector<HTMLElement>("[data-result-count]");
+  const label = article.querySelector<HTMLElement>("[data-result-label]");
+  if (count) {
+    count.textContent = String(visible);
+  }
+  if (label) {
+    label.textContent = visible === 1 ? "worktree" : "worktrees";
+  }
+  syncComparisonHeight(article);
+}
+
+function mountProposalInteractions() {
+  for (const article of proposal.querySelectorAll<HTMLElement>(".chrome-proposal__section")) {
+    const search = article.querySelector<HTMLInputElement>("[data-proposal-search]");
+    const status = article.querySelector<HTMLSelectElement>("[data-proposal-status]");
+    search?.addEventListener("input", () => filterProposalItems(article));
+    status?.addEventListener("change", () => filterProposalItems(article));
+
+    for (const filter of article.querySelectorAll<HTMLDetailsElement>("[data-proposal-filter]")) {
+      const count = filter.querySelector<HTMLElement>("[data-filter-count]");
+      const updateCount = () => {
+        const selected = filter.querySelectorAll<HTMLInputElement>("input:checked").length;
+        if (count) {
+          count.textContent = String(selected);
+          count.hidden = selected === 0;
+        }
+      };
+      filter
+        .querySelector<HTMLButtonElement>("[data-filter-apply]")
+        ?.addEventListener("click", () => {
+          updateCount();
+          filter.open = false;
+        });
+      filter
+        .querySelector<HTMLButtonElement>("[data-filter-clear]")
+        ?.addEventListener("click", () => {
+          for (const input of filter.querySelectorAll<HTMLInputElement>("input:checked")) {
+            input.checked = false;
+          }
+          updateCount();
+        });
+    }
+
+    for (const button of article.querySelectorAll<HTMLButtonElement>("[data-proposal-refresh]")) {
+      button.addEventListener("click", () => {
+        const statusText = article.querySelector<HTMLElement>("[data-refresh-status]");
+        button.disabled = true;
+        button.classList.add("is-refreshing");
+        if (statusText) {
+          statusText.textContent = "Updating…";
+        }
+        window.setTimeout(() => {
+          button.disabled = false;
+          button.classList.remove("is-refreshing");
+          if (statusText) {
+            statusText.textContent = "Updated just now";
+          }
+        }, 600);
+      });
+    }
+  }
+
+  for (const button of proposal.querySelectorAll<HTMLButtonElement>("[data-dialog-target]")) {
+    button.addEventListener("click", () => {
+      button.closest<HTMLDetailsElement>("details")?.removeAttribute("open");
+      const dialog = proposal.querySelector<HTMLDialogElement>(
+        `#${button.dataset.dialogTarget ?? ""}`,
+      );
+      if (dialog instanceof HTMLDialogElement) {
+        dialog.showModal();
+      }
+    });
+  }
+
+  const worktrees = proposal.querySelector<HTMLElement>("#proposal-worktrees");
+  const createDialog = proposal.querySelector<HTMLDialogElement>("#worktree-create-dialog");
+  if (worktrees && createDialog instanceof HTMLDialogElement) {
+    createDialog.addEventListener("close", () => {
+      if (createDialog.returnValue !== "create") {
+        return;
+      }
+      const input = createDialog.querySelector<HTMLInputElement>("input[name='worktree-name']");
+      const name = input?.value.trim() || "new-worktree";
+      const row = document.createElement("div");
+      row.className = "chrome-proposal__content-row";
+      row.dataset.proposalItem = "";
+      row.dataset.status = "active";
+      const identity = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = name;
+      const branch = document.createElement("span");
+      branch.textContent = `bench/${name}`;
+      identity.append(title, branch);
+      const itemStatus = document.createElement("span");
+      itemStatus.className = "chrome-proposal__item-status";
+      itemStatus.textContent = "Active";
+      row.append(identity, itemStatus);
+      worktrees.querySelector("[data-proposal-items]")?.prepend(row);
+      if (input) {
+        input.value = "usage-chrome";
+      }
+      filterProposalItems(worktrees);
+    });
+  }
+
+  const cleanupDialog = proposal.querySelector<HTMLDialogElement>("#worktree-cleanup-dialog");
+  if (worktrees && cleanupDialog instanceof HTMLDialogElement) {
+    cleanupDialog.addEventListener("close", () => {
+      if (cleanupDialog.returnValue !== "cleanup") {
+        return;
+      }
+      for (const row of worktrees.querySelectorAll<HTMLElement>(
+        "[data-proposal-item][data-status='archived']",
+      )) {
+        row.remove();
+      }
+      filterProposalItems(worktrees);
+    });
+  }
+}
+
 const style = document.createElement("style");
 style.textContent = fixtureStyles;
 document.head.append(style);
@@ -453,6 +592,7 @@ const proposal = document.createElement("div");
 proposal.className = "chrome-fixture__proposal";
 render(renderChromeUnifyProposal(), proposal);
 mountProposalComparisons();
+mountProposalInteractions();
 
 for (const section of sections) {
   const article = document.createElement("section");

@@ -26,6 +26,11 @@ type DataToolbarProps = {
   utilities?: TemplateResult;
 };
 
+type SelectOption = {
+  label: string;
+  value: string;
+};
+
 function renderPageHeader(props: PageHeaderProps) {
   const hasTrailing = Boolean(
     props.context || props.secondaryAction || props.primaryAction || props.overflowAction,
@@ -50,41 +55,70 @@ function renderPageHeader(props: PageHeaderProps) {
 }
 
 function renderAgentContext() {
-  return html`<button
-    class="btn chrome-proposal__context-trigger"
-    type="button"
-    aria-haspopup="listbox"
-    aria-label="Agent scope: Molty"
-  >
-    <span>Agent:</span> <strong>Molty</strong> ${icons.chevronsUpDown}
-  </button>`;
+  return html`<label class="btn chrome-proposal__context-trigger">
+    <span>Agent:</span>
+    <select aria-label="Agent scope">
+      <option>Molty</option>
+      <option>Main</option>
+      <option>Research</option>
+    </select>
+    ${icons.chevronsUpDown}
+  </label>`;
 }
 
 function renderRefreshControl(label: string) {
-  return html`<button class="btn btn--icon" type="button" aria-label=${label} title=${label}>
+  return html`<button
+    class="btn btn--icon"
+    type="button"
+    aria-label=${label}
+    title=${label}
+    data-proposal-refresh
+  >
     ${icons.refresh}
   </button>`;
 }
 
-function renderFilterButton(label = "Filters", count = 0) {
-  return html`<button class="btn chrome-proposal__filter-button" type="button">
-    ${icons.listFilter}<span>${label}</span>${count > 0
-      ? html`<span class="chrome-proposal__filter-count">${count}</span>`
-      : nothing}
-  </button>`;
+function renderFilterMenu(id: string, options: readonly string[]) {
+  return html`<details class="chrome-proposal__menu" data-proposal-filter>
+    <summary class="btn chrome-proposal__filter-button">
+      ${icons.listFilter}<span>Filters</span>
+      <span class="chrome-proposal__filter-count" data-filter-count hidden>0</span>
+    </summary>
+    <div class="chrome-proposal__menu-panel" aria-label="Filters">
+      <div class="chrome-proposal__menu-title">Filters</div>
+      ${options.map(
+        (option, index) => html`<label class="chrome-proposal__check-row">
+          <input type="checkbox" name=${`${id}-filter-${index}`} />
+          <span>${option}</span>
+        </label>`,
+      )}
+      <div class="chrome-proposal__menu-footer">
+        <button class="btn" type="button" data-filter-clear>Clear</button>
+        <button class="btn primary" type="button" data-filter-apply>Apply</button>
+      </div>
+    </div>
+  </details>`;
 }
 
-function renderSelect(label: string, value: string) {
-  return html`<button
-    class="btn chrome-proposal__select"
-    type="button"
-    aria-haspopup="listbox"
-    aria-label=${`${label}: ${value}`}
-  >
+function renderSelect(label: string, options: readonly SelectOption[]) {
+  return html`<label class="btn chrome-proposal__select">
     <span class="chrome-proposal__select-label">${label}:</span>
-    <span>${value}</span>
+    <select aria-label=${label} data-proposal-status>
+      ${options.map((option) => html`<option value=${option.value}>${option.label}</option>`)}
+    </select>
     ${icons.chevronsUpDown}
-  </button>`;
+  </label>`;
+}
+
+function renderOverflowMenu() {
+  return html`<details class="chrome-proposal__menu chrome-proposal__menu--end">
+    <summary class="btn btn--icon" aria-label="More worktree actions" title="More worktree actions">
+      ${icons.moreHorizontal}
+    </summary>
+    <div class="chrome-proposal__menu-panel chrome-proposal__menu-panel--compact">
+      <button type="button" data-dialog-target="worktree-cleanup-dialog">Clean up…</button>
+    </div>
+  </details>`;
 }
 
 function renderDataToolbar(props: DataToolbarProps) {
@@ -93,7 +127,7 @@ function renderDataToolbar(props: DataToolbarProps) {
       <label class="chrome-proposal__search">
         <span class="sr-only">${props.searchLabel}</span>
         ${icons.search}
-        <input type="search" placeholder=${props.searchPlaceholder} />
+        <input type="search" placeholder=${props.searchPlaceholder} data-proposal-search />
       </label>
       ${props.quickFilters
         ? html`<div class="chrome-proposal__toolbar-group">${props.quickFilters}</div>`
@@ -212,11 +246,16 @@ function renderTasksProposal() {
       ${renderDataToolbar({
         searchLabel: "Search tasks",
         searchPlaceholder: "Search tasks…",
-        quickFilters: renderSelect("Status", "All"),
-        filters: renderFilterButton(),
+        quickFilters: renderSelect("Status", [
+          { label: "All", value: "all" },
+          { label: "Running", value: "running" },
+          { label: "Queued", value: "queued" },
+          { label: "Completed", value: "completed" },
+        ]),
+        filters: renderFilterMenu("tasks", ["Has failures", "Assigned to me", "Created today"]),
         utilities: renderRefreshControl("Refresh tasks"),
       })}
-      ${renderResultMeta("No tasks")}
+      ${renderResultMeta(html`<span>No tasks</span><span data-refresh-status></span>`)}
       ${renderEmptyState(
         "No tasks yet",
         "Tasks started by this agent will appear here with their current state.",
@@ -233,29 +272,76 @@ function renderWorktreesProposal() {
       ${renderPageHeader({
         title: "Worktrees",
         description: "Isolated task checkouts and recovery snapshots.",
-        primaryAction: html`<button class="btn primary" type="button">New worktree</button>`,
-        overflowAction: html`<button
-          class="btn btn--icon"
+        primaryAction: html`<button
+          class="btn primary"
           type="button"
-          aria-label="More worktree actions"
-          title="More worktree actions"
+          data-dialog-target="worktree-create-dialog"
         >
-          ${icons.moreHorizontal}
+          New worktree
         </button>`,
+        overflowAction: renderOverflowMenu(),
       })}
       ${renderDataToolbar({
         searchLabel: "Search worktrees",
         searchPlaceholder: "Search worktrees…",
-        quickFilters: renderSelect("Status", "All"),
-        filters: renderFilterButton(),
+        quickFilters: renderSelect("Status", [
+          { label: "All", value: "all" },
+          { label: "Active", value: "active" },
+          { label: "Archived", value: "archived" },
+        ]),
+        filters: renderFilterMenu("worktrees", [
+          "Include archived",
+          "Recovery available",
+          "Owned by this agent",
+        ]),
         utilities: renderRefreshControl("Refresh worktrees"),
       })}
       ${renderResultMeta(
-        html`<strong>3</strong> worktrees <span aria-hidden="true">·</span> Updated 2m ago`,
+        html`<strong data-result-count>3</strong><span data-result-label>worktrees</span>
+          <span aria-hidden="true">·</span> <span data-refresh-status>Updated 2m ago</span>`,
       )}
-      <div class="chrome-proposal__content-preview" aria-hidden="true">
-        <span></span><span></span><span></span>
+      <div class="chrome-proposal__content-preview" data-proposal-items>
+        <div class="chrome-proposal__content-row" data-proposal-item data-status="active">
+          <div><strong>chrome-unify</strong><span>bench/chrome-unify</span></div>
+          <span class="chrome-proposal__item-status">Active</span>
+        </div>
+        <div class="chrome-proposal__content-row" data-proposal-item data-status="active">
+          <div><strong>dashboard-polish</strong><span>feature/dashboard-polish</span></div>
+          <span class="chrome-proposal__item-status">Active</span>
+        </div>
+        <div class="chrome-proposal__content-row" data-proposal-item data-status="archived">
+          <div><strong>session-recovery</strong><span>recovery/session-recovery</span></div>
+          <span class="chrome-proposal__item-status">Archived</span>
+        </div>
       </div>
+      <dialog id="worktree-create-dialog" class="chrome-proposal__dialog">
+        <form method="dialog">
+          <header>
+            <h2>Create worktree</h2>
+            <p>Create a mock worktree to exercise the proposed flow.</p>
+          </header>
+          <label>
+            <span>Name</span>
+            <input name="worktree-name" value="usage-chrome" required />
+          </label>
+          <div class="chrome-proposal__dialog-actions">
+            <button class="btn" type="submit" value="cancel">Cancel</button>
+            <button class="btn primary" type="submit" value="create">Create worktree</button>
+          </div>
+        </form>
+      </dialog>
+      <dialog id="worktree-cleanup-dialog" class="chrome-proposal__dialog">
+        <form method="dialog">
+          <header>
+            <h2>Clean up worktrees?</h2>
+            <p>The archived mock worktree will be removed from this fixture.</p>
+          </header>
+          <div class="chrome-proposal__dialog-actions">
+            <button class="btn" type="submit" value="cancel">Cancel</button>
+            <button class="btn primary" type="submit" value="cleanup">Clean up worktrees</button>
+          </div>
+        </form>
+      </dialog>
     `,
   );
 }

@@ -121,15 +121,34 @@
   color: var(--muted);
 }
 
-.chrome-proposal__context-trigger strong {
+.chrome-proposal__context-trigger select,
+.chrome-proposal__select select {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
   color: var(--text-strong);
+  font: inherit;
   font-weight: 600;
+}
+
+.chrome-proposal__context-trigger select:focus-visible,
+.chrome-proposal__select select:focus-visible {
+  outline: none;
+}
+
+.chrome-proposal__context-trigger:has(select:focus-visible),
+.chrome-proposal__select:has(select:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .chrome-proposal__context-trigger svg,
 .chrome-proposal__select svg {
   width: 14px;
   height: 14px;
+  pointer-events: none;
 }
 
 .chrome-proposal__toolbar {
@@ -176,7 +195,7 @@
 }
 
 .chrome-proposal__search input:focus-visible,
-.chrome-proposal__page :is(button, a):focus-visible {
+.chrome-proposal__page :is(button, a, summary):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
@@ -191,6 +210,10 @@
 .chrome-proposal__filter-button {
   min-height: 36px;
   background: transparent;
+}
+
+.chrome-proposal__select {
+  gap: 6px;
 }
 
 .chrome-proposal__select-label {
@@ -208,6 +231,90 @@
   color: var(--text-strong);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+}
+
+.chrome-proposal__filter-count[hidden] {
+  display: none;
+}
+
+.chrome-proposal__menu {
+  position: relative;
+}
+
+.chrome-proposal__menu > summary {
+  list-style: none;
+}
+
+.chrome-proposal__menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chrome-proposal__menu-panel {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 0;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 240px;
+  padding: var(--space-3);
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--overlay-shadow);
+}
+
+.chrome-proposal__menu--end .chrome-proposal__menu-panel {
+  inset-inline: auto 0;
+}
+
+.chrome-proposal__menu-panel--compact {
+  min-width: 180px;
+  padding: var(--space-2);
+}
+
+.chrome-proposal__menu-panel--compact > button {
+  min-height: 36px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  text-align: start;
+}
+
+.chrome-proposal__menu-panel--compact > button:hover {
+  background: var(--bg-hover);
+}
+
+.chrome-proposal__menu-title {
+  color: var(--text-strong);
+  font-size: var(--control-ui-text-sm);
+  font-weight: 650;
+}
+
+.chrome-proposal__check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  color: var(--text);
+  font-size: var(--control-ui-text-sm);
+}
+
+.chrome-proposal__check-row input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.chrome-proposal__menu-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--border);
 }
 
 .chrome-proposal__result-meta {
@@ -259,12 +366,114 @@
   padding-block: var(--space-2);
 }
 
-.chrome-proposal__content-preview span {
-  display: block;
-  width: 100%;
-  height: 42px;
+.chrome-proposal__content-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 48px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-elevated) 72%, transparent);
+}
+
+.chrome-proposal__content-row[hidden] {
+  display: none;
+}
+
+.chrome-proposal__content-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.chrome-proposal__content-row strong {
+  color: var(--text-strong);
+  font-size: var(--control-ui-text-sm);
+}
+
+.chrome-proposal__content-row div span,
+.chrome-proposal__item-status {
+  color: var(--muted);
+  font-size: var(--control-ui-text-xs);
+}
+
+.chrome-proposal__dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  box-shadow: var(--overlay-shadow);
+  color: var(--text);
+}
+
+.chrome-proposal__dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+.chrome-proposal__dialog form {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.chrome-proposal__dialog header,
+.chrome-proposal__dialog label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.chrome-proposal__dialog h2,
+.chrome-proposal__dialog p {
+  margin: 0;
+}
+
+.chrome-proposal__dialog h2 {
+  color: var(--text-strong);
+  font-size: var(--control-ui-text-lg);
+}
+
+.chrome-proposal__dialog p,
+.chrome-proposal__dialog label > span {
+  color: var(--muted);
+  font-size: var(--control-ui-text-sm);
+}
+
+.chrome-proposal__dialog input {
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text-strong);
+  font: inherit;
+}
+
+.chrome-proposal__dialog input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.chrome-proposal__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.chrome-proposal__page [data-proposal-refresh].is-refreshing svg {
+  opacity: 0.72;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-proposal__page [data-proposal-refresh].is-refreshing svg {
+    animation: chrome-proposal-spin 700ms linear infinite;
+  }
+}
+
+@keyframes chrome-proposal-spin {
+  to {
+    transform: rotate(1turn);
+  }
 }
 
 @media (max-width: 768px) {
