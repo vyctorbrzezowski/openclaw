@@ -3,9 +3,9 @@ import { icons } from "../components/icons.ts";
 import "../styles/chrome-unify-proposed.css";
 
 export const chromeUnifyProposalSections = [
-  { id: "proposal-dashboards", label: "Dashboards" },
-  { id: "proposal-tasks", label: "Tasks" },
-  { id: "proposal-worktrees", label: "Worktrees" },
+  { id: "proposal-dashboards", currentId: "dashboards", label: "Dashboards" },
+  { id: "proposal-tasks", currentId: "tasks", label: "Tasks" },
+  { id: "proposal-worktrees", currentId: "worktrees", label: "Worktrees" },
 ] as const;
 
 type PageHeaderProps = {
@@ -123,12 +123,61 @@ function renderEmptyState(title: string, description: string, action?: TemplateR
 }
 
 function renderBenchSection(id: string, label: string, content: TemplateResult) {
+  const beforeTabId = `${id}-before-tab`;
+  const beforePanelId = `${id}-before-panel`;
+  const afterTabId = `${id}-after-tab`;
+  const afterPanelId = `${id}-after-panel`;
   return html`<section id=${id} class="chrome-fixture__section chrome-proposal__section">
     <header class="chrome-fixture__section-header">
       <h2>${label}</h2>
-      <span class="chrome-fixture__status">shared grammar · direction</span>
+      <div
+        class="chrome-proposal__comparison-tabs"
+        role="tablist"
+        aria-label=${`${label} comparison`}
+      >
+        <button
+          id=${beforeTabId}
+          type="button"
+          role="tab"
+          aria-controls=${beforePanelId}
+          aria-selected="false"
+          tabindex="-1"
+          data-comparison-view="before"
+        >
+          Before
+        </button>
+        <button
+          id=${afterTabId}
+          type="button"
+          role="tab"
+          aria-controls=${afterPanelId}
+          aria-selected="true"
+          tabindex="0"
+          data-comparison-view="after"
+        >
+          After
+        </button>
+      </div>
     </header>
-    <div class="chrome-proposal__page">${content}</div>
+    <div class="chrome-proposal__comparison-stage">
+      <div
+        id=${beforePanelId}
+        class="chrome-proposal__comparison-panel"
+        role="tabpanel"
+        aria-labelledby=${beforeTabId}
+        data-comparison-panel="before"
+        hidden
+      ></div>
+      <div
+        id=${afterPanelId}
+        class="chrome-proposal__comparison-panel"
+        role="tabpanel"
+        aria-labelledby=${afterTabId}
+        data-comparison-panel="after"
+      >
+        <div class="chrome-proposal__page">${content}</div>
+      </div>
+    </div>
   </section>`;
 }
 

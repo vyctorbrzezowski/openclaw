@@ -286,10 +286,17 @@ function setView(mode: "current" | "proposal") {
   );
 }
 
-function frameReady(frame: HTMLIFrameElement, section: ChromeFixtureSection, status: HTMLElement) {
+function frameReady(
+  frame: HTMLIFrameElement,
+  section: ChromeFixtureSection,
+  status?: HTMLElement,
+  onReady?: () => void,
+) {
   const frameDocument = frame.contentDocument;
   if (!frameDocument) {
-    status.textContent = "frame unavailable";
+    if (status) {
+      status.textContent = "frame unavailable";
+    }
     return;
   }
   const style = frameDocument.createElement("style");
@@ -309,7 +316,9 @@ function frameReady(frame: HTMLIFrameElement, section: ChromeFixtureSection, sta
         window.setTimeout(measure, 80);
         return;
       }
-      status.textContent = "chrome not found";
+      if (status) {
+        status.textContent = "chrome not found";
+      }
       frame.dataset.renderState = "error";
       return;
     }
@@ -317,13 +326,101 @@ function frameReady(frame: HTMLIFrameElement, section: ChromeFixtureSection, sta
       const bottom = boundary.getBoundingClientRect().bottom;
       frame.style.height = `${Math.max(96, Math.ceil(bottom + 20))}px`;
       frame.dataset.renderState = "ready";
-      status.textContent = "real route · ready";
+      if (status) {
+        status.textContent = "real route · ready";
+      }
+      onReady?.();
     };
     requestAnimationFrame(resizeFrame);
     window.setTimeout(resizeFrame, 250);
     void frameDocument.fonts?.ready.then(resizeFrame);
   };
   measure();
+}
+
+function syncComparisonHeight(article: HTMLElement) {
+  const afterPanel = article.querySelector<HTMLElement>("[data-comparison-panel='after']");
+  const beforeFrame = article.querySelector<HTMLIFrameElement>(
+    "[data-comparison-panel='before'] iframe",
+  );
+  const afterHeight = Math.max(
+    afterPanel?.scrollHeight ?? 0,
+    afterPanel?.getBoundingClientRect().height ?? 0,
+  );
+  const beforeHeight = Number.parseFloat(beforeFrame?.style.height ?? "0");
+  const currentHeight =
+    Number.parseFloat(getComputedStyle(article).getPropertyValue("--chrome-comparison-height")) ||
+    0;
+  const height = Math.max(currentHeight, afterHeight, beforeHeight);
+  if (height > 0) {
+    article.style.setProperty("--chrome-comparison-height", `${Math.ceil(height)}px`);
+  }
+}
+
+function setComparisonView(article: HTMLElement, view: "before" | "after", focus = false) {
+  article.dataset.comparisonView = view;
+  for (const button of article.querySelectorAll<HTMLButtonElement>("[data-comparison-view]")) {
+    const selected = button.dataset.comparisonView === view;
+    button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+    if (selected && focus) {
+      button.focus();
+    }
+  }
+  for (const panel of article.querySelectorAll<HTMLElement>("[data-comparison-panel]")) {
+    panel.hidden = panel.dataset.comparisonPanel !== view;
+  }
+  syncComparisonHeight(article);
+}
+
+function mountProposalComparisons() {
+  for (const proposalSection of chromeUnifyProposalSections) {
+    const article = proposal.querySelector<HTMLElement>(`#${proposalSection.id}`);
+    const currentSection = sections.find((section) => section.id === proposalSection.currentId);
+    const beforePanel = article?.querySelector<HTMLElement>("[data-comparison-panel='before']");
+    if (!article || !currentSection || !beforePanel) {
+      continue;
+    }
+
+    const frame = document.createElement("iframe");
+    frame.className = "chrome-fixture__frame chrome-proposal__comparison-frame";
+    frame.title = `${proposalSection.label} current page chrome`;
+    frame.addEventListener("load", () =>
+      frameReady(frame, currentSection, undefined, () => syncComparisonHeight(article)),
+    );
+    frame.src = currentSection.path;
+    beforePanel.append(frame);
+
+    const tabs = [...article.querySelectorAll<HTMLButtonElement>("[data-comparison-view]")];
+    for (const tab of tabs) {
+      tab.addEventListener("click", () =>
+        setComparisonView(article, tab.dataset.comparisonView === "before" ? "before" : "after"),
+      );
+      tab.addEventListener("keydown", (event) => {
+        const currentIndex = tabs.indexOf(tab);
+        const nextIndex =
+          event.key === "ArrowLeft"
+            ? (currentIndex - 1 + tabs.length) % tabs.length
+            : event.key === "ArrowRight"
+              ? (currentIndex + 1) % tabs.length
+              : event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? tabs.length - 1
+                  : -1;
+        if (nextIndex < 0) {
+          return;
+        }
+        event.preventDefault();
+        setComparisonView(
+          article,
+          tabs[nextIndex]?.dataset.comparisonView === "before" ? "before" : "after",
+          true,
+        );
+      });
+    }
+    setComparisonView(article, "after");
+  }
 }
 
 const style = document.createElement("style");
@@ -336,10 +433,10 @@ const nav = document.createElement("nav");
 nav.className = "chrome-fixture__nav";
 nav.setAttribute("aria-label", "Page chrome index");
 nav.innerHTML = `
-  <div><h1>Control UI chrome</h1><p>Current routes and proposed grammar.</p></div>
+  <div><h1>Control UI chrome</h1><p>Local before/after and full current-page inventory.</p></div>
   <div class="chrome-fixture__switch" aria-label="Comparison view">
-    <button type="button" data-view="proposal">Direction</button>
-    <button type="button" data-view="current">Current</button>
+    <button type="button" data-view="proposal">Compare</button>
+    <button type="button" data-view="current">Inventory</button>
   </div>
   <div class="chrome-fixture__links"></div>
   <div class="chrome-fixture__themes" aria-label="Theme">
@@ -353,6 +450,7 @@ stack.className = "chrome-fixture__stack";
 const proposal = document.createElement("div");
 proposal.className = "chrome-fixture__proposal";
 render(renderChromeUnifyProposal(), proposal);
+mountProposalComparisons();
 
 for (const section of sections) {
   const article = document.createElement("section");
@@ -392,5 +490,10 @@ for (const button of nav.querySelectorAll<HTMLButtonElement>("[data-view]")) {
 
 shell.append(nav, stack, proposal);
 document.querySelector("#app")?.append(shell);
+requestAnimationFrame(() => {
+  for (const article of proposal.querySelectorAll<HTMLElement>(".chrome-proposal__section")) {
+    syncComparisonHeight(article);
+  }
+});
 setView("proposal");
 setTheme(matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");

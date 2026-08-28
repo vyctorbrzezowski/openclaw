@@ -2,6 +2,51 @@
   overflow: clip;
 }
 
+.chrome-proposal__comparison-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+
+.chrome-proposal__comparison-tabs button {
+  min-width: 68px;
+  min-height: 30px;
+  padding: 5px var(--space-3);
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--control-ui-text-sm);
+}
+
+.chrome-proposal__comparison-tabs button[aria-selected="true"] {
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.chrome-proposal__comparison-tabs button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.chrome-proposal__comparison-stage,
+.chrome-proposal__comparison-panel {
+  min-height: var(--chrome-comparison-height, 240px);
+}
+
+.chrome-proposal__comparison-panel[hidden] {
+  display: none;
+}
+
+.chrome-proposal__comparison-frame {
+  min-height: 0;
+}
+
 .chrome-proposal__page {
   display: grid;
   gap: var(--space-5);
