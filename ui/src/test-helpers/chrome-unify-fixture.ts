@@ -1,3 +1,7 @@
+import { render } from "lit";
+import { chromeUnifyProposalSections, renderChromeUnifyProposal } from "./chrome-unify-proposed.ts";
+import "./load-styles.ts";
+
 type ChromeFixtureSection = {
   id: string;
   label: string;
@@ -143,6 +147,13 @@ const fixtureStyles = `
     color: #17181c;
   }
   * { box-sizing: border-box; }
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
   html { scroll-behavior: smooth; }
   body { margin: 0; min-width: 1120px; background: inherit; color: inherit; }
   button { font: inherit; }
@@ -183,7 +194,9 @@ const fixtureStyles = `
   }
   .chrome-fixture__links a:hover { background: #22252c; }
   :root[data-theme-mode="light"] .chrome-fixture__links a:hover { background: #eef0f4; }
+  .chrome-fixture__switch,
   .chrome-fixture__themes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .chrome-fixture__switch button,
   .chrome-fixture__themes button {
     min-height: 30px;
     border: 1px solid #343842;
@@ -191,9 +204,14 @@ const fixtureStyles = `
     background: transparent;
     color: inherit;
   }
+  .chrome-fixture__switch button[aria-pressed="true"],
   .chrome-fixture__themes button[aria-pressed="true"] { background: #292d35; }
+  :root[data-theme-mode="light"] .chrome-fixture__switch button[aria-pressed="true"],
   :root[data-theme-mode="light"] .chrome-fixture__themes button[aria-pressed="true"] { background: #e5e8ee; }
-  .chrome-fixture__stack { display: grid; gap: 20px; min-width: 0; }
+  .chrome-fixture__stack,
+  .chrome-fixture__proposal { display: grid; gap: 20px; min-width: 0; }
+  .chrome-fixture[data-view-mode="current"] .chrome-fixture__proposal,
+  .chrome-fixture[data-view-mode="proposal"] .chrome-fixture__stack { display: none; }
   .chrome-fixture__section {
     scroll-margin-top: 20px;
     overflow: hidden;
@@ -252,6 +270,22 @@ function setTheme(mode: "dark" | "light") {
   }
 }
 
+function setView(mode: "current" | "proposal") {
+  shell.dataset.viewMode = mode;
+  for (const button of nav.querySelectorAll<HTMLButtonElement>("[data-view]")) {
+    button.setAttribute("aria-pressed", String(button.dataset.view === mode));
+  }
+  const targets = mode === "proposal" ? chromeUnifyProposalSections : sections;
+  links?.replaceChildren(
+    ...targets.map((section) => {
+      const link = document.createElement("a");
+      link.href = `#${section.id}`;
+      link.textContent = section.label;
+      return link;
+    }),
+  );
+}
+
 function frameReady(frame: HTMLIFrameElement, section: ChromeFixtureSection, status: HTMLElement) {
   const frameDocument = frame.contentDocument;
   if (!frameDocument) {
@@ -302,7 +336,11 @@ const nav = document.createElement("nav");
 nav.className = "chrome-fixture__nav";
 nav.setAttribute("aria-label", "Page chrome index");
 nav.innerHTML = `
-  <div><h1>Control UI chrome</h1><p>Real routes, one comparison bench.</p></div>
+  <div><h1>Control UI chrome</h1><p>Current routes and proposed grammar.</p></div>
+  <div class="chrome-fixture__switch" aria-label="Comparison view">
+    <button type="button" data-view="proposal">Direction</button>
+    <button type="button" data-view="current">Current</button>
+  </div>
   <div class="chrome-fixture__links"></div>
   <div class="chrome-fixture__themes" aria-label="Theme">
     <button type="button" data-theme="dark">Dark</button>
@@ -312,13 +350,11 @@ nav.innerHTML = `
 const links = nav.querySelector<HTMLElement>(".chrome-fixture__links");
 const stack = document.createElement("div");
 stack.className = "chrome-fixture__stack";
+const proposal = document.createElement("div");
+proposal.className = "chrome-fixture__proposal";
+render(renderChromeUnifyProposal(), proposal);
 
 for (const section of sections) {
-  const link = document.createElement("a");
-  link.href = `#${section.id}`;
-  link.textContent = section.label;
-  links?.append(link);
-
   const article = document.createElement("section");
   article.id = section.id;
   article.className = "chrome-fixture__section";
@@ -348,6 +384,13 @@ for (const button of nav.querySelectorAll<HTMLButtonElement>("[data-theme]")) {
   );
 }
 
-shell.append(nav, stack);
+for (const button of nav.querySelectorAll<HTMLButtonElement>("[data-view]")) {
+  button.addEventListener("click", () =>
+    setView(button.dataset.view === "current" ? "current" : "proposal"),
+  );
+}
+
+shell.append(nav, stack, proposal);
 document.querySelector("#app")?.append(shell);
+setView("proposal");
 setTheme(matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
