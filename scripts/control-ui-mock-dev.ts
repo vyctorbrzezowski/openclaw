@@ -54,6 +54,7 @@ type CliOptions = {
     | "approval"
     | "attachments"
     | "board"
+    | "chrome-unify"
     | "code-fences"
     | "swarm"
     | "update-available"
@@ -267,6 +268,7 @@ function buildUpdateFixture(fixture: CliOptions["fixture"], nowMs: number): Upda
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const uiRoot = path.join(repoRoot, "ui");
 const boardFixturePath = "/__fixtures/board/";
+const chromeUnifyFixturePath = "/__fixtures/chrome-unify/";
 const boardFixtureHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -307,6 +309,19 @@ const boardFixtureHtml = `<!doctype html>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/test-helpers/board-fixture.ts"></script>
+  </body>
+</html>`;
+const chromeUnifyFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw Page Chrome Fixture</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/test-helpers/chrome-unify-fixture.ts"></script>
   </body>
 </html>`;
 
@@ -357,6 +372,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "approval" &&
     value !== "attachments" &&
     value !== "board" &&
+    value !== "chrome-unify" &&
     value !== "code-fences" &&
     value !== "swarm" &&
     value !== "update-available" &&
@@ -814,7 +830,7 @@ function buildModelProviderMocks(baseTime: number) {
 
 // Deterministic year of daily activity so the settings profile heatmap,
 // streaks, and stat strip render with a lively fixture in the mock harness.
-function buildProfileUsageMocks(baseTime: number) {
+function buildProfileUsageMocks(baseTime: number, options: { refreshingCache?: boolean } = {}) {
   const daily: Array<Record<string, unknown>> = [];
   let lifetimeTokens = 0;
   for (let daysAgo = 364; daysAgo >= 0; daysAgo -= 1) {
@@ -828,12 +844,22 @@ function buildProfileUsageMocks(baseTime: number) {
     lifetimeTokens += tokens;
     daily.push({ date: iso, ...usageCostTotals(tokens, tokens / 1e9) });
   }
+  const cacheStatus = options.refreshingCache
+    ? {
+        status: "refreshing" as const,
+        cachedFiles: 31,
+        pendingFiles: 2,
+        staleFiles: 1,
+        refreshedAt: baseTime - 45_000,
+      }
+    : undefined;
   return {
     cost: {
       updatedAt: baseTime,
       days: daily.length,
       daily,
       totals: usageCostTotals(lifetimeTokens, lifetimeTokens / 1e9),
+      ...(cacheStatus ? { cacheStatus } : {}),
     },
     sessions: {
       updatedAt: baseTime,
@@ -852,6 +878,7 @@ function buildProfileUsageMocks(baseTime: number) {
         },
       ],
       totals: usageCostTotals(lifetimeTokens, lifetimeTokens / 1e9),
+      ...(cacheStatus ? { cacheStatus } : {}),
       aggregates: {
         sessionCount: 48_212,
         longestSessionDurationMs: (59 * 60 + 4) * 60 * 1000,
@@ -1377,6 +1404,94 @@ function searchPrefixes(term: string): string[] {
   return Array.from({ length: term.length }, (_value, index) => term.slice(0, index + 1));
 }
 
+function buildSkillsStatusMock() {
+  const baseSkill = {
+    source: "openclaw-bundled",
+    baseDir: "/mock/skills",
+    bundled: true,
+    always: false,
+    blockedByAllowlist: false,
+    blockedByAgentFilter: false,
+    modelVisible: true,
+    userInvocable: true,
+    commandVisible: true,
+    requirements: { anyBins: [], bins: [], env: [], config: [], os: [] },
+    missing: { anyBins: [], bins: [], env: [], config: [], os: [] },
+    configChecks: [],
+    install: [],
+  };
+  return {
+    workspaceDir: "/mock/workspace",
+    managedSkillsDir: "/mock/skills",
+    agentId: "main",
+    skills: [
+      {
+        ...baseSkill,
+        name: "GitHub",
+        description: "Review repositories, issues, and pull requests.",
+        filePath: "/mock/skills/github/SKILL.md",
+        skillKey: "github",
+        emoji: "🐙",
+        disabled: false,
+        eligible: true,
+      },
+      {
+        ...baseSkill,
+        name: "Browser",
+        description: "Drive a browser for visible UI workflows.",
+        filePath: "/mock/skills/browser/SKILL.md",
+        skillKey: "browser",
+        emoji: "🌐",
+        disabled: false,
+        eligible: false,
+        requirements: { anyBins: [], bins: ["chromium"], env: [], config: [], os: [] },
+        missing: { anyBins: [], bins: ["chromium"], env: [], config: [], os: [] },
+      },
+      {
+        ...baseSkill,
+        name: "Release notes",
+        description: "Draft release notes from repository history.",
+        filePath: "/mock/skills/release-notes/SKILL.md",
+        skillKey: "release-notes",
+        emoji: "📝",
+        disabled: true,
+        eligible: false,
+      },
+    ],
+  };
+}
+
+function buildAgentsListMock() {
+  return {
+    agents: [
+      {
+        id: "main",
+        name: "Molty",
+        identity: { name: "Molty", emoji: "🦞" },
+        workspace: "/Users/peter/Projects/openclaw",
+        workspaceGit: true,
+      },
+      {
+        id: "research",
+        name: "Research",
+        identity: { name: "Research", emoji: "🔎" },
+        workspace: "/Users/peter/Projects/research",
+        workspaceGit: true,
+      },
+      {
+        id: "ops",
+        name: "Operations",
+        identity: { name: "Operations", emoji: "🛠️" },
+        workspace: "/Users/peter/Projects/operations",
+        workspaceGit: true,
+      },
+    ],
+    defaultId: "main",
+    mainKey: "main",
+    scope: "agent",
+  };
+}
+
 async function createChatPickerScenario(
   fixture?: CliOptions["fixture"],
 ): Promise<ControlUiMockGatewayScenario> {
@@ -1854,7 +1969,9 @@ async function createChatPickerScenario(
   });
   // Profile fixtures track the real clock so streaks and the trailing-year
   // heatmap stay filled no matter when the mock harness runs.
-  const profileUsage = buildProfileUsageMocks(Date.now());
+  const profileUsage = buildProfileUsageMocks(Date.now(), {
+    refreshingCache: fixture === "chrome-unify",
+  });
   const modelProviders = buildModelProviderMocks(Date.now());
   const skillWorkshop = buildSkillWorkshopMocks(Date.now());
   const richAttention = fixture === "approval";
@@ -1901,7 +2018,7 @@ async function createChatPickerScenario(
   const channelWizard = buildChannelWizardMocks();
   const configMocks = buildConfigMocks({
     swarmEnabled: fixture === "swarm",
-    workboardEnabled: fixture === "workboard",
+    workboardEnabled: fixture === "workboard" || fixture === "chrome-unify",
   });
   const historyMessages =
     fixture === "attachments"
@@ -2108,6 +2225,7 @@ async function createChatPickerScenario(
     methodResponses: {
       ...buildBackgroundTasksMock(baseTime),
       ...cronMocks,
+      ...(fixture === "chrome-unify" ? { "agents.list": buildAgentsListMock() } : {}),
       "chat.history": {
         cases: [{ match: { sessionKey: "agent:main:main" }, response: planChatHistory }],
       },
@@ -2570,6 +2688,7 @@ async function createChatPickerScenario(
       "skills.proposals.inspect": skillWorkshop.inspect,
       "skills.proposals.historyStatus": skillWorkshop.historyStatus,
       "skills.proposals.historyScan": skillWorkshop.historyScan,
+      ...(fixture === "chrome-unify" ? { "skills.status": buildSkillsStatusMock() } : {}),
       "usage.cost": profileUsage.cost,
       "sessions.usage": profileUsage.sessions,
       "models.authStatus": modelAuthStatus,
@@ -2984,7 +3103,9 @@ async function createChatPickerScenario(
         ],
       },
       "sessions.search": { results: [] },
-      ...(fixture === "workboard" ? workboardMocks.methodResponses : {}),
+      ...(fixture === "workboard" || fixture === "chrome-unify"
+        ? workboardMocks.methodResponses
+        : {}),
     },
     models: modelProviders.models,
     repeatingSessionEvents: {
@@ -3305,6 +3426,26 @@ function createBoardFixturePlugin(): Plugin {
   };
 }
 
+function createChromeUnifyFixturePlugin(): Plugin {
+  return {
+    name: "openclaw-control-ui-chrome-unify-fixture",
+    configureServer(server) {
+      server.middlewares.use(chromeUnifyFixturePath, (_req, res, next) => {
+        void server
+          .transformIndexHtml(chromeUnifyFixturePath, chromeUnifyFixtureHtml)
+          .then((html) => {
+            res.statusCode = 200;
+            res.setHeader("content-type", "text/html; charset=utf-8");
+            res.end(html);
+          })
+          .catch((error: unknown) => {
+            next(error as Error);
+          });
+      });
+    },
+  };
+}
+
 function hostForUrl(boundAddress: string, requestedHost: string): string {
   const host = boundAddress === "0.0.0.0" || boundAddress === "::" ? requestedHost : boundAddress;
   const reachableHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
@@ -3354,14 +3495,24 @@ const server = await createServer({
   },
   logLevel: "error",
   optimizeDeps: {
-    ...(options.fixture === "board"
-      ? { entries: [path.join(uiRoot, "src", "test-helpers", "board-fixture.ts")] }
+    ...(options.fixture === "board" || options.fixture === "chrome-unify"
+      ? {
+          entries: [
+            path.join(
+              uiRoot,
+              "src",
+              "test-helpers",
+              options.fixture === "board" ? "board-fixture.ts" : "chrome-unify-fixture.ts",
+            ),
+          ],
+        }
       : {}),
     include: ["lit/directives/repeat.js"],
   },
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
+    createChromeUnifyFixturePlugin(),
     ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
   ],
   publicDir: path.join(uiRoot, "public"),
@@ -3385,6 +3536,9 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] chrome fixture: ${resolveServerUrl(server, options.host, chromeUnifyFixturePath)}`,
 );
 await waitForShutdown();
 await server.close();
