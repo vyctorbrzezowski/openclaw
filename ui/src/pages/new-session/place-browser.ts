@@ -3,6 +3,30 @@ import type { FsListDirResult } from "../../../../packages/gateway-protocol/src/
 import { icons } from "../../components/icons.ts";
 import { t } from "../../i18n/index.ts";
 
+const BROWSER_SKELETON_COUNT = 4;
+
+function renderBrowserSkeleton() {
+  return html`
+    <div class="new-session-page__browser-skeleton" role="status" aria-label=${t("common.loading")}>
+      ${Array.from(
+        { length: BROWSER_SKELETON_COUNT },
+        () => html`
+          <div class="new-session-page__browser-entry new-session-page__browser-entry--skeleton">
+            <span
+              class="skeleton new-session-page__browser-skeleton-icon"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="skeleton skeleton-line new-session-page__browser-skeleton-name"
+              aria-hidden="true"
+            ></span>
+          </div>
+        `,
+      )}
+    </div>
+  `;
+}
+
 export function renderPlaceBrowser(params: {
   listing: FsListDirResult | null;
   label: string;
@@ -65,9 +89,6 @@ export function renderPlaceBrowser(params: {
             }
           }}
         />
-        ${params.loading
-          ? html`<span class="new-session-page__browser-loading">${t("common.loading")}</span>`
-          : nothing}
         <button
           type="button"
           class="new-session-page__browser-nav"
@@ -80,6 +101,7 @@ export function renderPlaceBrowser(params: {
       </div>
       ${params.error ? html`<div class="new-session-page__error">${params.error}</div>` : nothing}
       <div class="new-session-page__browser-list" role="group" aria-label=${t("newSession.folder")}>
+        ${params.loading ? renderBrowserSkeleton() : nothing}
         ${params.listing && entries.length === 0 && !params.loading
           ? html`<div class="new-session-page__browser-empty">${t("newSession.browserEmpty")}</div>`
           : nothing}

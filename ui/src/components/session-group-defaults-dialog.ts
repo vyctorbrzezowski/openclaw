@@ -16,6 +16,8 @@ import "./modal-dialog.ts";
 import { syncDropdownItemRadio } from "./web-awesome.ts";
 import "./web-awesome-popover.ts";
 
+const BROWSER_LOADING_DELAY_MS = 100;
+
 export type SessionGroupDefaults = { cwd: string; worktree: boolean };
 
 type Options = {
@@ -48,9 +50,16 @@ export function showSessionGroupDefaultsDialog(options: Options): Promise<void> 
     let browserListing: FsListDirResult | null = null;
     let browserPathDraft = "";
     let browserRequestToken = 0;
+    let browserLoadingTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
+
+    const clearBrowserLoadingTimer = () => {
+      globalThis.clearTimeout(browserLoadingTimer);
+      browserLoadingTimer = undefined;
+    };
 
     const finish = () => {
       browserRequestToken += 1;
+      clearBrowserLoadingTimer();
       repositoryRequestToken += 1;
       render(nothing, host);
       host.remove();
@@ -93,6 +102,7 @@ export function showSessionGroupDefaultsDialog(options: Options): Promise<void> 
 
     const showPickerRoot = () => {
       browserRequestToken += 1;
+      clearBrowserLoadingTimer();
       browserVisible = false;
       browserLoading = false;
       browserError = null;
@@ -183,10 +193,19 @@ export function showSessionGroupDefaultsDialog(options: Options): Promise<void> 
     const loadDirectory = async (path?: string) => {
       const requestToken = ++browserRequestToken;
       const requestedPath = path?.trim() || undefined;
-      browserLoading = true;
+      clearBrowserLoadingTimer();
+      browserLoading = false;
       browserError = null;
       browserListing = null;
       browserPathDraft = requestedPath ?? "";
+      browserLoadingTimer = globalThis.setTimeout(() => {
+        browserLoadingTimer = undefined;
+        if (requestToken !== browserRequestToken) {
+          return;
+        }
+        browserLoading = true;
+        paint();
+      }, BROWSER_LOADING_DELAY_MS);
       paint();
       try {
         const listing = await options.listDirectory(requestedPath);
@@ -206,6 +225,7 @@ export function showSessionGroupDefaultsDialog(options: Options): Promise<void> 
           : formatUiError(error, t("newSession.browserLoadFailed"));
       } finally {
         if (requestToken === browserRequestToken) {
+          clearBrowserLoadingTimer();
           browserLoading = false;
           paint();
         }

@@ -20,6 +20,7 @@ import { projectCloneInput, type DraftRemoteProject } from "./project-chip.ts";
 import { recentPlaces, type RecentPlaceSource } from "./recent-places.ts";
 
 const PROJECT_SEARCH_DEBOUNCE_MS = 300;
+const BROWSER_LOADING_DELAY_MS = 100;
 type DraftPickerKind = "where" | "project" | "detail";
 
 type DraftPlaceBrowserSnapshot = Readonly<{
@@ -60,6 +61,7 @@ export class DraftPlaceBrowser {
   // Live head input; absolute paths stay applicable even without fs.listDir.
   private browserPathDraftValue = "";
   private browserRequestToken = 0;
+  private browserLoadingTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
   private projectSearchTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
 
   private readonly projectsTask: Task<readonly unknown[], ProjectsListResult>;
@@ -379,12 +381,21 @@ export class DraftPlaceBrowser {
       return;
     }
     const requestId = ++this.browserRequestToken;
-    this.browserLoadingValue = true;
+    this.clearBrowserLoadingTimer();
+    this.browserLoadingValue = false;
     this.browserErrorValue = retainedError;
     this.browserProjectPathValue = null;
     this.browserListingValue = null;
     this.browserPathDraftValue = path ?? "";
     const draftAtRequest = this.browserPathDraftValue;
+    this.browserLoadingTimer = globalThis.setTimeout(() => {
+      this.browserLoadingTimer = undefined;
+      if (requestId !== this.browserRequestToken) {
+        return;
+      }
+      this.browserLoadingValue = true;
+      this.callbacks.requestUpdate();
+    }, BROWSER_LOADING_DELAY_MS);
     this.callbacks.requestUpdate();
     void client
       .request<FsListDirResult>("fs.listDir", path ? { path } : {})
@@ -437,6 +448,7 @@ export class DraftPlaceBrowser {
       })
       .finally(() => {
         if (requestId === this.browserRequestToken) {
+          this.clearBrowserLoadingTimer();
           this.browserLoadingValue = false;
           this.callbacks.requestUpdate();
         }
@@ -525,6 +537,7 @@ export class DraftPlaceBrowser {
   }
 
   disconnect() {
+    this.clearBrowserLoadingTimer();
     this.clearProjectSearchTimer();
     void this.projectsTask.run([null, false, -1]);
     void this.projectSearchTask.run([null, false, "", -1]);
@@ -532,6 +545,7 @@ export class DraftPlaceBrowser {
 
   private resetBrowser(closePopover: boolean) {
     this.browserRequestToken += 1;
+    this.clearBrowserLoadingTimer();
     this.browserLoadingValue = false;
     this.browserErrorValue = null;
     this.browserListingValue = null;
@@ -548,6 +562,11 @@ export class DraftPlaceBrowser {
   private clearProjectSearchTimer() {
     globalThis.clearTimeout(this.projectSearchTimer);
     this.projectSearchTimer = undefined;
+  }
+
+  private clearBrowserLoadingTimer() {
+    globalThis.clearTimeout(this.browserLoadingTimer);
+    this.browserLoadingTimer = undefined;
   }
 
   private restorePopoverTrigger(id: string, popoverSelector: string) {

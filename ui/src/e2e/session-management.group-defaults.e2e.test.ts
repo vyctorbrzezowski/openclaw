@@ -82,13 +82,27 @@ suite.define(() => {
       await expect.poll(() => folderTrigger.getAttribute("aria-label")).toContain("peter");
       await folderTrigger.click();
       const folderPicker = dialog.locator("wa-popover.session-group-defaults__folder-popover");
+      await gateway.deferNext("fs.listDir", { path: initialGroupCwd });
       await folderPicker.getByRole("button", { name: "Browse folders" }).click();
       expect((await gateway.waitForRequest("fs.listDir")).params).toEqual({
         path: initialGroupCwd,
       });
+      const folderSkeleton = folderPicker.locator(".new-session-page__browser-skeleton");
+      await expect.poll(() => folderSkeleton.isVisible()).toBe(true);
+      expect(
+        await folderSkeleton.locator(".new-session-page__browser-entry--skeleton").count(),
+      ).toBe(4);
+      await captureUiProof(page, "group-defaults-folder-picker-loading.png");
+      await gateway.resolveDeferred("fs.listDir", {
+        path: groupCwd,
+        parent: "/home/peter",
+        home: "/home/peter",
+        entries: [],
+      });
       await expect
         .poll(() => folderPicker.locator("input.new-session-page__browser-path").inputValue())
         .toBe(groupCwd);
+      expect(await folderSkeleton.count()).toBe(0);
       for (const viewport of [
         { height: 844, name: "phone", width: 390 },
         { height: 1024, name: "tablet", width: 768 },

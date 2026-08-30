@@ -3,6 +3,7 @@ import { tooltipTitleText } from "./control-ui-e2e-suite.test-support.ts";
 import {
   SESSION_LIST_DEFAULTS,
   WORKSPACE,
+  PICKED,
   captureUiProofEnabled,
   captureProjectUiProof,
   createNewSessionPageE2eSuite,
@@ -20,6 +21,85 @@ const gatewayEnvironment = {
   status: "available",
 };
 suite.define(() => {
+  it("shows stable folder placeholders only for a delayed directory listing", async () => {
+    const context = await suite.browser.newContext({ locale: "en-US", serviceWorkers: "block" });
+    const page = await context.newPage();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const gateway = await installMockGateway(page, {
+      workspace: WORKSPACE,
+      workspaceGit: true,
+      featureMethods: ["chat.metadata", "chat.startup", "fs.listDir", "projects.list"],
+      methodResponses: {
+        "projects.list": { projects: [] },
+        "fs.listDir": {
+          cases: [
+            {
+              match: { path: WORKSPACE },
+              response: {
+                path: WORKSPACE,
+                home: "/home/peter",
+                entries: [{ name: "packages", path: PICKED, hidden: false }],
+              },
+            },
+            {
+              match: { path: PICKED },
+              response: { path: PICKED, parent: WORKSPACE, home: "/home/peter", entries: [] },
+            },
+          ],
+        },
+      },
+    });
+
+    try {
+      await page.clock.install();
+      await page.goto(`${suite.server.baseUrl}new`);
+      await gateway.waitForRequest("projects.list");
+      await gateway.deferNext("fs.listDir", { path: WORKSPACE });
+
+      const place = page.locator("wa-popover.new-session-page__project-popover");
+      await page.locator("#new-session-project-trigger").click();
+      await place.getByRole("button", { name: "Browse folders" }).click();
+      await gateway.waitForRequest("fs.listDir");
+      const skeleton = place.locator(".new-session-page__browser-skeleton");
+
+      await page.clock.runFor(50);
+      expect(await skeleton.count()).toBe(0);
+      await page.clock.runFor(50);
+      await expect.poll(() => skeleton.isVisible()).toBe(true);
+      expect(await skeleton.locator(".new-session-page__browser-entry--skeleton").count()).toBe(4);
+      expect(
+        await skeleton
+          .locator(".skeleton")
+          .first()
+          .evaluate((element) =>
+            element
+              .getAnimations({ subtree: true })
+              .some((animation) => animation.playState === "running"),
+          ),
+      ).toBe(false);
+      await captureProjectUiProof(page, "folder-browser-loading.png");
+
+      await gateway.resolveDeferred("fs.listDir", {
+        path: WORKSPACE,
+        home: "/home/peter",
+        entries: [{ name: "packages", path: PICKED, hidden: false }],
+      });
+      const packages = place.getByRole("button", { name: "packages" });
+      await packages.waitFor();
+      expect(await skeleton.count()).toBe(0);
+      await captureProjectUiProof(page, "folder-browser-loaded.png");
+
+      await packages.click();
+      await expect
+        .poll(() => place.locator("input.new-session-page__browser-path").inputValue())
+        .toBe(PICKED);
+      await page.clock.runFor(100);
+      expect(await skeleton.count()).toBe(0);
+    } finally {
+      await context.close();
+    }
+  });
+
   it("registers a Git checkout from Browse and selects the refreshed project", async () => {
     await prepareProjectUiProof();
     const context = await suite.browser.newContext({ locale: "en-US", serviceWorkers: "block" });
