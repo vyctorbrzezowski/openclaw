@@ -251,10 +251,6 @@ export type ChatPaneConnectionScope = {
 export const CHAT_OPEN_DETAILS_SELECTOR =
   ".chat-controls__inline-select[open], .context-usage details[open], .agent-chat__attach-menu[open], .chat-pr__checks[open]";
 export const CHAT_COMPOSER_TEXTAREA_SELECTOR = ".agent-chat__composer-combobox > textarea";
-export const CHAT_AUTOTYPE_EXEMPT_SELECTOR =
-  "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='combobox'], [role='listbox'], [role='textbox'], [data-chat-autotype-exempt]";
-export const CHAT_SPACE_ACTIVATION_SELECTOR =
-  "a[href], button, summary, [role='button'], [role='checkbox'], [role='link'], [role='radio'], [role='switch']";
 
 export const NEW_SESSION_ACTIVE_RUN_MESSAGE =
   "Start a new session after the active run or queued messages finish.";
@@ -262,9 +258,3 @@ export const NEW_SESSION_LIST_LOADING_MESSAGE =
   "Session list is still refreshing. Try New Chat again in a moment.";
 export const NEW_SESSION_CREATE_FAILED_MESSAGE =
   "New Chat could not create a new thread. Try again in a moment.";
-
-export function keyboardEventPathMatches(event: KeyboardEvent, selector: string): boolean {
-  return event
-    .composedPath()
-    .some((target) => target instanceof Element && target.matches(selector));
-}

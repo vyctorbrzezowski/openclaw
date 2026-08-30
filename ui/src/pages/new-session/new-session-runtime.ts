@@ -1,5 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import type { PresenceEntry } from "../../api/types.ts";
+import { shouldFocusComposerForPrintableKey } from "../../lib/composer-key-routing.ts";
 import type { OpenClawLightDomElement } from "../../lit/openclaw-element.ts";
 import { clearChatModelSearchOnEscape } from "../chat/components/chat-model-picker.ts";
 
@@ -54,6 +55,19 @@ export function closeSessionMenus(root: ParentNode) {
       menu.open = false;
     }
   }
+}
+
+export function focusNewSessionComposerForPrintableKey(root: HTMLElement, event: KeyboardEvent) {
+  if (root.closest("[inert]") || !shouldFocusComposerForPrintableKey(event)) {
+    return;
+  }
+  const composer = root.querySelector<HTMLTextAreaElement>(".new-session-page__message");
+  if (!composer || composer.disabled || composer.readOnly) {
+    return;
+  }
+  // Run at window bubble after menus/dropdowns have claimed their keys. Moving
+  // focus before keydown completes keeps the browser's normal input pipeline.
+  composer.focus({ preventScroll: true });
 }
 
 export function handleSessionPickerEvent(root: ParentNode, event: Event) {

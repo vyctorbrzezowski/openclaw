@@ -81,6 +81,11 @@ export abstract class ChatPaneRetainedPresentation extends ChatPaneBoard {
     this.clearComposerPrefillAttention();
     this.settleResetConfirmation(false);
     this.cancelHeaderRename();
+    // Web Awesome dropdowns listen on document while open. Retiring them with
+    // their presentation prevents a hidden pane from routing another pane's keys.
+    for (const dropdown of this.querySelectorAll<HTMLElement & { open: boolean }>("wa-dropdown")) {
+      dropdown.open = false;
+    }
     dismissConfirmedActionPopovers(this);
     resetTranscriptSession(this.presentationId, this);
     const state = this.state;

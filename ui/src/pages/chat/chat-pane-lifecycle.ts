@@ -21,6 +21,7 @@ import {
   TERMINAL_PANEL_TOGGLE_EVENT,
 } from "../../components/panel-toggle-contract.ts";
 import { t } from "../../i18n/index.ts";
+import { shouldFocusComposerForPrintableKey } from "../../lib/composer-key-routing.ts";
 import {
   KEYBOARD_SHORTCUT_COMBOS,
   matchesShortcutCombo,
@@ -48,13 +49,7 @@ import {
 import { releaseAttachmentWorkspaceOwner } from "./chat-pane-rails.ts";
 import { ChatPaneSessionCreation } from "./chat-pane-session-creation.ts";
 import { ChatPaneSessionPanelToggleController } from "./chat-pane-session-panel-toggle.ts";
-import {
-  CHAT_AUTOTYPE_EXEMPT_SELECTOR,
-  CHAT_COMPOSER_TEXTAREA_SELECTOR,
-  CHAT_OPEN_DETAILS_SELECTOR,
-  CHAT_SPACE_ACTIVATION_SELECTOR,
-  keyboardEventPathMatches,
-} from "./chat-pane-shared.ts";
+import { CHAT_COMPOSER_TEXTAREA_SELECTOR, CHAT_OPEN_DETAILS_SELECTOR } from "./chat-pane-shared.ts";
 import {
   subscribeChatPaneSnapshotInvalidation,
   subscribeChatPaneStartup,
@@ -353,20 +348,7 @@ export abstract class ChatPaneLifecycle extends ChatPaneSessionCreation {
       return;
     }
 
-    if (
-      this.active &&
-      this.presented &&
-      !event.defaultPrevented &&
-      !event.isComposing &&
-      !event.metaKey &&
-      !event.ctrlKey &&
-      !event.altKey &&
-      event.key.length === 1 &&
-      !keyboardEventPathMatches(event, CHAT_AUTOTYPE_EXEMPT_SELECTOR) &&
-      !(event.key === " " && keyboardEventPathMatches(event, CHAT_SPACE_ACTIVATION_SELECTOR)) &&
-      !document.openClawModalLayers?.size &&
-      !document.querySelector("[aria-modal='true']")
-    ) {
+    if (this.active && this.presented && shouldFocusComposerForPrintableKey(event)) {
       const composer = this.querySelector<HTMLTextAreaElement>(CHAT_COMPOSER_TEXTAREA_SELECTOR);
       if (composer && !composer.disabled && !composer.readOnly) {
         // Focus during keydown capture so the browser delivers beforeinput/input,

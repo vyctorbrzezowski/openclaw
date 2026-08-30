@@ -41,6 +41,7 @@ import {
   closeAgentPicker,
   closeSessionMenus,
   createControllerHost,
+  focusNewSessionComposerForPrintableKey,
   handleSessionPickerEvent,
   isPlaceTopologyEvent,
   presenceStateSignature,
@@ -76,6 +77,8 @@ export class NewSessionPage extends OpenClawLightDomElement {
   private readonly dictation: NewSessionDictationControl;
   private readonly subscriptions: SubscriptionsController;
   private readonly flushDraft = () => this.submission.draftPersistence.persistNow();
+  private readonly handleUnclaimedKeydown = (event: KeyboardEvent) =>
+    focusNewSessionComposerForPrintableKey(this, event);
 
   constructor() {
     super();
@@ -234,12 +237,14 @@ export class NewSessionPage extends OpenClawLightDomElement {
     super.connectedCallback();
     document.addEventListener("keydown", this, true);
     document.addEventListener("pointerdown", this, true);
+    window.addEventListener("keydown", this.handleUnclaimedKeydown);
     window.addEventListener("beforeunload", this.flushDraft);
   }
 
   override disconnectedCallback() {
     document.removeEventListener("keydown", this, true);
     document.removeEventListener("pointerdown", this, true);
+    window.removeEventListener("keydown", this.handleUnclaimedKeydown);
     window.removeEventListener("beforeunload", this.flushDraft);
     retainDraft(this.context, this.submission, this.openedFor, this.messageOwnerKey);
     this.subscriptions.clear();
