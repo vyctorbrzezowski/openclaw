@@ -297,8 +297,33 @@ export function renderProjectChip(params: {
                           </div>`
                         : nothing}
                       ${params.projectSearchLoading
-                        ? html`<div class="new-session-page__project-status" role="status">
-                            ${t("common.loading")}
+                        ? html`<div
+                            class="new-session-page__project-skeleton"
+                            role="status"
+                            aria-busy="true"
+                            aria-label=${t("common.loading")}
+                          >
+                            ${Array.from(
+                              { length: 3 },
+                              (_, index) => html`
+                                <div
+                                  class="session-menu__item"
+                                  style=${`--project-skeleton-delay: ${index * 120}ms`}
+                                  aria-hidden="true"
+                                >
+                                  <span class="session-menu__icon skeleton"></span>
+                                  <span class="session-menu__text">
+                                    <span class="skeleton skeleton-line skeleton-line--long"></span>
+                                  </span>
+                                  <span class="session-menu__sub">
+                                    <span
+                                      class="skeleton skeleton-line skeleton-line--medium"
+                                    ></span>
+                                  </span>
+                                  <span class="session-menu__check"></span>
+                                </div>
+                              `,
+                            )}
                           </div>`
                         : nothing}
                       ${params.projectSearchError

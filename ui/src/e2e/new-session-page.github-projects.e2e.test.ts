@@ -28,6 +28,95 @@ const remoteSearchResult = {
 };
 
 suite.define(() => {
+  it("shows project search structure only for a sustained request", async () => {
+    await prepareProjectUiProof();
+    await suite.withPage(
+      {
+        locale: "en-US",
+        serviceWorkers: "block",
+        ...(captureUiProofEnabled
+          ? {
+              recordVideo: { dir: projectProofArtifactDir, size: { height: 900, width: 1280 } },
+              viewport: { height: 900, width: 1280 },
+            }
+          : {}),
+      },
+      async ({ page }) => {
+        const gateway = await installMockGateway(page, {
+          workspace: WORKSPACE,
+          workspaceGit: false,
+          heldMethods: ["projects.searchRemote"],
+          featureMethods: [
+            "chat.metadata",
+            "chat.startup",
+            "projects.add",
+            "projects.list",
+            "projects.searchRemote",
+            "sessions.create",
+          ],
+          methodResponses: {
+            "projects.list": { projects: [] },
+            "projects.searchRemote": remoteSearchResult,
+          },
+        });
+        await page.goto(`${suite.server.baseUrl}new`);
+        await gateway.waitForRequest("projects.list");
+        await page.locator("#new-session-project-trigger").click();
+        const projects = page.locator("wa-popover.new-session-page__project-popover");
+        const search = projects.getByRole("searchbox", {
+          name: "Search projects or paste a Git URL",
+        });
+        const skeleton = projects.locator(".new-session-page__project-skeleton");
+
+        await captureProjectUiProof(page, "project-search-idle.png");
+        await search.fill("openclaw");
+        expect(await gateway.getRequests("projects.searchRemote")).toHaveLength(0);
+        const delayedRequest = await gateway.waitForRequest("projects.searchRemote");
+        expect(delayedRequest.params).toEqual({ query: "openclaw" });
+        expect(await skeleton.isVisible()).toBe(false);
+        await skeleton.waitFor({ state: "visible" });
+        expect(await skeleton.locator(".session-menu__item").count()).toBe(3);
+        await captureProjectUiProof(page, "project-search-loading-after.png");
+
+        await gateway.resolveDeferred("projects.searchRemote", remoteSearchResult);
+        await projects.getByRole("button", { name: /openclaw\/openclaw/u }).waitFor();
+        await skeleton.waitFor({ state: "detached" });
+
+        await page.evaluate(() => {
+          const state = { visible: false };
+          const sample = () => {
+            const element = document.querySelector(".new-session-page__project-skeleton");
+            if (element && getComputedStyle(element).visibility === "visible") {
+              state.visible = true;
+            }
+          };
+          const observer = new MutationObserver(() => {
+            sample();
+            requestAnimationFrame(sample);
+          });
+          observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+          (
+            window as Window & { stopProjectSkeletonObservation?: () => boolean }
+          ).stopProjectSkeletonObservation = () => {
+            sample();
+            observer.disconnect();
+            return state.visible;
+          };
+        });
+        await search.fill("moltbot");
+        await gateway.waitForRequest("projects.searchRemote", { after: 1 });
+        await projects.getByRole("button", { name: /openclaw\/openclaw/u }).waitFor();
+        const warmResponseShowedSkeleton = await page.evaluate(
+          () =>
+            (
+              window as Window & { stopProjectSkeletonObservation?: () => boolean }
+            ).stopProjectSkeletonObservation?.() ?? true,
+        );
+        expect(warmResponseShowedSkeleton).toBe(false);
+      },
+    );
+  });
+
   it("offers a worktree for a GitHub result before its checkout exists", async () => {
     await prepareProjectUiProof();
     await suite.withPage(

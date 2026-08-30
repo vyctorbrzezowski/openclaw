@@ -650,19 +650,34 @@ wa-popover.new-session-page__picker-popover
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
-.new-session-page__project-status,
 .new-session-page__project-error {
   padding: 5px 8px;
+  color: var(--danger);
   font-size: 11px;
   line-height: 1.4;
 }
 
-.new-session-page__project-status {
-  color: var(--muted);
+.new-session-page__project-skeleton .session-menu__sub {
+  width: 38%;
 }
 
-.new-session-page__project-error {
-  color: var(--danger);
+.new-session-page__project-skeleton {
+  visibility: hidden;
+  animation: new-session-project-skeleton-reveal 0s 150ms forwards;
+}
+
+.new-session-page__project-skeleton .skeleton-line {
+  display: block;
+}
+
+.new-session-page__project-skeleton .skeleton::after {
+  animation-delay: var(--project-skeleton-delay);
+}
+
+@keyframes new-session-project-skeleton-reveal {
+  to {
+    visibility: visible;
+  }
 }
 
 .new-session-page__menu-field {
