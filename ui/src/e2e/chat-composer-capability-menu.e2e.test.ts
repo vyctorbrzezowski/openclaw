@@ -1,4 +1,6 @@
 // Control UI E2E coverage proves the composer capability menu against a mocked Gateway.
+import fs from "node:fs/promises";
+import path from "node:path";
 import type { Page } from "playwright";
 import { expect, it } from "vitest";
 import { installMockGateway, type MockGatewayControls } from "../test-helpers/control-ui-e2e.ts";
@@ -400,7 +402,9 @@ suite.define(() => {
       );
       await gateway.emitGatewayEvent("sessions.changed", { sessionKey: "agent:main:main" });
       await expect.poll(async () => (await gateway.getRequests("tools.effective")).length).toBe(2);
-      await expect.poll(() => menu.getByText("Loading tools…").isVisible()).toBe(true);
+      await expect
+        .poll(() => menu.locator(".agent-chat__capability-menu-skeleton-row").count())
+        .toBe(3);
       await gateway.resolveDeferred("tools.effective", effectiveToolsResponse());
       await expect
         .poll(() => rawToolNames.allTextContents())
@@ -414,6 +418,79 @@ suite.define(() => {
 
       await menu.getByRole("menuitem", { name: "Back" }).click();
       await expect.poll(() => menu.getAttribute("data-view")).toBe("connectors");
+    });
+  });
+
+  it("shows delayed provisional rows and skips them for a warm response", async () => {
+    await suite.withPage({ viewport: { width: 1280, height: 900 } }, async ({ page }) => {
+      const gateway = await installMockGateway(page, {
+        featureMethods: ["chat.metadata", "chat.startup", "sessions.patch", "tools.effective"],
+        deferredMethods: ["skills.status"],
+        methodResponses: {
+          "config.get": configResponse({
+            github: { url: "https://mcp.example.test", enabled: true },
+          }),
+          "sessions.list": sessionsList(),
+          "skills.status": { skills: [skill("Docs")] },
+          "tools.effective": effectiveToolsResponse(),
+        },
+      });
+
+      await page.goto(`${suite.server.baseUrl}chat`);
+      const composer = await openMenu(page);
+      const menu = composer.locator("wa-dropdown.agent-chat__capability-menu");
+      await menu.getByRole("menuitem", { name: /^Skills/ }).click();
+      await gateway.waitForRequest("skills.status");
+
+      const provisionalRows = menu.locator(".agent-chat__capability-menu-skeleton-row");
+      await expect.poll(() => provisionalRows.count()).toBe(3);
+      expect(
+        await provisionalRows.first().evaluate((row) => {
+          const style = getComputedStyle(row);
+          return {
+            delay: style.animationDelay,
+            opacity: style.opacity,
+            visibility: style.visibility,
+          };
+        }),
+      ).toEqual({ delay: "0.15s", opacity: "0", visibility: "hidden" });
+      await expect
+        .poll(() => provisionalRows.first().evaluate((row) => getComputedStyle(row).opacity))
+        .toBe("1");
+      const artifactDir = process.env.OPENCLAW_UI_E2E_ARTIFACT_DIR?.trim();
+      if (artifactDir) {
+        await fs.mkdir(artifactDir, { recursive: true });
+        await page.screenshot({ path: path.join(artifactDir, "capability-menu-skeleton.png") });
+      }
+      await gateway.resolveDeferred("skills.status", { skills: [skill("Docs")] });
+      await expect.poll(() => menu.getByRole("menuitem", { name: /^Docs/ }).isVisible()).toBe(true);
+      expect(await provisionalRows.count()).toBe(0);
+      if (artifactDir) {
+        await page.screenshot({ path: path.join(artifactDir, "capability-menu-loaded.png") });
+      }
+
+      await page.evaluate(() => {
+        document.documentElement.dataset.capabilitySkeletonRevealCount = "0";
+        document.addEventListener("animationstart", (event) => {
+          if (event.animationName !== "capability-menu-skeleton-reveal") {
+            return;
+          }
+          const count = Number(document.documentElement.dataset.capabilitySkeletonRevealCount ?? 0);
+          document.documentElement.dataset.capabilitySkeletonRevealCount = String(count + 1);
+        });
+      });
+      await menu.getByRole("menuitem", { name: "Back" }).click();
+      await menu.getByRole("menuitem", { name: /^Connectors/ }).click();
+      await menu.getByRole("menuitem", { name: "Tool access" }).click();
+      await gateway.waitForRequest("tools.effective");
+      await expect
+        .poll(() => menu.getByRole("menuitem", { name: "list-issues" }).isVisible())
+        .toBe(true);
+      await page.waitForTimeout(200);
+      expect(await provisionalRows.count()).toBe(0);
+      expect(
+        await page.evaluate(() => document.documentElement.dataset.capabilitySkeletonRevealCount),
+      ).toBe("0");
     });
   });
 
@@ -548,7 +625,9 @@ suite.define(() => {
       await menu.getByRole("menuitem", { name: /^Connectors/ }).click();
       await menu.getByRole("menuitem", { name: "Tool access" }).click();
       await gateway.waitForRequest("tools.effective");
-      await expect.poll(() => menu.getByText("Loading tools…").isVisible()).toBe(true);
+      await expect
+        .poll(() => menu.locator(".agent-chat__capability-menu-skeleton-row").count())
+        .toBe(3);
       expect(await gateway.getRequests("sessions.patch")).toHaveLength(0);
 
       await gateway.resolveDeferred("tools.effective", effectiveToolsResponse());

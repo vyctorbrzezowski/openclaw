@@ -155,6 +155,28 @@ function renderCapabilityToggleRow(options: {
   `;
 }
 
+function renderCapabilitySkeletonRows(label: string) {
+  return html`
+    <div
+      class="agent-chat__capability-menu-skeleton"
+      role="status"
+      aria-busy="true"
+      aria-label=${label}
+    >
+      ${Array.from(
+        { length: 3 },
+        () => html`
+          <div class="agent-chat__capability-menu-skeleton-row" aria-hidden="true">
+            <span class="skeleton"></span>
+            <span class="skeleton skeleton-line skeleton-line--medium"></span>
+            <span class="skeleton"></span>
+          </div>
+        `,
+      )}
+    </div>
+  `;
+}
+
 function renderRootView(props: ChatComposerPlusMenuProps) {
   const overrideCount = countSessionToolOverrides(props.toolOverrides);
   const connectorCount = props.mcpServers.filter((server) =>
@@ -265,9 +287,7 @@ function renderRootView(props: ChatComposerPlusMenuProps) {
 function renderSkillView(props: ChatComposerPlusMenuProps) {
   const disabledReason = props.mutationBlockedReason;
   const rows = props.skillsLoading
-    ? html`<div class="agent-chat__capability-menu-state" role="status">
-        ${t("chat.composer.menu.loadingSkills")}
-      </div>`
+    ? renderCapabilitySkeletonRows(t("chat.composer.menu.loadingSkills"))
     : props.skillsError
       ? html`<div class="agent-chat__capability-menu-state" role="alert">
           ${t("chat.composer.menu.skillsLoadFailed")}
@@ -419,9 +439,7 @@ function renderToolAccessView(props: ChatComposerPlusMenuProps, serverName: stri
     { enabled: String(enabledCount), total: String(tools.length) },
   );
   const rows = props.toolsEffectiveLoading
-    ? html`<div class="agent-chat__capability-menu-state" role="status">
-        ${t("chat.composer.menu.toolAccess.loading")}
-      </div>`
+    ? renderCapabilitySkeletonRows(t("chat.composer.menu.toolAccess.loading"))
     : props.toolsEffectiveError
       ? html`<div class="agent-chat__capability-menu-state" role="alert">
           ${t("chat.composer.menu.toolAccess.loadFailed")}

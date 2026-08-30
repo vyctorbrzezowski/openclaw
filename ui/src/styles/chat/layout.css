@@ -4232,6 +4232,36 @@ button.chat-pr__diff {
   line-height: 1.4;
 }
 
+.agent-chat__capability-menu-skeleton-row {
+  display: grid;
+  grid-template-columns: var(--chat-composer-menu-icon) minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: var(--chat-composer-menu-row-gap);
+  min-height: var(--chat-composer-menu-row-height);
+  padding: var(--chat-composer-menu-row-padding);
+  visibility: hidden;
+  opacity: 0;
+  animation: capability-menu-skeleton-reveal 1ms step-end 150ms forwards;
+}
+
+.agent-chat__capability-menu-skeleton-row > .skeleton:first-child {
+  width: var(--chat-composer-menu-icon);
+  height: var(--chat-composer-menu-icon);
+}
+
+.agent-chat__capability-menu-skeleton-row > .skeleton:last-child {
+  width: 28px;
+  height: 16px;
+  border-radius: var(--radius-full);
+}
+
+@keyframes capability-menu-skeleton-reveal {
+  to {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
 .agent-chat__capability-menu-switch {
   pointer-events: none;
 }
