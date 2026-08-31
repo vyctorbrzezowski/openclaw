@@ -911,9 +911,10 @@ describe("renderModelProviders", () => {
         },
       }),
     );
-    expect(text(container.querySelector('[data-provider-id="openai"] .callout'))).toBe(
-      "Current failure",
-    );
+    const callout = container.querySelector('[data-provider-id="openai"] .callout');
+    expect(text(callout)).toBe("Current failure");
+    expect(callout?.classList.contains("danger")).toBe(true);
+    expect(callout?.getAttribute("role")).toBe("alert");
   });
 
   it("disables API-key mutations for explicit non-API-key auth modes", () => {

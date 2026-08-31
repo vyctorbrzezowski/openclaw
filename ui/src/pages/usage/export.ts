@@ -62,7 +62,10 @@ export function createUsageJsonExportTask(
       }
     },
     onError: (error) => {
-      showToast({ message: `${t("usage.export.label")}: ${toUsageErrorMessage(error)}` });
+      showToast({
+        message: `${t("usage.export.label")}: ${toUsageErrorMessage(error)}`,
+        severity: "danger",
+      });
     },
   });
 }

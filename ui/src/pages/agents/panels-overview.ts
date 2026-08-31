@@ -244,7 +244,7 @@ export function renderAgentOverview(params: {
       `,
     )}
     ${configDirty
-      ? html`<div class="callout warn">${t("agents.overview.unsavedConfig")}</div>`
+      ? html`<div class="callout warning">${t("agents.overview.unsavedConfig")}</div>`
       : nothing}
     ${renderSettingsSection(
       {

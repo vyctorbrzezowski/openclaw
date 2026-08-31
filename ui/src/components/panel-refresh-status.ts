@@ -50,7 +50,7 @@ export function renderPanelRefreshStatus(params: {
   const className = params.className ? ` ${params.className}` : "";
   if (!error) {
     return html`
-      <div class="callout warn${className}" role="status">
+      <div class="callout warning${className}" role="status">
         <strong>${t("common.staleData")}</strong>
       </div>
     `;

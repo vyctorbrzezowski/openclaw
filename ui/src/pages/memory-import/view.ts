@@ -398,7 +398,7 @@ function renderConfirmation(props: MemoryImportViewProps) {
             <div class="exec-approval-sub">${description}</div>
           </div>
         </div>
-        <div class="callout ${props.replaceExisting ? "warn" : ""}">
+        <div class="callout ${props.replaceExisting ? "warning" : ""}">
           ${props.replaceExisting
             ? t("memoryImport.confirmReplace")
             : t("memoryImport.confirmBackup")}
@@ -490,7 +490,7 @@ function renderBackfillConfirmation(props: MemoryImportViewProps) {
             </div>
           </div>
         </div>
-        <div class="callout warn">${t("memoryImport.backfill.rollbackWarning")}</div>
+        <div class="callout warning">${t("memoryImport.backfill.rollbackWarning")}</div>
         <div class="exec-approval-actions">
           <button
             class="btn danger"
@@ -624,7 +624,7 @@ function renderBackfillSection(props: MemoryImportViewProps) {
                           </ul>`
                         : html`<span>${t("memoryImport.backfill.noCandidates")}</span>`}
                       ${result.truncated
-                        ? html`<div class="callout warn">
+                        ? html`<div class="callout warning">
                             ${t("memoryImport.backfill.previewTruncated")}
                           </div>`
                         : nothing}

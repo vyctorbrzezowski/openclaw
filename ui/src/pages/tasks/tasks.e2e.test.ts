@@ -324,7 +324,7 @@ suite.define(() => {
       await expect
         .poll(() => retryRow.getByRole("button", { name: "Retry delivery" }).count())
         .toBe(0);
-      await expect.poll(() => retryRow.locator(".callout.warn").count()).toBe(0);
+      await expect.poll(() => retryRow.locator(".callout.warning").count()).toBe(0);
       await dismissRow.waitFor({ state: "detached" });
       expect(await gateway.getRequests("tasks.retry")).toHaveLength(2);
       expect((await gateway.getRequests("tasks.retry")).map((request) => request.params)).toEqual([

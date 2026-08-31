@@ -564,6 +564,7 @@ describe("session organizer destructive confirmations", () => {
     await pending;
     expect(showToast).toHaveBeenCalledWith({
       message: "Managed Worktrees:\nfeature — live run or cleanup active",
+      severity: "warning",
     });
   });
 
@@ -645,7 +646,10 @@ describe("session organizer destructive confirmations", () => {
       // The abort resolves the dialog to `false`, same as a user cancel, so the
       // operator needs a distinct, visible outcome or their lost intent reads
       // as a click that simply did nothing.
-      expect(showToast).toHaveBeenCalledWith({ message: operation.staleMessage });
+      expect(showToast).toHaveBeenCalledWith({
+        message: operation.staleMessage,
+        severity: "warning",
+      });
 
       // A fresh confirmation (the reconnect's own retry) must be able to open
       // immediately; a stale dialog holding the shared lock would block it.
@@ -688,6 +692,7 @@ describe("session organizer destructive confirmations", () => {
     // the no-access branch, so the operator learns where it went.
     expect(showToast).toHaveBeenCalledWith({
       message: "Managed Worktrees:\nfeature — cleanup failed",
+      severity: "warning",
     });
   });
 

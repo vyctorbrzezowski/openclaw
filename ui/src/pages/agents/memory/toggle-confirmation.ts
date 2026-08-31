@@ -45,7 +45,7 @@ export function renderDreamingToggleConfirmation(props: DreamingToggleConfirmati
             <div id=${descriptionId} class="exec-approval-sub">${description}</div>
           </div>
         </div>
-        <div class="callout ${props.enabling ? "info" : "warn"}" style="margin-top: 12px;">
+        <div class="callout ${props.enabling ? "info" : "warning"}" style="margin-top: 12px;">
           ${detail}
         </div>
         ${props.hasError

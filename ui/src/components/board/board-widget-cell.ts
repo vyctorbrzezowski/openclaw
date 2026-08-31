@@ -167,7 +167,7 @@ class OpenClawBoardWidgetCell extends OpenClawLightDomElement {
     } catch (error) {
       this.actionError = formatUiError(error);
       if (failureMessage) {
-        showToast({ message: failureMessage });
+        showToast({ message: failureMessage, severity: "danger" });
       }
     } finally {
       this.actionPending = false;

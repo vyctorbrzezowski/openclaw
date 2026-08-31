@@ -192,7 +192,9 @@ export class ChatPane extends ChatPaneLayoutRender {
       ? (card: ProgressCard) => {
           void this.progressCard
             .dismiss(card)
-            .catch(() => showToast({ message: t("sessionProgressCard.dismissFailed") }));
+            .catch(() =>
+              showToast({ message: t("sessionProgressCard.dismissFailed"), severity: "danger" }),
+            );
         }
       : undefined;
     const restartRecoveryTombstoned = selectedSession?.restartRecoveryStatus === "tombstoned";

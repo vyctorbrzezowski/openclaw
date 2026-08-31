@@ -570,7 +570,7 @@ class OpenClawShell
     }
     void import("../lib/chat/composer-draft-retirement.runtime.ts").then(
       ({ retireDeletedComposerDrafts }) => retireDeletedComposerDrafts(context, deletedSessions),
-      () => showToast({ message: t("sessionsView.draftCleanupFailed") }),
+      () => showToast({ message: t("sessionsView.draftCleanupFailed"), severity: "warning" }),
     );
   }
 

@@ -62,7 +62,7 @@ async function pinWidget(event: Event, pin: () => Promise<void>): Promise<void> 
     button.ariaLabel = t("chat.toolCards.pinToDashboard");
     const failureLabel = t("chat.toolCards.pinToDashboardFailed");
     button.title = failureLabel;
-    showToast({ message: failureLabel });
+    showToast({ message: failureLabel, severity: "danger" });
   }
 }
 
@@ -463,21 +463,21 @@ function handleWidgetExportAction(
           ?.querySelector<HTMLIFrameElement>(".chat-tool-card__preview-frame")
       : null;
   if (!frame) {
-    showToast({ message: t("chat.toolCards.widgetExportFailed") });
+    showToast({ message: t("chat.toolCards.widgetExportFailed"), severity: "danger" });
     return;
   }
   void exportWidget(value, frame, title)
     .then((result) => {
       if (result === "rerender-required") {
-        showToast({ message: t("chat.toolCards.widgetExportRerender") });
+        showToast({ message: t("chat.toolCards.widgetExportRerender"), severity: "info" });
       } else if (result === "html") {
-        showToast({ message: t("chat.toolCards.widgetExportHtmlFallback") });
+        showToast({ message: t("chat.toolCards.widgetExportHtmlFallback"), severity: "warning" });
       } else if (value === "copy") {
-        showToast({ message: t("common.copied") });
+        showToast({ message: t("common.copied"), severity: "success" });
       }
     })
     .catch(() => {
-      showToast({ message: t("chat.toolCards.widgetExportFailed") });
+      showToast({ message: t("chat.toolCards.widgetExportFailed"), severity: "danger" });
     });
 }
 

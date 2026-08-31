@@ -108,7 +108,7 @@ export class SidebarPeopleController implements ReactiveController {
         this.loading = null;
         if (generation === this.generation && this.host.isConnected) {
           this.clearPending();
-          showToast({ message: t("presence.card.loadFailed") });
+          showToast({ message: t("presence.card.loadFailed"), severity: "danger" });
         }
       },
     );

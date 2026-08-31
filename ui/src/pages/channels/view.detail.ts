@@ -260,7 +260,7 @@ export function renderChannelDetail(params: {
         </div>
         <div class="channels-detail__body">
           ${params.props.setupBlockedByDirtyConfig && params.props.configFormDirty
-            ? html`<div class="callout warn">${t("channels.hub.saveBeforeSetup")}</div>`
+            ? html`<div class="callout warning">${t("channels.hub.saveBeforeSetup")}</div>`
             : nothing}
           ${renderChannelPairingDetail(params.channelId, params.props)} ${body}
         </div>

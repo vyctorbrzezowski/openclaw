@@ -84,6 +84,7 @@ describe("chat pane session menu boundary", () => {
     expect(patch).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith({
       message: t("common.refresh"),
+      severity: "warning",
     });
   });
 

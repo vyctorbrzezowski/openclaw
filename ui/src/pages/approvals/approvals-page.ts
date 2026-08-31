@@ -497,11 +497,11 @@ class ApprovalsPage extends OpenClawLightDomElement {
     const body = renderSettingsPage(
       html`
         ${!this.connected
-          ? html`<div class="callout warn">${t("approvalHistory.offline")}</div>`
+          ? html`<div class="callout warning">${t("approvalHistory.offline")}</div>`
           : nothing}
         ${this.connected && !this.approvalsAccess
           ? html`
-              <div class="callout warn" role="status">
+              <div class="callout warning" role="status">
                 ${t("common.disabled")} · <code>${APPROVAL_HISTORY_REQUIRED_SCOPE}</code>
               </div>
             `

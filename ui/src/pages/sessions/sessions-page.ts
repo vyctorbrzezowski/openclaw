@@ -1138,6 +1138,7 @@ class SessionsPage extends OpenClawLightDomElement {
     const agentId = this.sessionAgentId(row.key, scope.context);
     showToast({
       message: t("sessionsView.sessionArchived"),
+      severity: "success",
       actionLabel: t("common.undo"),
       onAction: () => {
         void scope.sessions.patch(
@@ -1463,7 +1464,10 @@ class SessionsPage extends OpenClawLightDomElement {
               break;
             case "copy-session-id":
               void copyToClipboard(row.sessionId ?? "").then((copied) => {
-                showToast({ message: t(copied ? "common.copied" : "common.copyFailed") });
+                showToast({
+                  message: t(copied ? "common.copied" : "common.copyFailed"),
+                  severity: copied ? "success" : "danger",
+                });
               });
               break;
             case "toggle-pin":

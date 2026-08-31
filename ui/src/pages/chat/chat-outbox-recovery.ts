@@ -184,7 +184,7 @@ class ChatOutboxRecovery extends LitElement {
     }
     const rows = [...this.entries, ...this.drafts];
     return html`<details
-      class="callout warn chat-outbox-recovery"
+      class="callout warning chat-outbox-recovery"
       style="max-height: 40vh; overflow: auto"
     >
       <summary>${t("chat.outboxRecoveryTitle")} (${rows.length})</summary>

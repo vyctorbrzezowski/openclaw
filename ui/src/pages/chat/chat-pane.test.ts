@@ -192,6 +192,7 @@ describe("chat pane header state", () => {
       // as a click that simply did nothing.
       expect(showToast).toHaveBeenCalledWith({
         message: t("sessionsView.deleteSessionStale", { session: "Current session" }),
+        severity: "warning",
       });
     } finally {
       document.body.replaceChildren();
@@ -242,7 +243,10 @@ describe("chat pane header state", () => {
       await pending;
 
       expect(patch).not.toHaveBeenCalled();
-      expect(showToast).toHaveBeenCalledWith({ message: t("sessionsView.newGroupMoveSkipped") });
+      expect(showToast).toHaveBeenCalledWith({
+        message: t("sessionsView.newGroupMoveSkipped"),
+        severity: "warning",
+      });
     } finally {
       document.body.replaceChildren();
       restoreDialogPolyfill();
@@ -288,7 +292,7 @@ describe("chat pane header state", () => {
     await pane.handleHeaderSessionAction(action, session);
 
     expect(patch).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith({ message: t("common.refresh") });
+    expect(showToast).toHaveBeenCalledWith({ message: t("common.refresh"), severity: "warning" });
   });
 
   it("copies the resolved workspace path and branch", async () => {

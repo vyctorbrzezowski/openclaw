@@ -284,7 +284,10 @@ export function renderSidebarSessionMenuForController(controller: SidebarMenusCo
               break;
             case "copy-session-id":
               void copyToClipboard(session.sessionId ?? "").then((copied) => {
-                showToast({ message: t(copied ? "common.copied" : "common.copyFailed") });
+                showToast({
+                  message: t(copied ? "common.copied" : "common.copyFailed"),
+                  severity: copied ? "success" : "danger",
+                });
               });
               break;
             case "toggle-pin":

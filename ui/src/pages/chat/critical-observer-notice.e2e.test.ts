@@ -145,6 +145,11 @@ async function emitObserverAndReadToast(
           return result();
         }
         button.click();
+        if (params.action === "dismiss") {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 200);
+          });
+        }
         await host.updateComplete;
       }
       return result();

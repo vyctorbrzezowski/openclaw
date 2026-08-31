@@ -240,7 +240,7 @@ export function renderTasks(props: TasksProps) {
   return renderSettingsPage(
     html`<div class="tasks-page-list">
       ${!props.connected
-        ? html`<div class="callout warn">${t("tasksPage.disconnected")}</div>`
+        ? html`<div class="callout warning">${t("tasksPage.disconnected")}</div>`
         : nothing}
       ${props.error ? html`<div class="callout danger" role="alert">${props.error}</div>` : nothing}
       ${props.copyResultError

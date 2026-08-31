@@ -128,7 +128,7 @@ describe("openclaw-modal-dialog", () => {
       const { modal } = await renderModal();
       const moveBefore = vi.spyOn(Element.prototype, "moveBefore");
 
-      showToast({ message: "Saved" });
+      showToast({ message: "Saved", severity: "success" });
       modal.hide();
       await modal.updateComplete;
       await appHost.updateComplete;

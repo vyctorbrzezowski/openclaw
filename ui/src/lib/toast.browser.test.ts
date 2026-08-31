@@ -16,6 +16,7 @@ async function showArchiveToast() {
   await host.updateComplete;
   showToast({
     message: "Session archived",
+    severity: "success",
     actionLabel: "Undo",
     onAction: () => undefined,
     durationMs: 60_000,
@@ -55,5 +56,21 @@ describe.skipIf(!hasBrowserLayout)("toast browser layout", () => {
     const desktopHost = await showArchiveToast();
     const desktopToast = desktopHost.querySelector<HTMLElement>(".app-toast")!;
     expect(desktopToast.getBoundingClientRect().width).toBeLessThan(320);
+  });
+
+  it("uses the transient overlay chrome and shared motion contract", async () => {
+    await useViewport(1280, 800);
+    const host = await showArchiveToast();
+    const toast = host.querySelector<HTMLElement>(".app-toast")!;
+    const style = getComputedStyle(toast);
+    const probe = document.createElement("div");
+    probe.style.border = "1px solid var(--overlay-border)";
+    probe.style.boxShadow = "var(--overlay-shadow)";
+    document.body.append(probe);
+    const probeStyle = getComputedStyle(probe);
+
+    expect(style.borderColor).toBe(probeStyle.borderColor);
+    expect(style.boxShadow).toBe(probeStyle.boxShadow);
+    expect(style.transitionDuration).toContain("0.18s");
   });
 });

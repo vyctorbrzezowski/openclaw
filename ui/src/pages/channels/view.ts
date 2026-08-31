@@ -68,7 +68,7 @@ export function renderChannels(props: ChannelsProps) {
         : nothing}
       ${props.snapshot?.partial
         ? html`
-            <div class="callout warn">
+            <div class="callout warning">
               ${t("channels.hub.partialSnapshot")}
               ${partialWarnings.length > 0 ? partialWarnings.slice(0, 3).join("; ") : ""}
             </div>
@@ -76,7 +76,7 @@ export function renderChannels(props: ChannelsProps) {
         : nothing}
       ${props.lastError ? html`<div class="callout danger">${props.lastError}</div>` : nothing}
       ${props.setupBlockedByDirtyConfig && props.configFormDirty
-        ? html`<div class="callout warn">${t("channels.hub.saveBeforeSetup")}</div>`
+        ? html`<div class="callout warning">${t("channels.hub.saveBeforeSetup")}</div>`
         : nothing}
       ${renderSettingsSection(
         {

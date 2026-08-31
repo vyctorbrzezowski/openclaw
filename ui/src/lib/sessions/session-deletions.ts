@@ -84,7 +84,7 @@ export function createSessionDeletions(host: DeletionHost) {
   const reportError = (message: string) => {
     host.publish({ ...host.readState(), error: message }, "operation");
     // The initiating header/organizer may already be retired by navigation or reconnect.
-    showToast({ message });
+    showToast({ message, severity: "danger" });
   };
   const stateOf = (deletion: Deletion | undefined, sessionId?: string) => {
     if (

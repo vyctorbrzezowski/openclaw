@@ -426,6 +426,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
       actionLabel: t("common.undo"),
       onAction: () => setStoredSessionCatalogHidden(catalogId, false),
       durationMs: 12_000,
+      severity: "info",
     });
   }
 

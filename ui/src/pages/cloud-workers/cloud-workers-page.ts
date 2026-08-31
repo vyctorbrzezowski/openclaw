@@ -538,7 +538,7 @@ class CloudWorkersPage extends OpenClawLightDomElement {
           </div>`
         : nothing}
       ${this.formError && !this.editor
-        ? html`<div class="callout warning" role="alert">${this.formError}</div>`
+        ? html`<div class="callout danger" role="alert">${this.formError}</div>`
         : nothing}
       ${this.notice
         ? html`<div class="callout warning" role="status">${this.notice}</div>`

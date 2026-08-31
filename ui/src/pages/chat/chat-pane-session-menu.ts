@@ -70,7 +70,10 @@ export abstract class ChatPaneSessionMenu extends ChatPaneContext {
     }
     if (action.kind === "copy-session-id") {
       const copied = row.sessionId ? await copyToClipboard(row.sessionId) : false;
-      showToast({ message: t(copied ? "common.copied" : "common.copyFailed") });
+      showToast({
+        message: t(copied ? "common.copied" : "common.copyFailed"),
+        severity: copied ? "success" : "danger",
+      });
       return;
     }
     if (action.kind === "continue-in-terminal") {
@@ -110,7 +113,7 @@ export abstract class ChatPaneSessionMenu extends ChatPaneContext {
       );
       const resolvedRow = currentRow ?? (session.sessionId ? row : null);
       if (!resolvedRow && notify) {
-        showToast({ message: t("common.refresh") });
+        showToast({ message: t("common.refresh"), severity: "warning" });
       }
       return resolvedRow ? toActionSession(resolvedRow) : null;
     };

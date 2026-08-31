@@ -166,6 +166,7 @@ export async function archiveSessionWithUndo(
   }
   showToast({
     message: t("sessionsView.sessionArchived"),
+    severity: "success",
     actionLabel: t("common.undo"),
     onAction: () =>
       void restoreArchivedSessions(host, [{ session, pinned: session.pinned }], scope),
@@ -192,6 +193,7 @@ async function archiveSessionsWithUndo(
       archived.length === 1
         ? t("sessionsView.sessionArchived")
         : t("sessionsView.sessionsArchived", { count: String(archived.length) }),
+    severity: "success",
     actionLabel: t("common.undo"),
     onAction: () => void restoreArchivedSessions(host, archived, scope),
   });
@@ -286,7 +288,10 @@ export async function deleteSessionsBatch(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.deleteSessionsStale", { count: String(rows.length) }) });
+    showToast({
+      message: t("sessionsView.deleteSessionsStale", { count: String(rows.length) }),
+      severity: "warning",
+    });
     return;
   }
   if (!confirmed) {
@@ -308,7 +313,10 @@ export async function deleteSessionsBatch(
     const result = await scope.sessions.deleteMany(requests);
     if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
       if (result.preservedWorktrees.length > 0) {
-        showToast({ message: formatPreservedWorktreesNotice(result.preservedWorktrees) });
+        showToast({
+          message: formatPreservedWorktreesNotice(result.preservedWorktrees),
+          severity: "warning",
+        });
       }
       return;
     }
@@ -456,6 +464,7 @@ export async function assignSessionCategory(
   if (!currentSession) {
     showToast({
       message: t(catalogChanged ? "sessionsView.newGroupMoveSkipped" : "common.refresh"),
+      severity: "warning",
     });
     return;
   }
@@ -527,7 +536,10 @@ export async function stopCloudWorker(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.stopCloudWorkerStale", { session: session.label }) });
+    showToast({
+      message: t("sessionsView.stopCloudWorkerStale", { session: session.label }),
+      severity: "warning",
+    });
     return;
   }
   if (!confirmed) {
@@ -574,7 +586,10 @@ export async function deleteSession(
   // too, so without this order the operator's lost intent would look like an
   // ordinary cancel instead of the reconnect that actually dropped it.
   if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
-    showToast({ message: t("sessionsView.deleteSessionStale", { session: session.label }) });
+    showToast({
+      message: t("sessionsView.deleteSessionStale", { session: session.label }),
+      severity: "warning",
+    });
     return;
   }
   if (!confirmed) {
@@ -599,7 +614,10 @@ export async function deleteSession(
     const outcome = await scope.sessions.delete(session.key, deleteParams);
     if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
       if (outcome.worktreePreserved) {
-        showToast({ message: formatPreservedWorktreesNotice([outcome.worktreePreserved]) });
+        showToast({
+          message: formatPreservedWorktreesNotice([outcome.worktreePreserved]),
+          severity: "warning",
+        });
       }
       return;
     }
@@ -629,6 +647,7 @@ export async function deleteSession(
         if (!host.sessionData.isSessionMutationScopeCurrent(scope)) {
           showToast({
             message: formatPreservedWorktreesNotice([preserved]),
+            severity: "warning",
           });
           return;
         }

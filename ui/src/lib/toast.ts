@@ -7,11 +7,13 @@ import { OpenClawLightDomContentsElement } from "../lit/openclaw-element.ts";
 import { formatUiExternalText } from "./format-error.ts";
 
 type ToastDismissReason = "action" | "dismiss" | "disconnected" | "replaced" | "timeout";
+export type ToastSeverity = "neutral" | "info" | "success" | "warning" | "danger";
 
 export type ToastOptions = {
   /** A template lets a message name a destination the operator can actually open,
    * instead of spelling out a settings path the toast then makes them find. */
   message: string | TemplateResult;
+  severity: ToastSeverity;
   /** Positions a compact toast at the top center of the owning surface. */
   anchor?: Element;
   anchorTopOffset?: number;
@@ -23,7 +25,7 @@ export type ToastOptions = {
 };
 
 const DEFAULT_TOAST_DURATION_MS = 6_000;
-const TOAST_EXIT_FALLBACK_MS = 450;
+const TOAST_EXIT_FALLBACK_MS = 200;
 
 function activeModalToastLayer() {
   return [...(document.openClawModalLayers ?? [])].findLast((candidate) => candidate.isConnected);
@@ -46,6 +48,9 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
   private dismissTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private exitTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private exitReason: ToastDismissReason | null = null;
+  private dismissDeadline = 0;
+  private dismissRemainingMs = 0;
+  private pauseReasons = new Set<"focus" | "pointer">();
 
   private syncPlacement() {
     this.dataset.toastPlacement = this.parentElement?.matches(".shell") ? "shell" : "overlay";
@@ -81,10 +86,33 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     this.toast = options;
     this.active = true;
     this.exitReason = null;
+    this.pauseReasons.clear();
+    this.dismissRemainingMs = options.durationMs ?? DEFAULT_TOAST_DURATION_MS;
+    this.startDismissTimer();
+  }
+
+  private startDismissTimer() {
+    this.dismissDeadline = Date.now() + this.dismissRemainingMs;
     this.dismissTimer = globalThis.setTimeout(
       () => this.dismiss("timeout"),
-      options.durationMs ?? DEFAULT_TOAST_DURATION_MS,
+      this.dismissRemainingMs,
     );
+  }
+
+  private pauseTimeout(reason: "focus" | "pointer") {
+    this.pauseReasons.add(reason);
+    if (this.dismissTimer !== null) {
+      globalThis.clearTimeout(this.dismissTimer);
+      this.dismissTimer = null;
+      this.dismissRemainingMs = Math.max(0, this.dismissDeadline - Date.now());
+    }
+  }
+
+  private resumeTimeout(reason: "focus" | "pointer") {
+    this.pauseReasons.delete(reason);
+    if (this.pauseReasons.size === 0 && this.toast && this.dismissTimer === null) {
+      this.startDismissTimer();
+    }
   }
 
   private clearDismissTimer() {
@@ -104,6 +132,7 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     this.active = false;
     this.exitReason = null;
     this.toast = null;
+    this.pauseReasons.clear();
     toast?.onDismiss?.(reason);
   }
 
@@ -114,14 +143,7 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     }
     this.clearDismissTimer();
     const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const anchorRect = toast.anchor?.isConnected ? toast.anchor.getBoundingClientRect() : null;
-    const anchored = anchorRect !== null && anchorRect.width > 0;
-    if (
-      (reason !== "dismiss" && reason !== "timeout") ||
-      reducedMotion ||
-      !this.isConnected ||
-      !anchored
-    ) {
+    if ((reason !== "dismiss" && reason !== "timeout") || reducedMotion || !this.isConnected) {
       this.finishDismiss(reason);
       return;
     }
@@ -143,7 +165,7 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
     const anchored = anchorRect !== null && anchorRect.width > 0;
     return html`
       <div
-        class="app-toast ${anchored ? "app-toast--anchored" : ""}"
+        class="app-toast app-toast--${toast.severity} ${anchored ? "app-toast--anchored" : ""}"
         data-active=${this.active ? "true" : "false"}
         style=${styleMap(
           anchored
@@ -154,9 +176,23 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
               }
             : {},
         )}
-        role="status"
-        aria-live="polite"
+        role=${toast.severity === "danger" ? "alert" : "status"}
+        aria-live=${toast.severity === "danger" ? "assertive" : "polite"}
         aria-atomic="true"
+        @pointerenter=${() => this.pauseTimeout("pointer")}
+        @pointerleave=${() => this.resumeTimeout("pointer")}
+        @focusin=${() => this.pauseTimeout("focus")}
+        @focusout=${(event: FocusEvent) => {
+          const toastElement = event.currentTarget;
+          const nextTarget = event.relatedTarget;
+          if (
+            !(toastElement instanceof Element) ||
+            !(nextTarget instanceof Node) ||
+            !toastElement.contains(nextTarget)
+          ) {
+            this.resumeTimeout("focus");
+          }
+        }}
         @transitionend=${(event: TransitionEvent) => {
           if (
             event.target === event.currentTarget &&

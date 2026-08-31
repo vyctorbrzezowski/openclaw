@@ -277,6 +277,7 @@ describe("UsagePage detail requests", () => {
     await vi.waitFor(() =>
       expect(notice).toHaveBeenCalledWith({
         message: expect.stringContaining("Refresh usage and try again"),
+        severity: "danger",
       }),
     );
     expect(download).toHaveBeenCalledOnce();

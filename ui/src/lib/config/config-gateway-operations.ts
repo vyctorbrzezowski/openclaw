@@ -659,7 +659,7 @@ export async function openConfigFile(state: RuntimeConfigState): Promise<void> {
     }
     if (isCurrent()) {
       state.lastError = formatUiExternalText(message);
-      showToast({ message: state.lastError });
+      showToast({ message: state.lastError, severity: "danger" });
     }
   };
   try {

@@ -210,6 +210,7 @@ export function renderChatPaneComposerControls(params: {
               durationMs: 5_000,
               icon: icons.shieldCheck,
               message: t("chat.permissionControls.nextRun"),
+              severity: "info",
             });
           }
         } catch (error) {

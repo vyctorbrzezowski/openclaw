@@ -291,7 +291,7 @@ export function renderChannelPairingPrompt(props: ChannelsProps) {
           ${request.senderId} · ${request.channelLabel} · ${requestAccountName(request)}
           (${request.accountId})
         </div>
-        <div class="callout ${approving ? "info" : "warn"}">
+        <div class="callout ${approving ? "info" : "warning"}">
           ${approving
             ? t("channels.pairing.approveExplanation")
             : t("channels.pairing.dismissExplanation")}
@@ -337,7 +337,7 @@ export function renderChannelPairingPrompt(props: ChannelsProps) {
             `
           : nothing}
         ${approving && ownerMissing && !props.canAdmin
-          ? html`<div class="callout warn">${t("channels.pairing.commandOwnerNeedsAdmin")}</div>`
+          ? html`<div class="callout warning">${t("channels.pairing.commandOwnerNeedsAdmin")}</div>`
           : nothing}
         <div class="channels-pairing-dialog__actions">
           <button

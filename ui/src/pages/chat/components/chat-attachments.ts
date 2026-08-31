@@ -366,6 +366,7 @@ async function appendAttachmentFiles(
           names: failed.slice(0, 3).join(", "),
           more: failed.length > 3 ? ` +${failed.length - 3}` : "",
         }),
+        severity: "danger",
       });
     }
     if (additions.length === 0) {

@@ -6,9 +6,13 @@
 // zero-byte files, which the payload assembler would otherwise drop silently
 // after send.
 import { t } from "../../../i18n/index.ts";
-import { showToast } from "../../../lib/toast.ts";
+import { showToast, type ToastSeverity } from "../../../lib/toast.ts";
 
-function skippedFilesToast(messageKey: string, skipped: readonly File[]): void {
+function skippedFilesToast(
+  messageKey: string,
+  skipped: readonly File[],
+  severity: ToastSeverity,
+): void {
   if (skipped.length === 0) {
     return;
   }
@@ -20,6 +24,7 @@ function skippedFilesToast(messageKey: string, skipped: readonly File[]): void {
         .join(", "),
       more: skipped.length > 3 ? ` +${skipped.length - 3}` : "",
     }),
+    severity,
   });
 }
 
@@ -33,7 +38,7 @@ export function admitAttachmentFiles(
   const oversized = candidates.filter(
     (file) => file.size > 0 && limits !== undefined && file.size > (fileLimit(file) ?? Infinity),
   );
-  skippedFilesToast("chat.attachments.readFailed", empty);
-  skippedFilesToast("chat.attachments.tooLarge", oversized);
+  skippedFilesToast("chat.attachments.readFailed", empty, "danger");
+  skippedFilesToast("chat.attachments.tooLarge", oversized, "warning");
   return candidates.filter((file) => !empty.includes(file) && !oversized.includes(file));
 }
