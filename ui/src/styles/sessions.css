@@ -813,7 +813,7 @@
   stroke: currentColor;
   fill: none;
   stroke-width: 2px;
-  transition: transform var(--duration-normal) var(--ease-out);
+  transition: transform var(--motion-inline-detail-duration) var(--ease-out);
 }
 
 .session-data-row--expanded .session-details-toggle {
@@ -873,6 +873,7 @@
 }
 
 .session-details-panel {
+  z-index: var(--z-inline-detail);
   display: grid;
   gap: var(--space-2);
   padding: var(--space-3);

@@ -317,6 +317,14 @@
   --duration-fast: 100ms;
   --duration-normal: 180ms;
   --duration-slow: 300ms;
+  /* Drawer-family modes share named motion and layer contracts without sharing
+     geometry: direction, chrome, backdrop, and focus stay with each owner. */
+  --ease-modal-surface: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-modal-sheet-duration: 240ms;
+  --motion-modal-drawer-duration: 200ms;
+  --motion-persistent-edge-panel-duration: 160ms;
+  --motion-inline-detail-duration: var(--duration-normal);
+  --motion-diagnostic-overlay-duration: 0ms;
   --cursor-action: default;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
@@ -325,6 +333,13 @@
 
   /* Layering */
   --z-dropdown: 100;
+  --z-modal-drawer-backdrop: 65;
+  --z-modal-drawer: 70;
+  --z-modal-sheet-backdrop: 120;
+  --z-modal-sheet: 121;
+  --z-persistent-edge-panel: auto;
+  --z-inline-detail: auto;
+  --z-diagnostic-overlay: 900;
   --z-toast: 2000;
 
   /* Custom select chevron. Data URIs cannot read var(--muted), so the stroke

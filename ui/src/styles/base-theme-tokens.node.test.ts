@@ -74,6 +74,35 @@ describe("Control UI base theme tokens", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps drawer-family motion and layers explicit by modality", () => {
+    const baseCss = fs.readFileSync(path.join(stylesDir, "base.css"), "utf8");
+    const contracts = {
+      "diagnostic-overlay": ["styles/debug.css"],
+      "inline-detail": ["styles/sessions.css"],
+      "modal-drawer": ["components/modal-dialog.ts", "styles/layout.mobile.css"],
+      "modal-sheet": ["styles/sidebar-issues.css"],
+      "persistent-edge-panel": ["styles/chat/sidebar.css", "styles/components.css"],
+    } as const;
+
+    for (const [mode, consumers] of Object.entries(contracts)) {
+      expect(baseCss, `missing motion contract for ${mode}`).toContain(`--motion-${mode}-`);
+      expect(baseCss, `missing layer contract for ${mode}`).toContain(`--z-${mode}:`);
+      const consumedContract = consumers
+        .map((consumer) => fs.readFileSync(path.join(uiSrcDir, consumer), "utf8"))
+        .join("\n");
+      expect(consumedContract, `${mode} does not consume its motion contract`).toContain(
+        `var(--motion-${mode}-`,
+      );
+      expect(consumedContract, `${mode} does not consume its layer contract`).toContain(
+        `var(--z-${mode})`,
+      );
+    }
+
+    expect(fs.readFileSync(path.join(stylesDir, "debug.css"), "utf8")).not.toContain(
+      "var(--z-toast)",
+    );
+  });
+
   it("routes every Web Awesome switch through the shared accent", () => {
     const baseCss = fs.readFileSync(path.join(stylesDir, "base.css"), "utf8");
     const localOverrides = collectFiles(stylesDir, [".css"])

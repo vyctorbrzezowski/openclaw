@@ -149,10 +149,10 @@ describe("openclaw-modal-dialog", () => {
       /:host\(\.palette\)\s+wa-dialog\s*\{[^}]*--show-duration:\s*0ms;[^}]*--hide-duration:\s*0ms;/u,
     );
     expect(styles).toMatch(
-      /:host\(\.drawer\)\s+wa-dialog\s*\{[^}]*--show-duration:\s*200ms;[^}]*--hide-duration:\s*0ms;/u,
+      /:host\(\.drawer\)\s+wa-dialog\s*\{[^}]*--show-duration:\s*var\(--motion-modal-drawer-duration\);[^}]*--hide-duration:\s*0ms;/u,
     );
     expect(styles).toMatch(
-      /:host\(\.drawer\)\s+wa-dialog\[open\]::part\(dialog\)\s*\{[^}]*animation:\s*openclaw-drawer-in 200ms cubic-bezier\(0\.32, 0\.72, 0, 1\);/u,
+      /:host\(\.drawer\)\s+wa-dialog\[open\]::part\(dialog\)\s*\{[^}]*animation:\s*openclaw-drawer-in var\(--motion-modal-drawer-duration\)\s*var\(--ease-modal-surface\);/u,
     );
     expect(styles).toMatch(
       /@keyframes openclaw-drawer-in\s*\{\s*from\s*\{\s*transform:\s*translateX\(100%\);\s*\}\s*to\s*\{\s*transform:\s*translateX\(0\);/u,

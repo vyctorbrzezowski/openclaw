@@ -79,7 +79,7 @@ html:not(.openclaw-native-macos):not(.openclaw-native-nav):not(.openclaw-native-
   top: max(8px, var(--safe-area-top, 0px));
   bottom: max(8px, var(--safe-area-bottom, 0px));
   left: 0;
-  z-index: 70;
+  z-index: var(--z-modal-drawer);
   width: min(86vw, 320px);
   min-width: 0;
   min-height: 0;
@@ -129,7 +129,7 @@ html:not(.openclaw-native-macos):not(.openclaw-native-nav):not(.openclaw-native-
 
 .shell--mobile-nav .shell-nav-backdrop {
   position: fixed;
-  z-index: 65;
+  z-index: var(--z-modal-drawer-backdrop);
   inset: 0;
   display: block;
   width: auto;
@@ -164,7 +164,7 @@ html:not(.openclaw-native-macos):not(.openclaw-native-nav):not(.openclaw-native-
   visibility: visible;
   opacity: 1;
   transition:
-    opacity 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity var(--motion-modal-drawer-duration) var(--ease-modal-surface),
     visibility 0s;
 }
 
@@ -173,7 +173,7 @@ html:not(.openclaw-native-macos):not(.openclaw-native-nav):not(.openclaw-native-
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
-  transition-duration: 200ms, 140ms;
+  transition-duration: var(--motion-modal-drawer-duration), 140ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

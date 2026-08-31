@@ -163,7 +163,7 @@ openclaw-chat-sidebar-region,
   overflow: hidden;
   background: transparent;
   flex-direction: column;
-  animation: chat-sidebar-fade-in 160ms ease-out;
+  animation: chat-sidebar-fade-in var(--motion-persistent-edge-panel-duration) var(--ease-out);
 }
 
 /* Canonical rail header contract. The header owns geometry; actions are bare
