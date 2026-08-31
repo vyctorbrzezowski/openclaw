@@ -5,6 +5,46 @@ import { createControlUiE2eSuite } from "./control-ui-e2e-suite.test-support.ts"
 const suite = createControlUiE2eSuite({ name: "Control UI model and effort controls" });
 
 suite.define(() => {
+  it("collapses the closed effort reservation while model metadata loads", async () => {
+    await suite.withPage({ viewport: { width: 1280, height: 900 } }, async ({ page }) => {
+      const model = {
+        available: true,
+        id: "gpt-5.6-luna",
+        name: "GPT-5.6 Luna",
+        provider: "openai",
+        reasoning: true,
+      };
+      const gateway = await installMockGateway(page, {
+        agentModel: "openai/gpt-5.6-luna",
+        heldMethods: ["chat.startup"],
+        models: [model],
+      });
+      await page.goto(`${suite.server.baseUrl}chat`);
+      await gateway.waitForRequest("chat.startup");
+
+      const composer = page.locator(".agent-chat__composer-shell");
+      const modelTrigger = composer.locator('[data-chat-model-select="true"]');
+      const effortPicker = composer.locator(".chat-controls__effort-picker");
+      const actions = composer.locator(".agent-chat__composer-actions");
+      await expect.poll(() => modelTrigger.getAttribute("aria-busy")).toBe("true");
+
+      const loadingModelBox = await modelTrigger.boundingBox();
+      const loadingActionsBox = await actions.boundingBox();
+      expect(loadingModelBox).not.toBeNull();
+      expect(loadingActionsBox).not.toBeNull();
+      expect(
+        (loadingActionsBox?.x ?? 0) - ((loadingModelBox?.x ?? 0) + (loadingModelBox?.width ?? 0)),
+      ).toBeLessThan(16);
+      expect(await effortPicker.count()).toBe(0);
+
+      await gateway.resolveDeferred("chat.startup");
+      await expect.poll(() => effortPicker.isVisible()).toBe(true);
+      const settledActionsBox = await actions.boundingBox();
+      expect(settledActionsBox?.x).toBeCloseTo(loadingActionsBox?.x ?? 0, 0);
+      expect(settledActionsBox?.width).toBeCloseTo(loadingActionsBox?.width ?? 0, 0);
+    });
+  });
+
   it.each(["chat", "new"])(
     "keeps independent model and effort controls within the %s composer",
     async (route) => {

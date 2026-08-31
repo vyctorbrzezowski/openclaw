@@ -6670,10 +6670,11 @@ describe("chat model controls", () => {
     expect(modelSelect.getAttribute("aria-disabled")).toBe("true");
   });
 
-  it("renders an accessible skeleton and reserves hidden effort geometry before the snapshot", () => {
+  it("renders an accessible skeleton without reserving closed effort geometry", () => {
     const { state } = createChatHeaderState();
     const container = renderModelControls(state, {
       modelCatalogState: { hasSnapshot: false, status: "loading" },
+      modelPickerOpen: false,
       modelsLoading: true,
     });
     const trigger = getChatModelSelect(container);
@@ -6682,9 +6683,7 @@ describe("chat model controls", () => {
     expect(trigger.getAttribute("aria-disabled")).toBe("false");
     expect(trigger.querySelector(".chat-controls__model-trigger-skeleton")).not.toBeNull();
     expect(trigger.textContent).not.toContain("Loading models");
-    const effort = container.querySelector(".chat-controls__effort-picker");
-    expect(effort?.getAttribute("aria-hidden")).toBe("true");
-    expect(effort?.hasAttribute("inert")).toBe(true);
+    expect(container.querySelector(".chat-controls__effort-picker")).toBeNull();
   });
 
   it("shows disabled configured models and model setup when no model has authentication", () => {

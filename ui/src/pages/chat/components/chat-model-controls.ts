@@ -397,11 +397,11 @@ export function renderChatModelControls(props: ChatModelControlsProps) {
     commonDisabled ||
     effortMutationDisabled ||
     (thinking.options.length === 0 && fastMode.disabled);
-  // Floating UI deliberately tracks a live anchor. Keep the eventual effort
-  // control in layout while catalog state is transient (and until an open model
-  // menu closes), so a sibling appearing cannot move that anchor mid-interaction.
+  // False means controlled chat is closed; undefined keeps /new's CSS-owned DOM anchor.
   const reserveEffortPicker =
-    !hasResolvableModel && (catalogLoadingWithoutSnapshot || props.modelPickerOpen === true);
+    !hasResolvableModel &&
+    props.modelPickerOpen !== false &&
+    (catalogLoadingWithoutSnapshot || props.modelPickerOpen === true);
   const showEffortPicker = hasResolvableModel || reserveEffortPicker;
   return html`
     <div class="chat-controls__session chat-controls__model chat-controls__model-settings">
