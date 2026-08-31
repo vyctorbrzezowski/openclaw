@@ -606,16 +606,7 @@ suite.define(() => {
           clientX: (firstBounds?.x ?? 0) + (firstBounds?.width ?? 0),
           clientY: (firstBounds?.y ?? 0) + (firstBounds?.height ?? 0) / 2,
         });
-        await page.clock.runFor(219);
-        expect(await card.count()).toBe(1);
-        await page.mouse.move(
-          (cardBounds?.x ?? 0) + (cardBounds?.width ?? 0) / 2,
-          (cardBounds?.y ?? 0) + (cardBounds?.height ?? 0) / 2,
-        );
-        await page.clock.runFor(1);
-        expect(await card.count()).toBe(1);
-        await page.mouse.move(900, 800);
-        await page.clock.runFor(99);
+        await page.clock.runFor(119);
         expect(await card.count()).toBe(1);
         await page.clock.runFor(1);
         expect(
@@ -623,7 +614,7 @@ suite.define(() => {
             cards.every((element) => element.getAttribute("data-open") === "false"),
           ),
         ).toBe(true);
-        await page.clock.runFor(300);
+        await page.clock.runFor(150);
         expect(await card.count()).toBe(0);
 
         await first.hover();

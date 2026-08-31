@@ -30,7 +30,6 @@ const OPEN_DELAY_MS = 450;
 const SWEEP_OPEN_DELAY_MS = 80;
 const SKIP_DELAY_MS = 300;
 const CLOSE_DELAY_MS = 100;
-const EXIT_DURATION_MS = 100;
 let nextHovercardId = 0;
 
 function sessionHovercardMenuOpen(owner: ParentNode): boolean {
@@ -57,7 +56,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
   private suppressFocusOpen = false;
   private open = false;
   private delayed = true;
-  private animateNextOpen = true;
   private skipDelayTimer: number | null = null;
   private lastProgressCard: ProgressCard | null = null;
   private readonly hovercard = new PortaledHovercardController(
@@ -208,7 +206,7 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
       return;
     }
     const delayed = this.delayed;
-    this.activate(target, target, delayed ? OPEN_DELAY_MS : SWEEP_OPEN_DELAY_MS, delayed);
+    this.activate(target, target, delayed ? OPEN_DELAY_MS : SWEEP_OPEN_DELAY_MS);
     this.hovercard.pointerInside = true;
   };
 
@@ -235,7 +233,7 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
     if (!target || !trigger || sessionHovercardMenuOpen(this)) {
       return;
     }
-    this.activate(target, trigger, 0, false);
+    this.activate(target, trigger, 0);
     this.hovercard.focusInside = true;
   };
 
@@ -275,12 +273,7 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
     this.close();
   };
 
-  private activate(
-    target: HTMLElement,
-    trigger: HTMLElement,
-    delay: number,
-    animateEntry: boolean,
-  ): void {
+  private activate(target: HTMLElement, trigger: HTMLElement, delay: number): void {
     const sessionKey = target.dataset.sessionKey;
     if (!sessionKey) {
       return;
@@ -293,7 +286,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
         if (this.open) {
           this.showCurrent();
         } else {
-          this.animateNextOpen = animateEntry;
           const generation = ++this.loadGeneration;
           this.hovercard.scheduleOpen(delay, () => void this.loadAndShow(sessionKey, generation));
         }
@@ -305,7 +297,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
     this.activeTrigger = trigger;
     this.activeSessionKey = sessionKey;
     this.open = false;
-    this.animateNextOpen = animateEntry;
     this.lastProgressCard = null;
     this.progressCards?.watch(this, [sessionKey]);
     this.hovercard.markTrigger(trigger);
@@ -443,7 +434,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
       : -1;
     const focusedHref =
       focusedCardElement instanceof HTMLAnchorElement ? focusedCardElement.href : null;
-    const animateEntry = !mountedCard && this.animateNextOpen;
     let card = mountedCard;
     if (!card) {
       nextHovercardId += 1;
@@ -451,12 +441,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
         `openclaw-session-progress-hovercard-${nextHovercardId}`,
         "session-progress-hovercard",
       );
-      this.animateNextOpen = false;
-      if (animateEntry) {
-        card.dataset.open = "false";
-      } else {
-        card.dataset.instant = "true";
-      }
     }
     card.dataset.revision = revision;
     card.setAttribute("aria-label", t("sessionHovercard.ariaLabel"));
@@ -507,14 +491,6 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
     this.hovercard.mount(target, card, sessionProgressHoverPlacementForTarget(target), false, () =>
       render(nothing, card),
     );
-    if (animateEntry) {
-      void card.offsetWidth;
-      window.setTimeout(() => {
-        if (this.hovercard.card === card && this.open) {
-          card.dataset.open = "true";
-        }
-      }, 0);
-    }
   }
 
   private readonly handleCardPointerEnter = () => {
@@ -569,10 +545,13 @@ export class SessionProgressHovercardProvider extends ReactiveElement {
 
   private close(animateExit = false): void {
     const wasOpen = this.open;
-    this.hovercard.reset(animateExit ? EXIT_DURATION_MS : 0);
+    if (animateExit) {
+      this.hovercard.resetAnimated();
+    } else {
+      this.hovercard.reset();
+    }
     this.loadGeneration += 1;
     this.open = false;
-    this.animateNextOpen = true;
     this.lastProgressCard = null;
     this.activeTargetObserver.disconnect();
     this.progressCards?.unwatch(this);

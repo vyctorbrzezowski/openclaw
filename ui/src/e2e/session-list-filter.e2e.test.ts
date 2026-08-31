@@ -12,6 +12,16 @@ const suite = createControlUiE2eSuite({
 async function openSessionFilters(page: Page) {
   await page.getByRole("button", { name: "Filters" }).click();
   await page.locator("wa-popover.sessions-filter-popover[open]").waitFor();
+  expect(
+    await page.locator(".sessions-filter-popover__panel").evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style.borderTopWidth,
+        shadow: style.boxShadow,
+      };
+    }),
+  ).toEqual({ background: "rgba(0, 0, 0, 0)", border: "0px", shadow: "none" });
 }
 
 // Browser contexts preserve test isolation; keep one process warm for this file.

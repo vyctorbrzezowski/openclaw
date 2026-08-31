@@ -433,6 +433,26 @@ describeControlUiE2e("GitHub link hover cards", () => {
     await expect
       .poll(() => pullLink.getAttribute("aria-controls"))
       .toBe(await card.getAttribute("id"));
+    const chrome = await card.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const probe = document.createElement("div");
+      probe.style.border = "1px solid var(--overlay-border)";
+      probe.style.boxShadow = "var(--overlay-shadow)";
+      document.body.append(probe);
+      const probeStyle = getComputedStyle(probe);
+      const result = {
+        borderColor: style.borderColor,
+        overlayBorder: probeStyle.borderColor,
+        overlayShadow: probeStyle.boxShadow,
+        shadow: style.boxShadow,
+        transitionDuration: style.transitionDuration,
+      };
+      probe.remove();
+      return result;
+    });
+    expect(chrome.borderColor).toBe(chrome.overlayBorder);
+    expect(chrome.shadow).toBe(chrome.overlayShadow);
+    expect(chrome.transitionDuration).toBe("0.16s");
 
     // Tab enters the card at its first link and then walks the rest natively.
     const focused = () => page.evaluate(() => document.activeElement?.className ?? "");

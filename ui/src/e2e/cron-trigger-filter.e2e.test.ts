@@ -78,6 +78,12 @@ suite.define(() => {
         );
 
         await page.locator(".cron-filter-popover__trigger").click();
+        expect(
+          await page.locator(".cron-filter-popover__panel").evaluate((element) => {
+            const style = getComputedStyle(element);
+            return [style.backgroundColor, style.borderTopWidth, style.position, style.boxShadow];
+          }),
+        ).toEqual(["rgba(0, 0, 0, 0)", "0px", "static", "none"]);
         await page.locator('[data-test-id="cron-jobs-trigger-filter"]').selectOption("conditional");
         await expect
           .poll(async () =>

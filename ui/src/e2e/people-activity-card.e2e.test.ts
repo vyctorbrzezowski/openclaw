@@ -138,6 +138,18 @@ suite.define(() => {
         expect(await row.locator("a, button").count()).toBe(1);
         await person.hover();
         await card.waitFor({ state: "visible" });
+        const chrome = await card.evaluate((element) => {
+          const probe = document.createElement("div");
+          probe.className = "github-link-hovercard";
+          element.before(probe);
+          const style = getComputedStyle(element);
+          const probeStyle = getComputedStyle(probe);
+          const result = [style.borderColor, style.boxShadow, style.transitionDuration];
+          const expected = [probeStyle.borderColor, probeStyle.boxShadow, "0.16s"];
+          probe.remove();
+          return { expected, result };
+        });
+        expect(chrome.result).toEqual(chrome.expected);
         expect(await card.textContent()).toContain("Reported time zone: Europe/Paris");
         await expect
           .poll(() => card.locator("a").allTextContents())

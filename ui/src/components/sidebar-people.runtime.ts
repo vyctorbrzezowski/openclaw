@@ -36,7 +36,7 @@ export class SidebarPeopleRuntime {
     gateway: ApplicationGateway;
     client: GatewayBrowserClient | null;
   } | null = null;
-  private readonly portal = new PortaledHovercardController(() => this.close(), 100);
+  private readonly portal = new PortaledHovercardController(() => this.close(true), 100);
   private readonly observer = new MutationObserver(() => this.sync());
   private suppressFocus = false;
   private lastOpenAt = -Infinity;
@@ -367,7 +367,7 @@ export class SidebarPeopleRuntime {
     }
   };
 
-  private close(): void {
+  private close(animateExit = false): void {
     if (this.portal.card) {
       this.lastOpenAt = performance.now();
     }
@@ -375,7 +375,11 @@ export class SidebarPeopleRuntime {
     document.removeEventListener("pointerdown", this.outsidePointer, true);
     document.removeEventListener("focusin", this.outsideFocus, true);
     document.removeEventListener("keydown", this.outsideKey, true);
-    this.portal.reset();
+    if (animateExit) {
+      this.portal.resetAnimated();
+    } else {
+      this.portal.reset();
+    }
     this.active?.trigger.setAttribute("aria-haspopup", "dialog");
     this.active?.trigger.setAttribute("aria-expanded", "false");
     this.active = null;

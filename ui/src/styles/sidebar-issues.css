@@ -18,7 +18,7 @@
   border-radius: var(--radius-lg);
   background: var(--bg-elevated);
   color: var(--text);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--overlay-shadow);
   animation: menu-in 140ms var(--ease-out);
 }
 
@@ -49,6 +49,7 @@
   border-width: 1px 0 0;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   background: var(--secondary);
+  box-shadow: var(--shadow-sm);
   animation: sidebar-issues-sheet-in 240ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 

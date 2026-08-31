@@ -341,7 +341,7 @@ export class GitHubLinkHovercardProvider extends ReactiveElement {
   // the portaled card (e.g. clicking the title link) can hold it open, so a
   // pointer-driven open still fully releases on mouse-out (see handleCardPointerLeave).
   private activeTrigger: "focus" | "pointer" | null = null;
-  private readonly hovercard = new PortaledHovercardController(() => this.close());
+  private readonly hovercard = new PortaledHovercardController(() => this.close(true));
   private renderedPreview: GitHubPreview | null = null;
   private renderedUnavailable = false;
   private stopI18n: (() => void) | null = null;
@@ -656,8 +656,12 @@ export class GitHubLinkHovercardProvider extends ReactiveElement {
     return entry.promise;
   }
 
-  private close(): void {
-    this.hovercard.reset();
+  private close(animateExit = false): void {
+    if (animateExit) {
+      this.hovercard.resetAnimated();
+    } else {
+      this.hovercard.reset();
+    }
     this.activeAnchorObserver.disconnect();
     void this.previewTask.run([null]);
     this.renderedPreview = null;

@@ -912,10 +912,10 @@ openclaw-session-progress-hovercard-provider {
   padding: 0;
   margin: 0;
   overflow: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--overlay-border);
   border-radius: var(--radius-lg);
   background: var(--session-hovercard-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--overlay-shadow);
   color: var(--text);
   pointer-events: none;
   opacity: 0;
@@ -949,11 +949,7 @@ openclaw-session-progress-hovercard-provider {
 .session-progress-hovercard[data-open="true"] {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
-  transition-duration: 150ms;
-}
-
-.session-progress-hovercard[data-instant="true"][data-open="true"] {
-  transition: none;
+  transition-duration: 160ms;
 }
 
 @media (hover: hover) {
@@ -1233,8 +1229,8 @@ openclaw-session-progress-hovercard-provider {
   transform: translateY(-5px) scale(0.99);
   transform-origin: bottom left;
   transition:
-    opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-out);
+    opacity 100ms var(--ease-out),
+    transform 100ms var(--ease-out);
 }
 
 .github-link-hovercard[data-side="bottom"] {
@@ -1245,6 +1241,7 @@ openclaw-session-progress-hovercard-provider {
 .github-link-hovercard[data-open="true"] {
   opacity: 1;
   transform: translateY(0) scale(1);
+  transition-duration: 160ms;
 }
 
 .github-link-hovercard__header,

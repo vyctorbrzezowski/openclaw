@@ -2,6 +2,8 @@ import { promoteToPopoverTopLayer } from "./menu-surface.ts";
 
 const CARD_GAP = 10;
 const VIEWPORT_PADDING = 12;
+const BRIDGE_DELAY_MS = 120;
+const EXIT_DURATION_MS = 100;
 
 type PortaledHovercardPlacement = "horizontal" | "vertical";
 
@@ -37,7 +39,7 @@ export class PortaledHovercardController {
     );
   }
 
-  schedulePointerExit(event: PointerEvent, target: HTMLElement, bridgeMs = 220): void {
+  schedulePointerExit(event: PointerEvent, target: HTMLElement): void {
     this.pointerInside = false;
     const side = this.card?.dataset.side;
     const rect = target.getBoundingClientRect();
@@ -47,7 +49,7 @@ export class PortaledHovercardController {
       (side === "left" && event.clientX <= rect.left) ||
       (side === "bottom" && event.clientY >= rect.bottom) ||
       (side === "top" && event.clientY <= rect.top);
-    this.scheduleClose(towardCard ? bridgeMs : this.closeDelayMs);
+    this.scheduleClose(towardCard ? BRIDGE_DELAY_MS : this.closeDelayMs);
   }
 
   focusables(): HTMLElement[] {
@@ -99,7 +101,8 @@ export class PortaledHovercardController {
     observeVisualViewport = true,
     unmountContents?: () => void,
   ): void {
-    this.clearCard();
+    // A replacement has its own anchor and must not overlap an outgoing card.
+    this.clearCard(0);
     this.anchor = anchor;
     this.card = card;
     this.placement = placement;
@@ -111,6 +114,8 @@ export class PortaledHovercardController {
       placement,
       observeVisualViewport,
     });
+    void card.offsetWidth;
+    card.dataset.open = "true";
   }
 
   clearCard(exitDurationMs = 0): void {
@@ -131,6 +136,8 @@ export class PortaledHovercardController {
       return;
     }
     card.dataset.open = "false";
+    card.inert = true;
+    card.setAttribute("aria-hidden", "true");
     card.style.pointerEvents = "none";
     let exitTimer: number | null = null;
     const finish = () => {
@@ -177,6 +184,10 @@ export class PortaledHovercardController {
     this.anchor = null;
     this.trigger = null;
   }
+
+  resetAnimated(): void {
+    this.reset(EXIT_DURATION_MS);
+  }
 }
 
 function markPortaledHovercardTrigger(trigger: HTMLElement): void {
@@ -194,7 +205,7 @@ export function createPortaledHovercard(id: string, className: string): HTMLDivE
   const card = document.createElement("div");
   card.id = id;
   card.className = className;
-  card.dataset.open = "true";
+  card.dataset.open = "false";
   card.setAttribute("role", "dialog");
   return card;
 }

@@ -7,6 +7,7 @@ import { GitHubLinkHovercardProvider } from "./github-link-hovercard.runtime.ts"
 
 // Mirrors CLOSE_DELAY_MS in the runtime, like the 250ms open delay used below.
 const GITHUB_HOVERCARD_CLOSE_DELAY_MS = 120;
+const HOVERCARD_EXIT_DURATION_MS = 100;
 
 const GITHUB_LINK_HOVERCARD_ELEMENT_NAME = `test-openclaw-github-link-hovercard-provider-${crypto.randomUUID()}`;
 
@@ -82,6 +83,14 @@ function leave(anchor: HTMLAnchorElement, relatedTarget: EventTarget = document.
 
 function hovercard(): HTMLElement | null {
   return document.querySelector<HTMLElement>(".github-link-hovercard");
+}
+
+async function finishAnimatedClose(card: HTMLElement | null): Promise<void> {
+  expect(card?.dataset.open).toBe("false");
+  expect(card?.inert).toBe(true);
+  expect(card?.getAttribute("aria-hidden")).toBe("true");
+  await vi.advanceTimersByTimeAsync(HOVERCARD_EXIT_DURATION_MS + 50);
+  expect(hovercard()).toBeNull();
 }
 
 describe("openclaw-github-link-hovercard-provider", () => {
@@ -276,7 +285,7 @@ describe("openclaw-github-link-hovercard-provider", () => {
 
     leave(anchor);
     await vi.advanceTimersByTimeAsync(GITHUB_HOVERCARD_CLOSE_DELAY_MS);
-    expect(hovercard()).toBeNull();
+    await finishAnimatedClose(card);
     await hover(anchor);
     expect(request).toHaveBeenCalledTimes(1);
   });
@@ -300,7 +309,7 @@ describe("openclaw-github-link-hovercard-provider", () => {
     card?.dispatchEvent(new MouseEvent("pointerleave"));
     expect(hovercard()).toBe(card);
     await vi.advanceTimersByTimeAsync(GITHUB_HOVERCARD_CLOSE_DELAY_MS);
-    expect(hovercard()).toBeNull();
+    await finishAnimatedClose(card);
     expect(anchor.hasAttribute("aria-expanded")).toBe(false);
     expect(anchor.hasAttribute("aria-controls")).toBe(false);
     expect(anchor.hasAttribute("aria-haspopup")).toBe(false);
@@ -329,7 +338,7 @@ describe("openclaw-github-link-hovercard-provider", () => {
 
     card?.dispatchEvent(new MouseEvent("pointerleave"));
     await vi.advanceTimersByTimeAsync(GITHUB_HOVERCARD_CLOSE_DELAY_MS);
-    expect(hovercard()).toBeNull();
+    await finishAnimatedClose(card);
   });
 
   it("renders issue comments and supports focus plus Escape", async () => {
@@ -402,7 +411,7 @@ describe("openclaw-github-link-hovercard-provider", () => {
 
     outside.focus();
     await vi.advanceTimersByTimeAsync(GITHUB_HOVERCARD_CLOSE_DELAY_MS);
-    expect(hovercard()).toBeNull();
+    await finishAnimatedClose(document.querySelector(".github-link-hovercard"));
     expect(anchor.hasAttribute("aria-expanded")).toBe(false);
   });
 
