@@ -1,4 +1,5 @@
-import { html, nothing, type TemplateResult } from "lit";
+import { html, type TemplateResult } from "lit";
+import "../../../components/hover-help.ts";
 import { t } from "../../../i18n/index.ts";
 import type { MessageGroup } from "../../../lib/chat/chat-types.ts";
 import { formatCompactTokenCount, formatCost, formatTimeAgo } from "../../../lib/format.ts";
@@ -75,27 +76,24 @@ export function renderChatTimestamp(timestamp: number, metadata: TemplateResult[
       ${formatChatRelativeTimestampLabel(timestamp)}
     </time>
   `;
+  if (metadata.length === 0) {
+    return html`<openclaw-tooltip class="msg-meta" content=${display.label}
+      >${time}</openclaw-tooltip
+    >`;
+  }
   return html`
-    <openclaw-tooltip
-      class="msg-meta"
-      ?open-on-click=${metadata.length > 0}
-      content=${metadata.length ? "" : display.label}
-    >
-      ${metadata.length
-        ? html`<button
-            type="button"
-            class="msg-meta__summary"
-            aria-label=${t("chat.messages.contextFor", { timestamp: display.title })}
-          >
-            ${time}
-          </button>`
-        : time}
-      ${metadata.length
-        ? html`<span slot="content" class="msg-meta__details">
-            <span class="msg-meta__time">${display.label}</span>${metadata}
-          </span>`
-        : nothing}
-    </openclaw-tooltip>
+    <openclaw-hover-help class="msg-meta" open-on-click>
+      <button
+        type="button"
+        class="msg-meta__summary"
+        aria-label=${t("chat.messages.contextFor", { timestamp: display.title })}
+      >
+        ${time}
+      </button>
+      <span slot="content" class="msg-meta__details">
+        <span class="msg-meta__time">${display.label}</span>${metadata}
+      </span>
+    </openclaw-hover-help>
   `;
 }
 

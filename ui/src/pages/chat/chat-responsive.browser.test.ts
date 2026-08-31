@@ -2696,9 +2696,9 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
       try {
         await page.setViewportSize({ width: 1366, height: 900 });
         const group = page.locator(".chat-group").filter({ hasText: SHARED_APP_CONTEXT_TEXT });
-        const tooltip = group.locator("openclaw-tooltip.msg-meta");
-        const context = tooltip.locator(".msg-meta__details");
-        const summary = tooltip.locator(".msg-meta__summary");
+        const hoverHelp = group.locator("openclaw-hover-help.msg-meta");
+        const context = hoverHelp.locator(".msg-meta__details");
+        const summary = hoverHelp.locator(".msg-meta__summary");
         const messageText = group.locator(".chat-text").first();
         await messageText.waitFor({ timeout: APP_FIRST_RENDER_TIMEOUT_MS });
         expect(await context.isVisible()).toBe(false);
@@ -2740,10 +2740,9 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
           .poll(() =>
             context.evaluate((node) => {
               const row = node.closest<HTMLElement>(".chat-virtual-row")!;
-              const tooltipNode = node.closest("openclaw-tooltip")!;
-              const popup = tooltipNode.shadowRoot
-                ?.querySelector("wa-tooltip")
-                ?.shadowRoot?.querySelector("wa-popup")
+              const hoverHelpNode = node.closest("openclaw-hover-help")!;
+              const popup = hoverHelpNode.shadowRoot
+                ?.querySelector("wa-popup")
                 ?.shadowRoot?.querySelector<HTMLElement>('[part="popup"]');
               const rect = node.getBoundingClientRect();
               const target = document.elementFromPoint(rect.left + 8, rect.top + rect.height / 2);
@@ -2783,7 +2782,7 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
           });
         await page.keyboard.press("Escape");
         await context.waitFor({ state: "hidden", timeout: 10_000 });
-        expect(await tooltip.getAttribute("open")).toBeNull();
+        expect(await hoverHelp.getAttribute("open")).toBeNull();
 
         await summary.press("Enter");
         await context.waitFor({ state: "visible", timeout: 10_000 });
@@ -2801,19 +2800,19 @@ describeBrowserLayout.concurrent("chat responsive browser layout", () => {
             })),
           )
           .toEqual({ hovered: false, focused: false, footerOpacity: "1" });
-        expect(await tooltip.getAttribute("open")).toBe("");
+        expect(await hoverHelp.getAttribute("open")).toBe("");
         expect(await context.isVisible()).toBe(true);
 
         await page.mouse.click(0, 0);
         await context.waitFor({ state: "hidden", timeout: 10_000 });
-        expect(await tooltip.getAttribute("open")).toBeNull();
+        expect(await hoverHelp.getAttribute("open")).toBeNull();
 
         await messageText.hover();
         await summary.click();
         await context.waitFor({ state: "visible", timeout: 10_000 });
         await page.keyboard.press("Escape");
         await context.waitFor({ state: "hidden", timeout: 10_000 });
-        expect(await tooltip.getAttribute("open")).toBeNull();
+        expect(await hoverHelp.getAttribute("open")).toBeNull();
       } finally {
         await page.keyboard.press("Escape");
         await page.mouse.move(0, 0);

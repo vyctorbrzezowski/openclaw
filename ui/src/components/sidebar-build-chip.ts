@@ -11,7 +11,7 @@ import {
   formatSidebarBuildSubtitle,
   renderSidebarServerDetails,
 } from "./sidebar-build-chip-format.ts";
-import "./tooltip.ts";
+import "./hover-help.ts";
 
 class SidebarBuildChip extends OpenClawLightDomContentsElement {
   @property({ attribute: false }) basePath = "";
@@ -33,7 +33,7 @@ class SidebarBuildChip extends OpenClawLightDomContentsElement {
       return nothing;
     }
     return html`
-      <openclaw-tooltip class="sidebar-hover-tooltip" .delay=${600} .closeDelay=${300}>
+      <openclaw-hover-help class="sidebar-hover-help">
         <a
           class="sidebar-footer-build"
           href=${pathForRoute("about", this.basePath)}
@@ -57,7 +57,7 @@ class SidebarBuildChip extends OpenClawLightDomContentsElement {
         <div slot="content" class="sidebar-hover-card sidebar-build-hover-card">
           ${renderSidebarServerDetails(CONTROL_UI_BUILD_INFO, this.gatewayVersion)}
         </div>
-      </openclaw-tooltip>
+      </openclaw-hover-help>
     `;
   }
 }

@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import "../../../components/elapsed-time.ts";
 import { icons } from "../../../components/icons.ts";
-import "../../../components/tooltip.ts";
+import "../../../components/hover-help.ts";
 import { t } from "../../../i18n/index.ts";
 import { formatRelativeTimestamp } from "../../../lib/format.ts";
 import {
@@ -142,10 +142,10 @@ export function renderBackgroundTasksStatusRow(
           `
         : nothing}
       <span class="sr-only" role="status">${label}</span>
-      <openclaw-tooltip class="chat-tasks-status__preview">
+      <openclaw-hover-help class="chat-tasks-status__preview">
         <button class="chat-tasks-status__link" type="button" @click=${openRail}>${label}</button>
         ${renderStatusPreview(remainingTasks)}
-      </openclaw-tooltip>
+      </openclaw-hover-help>
     </div>
   `;
   return subagentActivity === nothing ? aggregate : html`${subagentActivity}${aggregate}`;

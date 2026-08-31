@@ -63,27 +63,17 @@ async function openBuildDetails(page: Page) {
   expect(containsBrokenSurrogate(compactText)).toBe(false);
 
   await buildLink.hover();
-  const tooltip = sidebar.locator("openclaw-sidebar-build-chip openclaw-tooltip wa-tooltip");
-  await expect.poll(() => tooltip.evaluate((element) => element.hasAttribute("open"))).toBe(true);
+  const hoverHelp = sidebar.locator("openclaw-sidebar-build-chip openclaw-hover-help");
+  await expect.poll(() => hoverHelp.evaluate((element) => element.hasAttribute("open"))).toBe(true);
   const buildLinkHandle = await buildLink.elementHandle();
   if (!buildLinkHandle) {
     throw new Error("Expected the identity-menu build link to be attached");
   }
-  const afterHideMarker = "data-openclaw-test-after-hide";
-  await tooltip.evaluate((element, marker) => {
-    element.removeAttribute(marker);
-    element.addEventListener("wa-after-hide", () => element.setAttribute(marker, ""), {
-      once: true,
-    });
-  }, afterHideMarker);
   await page.mouse.down();
   await expect
-    .poll(() =>
-      tooltip.evaluate((element, marker) => element.hasAttribute(marker), afterHideMarker),
-    )
-    .toBe(true);
+    .poll(() => hoverHelp.evaluate((element) => element.hasAttribute("open")))
+    .toBe(false);
   expect(await buildLinkHandle.evaluate((element) => element.isConnected)).toBe(true);
-  await tooltip.evaluate((element, marker) => element.removeAttribute(marker), afterHideMarker);
   await page.mouse.up();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/settings/about");
 }

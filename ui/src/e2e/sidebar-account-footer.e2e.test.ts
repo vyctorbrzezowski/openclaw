@@ -74,17 +74,17 @@ async function runAccountFooterProof(page: Page, sidebar: Locator, branch: "feat
     const buildPrefix = branch === "main" ? "git@0123456" : "feat/sidebar-f…@0123456";
     expect(buildLabel?.startsWith(`${buildPrefix} · `)).toBe(true);
     const buildLink = menu.getByRole("link", { name: "Control UI build details" });
-    const buildTooltip = sidebar.locator("openclaw-sidebar-build-chip openclaw-tooltip wa-tooltip");
+    const buildHoverHelp = sidebar.locator("openclaw-sidebar-build-chip openclaw-hover-help");
     const buildTooltipCard = sidebar.locator(".sidebar-build-hover-card");
     await page.clock.install();
     await buildLink.hover();
     await page.clock.runFor(300);
     await page.mouse.move(0, 0);
     await page.clock.runFor(300);
-    expect(await buildTooltip.getAttribute("open")).toBeNull();
+    expect(await buildHoverHelp.getAttribute("open")).toBeNull();
     await buildLink.hover();
-    await page.clock.runFor(600);
-    await expect.poll(() => buildTooltip.getAttribute("open")).not.toBeNull();
+    await page.clock.runFor(450);
+    await expect.poll(() => buildHoverHelp.getAttribute("open")).not.toBeNull();
     await page.clock.resume();
     await captureUnionProof(page, "build-chip-hover-intent", `${branch}-${theme}-intent-open.png`, [
       footer,
@@ -225,8 +225,8 @@ suite.define(() => {
         name: "Control UI build details",
         exact: true,
       });
-      const tooltip = sidebar.locator("openclaw-sidebar-build-chip openclaw-tooltip wa-tooltip");
-      await tooltip.evaluate((element) => {
+      const hoverHelp = sidebar.locator("openclaw-sidebar-build-chip openclaw-hover-help");
+      await hoverHelp.evaluate((element) => {
         document.documentElement.dataset.buildTooltipOpenedByClick = "false";
         element.addEventListener(
           "wa-show",

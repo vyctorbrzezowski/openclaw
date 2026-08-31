@@ -488,7 +488,7 @@ suite.define(() => {
         const statusLink = page.locator(".chat-tasks-status__link");
         await statusLink.hover();
         const previewBody = page.locator(
-          "openclaw-tooltip.chat-tasks-status__preview wa-tooltip[open] .body",
+          "openclaw-hover-help.chat-tasks-status__preview[open] .chat-tasks-preview",
         );
         await previewBody.waitFor({ state: "visible" });
         const linkBox = await statusLink.boundingBox();

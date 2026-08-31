@@ -1,5 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import type { ServerUiPrefProvenance } from "../../app/server-prefs.ts";
+import "../../components/hover-help.ts";
 import {
   normalizeCatalogOpenTarget,
   normalizeChatFollowUpMode,
@@ -378,7 +379,7 @@ export function renderLobsterPetSection(props: ConfigProps) {
                     .filter((line): line is string => line !== null)
                     .join("\n");
                   return html`
-                    <openclaw-tooltip>
+                    <openclaw-hover-help open-on-click>
                       <span
                         class="lobsterdex__mini lobster-pet--palette-${palette.id} ${seen
                           ? ""
@@ -398,7 +399,7 @@ export function renderLobsterPetSection(props: ConfigProps) {
                         <span>${loreLine}</span>
                         ${visitedLine ? html`<span>${visitedLine}</span>` : nothing}
                       </span>
-                    </openclaw-tooltip>
+                    </openclaw-hover-help>
                   `;
                 })}
               </div>

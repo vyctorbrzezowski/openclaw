@@ -130,9 +130,9 @@ describe("renderUsageInsights", () => {
     );
 
     const buttons = [...container.querySelectorAll<HTMLButtonElement>("button.usage-summary-hint")];
-    const tooltips = [...container.querySelectorAll("openclaw-tooltip")];
+    const hoverHelp = [...container.querySelectorAll("openclaw-hover-help")];
     expect(buttons).toHaveLength(9);
-    expect(tooltips).toHaveLength(9);
+    expect(hoverHelp).toHaveLength(9);
     expect(
       buttons.every(
         (button) =>
@@ -142,9 +142,9 @@ describe("renderUsageInsights", () => {
       ),
     ).toBe(true);
     expect(
-      tooltips.every((tooltip) => {
-        const button = tooltip.querySelector<HTMLButtonElement>("button.usage-summary-hint");
-        const content = tooltip.querySelector('[slot="content"]');
+      hoverHelp.every((surface) => {
+        const button = surface.querySelector<HTMLButtonElement>("button.usage-summary-hint");
+        const content = surface.querySelector('[slot="content"]');
         return Boolean(
           button &&
           buttons.includes(button) &&

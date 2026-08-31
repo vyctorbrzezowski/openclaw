@@ -723,28 +723,27 @@ suite.define(() => {
     });
     await page.clock.install();
     await buildLink.hover();
-    await page.clock.runFor(600);
-    const hoverCardMotion = await sidebar
-      .locator("openclaw-sidebar-build-chip openclaw-tooltip")
-      .evaluate((tooltip) => {
-        const webAwesomeTooltip = tooltip.shadowRoot?.querySelector("wa-tooltip");
-        const popup = webAwesomeTooltip?.shadowRoot?.querySelector("wa-popup");
-        const popupSurface = popup?.shadowRoot?.querySelector<HTMLElement>('[part~="popup"]');
-        if (!popup || !popupSurface) {
-          throw new Error("expected the open sidebar hovercard shadow parts");
-        }
-        const [originX, originY] = getComputedStyle(popupSurface)
-          .transformOrigin.split(" ")
-          .map(Number.parseFloat);
-        return {
-          animationDuration: getComputedStyle(popupSurface).animationDuration,
-          popupHeight: popupSurface.offsetHeight,
-          popupWidth: popupSurface.offsetWidth,
-          originX,
-          originY,
-          placement: popup.getAttribute("data-current-placement"),
-        };
-      });
+    await page.clock.runFor(450);
+    const buildHoverHelp = sidebar.locator("openclaw-sidebar-build-chip openclaw-hover-help");
+    await expect.poll(() => buildHoverHelp.getAttribute("open")).toBe("");
+    const hoverCardMotion = await buildHoverHelp.evaluate((hoverHelp) => {
+      const popup = hoverHelp.shadowRoot?.querySelector("wa-popup");
+      const card = hoverHelp.shadowRoot?.querySelector<HTMLElement>(".hover-help-card");
+      if (!popup || !card) {
+        throw new Error("expected the open sidebar hovercard shadow parts");
+      }
+      const [originX, originY] = getComputedStyle(card)
+        .transformOrigin.split(" ")
+        .map(Number.parseFloat);
+      return {
+        transitionDuration: getComputedStyle(card).transitionDuration,
+        popupHeight: card.offsetHeight,
+        popupWidth: card.offsetWidth,
+        originX,
+        originY,
+        placement: popup.getAttribute("data-current-placement"),
+      };
+    });
     await page.clock.resume();
     await page.keyboard.press("Escape");
 
@@ -759,7 +758,7 @@ suite.define(() => {
     expect(paletteAnimationName).toBe("none");
     expect(paletteDialogAnimationDuration).toBe("0s");
     expect(drawerAnimationName).toBe("none");
-    expect(hoverCardMotion.animationDuration).toBe("0.14s");
+    expect(hoverCardMotion.transitionDuration).toBe("0.16s");
     expect(hoverCardMotion.placement).toMatch(/^top(?:-|$)/u);
     expect(hoverCardMotion.originX).toBeGreaterThan(hoverCardMotion.popupWidth * 0.45);
     expect(hoverCardMotion.originX).toBeLessThan(hoverCardMotion.popupWidth * 0.55);

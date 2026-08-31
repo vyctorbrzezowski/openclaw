@@ -5,6 +5,7 @@ import { truncateUtf16Safe } from "@openclaw/normalization-core/utf16-slice";
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { handleCopyButton } from "../../components/copy-button.ts";
+import "../../components/hover-help.ts";
 import { renderSettingsSection } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import "../../components/tooltip.ts";
@@ -546,7 +547,7 @@ function renderSummaryStat(params: {
     <div class=${classes}>
       <div class="usage-summary-title">
         ${params.title}
-        <openclaw-tooltip open-on-click>
+        <openclaw-hover-help open-on-click>
           <button
             id=${hintId}
             type="button"
@@ -561,7 +562,7 @@ function renderSummaryStat(params: {
                click-to-open; the click handler still normalizes browsers that do
                not focus buttons on pointer activation. -->
           <span slot="content">${params.hint}</span>
-        </openclaw-tooltip>
+        </openclaw-hover-help>
       </div>
       <div class=${valueClasses}>${params.value}</div>
       <div class="usage-summary-sub">${params.sub}</div>

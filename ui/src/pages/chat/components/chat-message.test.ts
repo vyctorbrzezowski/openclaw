@@ -1512,7 +1512,11 @@ describe("grouped chat rendering", () => {
 
     try {
       await Promise.all(
-        [...container.querySelectorAll("openclaw-tooltip")].map((tip) => tip.updateComplete),
+        [
+          ...container.querySelectorAll<HTMLElement & { updateComplete: Promise<boolean> }>(
+            "openclaw-tooltip, openclaw-hover-help",
+          ),
+        ].map((surface) => surface.updateComplete),
       );
       const summary = container.querySelector<HTMLElement>(".msg-meta__summary")!;
       summary.click();
@@ -1521,8 +1525,8 @@ describe("grouped chat rendering", () => {
       const replyTooltip = reply.closest("openclaw-tooltip")!;
       await Promise.resolve();
       expect(replyTooltip.shadowRoot?.querySelector("wa-tooltip")?.hasAttribute("open")).toBe(true);
-      const metadata = summary.closest("openclaw-tooltip")!;
-      expect(metadata.shadowRoot?.querySelector("wa-tooltip")?.hasAttribute("open")).toBe(false);
+      const metadata = summary.closest("openclaw-hover-help")!;
+      expect(metadata.hasAttribute("open")).toBe(false);
     } finally {
       provider.remove();
     }

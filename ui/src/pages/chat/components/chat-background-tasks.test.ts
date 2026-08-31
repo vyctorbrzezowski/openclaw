@@ -819,7 +819,7 @@ describe("running-tasks status row", () => {
       ],
     });
 
-    const preview = container.querySelector("openclaw-tooltip.chat-tasks-status__preview");
+    const preview = container.querySelector("openclaw-hover-help.chat-tasks-status__preview");
     expect(preview?.firstElementChild?.classList.contains("chat-tasks-status__link")).toBe(true);
     expect(container.querySelector(".chat-tasks-status")?.id).toBe("chat-tasks-status-test");
     expect(preview?.querySelector('.chat-tasks-preview[slot="content"]')).not.toBeNull();

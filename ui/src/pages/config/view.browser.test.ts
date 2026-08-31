@@ -2446,20 +2446,20 @@ describe("config view", () => {
       });
 
       const seen = container.querySelector(".lobster-pet--palette-crimson");
-      const seenTooltip = seen?.closest("openclaw-tooltip");
+      const seenHoverHelp = seen?.closest("openclaw-hover-help");
       expect(seen?.hasAttribute("title")).toBe(false);
       expect(seen?.getAttribute("aria-label")).toContain("Ruby ✦");
-      expect(seenTooltip?.querySelector('[slot="content"]')?.textContent).toContain(
+      expect(seenHoverHelp?.querySelector('[slot="content"]')?.textContent).toContain(
         "The classic red, first in every tide pool.",
       );
-      expect(seenTooltip?.querySelector('[slot="content"]')?.textContent).toContain(
+      expect(seenHoverHelp?.querySelector('[slot="content"]')?.textContent).toContain(
         new Date(firstSeenAt).toLocaleDateString(),
       );
 
       const unseen = container.querySelector(".lobster-pet--palette-watermelon");
       expect(unseen?.getAttribute("aria-label")).toContain("Ripe when thumped.");
       expect(
-        unseen?.closest("openclaw-tooltip")?.querySelector('[slot="content"]')?.textContent,
+        unseen?.closest("openclaw-hover-help")?.querySelector('[slot="content"]')?.textContent,
       ).toContain("Ripe when thumped.");
 
       const openLink = container.querySelector<HTMLAnchorElement>(".lobsterdex__open");

@@ -2091,13 +2091,9 @@
 /* Hover preview on the status row: the latest tasks in a read-only card. The
    tooltip body is content-sized (width: max-content up to --max-width), so a
    single task stays one compact line instead of a fixed-size panel. */
-openclaw-tooltip.chat-tasks-status__preview {
-  --openclaw-tooltip-max-width: min(352px, calc(100vw - 24px));
-  --openclaw-tooltip-background-color: var(--chat-composer-surface, var(--popover));
-  --openclaw-tooltip-border-color: color-mix(in srgb, var(--text-strong) 11%, transparent);
-  --openclaw-tooltip-border-radius: calc(16px * var(--openclaw-corner-radius-scale));
-  --openclaw-tooltip-padding: 11px;
-  --openclaw-tooltip-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 12px 32px rgb(0 0 0 / 14%);
+openclaw-hover-help.chat-tasks-status__preview {
+  --openclaw-hover-help-max-width: min(352px, calc(100vw - 24px));
+  --openclaw-hover-help-padding: 11px;
 }
 
 .chat-tasks-preview {

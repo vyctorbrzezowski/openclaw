@@ -709,31 +709,30 @@ suite.define(() => {
           )
           .toContain("openai");
         const messagesHint = page.locator("#usage-summary-hint-messages");
-        const messagesTooltipHost = messagesHint.locator("xpath=..");
-        const messagesTooltip = messagesTooltipHost.locator("wa-tooltip");
+        const messagesHoverHelp = messagesHint.locator("xpath=..");
         await messagesHint.hover();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBe("");
         await page.mouse.move(1, 1);
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBeNull();
 
         await page.keyboard.press("Tab");
         await messagesHint.focus();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBe("");
         await page.getByRole("button", { name: "Cost", exact: true }).focus();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBeNull();
 
         await messagesHint.click();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBe("");
         await expect
-          .poll(() => messagesTooltipHost.locator('[slot="content"]').textContent())
+          .poll(() => messagesHoverHelp.locator('[slot="content"]').textContent())
           .toContain("Total user and assistant messages in range.");
         await page.getByRole("button", { name: "Cost", exact: true }).click();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBeNull();
         await page.keyboard.press("Tab");
         await messagesHint.focus();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBe("");
         await messagesHint.press("Escape");
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
+        await expect.poll(() => messagesHoverHelp.getAttribute("open")).toBeNull();
         const providerCards = page.locator(".provider-usage-card");
         await expect.poll(() => providerCards.count()).toBe(3);
         await expect

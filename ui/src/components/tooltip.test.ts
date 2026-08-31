@@ -5,7 +5,6 @@ import { createPortaledHovercard, PortaledHovercardController } from "./portaled
 import { installTitleTooltips } from "./tooltip-title.ts";
 
 type TooltipElement = HTMLElement & {
-  closeDelay: number;
   content: string;
   delay: number;
   openOnClick: boolean;
@@ -24,17 +23,6 @@ function createTooltip(content: string, triggerText = "trigger") {
   trigger.textContent = triggerText;
   tooltip.append(trigger);
   return { tooltip, trigger };
-}
-
-function createRichTooltip(content: string, triggerText = "trigger") {
-  const tooltip = document.createElement("openclaw-tooltip") as TooltipElement;
-  const trigger = document.createElement("button");
-  trigger.textContent = triggerText;
-  const card = document.createElement("div");
-  card.slot = "content";
-  card.textContent = content;
-  tooltip.append(trigger, card);
-  return { tooltip, trigger, card };
 }
 
 function createProvider() {
@@ -143,20 +131,7 @@ describe("openclaw-tooltip", () => {
     expect(styles).toContain("var(--overlay-border, var(--border-strong))");
     expect(styles).toContain("var(--overlay-shadow, var(--shadow-md))");
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(styles).toContain("animation: none");
-  });
-
-  it("projects rich content into the Web Awesome tooltip", async () => {
-    const { tooltip, trigger, card } = createRichTooltip("Rich card", "Rich card");
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-
-    const contentSlot =
-      webAwesomeTooltip(tooltip)?.querySelector<HTMLSlotElement>('slot[name="content"]');
-    expect(contentSlot?.assignedElements()).toEqual([card]);
-
-    focusTrigger(trigger);
-    expectOpenCount(1);
+    expect(styles).toContain("--show-duration: 0ms");
   });
 
   it("anchors the Web Awesome popup after its initial update", async () => {
@@ -309,7 +284,7 @@ describe("openclaw-tooltip", () => {
 
   it("pins reveal-only hints until toggled, dismissed, or replaced", async () => {
     const provider = createProvider();
-    const reveal = createRichTooltip("Message context");
+    const reveal = createTooltip("Message context");
     const action = createTooltip("Reply");
     const outside = document.createElement("button");
     reveal.tooltip.openOnClick = true;
@@ -372,9 +347,8 @@ describe("openclaw-tooltip", () => {
 
   it("honors per-tooltip hover intent while keyboard focus stays immediate", async () => {
     const provider = createProvider();
-    const { tooltip, trigger } = createRichTooltip("Intentional hovercard");
+    const { tooltip, trigger } = createTooltip("Intentional tooltip");
     tooltip.delay = 600;
-    tooltip.closeDelay = 300;
     provider.append(tooltip);
     document.body.append(provider);
     await tooltip.updateComplete;
@@ -391,9 +365,6 @@ describe("openclaw-tooltip", () => {
     expectOpenCount(1);
 
     dispatchMousePointer(trigger, "pointerleave");
-    vi.advanceTimersByTime(299);
-    expectOpenCount(1);
-    vi.advanceTimersByTime(1);
     expectOpenCount(0);
 
     focusTrigger(trigger);
@@ -425,10 +396,8 @@ describe("openclaw-tooltip", () => {
     link.href = "#session";
     link.textContent = "Release notes";
     row.append(link);
-    const card = document.createElement("div");
-    card.slot = "content";
-    card.textContent = "Branch feature/sidebar";
-    tooltip.append(row, card);
+    tooltip.content = "Branch feature/sidebar";
+    tooltip.append(row);
     document.body.append(tooltip);
     await tooltip.updateComplete;
 
@@ -440,95 +409,8 @@ describe("openclaw-tooltip", () => {
     );
   });
 
-  it("describes rich content with its text content", async () => {
-    const { tooltip, trigger } = createRichTooltip("Online 2 Alice Server v2026.7.2");
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-
-    const descriptionId = trigger.getAttribute("aria-describedby");
-    expect(descriptionId).toBeTruthy();
-    expect(document.getElementById(descriptionId ?? "")?.textContent).toBe(
-      "Online 2 Alice Server v2026.7.2",
-    );
-  });
-
-  it("refreshes the rich description when assigned descendants change", async () => {
-    const { tooltip, trigger, card } = createRichTooltip("");
-    const detail = document.createElement("span");
-    detail.textContent = "Initial detail";
-    card.append(detail);
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-
-    const descriptionId = trigger.getAttribute("aria-describedby") ?? "";
-    expect(document.getElementById(descriptionId)?.textContent).toBe("Initial detail");
-
-    tooltip.remove();
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-    detail.textContent = "Updated detail";
-    await Promise.resolve();
-    expect(document.getElementById(descriptionId)?.textContent).toBe("Updated detail");
-  });
-
-  it("stays open while focus moves from the trigger into rich content", async () => {
-    const { tooltip, trigger, card } = createRichTooltip("Focusable card");
-    card.tabIndex = 0;
-    const outside = document.createElement("button");
-    document.body.append(tooltip, outside);
-    await tooltip.updateComplete;
-
-    focusTrigger(trigger);
-    trigger.dispatchEvent(
-      new FocusEvent("focusout", { bubbles: true, composed: true, relatedTarget: card }),
-    );
-    focusTrigger(card);
-    expectOpenCount(1);
-
-    card.dispatchEvent(
-      new FocusEvent("focusout", { bubbles: true, composed: true, relatedTarget: outside }),
-    );
-    expectOpenCount(0);
-  });
-
-  it("stays open when a focused trigger is swept through and out of rich content", async () => {
-    const { tooltip, trigger } = createRichTooltip("Scrollable card");
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-
-    trigger.focus();
-    expect(document.activeElement).toBe(trigger);
-    hoverTrigger(trigger);
-    const richContent = tooltip.shadowRoot?.querySelector(".tooltip-rich-content");
-    dispatchMousePointer(trigger, "pointerleave");
-    if (richContent) {
-      dispatchMousePointer(richContent, "pointerenter");
-      dispatchMousePointer(richContent, "pointerleave");
-    }
-    vi.advanceTimersByTime(100);
-
-    expect(document.activeElement).toBe(trigger);
-    expectOpenCount(1);
-  });
-
-  it("closes after pointer leave when nothing retains the rich tooltip", async () => {
-    const { tooltip, trigger } = createRichTooltip("Hover-only card");
-    document.body.append(tooltip);
-    await tooltip.updateComplete;
-
-    hoverTrigger(trigger);
-    vi.advanceTimersByTime(150);
-    expectOpenCount(1);
-
-    dispatchMousePointer(trigger, "pointerleave");
-    vi.advanceTimersByTime(99);
-    expectOpenCount(1);
-    vi.advanceTimersByTime(1);
-    expectOpenCount(0);
-  });
-
   it("closes on focusout to an outside element when not hovered", async () => {
-    const { tooltip, trigger } = createRichTooltip("Focus-only card");
+    const { tooltip, trigger } = createTooltip("Focus-only tooltip");
     const outside = document.createElement("button");
     document.body.append(tooltip, outside);
     await tooltip.updateComplete;

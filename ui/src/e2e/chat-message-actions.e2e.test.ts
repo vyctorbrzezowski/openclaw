@@ -318,17 +318,7 @@ describeControlUiE2e("Control UI chat message actions", () => {
       ],
     });
     const openTooltip = page.locator("wa-tooltip[open]");
-    const popupStyle = () =>
-      openTooltip.locator('[part="body"]').evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          background: style.backgroundColor,
-          border: style.border,
-          radius: style.borderRadius,
-          padding: style.padding,
-          fontSize: style.fontSize,
-        };
-      });
+    const openHoverHelp = page.locator("openclaw-hover-help[open]");
     try {
       await page.goto(`${server.baseUrl}chat`);
       const group = page.locator(".chat-group.assistant").filter({ hasText: "Tooltip proof." });
@@ -338,20 +328,18 @@ describeControlUiE2e("Control UI chat message actions", () => {
         .tap({ position: { x: 4, y: 4 } });
       const timestamp = group.locator(".msg-meta__summary");
       await timestamp.hover();
-      await expect.poll(() => openTooltip.count()).toBe(1);
+      await expect.poll(() => openHoverHelp.count()).toBe(1);
       await group.locator(".msg-meta__details").waitFor({ state: "visible" });
-      const metadataStyle = await popupStyle();
       expect(await group.locator(".msg-meta__details").textContent()).toContain("gpt-5.6-luna");
       expect(await group.locator(".msg-meta__cost").textContent()).toContain("$0.12");
       await screenshot(page, "tooltip-metadata.png");
 
       await timestamp.click();
       await page.mouse.move(0, 0);
-      await expect.poll(() => openTooltip.count()).toBe(1);
+      await expect.poll(() => openHoverHelp.count()).toBe(1);
       const reply = group.getByRole("button", { name: "Reply to message" });
       await expectHoverTooltip(reply, "Reply");
       await expect.poll(() => openTooltip.count()).toBe(1);
-      expect(await popupStyle()).toEqual(metadataStyle);
       await screenshot(page, "tooltip-reply.png");
       await page.keyboard.press("Escape");
       await expect.poll(() => openTooltip.count()).toBe(0);
@@ -360,21 +348,20 @@ describeControlUiE2e("Control UI chat message actions", () => {
       await file.hover();
       await expect.poll(() => openTooltip.count()).toBe(1);
       expect(await openTooltip.textContent()).toContain("/workspace/tooltip-proof.txt");
-      expect(await popupStyle()).toEqual(metadataStyle);
       expect(await file.getAttribute("title")).toBe("");
       await screenshot(page, "tooltip-file-hint.png");
 
       await page.setViewportSize({ width: 390, height: 844 });
       await timestamp.tap();
-      await expect.poll(() => openTooltip.count()).toBe(1);
+      await expect.poll(() => openHoverHelp.count()).toBe(1);
       await group.locator(".msg-meta__details").waitFor({ state: "visible" });
-      const bounds = await openTooltip.locator('[part="body"]').boundingBox();
+      const bounds = await openHoverHelp.locator(".msg-meta__details").boundingBox();
       expect(bounds).not.toBeNull();
       expect(bounds!.x).toBeGreaterThanOrEqual(0);
       expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
       await screenshot(page, "tooltip-mobile.png");
       await timestamp.tap();
-      await expect.poll(() => openTooltip.count()).toBe(0);
+      await expect.poll(() => openHoverHelp.count()).toBe(0);
     } finally {
       await context.close();
     }
