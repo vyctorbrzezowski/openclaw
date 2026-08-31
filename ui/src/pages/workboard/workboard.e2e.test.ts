@@ -762,6 +762,74 @@ suite.define(() => {
     }
   });
 
+  it("removes a card before delete acknowledgement and restores it after rejection", async () => {
+    const artifacts: ProofArtifacts = { screenshots: [], videos: [] };
+    const parent = card({ id: "delete-parent", position: 1000, title: "Delete without waiting" });
+    const child = card({
+      id: "delete-child",
+      metadata: {
+        links: [
+          {
+            createdAt: baseTime,
+            id: "delete-link",
+            targetCardId: parent.id,
+            type: "parent",
+          },
+        ],
+      },
+      position: 2000,
+      title: "Linked follow-up",
+    });
+    const recorded = await newRecordedPage("workboard-optimistic-delete");
+    try {
+      const gateway = await installMockGateway(recorded.page, {
+        methodResponses: {
+          "config.get": workboardConfigSnapshot(),
+          "sessions.list": sessionsListResponse([]),
+          "tasks.list": { nextCursor: null, tasks: [] },
+          "workboard.cards.list": cardsListResponse([parent, child]),
+        },
+      });
+      const response = await recorded.page.goto(`${suite.server.baseUrl}workboard`);
+      expect(response?.status()).toBe(200);
+      const parentCard = cardInColumn(recorded.page, "Todo", parent.title);
+      await parentCard.waitFor({ state: "visible" });
+      await cardInColumn(recorded.page, "Todo", child.title).waitFor({ state: "visible" });
+      await captureScreenshot(recorded.page, artifacts, "optimistic-delete-01-before");
+
+      await gateway.deferNext("workboard.cards.delete");
+      const deleteBefore = (await gateway.getRequests("workboard.cards.delete")).length;
+      const listBefore = (await gateway.getRequests("workboard.cards.list")).length;
+      await parentCard.getByRole("button", { name: "Delete card" }).click();
+      const request = await waitForNextRequest(gateway, "workboard.cards.delete", deleteBefore);
+      expect(requestParams(request)).toEqual({ id: parent.id });
+      await parentCard.waitFor({ state: "hidden" });
+      expect(await gateway.getRequests("workboard.cards.delete")).toHaveLength(deleteBefore + 1);
+      expect(await gateway.getRequests("workboard.cards.list")).toHaveLength(listBefore);
+      await captureScreenshot(recorded.page, artifacts, "optimistic-delete-02-pending");
+      await recorded.page.waitForTimeout(1_000);
+
+      await gateway.rejectDeferred("workboard.cards.delete", {
+        message: "Delete unavailable",
+      });
+      await parentCard.waitFor({ state: "visible" });
+      await recorded.page.locator(".callout.danger").getByText("Delete unavailable").waitFor({
+        state: "visible",
+      });
+      await captureScreenshot(recorded.page, artifacts, "optimistic-delete-03-rollback");
+    } finally {
+      await closeRecordedPage(recorded, artifacts, "workboard-optimistic-delete");
+    }
+
+    if (captureUiProofEnabled) {
+      await writeFile(
+        path.join(artifactDir, "optimistic-delete-manifest.json"),
+        `${JSON.stringify(artifacts, null, 2)}\n`,
+        "utf-8",
+      );
+    }
+  });
+
   it("keeps card titles visible when a column overflows its height", async () => {
     const artifacts: ProofArtifacts = { screenshots: [], videos: [] };
     const crowdedColumnCardCount = 8;

@@ -3611,6 +3611,7 @@ describe("workboard controller", () => {
   });
 
   it("removes stale dependency links from local cards after delete", async () => {
+    const deletion = createDeferred<unknown>();
     const parent = makeCard({
       id: "parent-1",
       title: "Parent",
@@ -3625,7 +3626,7 @@ describe("workboard controller", () => {
     });
     const client = createClient((method) => {
       if (method === "workboard.cards.delete") {
-        return { deleted: true };
+        return deletion.promise;
       }
       if (method === "workboard.cards.start") {
         return {
@@ -3642,11 +3643,15 @@ describe("workboard controller", () => {
     });
     getWorkboardState(host).cards = [parent, child];
 
-    await deleteCard(client, parent.id);
+    const pendingDelete = deleteCard(client, parent.id);
 
     const remaining = expectDefined(getWorkboardState(host).cards[0], "remaining child card");
     expect(remaining).toMatchObject({ id: child.id });
     expect(remaining.metadata?.links).toBeUndefined();
+    expect(getWorkboardState(host).busyCardIds).toEqual(new Set([parent.id]));
+
+    deletion.resolve({ deleted: true });
+    await pendingDelete;
 
     client.request.mockClear();
     await startCard(client, {
@@ -3654,6 +3659,39 @@ describe("workboard controller", () => {
     });
 
     expect(client.request).toHaveBeenNthCalledWith(1, "workboard.cards.start", { id: child.id });
+  });
+
+  it("rolls back an optimistic delete without overwriting concurrent card changes", async () => {
+    const deletion = createDeferred<unknown>();
+    const parent = makeCard({ id: "parent-1", title: "Parent", position: 1000 });
+    const child = makeCard({
+      id: "child-1",
+      title: "Child",
+      position: 2000,
+      metadata: {
+        links: [{ id: "link-1", type: "parent", targetCardId: parent.id, createdAt: 1 }],
+      },
+    });
+    const client = createClient((method) => {
+      if (method === "workboard.cards.delete") {
+        return deletion.promise;
+      }
+      if (method === "workboard.cards.move") {
+        return { card: { ...child, status: "review", metadata: undefined } };
+      }
+      return {};
+    });
+    getWorkboardState(host).cards = [parent, child];
+
+    const pendingDelete = deleteCard(client, parent.id);
+    await moveCard(client, { cardId: child.id, status: "review", position: child.position });
+    expect(requestCalls(client, "workboard.cards.delete")).toHaveLength(1);
+    deletion.reject(new Error("delete unavailable"));
+    await pendingDelete;
+
+    expect(getWorkboardState(host).cards).toEqual([parent, { ...child, status: "review" }]);
+    expect(getWorkboardState(host).busyCardIds).toEqual(new Set());
+    expect(getWorkboardState(host).error).toBe("delete unavailable");
   });
 
   it("derives lifecycle state from linked dashboard sessions", () => {

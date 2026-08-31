@@ -243,11 +243,38 @@ export async function deleteWorkboardCard(params: {
   invalidateWorkboardLoads(params.host);
   state.busyCardIds.add(params.cardId);
   state.error = null;
+  const deletedCard = state.cards.find((card) => card.id === params.cardId);
+  const removedLinkSnapshots = new Map(
+    state.cards.flatMap((card) => {
+      const removed = card.metadata?.links?.flatMap((link, index) =>
+        link.targetCardId === params.cardId ? [{ index, link }] : [],
+      );
+      return removed?.length ? [[card.id, removed] as const] : [];
+    }),
+  );
+  state.cards = removeCardAndReferences(state.cards, params.cardId);
   params.requestUpdate?.();
   try {
     await params.client.request("workboard.cards.delete", { id: params.cardId });
-    state.cards = removeCardAndReferences(state.cards, params.cardId);
   } catch (error) {
+    // Roll back only this delete's projection. Sibling card writes can finish
+    // while it is pending, so restoring the whole card array would lose them.
+    state.cards = state.cards.map((card) => {
+      const removed = removedLinkSnapshots.get(card.id);
+      if (!removed) {
+        return card;
+      }
+      const links = [...(card.metadata?.links ?? [])];
+      for (const snapshot of removed) {
+        if (!links.some((link) => link.id === snapshot.link.id)) {
+          links.splice(Math.min(snapshot.index, links.length), 0, snapshot.link);
+        }
+      }
+      return { ...card, metadata: { ...card.metadata, links } };
+    });
+    if (deletedCard && !state.cards.some((card) => card.id === deletedCard.id)) {
+      replaceCard(state, deletedCard);
+    }
     state.error = formatError(error);
   } finally {
     state.busyCardIds.delete(params.cardId);
