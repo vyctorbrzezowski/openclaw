@@ -57,7 +57,7 @@ export const terminalPanelStyles = css`
   }
   .tp-session-menu {
     position: absolute;
-    z-index: 4;
+    z-index: var(--z-dropdown);
     top: calc(100% + 3px);
     left: 8px;
     right: 8px;
@@ -73,6 +73,17 @@ export const terminalPanelStyles = css`
     border-radius: var(--menu-radius);
     background: var(--bg-elevated);
     box-shadow: var(--overlay-shadow);
+    animation: menu-in var(--menu-duration) var(--ease-out);
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      scale: 0.9;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
   }
   .tp-session-menu__header {
     display: flex;
@@ -107,7 +118,7 @@ export const terminalPanelStyles = css`
     border-radius: var(--menu-item-radius);
     background: transparent;
     color: var(--text, #d7dae0);
-    padding: 7px 8px;
+    padding: var(--menu-item-padding);
     text-align: left;
   }
   .tp-session:not(:disabled):hover,
@@ -115,7 +126,7 @@ export const terminalPanelStyles = css`
     background: var(--bg-hover);
   }
   .tp-session:disabled {
-    opacity: 0.55;
+    opacity: var(--menu-disabled-opacity);
   }
   .tp-session__agent {
     overflow: hidden;

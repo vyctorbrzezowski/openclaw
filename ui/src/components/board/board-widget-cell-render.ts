@@ -73,7 +73,12 @@ export function renderBoardWidgetMenu(options: {
           </wa-dropdown-item>`
         : nothing}
       <div class="board-widget__menu-separator" role="separator"></div>
-      <wa-dropdown-item class="board-widget__menu-danger" value="remove" ?disabled=${disabled}>
+      <wa-dropdown-item
+        class="board-widget__menu-danger"
+        value="remove"
+        variant="danger"
+        ?disabled=${disabled}
+      >
         ${t("board.widget.remove")}
       </wa-dropdown-item>
     </wa-dropdown>

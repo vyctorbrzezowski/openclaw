@@ -93,7 +93,7 @@ openclaw-board-view {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--menu-item-radius);
   color: var(--muted);
   cursor: var(--cursor-action);
   display: inline-flex;
@@ -115,11 +115,6 @@ openclaw-board-view {
 .board-tabs__overflow::part(menu),
 .board-widget__menu::part(menu) {
   min-width: 190px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .board-tabs__overflow-item {

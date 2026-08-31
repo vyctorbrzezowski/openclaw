@@ -308,7 +308,10 @@
   --menu-radius: var(--radius-md);
   --menu-item-radius: var(--radius-sm);
   --menu-item-height: 28px;
+  --menu-item-padding: 0 8px;
+  --menu-disabled-opacity: 0.5;
   --menu-padding: 4px;
+  --menu-duration: var(--duration-fast);
 
   /* Transitions - Crisp and responsive */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -496,7 +499,7 @@
   wa-popover::part(body),
   wa-select::part(listbox),
   wa-select::part(combobox) {
-    border-radius: calc(10px * var(--openclaw-corner-radius-scale)) !important;
+    border-radius: var(--menu-radius) !important;
     corner-shape: superellipse(1.5);
   }
 }
@@ -871,10 +874,16 @@ wa-switch {
    Document rules beat `:host`, so route them through the policy here — and
    re-add the disabled cue this override would otherwise clobber. */
 wa-dropdown-item {
+  --wa-color-neutral-fill-normal: var(--bg-hover);
+
+  min-height: var(--menu-item-height);
+  padding: var(--menu-item-padding);
+  border-radius: var(--menu-item-radius);
   cursor: var(--cursor-action);
 }
 
 wa-dropdown-item[disabled] {
+  opacity: var(--menu-disabled-opacity);
   cursor: not-allowed;
 }
 
@@ -895,7 +904,20 @@ wa-dropdown-item[type="checkbox"] {
 
 /* Web Awesome owns these popup panels in shadow DOM, so shared tokens enter
    through exported parts; feature styles continue to own content geometry. */
-wa-dropdown::part(menu),
+wa-dropdown {
+  --wa-transition-fast: var(--menu-duration);
+  --show-duration: var(--menu-duration);
+  --hide-duration: var(--menu-duration);
+}
+
+wa-dropdown::part(menu) {
+  padding: var(--menu-padding);
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--menu-radius);
+  background: var(--popover);
+  box-shadow: var(--overlay-shadow);
+}
+
 wa-dropdown-item::part(submenu),
 wa-popover::part(body),
 wa-select::part(listbox) {
@@ -1000,11 +1022,11 @@ wa-popover::part(body)::-webkit-scrollbar-thumb:hover {
 @keyframes menu-in {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    scale: 0.9;
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    scale: 1;
   }
 }
 
@@ -1085,6 +1107,10 @@ wa-popover::part(body)::-webkit-scrollbar-thumb:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --menu-duration: 0.01ms;
+  }
+
   *,
   *::before,
   *::after {

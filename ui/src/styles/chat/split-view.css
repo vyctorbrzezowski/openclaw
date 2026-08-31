@@ -368,10 +368,6 @@ openclaw-chat-pane {
 .chat-pane__placement-menu::part(menu) {
   width: 250px;
   padding: 6px;
-  border: 1px solid var(--overlay-border);
-  border-radius: 8px;
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .chat-pane__placement-chip {
@@ -433,17 +429,9 @@ openclaw-chat-pane {
   min-width: 0;
 }
 
-.chat-pane__gateway-menu::part(menu) {
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
-}
-
 .chat-pane__gateway-menu-item {
   min-height: var(--menu-item-height);
-  padding: 0 8px;
+  padding: var(--menu-item-padding);
   border-radius: var(--menu-item-radius);
   color: var(--text);
   font: inherit;

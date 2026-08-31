@@ -1185,15 +1185,17 @@ img.chat-avatar.chat-avatar--logo {
 
 .chat-confirm-popover {
   position: fixed;
-  background: var(--card);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  border-radius: var(--radius-md, 8px);
+  inset: auto;
+  z-index: var(--z-dropdown);
+  margin: 0;
+  background: var(--popover);
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--menu-radius);
   padding: 12px;
   min-width: 200px;
   max-width: calc(100vw - 48px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
-  animation: scale-in 0.15s ease-out;
+  box-shadow: var(--overlay-shadow);
+  animation: menu-in var(--menu-duration) var(--ease-out);
   transform-origin: top right;
 }
 
@@ -1237,12 +1239,12 @@ img.chat-avatar.chat-avatar--logo {
 }
 
 .chat-confirm-popover__cancel {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  background: var(--bg-hover);
   color: var(--muted);
 }
 
 .chat-confirm-popover__cancel:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--text) 12%, transparent);
 }
 
 .chat-confirm-popover__yes {

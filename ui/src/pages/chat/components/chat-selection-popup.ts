@@ -2,6 +2,7 @@
 // companion immediately; "Ask in side chat" pre-fills the session rail.
 // Mirrors the imperative reply-context-menu pattern in chat-thread.ts.
 
+import { promoteToPopoverTopLayer } from "../../../components/menu-surface.ts";
 import { t } from "../../../i18n/index.ts";
 
 type ChatSelectionPopupActions = {
@@ -110,15 +111,20 @@ function showChatSelectionPopup(
     ),
   );
   document.body.appendChild(popup);
+  promoteToPopoverTopLayer(popup);
   activeSelectionPopup = popup;
 
+  popup.style.left = `${selectionRect.left}px`;
+  popup.style.top = `${selectionRect.top}px`;
   const popupRect = popup.getBoundingClientRect();
-  let left = selectionRect.left + selectionRect.width / 2 - popupRect.width / 2;
-  let top = selectionRect.top - popupRect.height - 8;
+  const popupWidth = popup.offsetWidth || popupRect.width;
+  const popupHeight = popup.offsetHeight || popupRect.height;
+  let left = selectionRect.left + selectionRect.width / 2 - popupWidth / 2;
+  let top = selectionRect.top - popupHeight - 8;
   if (top < 8) {
     top = selectionRect.bottom + 8;
   }
-  left = Math.min(Math.max(8, left), window.innerWidth - popupRect.width - 8);
+  left = Math.min(Math.max(8, left), window.innerWidth - popupWidth - 8);
   popup.style.left = `${left}px`;
   popup.style.top = `${top}px`;
 

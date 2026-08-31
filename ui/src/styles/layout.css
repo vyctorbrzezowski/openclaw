@@ -2314,21 +2314,6 @@ openclaw-settings-save-indicator:empty {
   box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
-.sidebar-customize-menu:not(wa-dropdown) {
-  position: fixed;
-  z-index: 120;
-  min-width: 224px;
-  max-width: 264px;
-  max-height: 420px;
-  overflow-y: auto;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
-  animation: menu-in 140ms var(--ease-out);
-}
-
 wa-dropdown.sidebar-customize-menu {
   position: fixed;
   z-index: 120;
@@ -2339,11 +2324,6 @@ wa-dropdown.sidebar-customize-menu::part(menu) {
   max-width: 264px;
   max-height: 420px;
   overflow-y: auto;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .sidebar-customize-menu__title {
@@ -2447,19 +2427,6 @@ wa-dropdown-item.sidebar-customize-menu__item {
   color: var(--accent);
 }
 
-.session-menu:not(wa-dropdown) {
-  position: fixed;
-  z-index: 121;
-  min-width: 224px;
-  max-width: 264px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
-  animation: menu-in 140ms var(--ease-out);
-}
-
 wa-dropdown.session-menu {
   position: fixed;
   z-index: 121;
@@ -2468,11 +2435,6 @@ wa-dropdown.session-menu {
 wa-dropdown.session-menu::part(menu) {
   min-width: 224px;
   max-width: 264px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .session-menu--compact .session-menu__back {
@@ -2506,19 +2468,6 @@ openclaw-session-menu[popover] {
   background: transparent;
 }
 
-.sidebar-session-sort-menu:not(wa-dropdown) {
-  position: fixed;
-  z-index: 121;
-  min-width: 176px;
-  max-width: 220px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
-  animation: menu-in 140ms var(--ease-out);
-}
-
 wa-dropdown.sidebar-session-sort-menu {
   position: fixed;
   z-index: 121;
@@ -2527,11 +2476,6 @@ wa-dropdown.sidebar-session-sort-menu {
 wa-dropdown.sidebar-session-sort-menu::part(menu) {
   min-width: 176px;
   max-width: 220px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .sidebar-session-sort-menu__title {
@@ -2550,7 +2494,7 @@ wa-dropdown.sidebar-session-sort-menu::part(menu) {
   gap: 8px;
   width: 100%;
   min-height: var(--menu-item-height);
-  padding: 0 8px;
+  padding: var(--menu-item-padding);
   border: none;
   border-radius: var(--menu-item-radius);
   background: transparent;
@@ -2595,7 +2539,7 @@ wa-dropdown-item.session-menu__item::part(submenu-icon) {
 
 .session-menu__item:disabled,
 .session-menu__item[aria-disabled="true"] {
-  opacity: 0.42;
+  opacity: var(--menu-disabled-opacity);
   cursor: not-allowed;
 }
 
@@ -3824,19 +3768,11 @@ wa-dropdown.sidebar-agent-menu::part(menu) {
 }
 
 .sidebar-identity-menu {
-  --menu-item-height: 32px;
-  --menu-padding: 6px;
-
   overflow: visible;
 }
 
 wa-dropdown.sidebar-identity-menu::part(menu) {
   min-width: max(224px, var(--sidebar-identity-menu-min-width, 224px));
-  border-color: transparent;
-  border-radius: var(--radius-md);
-  box-shadow:
-    0 0 0 1px var(--overlay-border),
-    var(--overlay-shadow);
 }
 
 .sidebar-identity-menu__header {

@@ -960,6 +960,16 @@ openclaw-chat-page {
   corner-shape: superellipse(1.5);
 }
 
+.agent-chat__attach-menu,
+.agent-chat__capability-menu,
+.chat-controls__permission-picker,
+.chat-talk-input-picker {
+  --menu-radius: var(--chat-composer-popover-radius, var(--radius-lg));
+  --menu-item-radius: var(--chat-composer-menu-row-radius, var(--radius-md));
+  --menu-item-height: var(--chat-composer-menu-row-height, 40px);
+  --menu-item-padding: var(--chat-composer-menu-row-padding, 6px 9px);
+}
+
 /* Composer popovers share one information architecture: a quiet title, a
    consistent icon/copy/state rail, and a neutral selected surface. Their
    widths still follow the amount of content each owner needs. */
@@ -2031,14 +2041,16 @@ button.chat-reply-preview--message:disabled {
 /* Right-click reply context menu */
 .chat-reply-context-menu {
   position: fixed;
-  z-index: 9999;
+  inset: auto;
+  z-index: var(--z-dropdown);
+  margin: 0;
   padding: var(--menu-padding);
   border: 1px solid var(--overlay-border);
   border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
+  background: var(--popover);
   box-shadow: var(--overlay-shadow);
   min-width: 160px;
-  animation: menu-in 140ms var(--ease-out);
+  animation: menu-in var(--menu-duration) var(--ease-out);
 }
 
 .chat-reply-context-menu button {
@@ -2046,7 +2058,7 @@ button.chat-reply-preview--message:disabled {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--menu-item-padding);
   border: none;
   background: none;
   color: var(--text);
@@ -2061,15 +2073,21 @@ button.chat-reply-preview--message:disabled {
   outline: none;
 }
 
+.chat-reply-context-menu button:disabled {
+  opacity: var(--menu-disabled-opacity);
+}
+
 .chat-selection-popup {
   position: fixed;
-  z-index: 9999;
+  inset: auto;
+  z-index: var(--z-dropdown);
+  margin: 0;
   display: flex;
   gap: 2px;
   padding: var(--menu-padding);
   border: 1px solid var(--overlay-border);
   border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
+  background: var(--popover);
   box-shadow: var(--overlay-shadow);
   animation: fade-in 0.12s var(--ease-out);
 }
@@ -3024,15 +3042,15 @@ button.chat-pr__diff {
 
 .chat-pr__checks-menu {
   position: absolute;
-  z-index: 30;
+  z-index: var(--z-dropdown);
   right: 0;
   bottom: calc(100% + 8px);
   min-width: 200px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--panel);
-  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 0.18));
+  border: 1px solid var(--overlay-border);
+  border-radius: var(--menu-radius);
+  background: var(--popover);
+  box-shadow: var(--overlay-shadow);
   color: var(--text);
   font-size: 13px;
   font-weight: 500;
@@ -4989,28 +5007,6 @@ button.chat-pr__diff {
 .chat-talk-input-picker::part(menu) {
   width: min(300px, calc(100vw - 24px));
   padding: 8px;
-  /* Same quick family as the chevron's own reveal, anchored at the bottom edge
-     the menu is placed against, so the list reads as continuing out of the
-     control the operator just touched rather than arriving from elsewhere. */
-  transform-origin: bottom right;
-  animation: chat-talk-input-picker-enter 140ms ease-out;
-}
-
-@keyframes chat-talk-input-picker-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-talk-input-picker::part(menu) {
-    animation: none;
-  }
 }
 
 .chat-talk-input-picker__item {

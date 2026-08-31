@@ -934,7 +934,7 @@
   color: var(--text);
   font-size: 13px;
   text-align: left;
-  padding: 7px 10px;
+  padding: var(--menu-item-padding);
   border-radius: var(--menu-item-radius);
   cursor: var(--cursor-action);
 }
@@ -1299,18 +1299,8 @@
 
 .cron-job-menu::part(menu) {
   min-width: 170px;
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }
 
 .cron-filter-dropdown__details::part(menu) {
   width: min(300px, calc(100vw - 48px));
-  padding: var(--menu-padding);
-  border: 1px solid var(--overlay-border);
-  border-radius: var(--menu-radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--overlay-shadow);
 }

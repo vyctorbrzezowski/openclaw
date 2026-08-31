@@ -1,5 +1,6 @@
 import { html } from "lit";
 import { icons } from "../../../components/icons.ts";
+import { promoteToPopoverTopLayer } from "../../../components/menu-surface.ts";
 import { t } from "../../../i18n/index.ts";
 import { getSafeLocalStorage } from "../../../local-storage.ts";
 
@@ -66,14 +67,20 @@ function clampConfirmedActionPosition(value: number, min: number, max: number) {
 
 function placeConfirmedActionPopover(trigger: HTMLElement, popover: HTMLElement) {
   const triggerRect = trigger.getBoundingClientRect();
-  const popoverRect = popover.getBoundingClientRect();
   const viewport = resolveViewportBounds();
   const margin = CONFIRMED_ACTION_VIEWPORT_MARGIN_PX;
   const gap = CONFIRMED_ACTION_TRIGGER_GAP_PX;
   const viewportWidth = viewport.right - viewport.left;
   const viewportHeight = viewport.bottom - viewport.top;
-  const popoverWidth = Math.min(popoverRect.width, viewportWidth - margin * 2);
-  const popoverHeight = Math.min(popoverRect.height, viewportHeight - margin * 2);
+  const popoverRect = popover.getBoundingClientRect();
+  const popoverWidth = Math.min(
+    popover.offsetWidth || popoverRect.width,
+    viewportWidth - margin * 2,
+  );
+  const popoverHeight = Math.min(
+    popover.offsetHeight || popoverRect.height,
+    viewportHeight - margin * 2,
+  );
   const spaceAbove = triggerRect.top - viewport.top - margin - gap;
   const spaceBelow = viewport.bottom - triggerRect.bottom - margin - gap;
   const placeBelow = spaceAbove < popoverHeight && spaceBelow >= spaceAbove;
@@ -187,6 +194,7 @@ function openConfirmedActionPopover(btn: HTMLElement, params: ConfirmedActionPar
   // descendants relative to the row instead of the viewport. Portal the dialog
   // so the viewport-clamped coordinates stay correct in web and native hosts.
   owner.ownerDocument.body.appendChild(popover);
+  promoteToPopoverTopLayer(popover);
   confirmedActionOwners.set(popover, owner);
   confirmedActionPopovers.add(popover);
   confirmedActionPopoversByOwner.set(owner, popover);

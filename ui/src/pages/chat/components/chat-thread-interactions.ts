@@ -9,6 +9,7 @@ import { copyMarkdownLabel, handleCopyButton } from "../../../components/copy-bu
 import { icons } from "../../../components/icons.ts";
 import type { ImageLightboxItem } from "../../../components/image-lightbox.ts";
 import type { SessionLinkTarget } from "../../../components/markdown-session-links.ts";
+import { promoteToPopoverTopLayer } from "../../../components/menu-surface.ts";
 import type { PersonActivityRouting } from "../../../components/person-activity-link.ts";
 import "../../../components/tooltip.ts";
 import { t } from "../../../i18n/index.ts";
@@ -576,17 +577,25 @@ export function handleTranscriptContextMenu(event: MouseEvent, props: Transcript
     focusCandidates.push(action.button);
   }
   document.body.appendChild(menu);
+  promoteToPopoverTopLayer(menu);
   activeReplyContextMenu = menu;
   activeReplyContextMenuPaneId = props.paneId;
 
+  // Entering the top layer changes the fixed-position containing block in some
+  // engines. Reapply the anchor before measuring so viewport clamping sees the
+  // same coordinates the menu will paint at.
+  menu.style.left = `${event.clientX}px`;
+  menu.style.top = `${event.clientY}px`;
   const menuRect = menu.getBoundingClientRect();
+  const menuWidth = menu.offsetWidth || menuRect.width;
+  const menuHeight = menu.offsetHeight || menuRect.height;
   let left = event.clientX;
   let top = event.clientY;
-  if (left + menuRect.width > window.innerWidth) {
-    left = window.innerWidth - menuRect.width - 8;
+  if (left + menuWidth > window.innerWidth) {
+    left = window.innerWidth - menuWidth - 8;
   }
-  if (top + menuRect.height > window.innerHeight) {
-    top = window.innerHeight - menuRect.height - 8;
+  if (top + menuHeight > window.innerHeight) {
+    top = window.innerHeight - menuHeight - 8;
   }
   menu.style.left = `${Math.max(0, left)}px`;
   menu.style.top = `${Math.max(0, top)}px`;
