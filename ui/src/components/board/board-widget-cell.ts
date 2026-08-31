@@ -465,7 +465,7 @@ class OpenClawBoardWidgetCell extends OpenClawLightDomElement {
               })}
         </header>
         <div
-          class=${`board-widget__body ${contentScrollable ? "board-widget__body--scrollable" : ""} ${presentation === "card" ? "board-widget__body--card" : ""}`}
+          class=${`board-widget__body ${contentScrollable ? "board-widget__body--scrollable" : ""}`}
         >
           ${body}
           ${this.actionError && widget.grantState !== "pending"

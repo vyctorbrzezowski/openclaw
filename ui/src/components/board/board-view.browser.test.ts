@@ -349,14 +349,14 @@ describe.skipIf(!hasBrowserLayout)("openclaw-board-view browser layout", () => {
         data: { type: "openclaw:widget-size", height: 300 },
       }),
     );
-    // The card hugs its exact content height (300px + 2x12px card inset); the
-    // ceil-to-row slack stays outside the card as grid background.
-    await vi.waitFor(() => expect(Math.round(first.getBoundingClientRect().height)).toBe(324));
+    // The card hugs the authored content height; ceil-to-row slack stays
+    // outside the card as grid background.
+    await vi.waitFor(() => expect(Math.round(first.getBoundingClientRect().height)).toBe(300));
     expect(second.getBoundingClientRect().top).toBeGreaterThan(secondTopBefore);
 
     const cardBody = first.querySelector<HTMLElement>(".board-widget__body");
     expect(first.classList.contains("board-widget--card")).toBe(true);
-    expect(getComputedStyle(cardBody!).paddingTop).toBe("12px");
+    expect(getComputedStyle(cardBody!).paddingTop).toBe("0px");
     expect(second.classList.contains("board-widget--frameless")).toBe(true);
     expect(getComputedStyle(second).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(getComputedStyle(second).borderTopColor).toBe("rgba(0, 0, 0, 0)");

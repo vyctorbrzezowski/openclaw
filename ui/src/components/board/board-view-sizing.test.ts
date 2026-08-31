@@ -15,12 +15,17 @@ afterEach(() => {
 });
 
 describe("board widget sizing", () => {
-  it("snaps reported HTML heights to rows with card inset and fixed-mode fallbacks", () => {
+  it("snaps reported HTML heights to rows with fixed-mode fallbacks", () => {
     const card = boardWidget({ sizeH: 6 });
     expect(effectiveBoardWidgetRows(card, 100)).toBe(2);
-    expect(effectiveBoardWidgetRows(card, 101)).toBe(3);
-    expect(effectiveBoardWidgetRows({ ...card, presentation: "full-bleed" }, 124)).toBe(2);
-    expect(effectiveBoardWidgetRows({ ...card, presentation: "frameless" }, 125)).toBe(3);
+    expect(effectiveBoardWidgetRows(card, 124)).toBe(2);
+    expect(effectiveBoardWidgetRows(card, 125)).toBe(3);
+    expect(
+      effectiveBoardWidgetRows(boardWidget({ sizeH: 6, presentation: "full-bleed" }), 125),
+    ).toBe(3);
+    expect(
+      effectiveBoardWidgetRows(boardWidget({ sizeH: 6, presentation: "frameless" }), 125),
+    ).toBe(3);
     expect(effectiveBoardWidgetRows(card, 1)).toBe(2);
     expect(effectiveBoardWidgetRows(card, 10_000)).toBe(20);
     expect(effectiveBoardWidgetRows({ ...card, heightMode: "fixed" }, 600)).toBe(6);
@@ -29,22 +34,23 @@ describe("board widget sizing", () => {
     // Coarse-pointer layouts keep the 38px bar in flow; the same report needs
     // more rows than the fine-pointer overlay layout.
     expect(effectiveBoardWidgetRows(card, 101, 38)).toBe(3);
-    expect(effectiveBoardWidgetRows(card, 150, 38)).toBe(4);
-    expect(effectiveBoardWidgetRows(card, 150, 0)).toBe(3);
+    expect(effectiveBoardWidgetRows(card, 155, 38)).toBe(4);
+    expect(effectiveBoardWidgetRows(card, 155, 0)).toBe(3);
   });
 
   it("hugs auto cards to their exact content height inside the quantized cell", () => {
     const card = boardWidget({ sizeH: 6 });
-    // Card inset adds 12px per edge; frameless/full-bleed report bare content.
-    expect(exactBoardWidgetHeightPx(card, 300)).toBe(324);
-    expect(exactBoardWidgetHeightPx({ ...card, presentation: "frameless" }, 300)).toBe(300);
+    expect(exactBoardWidgetHeightPx(card, 300)).toBe(300);
+    expect(
+      exactBoardWidgetHeightPx(boardWidget({ sizeH: 6, presentation: "frameless" }), 300),
+    ).toBe(300);
     // Short content hugs below the 2-row cell minimum: the cell keeps its
     // minimum span, only the card shrinks.
-    expect(exactBoardWidgetHeightPx(card, 60)).toBe(84);
+    expect(exactBoardWidgetHeightPx(card, 60)).toBe(60);
     // At the 20-row cap the card fills the cell exactly and the body clips.
     expect(exactBoardWidgetHeightPx(card, 10_000)).toBe(20 * 56 + 19 * 12);
     // Coarse-pointer layouts keep the 38px bar in flow, joining the height.
-    expect(exactBoardWidgetHeightPx(card, 300, 38)).toBe(362);
+    expect(exactBoardWidgetHeightPx(card, 300, 38)).toBe(338);
     expect(exactBoardWidgetHeightPx({ ...card, heightMode: "fixed" }, 300)).toBeUndefined();
     expect(exactBoardWidgetHeightPx(card, undefined)).toBeUndefined();
     expect(exactBoardWidgetHeightPx({ ...card, contentKind: "mcp-app" }, 300)).toBeUndefined();

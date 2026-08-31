@@ -198,8 +198,6 @@ export function toCssPlacement(rect: BoardGridRect): string {
   return `grid-column: ${rect.x + 1} / span ${rect.w}; grid-row: ${rect.y + 1} / span ${rect.h};`;
 }
 
-// Keep this numeric inset aligned with the app-level --widget-frame-inset token.
-const BOARD_WIDGET_FRAME_INSET = 12;
 const BOARD_WIDGET_AUTO_MIN_ROWS = 2;
 const BOARD_WIDGET_AUTO_MAX_ROWS = 20;
 // Mirrors the 38px header grid row in board.css: coarse-pointer layouts keep
@@ -233,11 +231,7 @@ function autoBoardWidgetHeightPx(
   ) {
     return undefined;
   }
-  return (
-    contentHeightPx +
-    chromeRowPx +
-    ((widget.presentation ?? "card") === "card" ? BOARD_WIDGET_FRAME_INSET * 2 : 0)
-  );
+  return contentHeightPx + chromeRowPx;
 }
 
 function boardRowSpanPx(rows: number): number {
@@ -286,6 +280,5 @@ export function exactBoardWidgetHeightPx(
 type BoardWidgetSizingInput = {
   contentKind: string;
   heightMode?: "auto" | "fixed";
-  presentation?: "card" | "full-bleed" | "frameless";
   sizeH: number;
 };

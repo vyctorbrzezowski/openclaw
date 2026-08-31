@@ -280,11 +280,6 @@ openclaw-board-widget-cell {
   position: relative;
 }
 
-.board-widget__body--card {
-  box-sizing: border-box;
-  padding: var(--widget-frame-inset);
-}
-
 .board-widget__body--scrollable {
   overflow: auto;
 }
