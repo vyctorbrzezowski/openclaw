@@ -22,10 +22,12 @@ import type {
   SessionConnectionOwner,
   SessionConnectionScope,
   SessionCreateReconciliation,
+  SessionListScope,
   SessionResetOptions,
   SessionResetResult,
   SessionState,
 } from "./session-capability.ts";
+import { createSessionLabelOptimism, type PendingLabelHandle } from "./session-label-optimism.ts";
 import { requestSessionPatch, requestSessionReset } from "./session-requests.ts";
 
 /** The Gateway's single pin fact: `pinned` is a projection of `pinnedAt`. */
@@ -36,7 +38,10 @@ type SessionMutationsHost = {
   readState: () => SessionState;
   publish: (state: SessionState, errorSource?: "session-observer" | "operation") => void;
   refreshReplacement: (agentId?: string | null) => Promise<void>;
-  publishedRow: (key: string) => GatewaySessionRow | undefined;
+  publishedRow: (
+    matches: (row: GatewaySessionRow, agentId?: string | null) => boolean,
+  ) => GatewaySessionRow | undefined;
+  sessionIdentity: (key: string, agentId?: string | null) => string;
   redecorateLists: () => void;
   notifyCreated: (key: string, entry?: SessionCreateOutcome["entry"], agentId?: string) => void;
   clearThink: (key: string, agentId?: string | null) => void;
@@ -56,8 +61,10 @@ export function createSessionMutations(host: SessionMutationsHost) {
     string,
     { token: symbol; previous: SessionPinFields; next: SessionPinFields }
   >();
-  const archiveState = createSessionArchiveState(host.publishedRow, () =>
-    host.publish({ ...host.readState() }),
+  const optimisticLabels = createSessionLabelOptimism(host);
+  const archiveState = createSessionArchiveState(
+    (key) => host.publishedRow((row) => row.key === key),
+    () => host.publish({ ...host.readState() }),
   );
   const preparedWorkSessionKeys = new Set<string>();
   const pendingCreatedModelOverrides = new Set<string>();
@@ -233,7 +240,9 @@ export function createSessionMutations(host: SessionMutationsHost) {
     const managesModelOverride = Object.hasOwn(patchParams, "model");
     const normalizedKey = key.trim();
     const archivedPresentationRow =
-      patchParams.archived === true ? host.publishedRow(normalizedKey) : undefined;
+      patchParams.archived === true
+        ? host.publishedRow((row) => row.key === normalizedKey)
+        : undefined;
     let modelPatchStarted = false;
     let modelPatchRevision = 0;
     const modelPatchToken = Symbol("session-model-patch");
@@ -269,7 +278,7 @@ export function createSessionMutations(host: SessionMutationsHost) {
       // The baseline comes from wherever the row is published: a sidebar on
       // `archived`/`all` renders its own snapshot, and inferring `previous`
       // from the primary state alone would roll such a row back to a guess.
-      const row = host.publishedRow(normalizedKey);
+      const row = host.publishedRow((candidate) => candidate.key === normalizedKey);
       pinPatchStarted = true;
       const next = pinRowFields(nextPinned, row?.pinnedAt);
       // `previous` chains through an in-flight pin so a rollback lands on the
@@ -281,9 +290,22 @@ export function createSessionMutations(host: SessionMutationsHost) {
       });
       host.redecorateLists();
     };
+    let labelPatch: PendingLabelHandle | null | undefined;
+    const startLabelPatch = () => {
+      if (!Object.hasOwn(patchParams, "label") || labelPatch !== undefined) {
+        return;
+      }
+      labelPatch = optimisticLabels.start({
+        key: normalizedKey,
+        agentId: options.agentId,
+        expectedSessionId: options.expectedSessionId,
+        label: patchParams.label,
+      });
+    };
     const startOptimisticPatch = () => {
       startModelPatch();
       startPinPatch();
+      startLabelPatch();
     };
     if (!options.waitFor) {
       startOptimisticPatch();
@@ -307,7 +329,8 @@ export function createSessionMutations(host: SessionMutationsHost) {
             const created =
               !completed &&
               previous.created &&
-              host.publishedRow(normalizedKey)?.modelOverrideSource === undefined;
+              host.publishedRow((row) => row.key === normalizedKey)?.modelOverrideSource ===
+                undefined;
             setModelOverride(
               key,
               completed
@@ -357,6 +380,7 @@ export function createSessionMutations(host: SessionMutationsHost) {
     const settleOptimisticPatch = (completed: boolean) => {
       settleModelOverride(completed);
       settlePinPatch(completed);
+      labelPatch?.settle(completed, host.connection.isCurrent(scope));
     };
     try {
       if (options.waitFor) {
@@ -409,6 +433,7 @@ export function createSessionMutations(host: SessionMutationsHost) {
         archiveState.clear(normalizedKey);
       }
       confirmPinPatch();
+      labelPatch?.confirm();
       if (!options.deferListRefresh) {
         await host.refreshReplacement(options.agentId);
         if (!host.connection.isCurrent(scope)) {
@@ -498,21 +523,27 @@ export function createSessionMutations(host: SessionMutationsHost) {
      * `sessions.changed` payload and list refresh carries the server's pin
      * state, which is the pre-click value until this operation's patch lands.
      */
-    applyPendingPins(result: SessionsListResult | null): SessionsListResult | null {
-      if (!result || pendingPinPatches.size === 0) {
+    applyPendingPatches(
+      result: SessionsListResult | null,
+      owner: { scope: SessionListScope },
+    ): SessionsListResult | null {
+      if (!result || (pendingPinPatches.size === 0 && !optimisticLabels.active)) {
         return result;
       }
       let changed = false;
       const sessions = result.sessions.map((row) => {
+        let decorated = row;
         const pendingPinPatch = pendingPinPatches.get(row.key);
         // Once the Gateway agrees on `pinned`, its own `pinnedAt` wins again.
         // A row predating a rapid unpin/repin can keep the older stamp for the
         // patch window; that beats overwriting confirmed stamps with our clock.
-        if (!pendingPinPatch || (row.pinned === true) === pendingPinPatch.next.pinned) {
-          return row;
+        if (pendingPinPatch && (row.pinned === true) !== pendingPinPatch.next.pinned) {
+          changed = true;
+          decorated = { ...decorated, ...pendingPinPatch.next };
         }
-        changed = true;
-        return { ...row, ...pendingPinPatch.next };
+        decorated = optimisticLabels.decorate(row, decorated, owner);
+        changed ||= decorated !== row;
+        return decorated;
       });
       return changed ? { ...result, sessions } : result;
     },
@@ -540,6 +571,7 @@ export function createSessionMutations(host: SessionMutationsHost) {
       // rehydrates wholesale; only the model-override side map outlives that
       // replacement, so it is the one that needs an explicit rollback below.
       pendingPinPatches.clear();
+      optimisticLabels.clear();
       archiveState.clearAll();
       preparedWorkSessionKeys.clear();
       const state = host.readState();
@@ -549,6 +581,7 @@ export function createSessionMutations(host: SessionMutationsHost) {
       pendingCreatedModelOverrides.clear();
       pendingModelPatches.clear();
       pendingPinPatches.clear();
+      optimisticLabels.clear();
       archiveState.clearAll();
       preparedWorkSessionKeys.clear();
     },

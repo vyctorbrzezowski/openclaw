@@ -13,7 +13,7 @@ import {
 } from "./session-management.test-support.ts";
 
 const suite = createSessionManagementE2eSuite();
-const proofDir = path.join(process.cwd(), ".artifacts/control-ui-e2e/session-identity-20260827");
+const proofDir = path.join(process.cwd(), ".artifacts/control-ui-e2e/opt07-rename/after");
 
 suite.define(() => {
   it.each(["sessions", "sidebar", "header"] as const)(
@@ -127,6 +127,7 @@ suite.define(() => {
         await openRename();
         await expect.poll(() => input.inputValue()).toBe(replacement.label);
         await input.fill("Fresh rename");
+        await gateway.deferNext("sessions.patch", { label: "Fresh rename" });
         await input.press("Enter");
         const fresh = await waitForPatch(gateway, (next) => next.label === "Fresh rename");
         expect(fresh.params).toMatchObject({
@@ -134,7 +135,21 @@ suite.define(() => {
           expectedSessionId: replacement.sessionId,
           label: "Fresh rename",
         });
+        // The local intent is visible while the authoritative request remains held.
         await expect.poll(() => row.textContent()).toContain("Fresh rename");
+        await capture("optimistic");
+        await gateway.setMethodResponse(
+          "sessions.list",
+          sessionsListResponse([
+            {
+              ...replacement,
+              label: "Fresh rename",
+              displayName: "Fresh rename",
+              updatedAt: replacement.updatedAt + 1_000,
+            },
+          ]),
+        );
+        await gateway.resolveDeferred("sessions.patch");
         await capture("recovered");
       } finally {
         await context.close();

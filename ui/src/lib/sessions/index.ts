@@ -113,7 +113,7 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
   let sessionEventSubscriptionError: string | null = null;
   let publishedErrorSource: "session-observer" | "operation" | null = null;
 
-  const thinkingClaimKey = (key: string, agentId?: string | null) => {
+  const sessionIdentityKey = (key: string, agentId?: string | null) => {
     const ownerAgentId =
       parseAgentSessionKey(key)?.agentId ??
       agentId ??
@@ -126,7 +126,7 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
     requestRevision: number,
     agentId?: string,
   ) => {
-    const key = thinkingClaimKey(row.key, agentId);
+    const key = sessionIdentityKey(row.key, agentId);
     const claim = thinkingLevelClaims.get(key);
     const newer =
       claim?.[1] !== undefined
@@ -163,7 +163,9 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
     owner = roster.primaryList(),
   ): SessionsListResult | null =>
     deletions.apply(
-      mutations.applyConfirmedArchives(mutations.applyPendingPins(swarmActivity.decorate(result))),
+      mutations.applyConfirmedArchives(
+        mutations.applyPendingPatches(swarmActivity.decorate(result), owner),
+      ),
       owner,
     );
 
@@ -219,7 +221,7 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
 
   const notifyCreated = (key: string, entry?: SessionCreateOutcome["entry"], agentId?: string) => {
     if (typeof entry?.thinkingLevel === "string" && typeof entry.updatedAt === "number") {
-      thinkingLevelClaims.set(thinkingClaimKey(key, agentId), [
+      thinkingLevelClaims.set(sessionIdentityKey(key, agentId), [
         entry.thinkingLevel,
         entry.updatedAt,
       ]);
@@ -234,10 +236,11 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
     readState: () => state,
     publish,
     refreshReplacement: (agentId) => roster.refreshReplacement(agentId),
-    publishedRow: (key) => roster.publishedRow((row) => row.key === key),
+    publishedRow: (matches) => roster.publishedRow(matches),
+    sessionIdentity: sessionIdentityKey,
     redecorateLists: () => roster.redecorateLists(),
     notifyCreated,
-    clearThink: (key, agentId) => thinkingLevelClaims.delete(thinkingClaimKey(key, agentId)),
+    clearThink: (key, agentId) => thinkingLevelClaims.delete(sessionIdentityKey(key, agentId)),
     retirePullRequestSummary,
   });
 
@@ -375,7 +378,7 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
     const reconciled = reconcileSessionChanged(previous, payload, reconcileOptions);
     let claimChanged = false;
     if (reconciled.applied && reconciled.key && eventInfo) {
-      const claimKey = thinkingClaimKey(reconciled.key, eventInfo.agentId);
+      const claimKey = sessionIdentityKey(reconciled.key, eventInfo.agentId);
       const claim = thinkingLevelClaims.get(claimKey);
       const thinkingLevel = eventInfo.thinkingLevel;
       const eventIsCurrent =
@@ -625,7 +628,7 @@ export function createSessionCapability(gateway: SessionGateway): SessionCapabil
     setArchivePending: mutations.setArchivePending,
     assignOwner: mutations.assignOwner,
     retireModelOverride: mutations.retireModelOverride,
-    think: (key, agentId) => thinkingLevelClaims.get(thinkingClaimKey(key, agentId))?.[0],
+    think: (key, agentId) => thinkingLevelClaims.get(sessionIdentityKey(key, agentId))?.[0],
     patchRowLocal: mutations.patchRowLocal,
     isPreparedWorkSession: mutations.isPreparedWorkSession,
     pullRequestSummary,
