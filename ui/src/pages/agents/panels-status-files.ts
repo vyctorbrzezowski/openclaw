@@ -588,8 +588,8 @@ export function renderAgentFiles(params: {
                         </label>
                         <openclaw-modal-dialog
                           manual
+                          variant="reader"
                           label=${activeEntry.name}
-                          style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
                           @modal-cancel=${(e: Event) => {
                             resetAgentFilePreview(e.currentTarget as HTMLElement);
                           }}

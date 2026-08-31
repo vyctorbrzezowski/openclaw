@@ -67,7 +67,7 @@ async function mountModal(
   width: number,
   options: {
     fullscreen?: boolean;
-    kind?: "drawer";
+    variant?: OpenClawModalDialog["variant"];
     modalWidth: string;
   },
 ) {
@@ -79,7 +79,7 @@ async function mountModal(
   modal.style.setProperty("--wa-transition-normal", "150ms");
   modal.style.setProperty("--openclaw-modal-width", options.modalWidth);
   modal.classList.toggle("fullscreen", options.fullscreen === true);
-  modal.classList.toggle("drawer", options.kind !== undefined);
+  modal.variant = options.variant ?? "reader";
   const content = document.createElement("div");
   content.style.cssText = "width: 100%; height: 80px;";
   modal.append(content);
@@ -220,7 +220,7 @@ describe.runIf(browserMode)("file preview modal responsive layout", () => {
     { viewport: 1280, expectedWidth: 460 },
   ])("keeps workboard drawers edge-to-edge on phones", async ({ viewport, expectedWidth }) => {
     const dialog = await mountModal(viewport, {
-      kind: "drawer",
+      variant: "drawer",
       modalWidth: "min(460px, 100vw)",
     });
 
@@ -228,7 +228,7 @@ describe.runIf(browserMode)("file preview modal responsive layout", () => {
   });
   it("slides workboard drawers in from the owned edge", async () => {
     const dialog = await mountModal(1280, {
-      kind: "drawer",
+      variant: "drawer",
       modalWidth: "min(460px, 100vw)",
     });
     const style = getComputedStyle(dialog);

@@ -90,13 +90,8 @@
 .channels-detail {
   display: flex;
   flex-direction: column;
-  width: min(680px, calc(100vw - 48px));
   max-height: min(85dvh, 860px);
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .channels-detail__header {
@@ -201,13 +196,8 @@
 
 .channels-pairing-dialog {
   display: grid;
-  width: min(520px, calc(100vw - 48px));
   gap: var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
   padding: var(--space-4);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .channels-pairing-dialog__option {
@@ -245,13 +235,8 @@
 .channels-wizard {
   display: flex;
   flex-direction: column;
-  width: min(540px, calc(100vw - 48px));
   max-height: min(85dvh, 760px);
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .channels-wizard__header {

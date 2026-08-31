@@ -376,12 +376,7 @@
   display: grid;
   justify-items: center;
   gap: 18px;
-  width: min(480px, calc(100vw - 48px));
   padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-lg);
   text-align: center;
 }
 
@@ -486,10 +481,6 @@
   min-width: 0;
   max-height: min(720px, calc(100dvh - 48px));
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-lg);
 }
 
 .model-setup-wizard__header,

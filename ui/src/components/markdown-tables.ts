@@ -5,6 +5,7 @@ import { copyToClipboard } from "../lib/clipboard.ts";
 import { toolIcons } from "./icons-tools.ts";
 import { icons } from "./icons.ts";
 import { escapeMarkdownHtml } from "./markdown-text.ts";
+import "./modal-dialog.ts";
 
 const tableShellSelector = ".chat-text .markdown-table[data-table-interactions]";
 const tableViewportSelector = ".markdown-table__viewport";
@@ -138,9 +139,12 @@ export function releaseMarkdownTables(owner: HTMLElement): void {
 }
 
 function showTableDialog(table: HTMLTableElement, trigger: HTMLElement): void {
-  const dialog = document.createElement("dialog");
-  dialog.className = "markdown-table-dialog chat-text";
-  dialog.setAttribute("aria-label", t("common.expandedTable"));
+  const dialog = document.createElement("openclaw-modal-dialog");
+  dialog.variant = "reader";
+  dialog.label = t("common.expandedTable");
+  dialog.style.setProperty("--openclaw-modal-width", "min(1200px, calc(100vw - 64px))");
+  const panel = document.createElement("section");
+  panel.className = "markdown-table-dialog chat-text";
 
   const close = document.createElement("button");
   close.type = "button";
@@ -149,30 +153,17 @@ function showTableDialog(table: HTMLTableElement, trigger: HTMLElement): void {
   render(icons.x, close);
 
   const expandedTable = table.cloneNode(true);
-  dialog.append(close, expandedTable);
-  close.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (event) => {
-    if (event.target !== dialog) {
-      return;
-    }
-    const bounds = dialog.getBoundingClientRect();
-    const outside =
-      event.clientX < bounds.left ||
-      event.clientX > bounds.right ||
-      event.clientY < bounds.top ||
-      event.clientY > bounds.bottom;
-    if (outside) {
-      dialog.close();
-    }
-  });
-  dialog.addEventListener("close", () => {
+  panel.append(close, expandedTable);
+  dialog.append(panel);
+  const finish = () => {
     dialog.remove();
     if (trigger.isConnected) {
       trigger.focus({ preventScroll: true });
     }
-  });
+  };
+  close.addEventListener("click", finish);
+  dialog.addEventListener("modal-cancel", finish);
   document.body.append(dialog);
-  dialog.showModal();
   close.focus({ preventScroll: true });
 }
 

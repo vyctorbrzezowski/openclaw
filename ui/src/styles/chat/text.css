@@ -246,21 +246,12 @@
 }
 
 .markdown-table-dialog {
-  width: calc(100vw - 64px);
-  max-width: 1200px;
+  width: 100%;
   max-height: calc(100dvh - 64px);
   padding: 20px 28px;
-  border: 0;
-  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--bg) 96%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent);
   color: var(--text);
   overflow: auto;
-}
-
-.markdown-table-dialog::backdrop {
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(3px);
 }
 
 .markdown-table-dialog.chat-text > table {

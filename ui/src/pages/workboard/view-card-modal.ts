@@ -184,6 +184,8 @@ export function renderCardModal(props: WorkboardProps) {
   };
   return html`
     <openclaw-modal-dialog
+      class="mobile-edge-to-edge"
+      variant="large"
       label=${editing ? t("workboard.editCard") : t("workboard.newCard")}
       description=${editing ? t("workboard.editCardHelp") : t("workboard.newCardHelp")}
       style="--openclaw-modal-width: min(1120px, calc(100vw - 56px)); --openclaw-modal-max-height: calc(100dvh - 56px);"

@@ -47,9 +47,6 @@ export class OpenClawFilePreviewModal extends OpenClawLitElement {
       width: 100%;
       height: min(780px, 86vh);
       background: var(--bg);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -491,8 +488,8 @@ export class OpenClawFilePreviewModal extends OpenClawLitElement {
 
     return html`
       <openclaw-modal-dialog
+        variant="reader"
         label=${label}
-        style="--openclaw-modal-width: min(1100px, 92vw); --openclaw-modal-max-height: 86vh;"
         @modal-cancel=${this.emitClose}
         @keydown=${this.handleKeydown}
       >

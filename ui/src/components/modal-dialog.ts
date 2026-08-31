@@ -7,6 +7,8 @@ import { OpenClawLitElement } from "../lit/openclaw-element.ts";
 
 const modalLayers = (document.openClawModalLayers ??= new Set<HTMLElement>());
 
+type ModalDialogVariant = "standard" | "large" | "reader" | "palette" | "media" | "drawer";
+
 function setModalLayer(modal: HTMLElement, open: boolean) {
   modalLayers.delete(modal);
   if (open) {
@@ -17,6 +19,7 @@ function setModalLayer(modal: HTMLElement, open: boolean) {
 export class OpenClawModalDialog extends OpenClawLitElement {
   @property({ type: Boolean }) open = true;
   @property({ type: Boolean, reflect: true }) manual = false;
+  @property({ reflect: true }) variant: ModalDialogVariant = "standard";
   @property() label = "";
   @property() description = "";
 
@@ -35,75 +38,117 @@ export class OpenClawModalDialog extends OpenClawLitElement {
     wa-dialog {
       --width: min(var(--openclaw-modal-width, 540px), calc(100vw - 48px));
       --spacing: 0;
-      --backdrop-filter: var(--openclaw-modal-backdrop-filter, blur(4px));
+      --backdrop-filter: blur(4px);
     }
 
+    /* The adapter owns outer chrome; slotted content keeps only its screen-specific layout. */
     wa-dialog::part(dialog) {
       max-width: var(--openclaw-modal-max-width, calc(100vw - 48px));
       max-height: var(--openclaw-modal-max-height, calc(100dvh - 48px));
       padding: 0;
-      border: 0;
-      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--card);
       color: var(--text);
-      overflow: visible;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
     }
 
     wa-dialog::part(body) {
+      min-height: 0;
       padding: 0;
-      overflow: visible;
+      overflow: auto;
     }
 
-    :host(.fullscreen) wa-dialog {
+    :host([variant="large"]) wa-dialog {
+      --width: min(var(--openclaw-modal-width, 680px), calc(100vw - 48px));
+    }
+
+    :host([variant="large"]) wa-dialog::part(dialog) {
+      border-color: var(--border-strong);
+      border-radius: var(--radius-xl);
+      background: var(--popover);
+      box-shadow: var(--shadow-xl);
+    }
+
+    :host([variant="reader"]) wa-dialog {
+      --width: min(var(--openclaw-modal-width, 1100px), calc(100vw - 32px));
+    }
+
+    :host([variant="reader"]) wa-dialog::part(dialog) {
+      max-width: var(--openclaw-modal-max-width, calc(100vw - 32px));
+      max-height: var(--openclaw-modal-max-height, calc(100dvh - 32px));
+      border-color: var(--border-strong);
+      border-radius: var(--radius-xl);
+      background: var(--panel);
+      box-shadow: var(--shadow-xl);
+    }
+
+    :host([variant="reader"].fullscreen) wa-dialog {
       --width: calc(100vw - 20px);
     }
 
-    :host(.fullscreen) wa-dialog::part(dialog) {
+    :host([variant="reader"].fullscreen) wa-dialog::part(dialog) {
       max-width: calc(100vw - 20px);
       max-height: calc(100dvh - 20px);
     }
 
-    :host(.viewport-edge-to-edge) wa-dialog {
+    :host([variant="media"]) wa-dialog {
       --width: 100vw;
+      --backdrop-filter: none;
     }
 
-    :host(.viewport-edge-to-edge) wa-dialog::part(dialog) {
+    :host([variant="media"]) wa-dialog::part(dialog) {
       width: 100vw;
       height: 100dvh;
       max-width: none;
       max-height: none;
       margin: 0;
+      border: 0;
       border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
-    :host(.viewport-edge-to-edge) wa-dialog::part(body) {
+    :host([variant="media"]) wa-dialog::part(body) {
       height: 100%;
+      overflow: hidden;
     }
 
-    :host(.palette) wa-dialog::part(dialog) {
-      margin-block-start: min(20dvh, 160px);
-      margin-block-end: auto;
-    }
-
-    :host(.palette) wa-dialog {
+    :host([variant="palette"]) wa-dialog {
+      --width: min(var(--openclaw-modal-width, 640px), calc(100vw - 32px));
       --show-duration: 0ms;
       --hide-duration: 0ms;
     }
 
-    :host(.drawer) wa-dialog {
-      --width: min(var(--openclaw-modal-width, 100vw), 100vw);
+    :host([variant="palette"]) wa-dialog::part(dialog) {
+      max-width: calc(100vw - 32px);
+      margin-block-start: min(20dvh, 160px);
+      margin-block-end: auto;
+    }
+
+    :host([variant="drawer"]) wa-dialog {
+      --width: min(var(--openclaw-modal-width, 460px), 100vw);
       --show-duration: 200ms;
       --hide-duration: 0ms;
     }
 
-    :host(.drawer) wa-dialog::part(dialog) {
+    :host([variant="drawer"]) wa-dialog::part(dialog) {
       height: 100dvh;
       max-width: 100vw;
       max-height: 100dvh;
       margin: 0 0 0 auto;
+      border: 0;
       border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
-    :host(.drawer) wa-dialog[open]::part(dialog) {
+    :host([variant="drawer"]) wa-dialog::part(body) {
+      overflow: hidden;
+    }
+
+    :host([variant="drawer"]) wa-dialog[open]::part(dialog) {
       animation: openclaw-drawer-in 200ms cubic-bezier(0.32, 0.72, 0, 1);
     }
 
@@ -117,11 +162,11 @@ export class OpenClawModalDialog extends OpenClawLitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      :host(.drawer) wa-dialog {
+      :host([variant="drawer"]) wa-dialog {
         --show-duration: 0ms;
       }
 
-      :host(.drawer) wa-dialog[open]::part(dialog) {
+      :host([variant="drawer"]) wa-dialog[open]::part(dialog) {
         animation: none;
       }
     }
@@ -133,6 +178,28 @@ export class OpenClawModalDialog extends OpenClawLitElement {
       wa-dialog::part(dialog) {
         max-width: var(--openclaw-modal-max-width, calc(100vw - 24px));
         max-height: 90dvh;
+      }
+    }
+
+    @media (max-width: 900px) {
+      :host([variant="large"].mobile-edge-to-edge) wa-dialog {
+        --width: 100vw;
+      }
+
+      :host([variant="large"].mobile-edge-to-edge) wa-dialog::part(dialog) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      :host([variant="large"].mobile-edge-to-edge) wa-dialog::part(body) {
+        height: 100%;
+        overflow: hidden;
       }
     }
 
@@ -148,11 +215,14 @@ export class OpenClawModalDialog extends OpenClawLitElement {
         max-width: none;
         max-height: none;
         margin: 0;
+        border: 0;
         border-radius: 0;
+        box-shadow: none;
       }
 
       :host(.mobile-edge-to-edge) wa-dialog::part(body) {
         height: 100%;
+        overflow: hidden;
       }
     }
   `;

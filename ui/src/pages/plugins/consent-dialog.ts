@@ -376,11 +376,7 @@ export function renderPluginConsentDialog(props: PluginConsentDialogProps): Temp
         ? t("pluginsPage.working")
         : t("pluginConsent.enableNamed", { name });
   return html`
-    <openclaw-modal-dialog
-      label=${name}
-      style="--openclaw-modal-width: min(560px, calc(100vw - 32px));"
-      @modal-cancel=${props.onCancel}
-    >
+    <openclaw-modal-dialog label=${name} @modal-cancel=${props.onCancel}>
       <section class="plugins-consent" data-plugin-consent=${consent.intent.kind}>
         <header class="plugins-consent__header">
           ${renderArtTile(slug, name, props.iconUrl)}

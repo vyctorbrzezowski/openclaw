@@ -226,7 +226,11 @@ export function renderChannelDetail(params: {
 }): TemplateResult {
   const body = renderChannelBody(params.channelId, params.props, params.data);
   return html`
-    <openclaw-modal-dialog label=${params.label} @modal-cancel=${() => params.onClose()}>
+    <openclaw-modal-dialog
+      variant="large"
+      label=${params.label}
+      @modal-cancel=${() => params.onClose()}
+    >
       <div class="channels-detail">
         <div class="channels-detail__header">
           ${renderChannelIcon(params.channelId, params.label, "cover")}

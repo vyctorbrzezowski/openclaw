@@ -186,27 +186,16 @@ describe("Markdown table interactions", () => {
     expand.focus();
     expand.click();
 
-    const dialog = document.querySelector<HTMLDialogElement>(".markdown-table-dialog")!;
-    expect(dialog.hasAttribute("open")).toBe(true);
+    const dialog = document.querySelector("openclaw-modal-dialog")!;
+    expect(dialog.open).toBe(true);
     expect(dialog.querySelector("table")?.textContent).toContain("Alpha");
 
-    vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({
-      bottom: 500,
-      height: 400,
-      left: 100,
-      right: 500,
-      top: 100,
-      width: 400,
-      x: 100,
-      y: 100,
-      toJSON: () => ({}),
-    });
-    dialog.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 50, clientY: 50 }));
+    dialog.dispatchEvent(new CustomEvent("modal-cancel"));
     expect(document.querySelector(".markdown-table-dialog")).toBeNull();
     expect(document.activeElement).toBe(expand);
 
     expand.click();
-    const reopenedDialog = document.querySelector<HTMLDialogElement>(".markdown-table-dialog")!;
+    const reopenedDialog = document.querySelector("openclaw-modal-dialog")!;
 
     reopenedDialog.querySelector<HTMLButtonElement>(".markdown-table-dialog__close")!.click();
     expect(document.querySelector(".markdown-table-dialog")).toBeNull();

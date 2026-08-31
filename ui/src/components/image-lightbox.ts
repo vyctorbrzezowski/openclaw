@@ -66,13 +66,6 @@ class OpenClawImageLightbox extends OpenClawLitElement {
       --image-lightbox-control-background-hover: rgba(255, 255, 255, 0.22);
     }
 
-    openclaw-modal-dialog {
-      --openclaw-modal-width: 100vw;
-      --openclaw-modal-max-width: 100vw;
-      --openclaw-modal-max-height: 100dvh;
-      --openclaw-modal-backdrop-filter: none;
-    }
-
     .lightbox {
       width: 100vw;
       height: 100dvh;
@@ -242,12 +235,6 @@ class OpenClawImageLightbox extends OpenClawLitElement {
 
     @media (max-width: 768px),
       (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
-      openclaw-modal-dialog {
-        --openclaw-modal-width: 100vw;
-        --openclaw-modal-max-width: 100vw;
-        --openclaw-modal-max-height: 100dvh;
-      }
-
       .lightbox {
         width: 100vw;
         height: 100dvh;
@@ -339,7 +326,7 @@ class OpenClawImageLightbox extends OpenClawLitElement {
     const canZoom = this.imageReady && this.panzoom !== undefined;
     return html`
       <openclaw-modal-dialog
-        class="mobile-edge-to-edge viewport-edge-to-edge"
+        variant="media"
         label=${dialogLabel}
         @modal-cancel=${this.emitClose}
         @keydown=${this.handleKeydown}

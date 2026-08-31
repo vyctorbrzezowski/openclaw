@@ -4,9 +4,9 @@ import { t } from "../i18n/index.ts";
 export function renderCommandPaletteLoading(onClose: () => void) {
   const label = t("palette.placeholder");
   return html`<openclaw-modal-dialog
-    class="cmd-palette-overlay palette"
+    class="cmd-palette-overlay"
+    variant="palette"
     label=${label}
-    style="--openclaw-modal-width: min(640px, calc(100vw - 32px));"
     @modal-cancel=${onClose}
   >
     <div class="cmd-palette" role="status" aria-label=${t("common.loading")}>

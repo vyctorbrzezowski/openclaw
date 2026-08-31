@@ -496,8 +496,8 @@ function renderClawHubDetailDialog(props: SkillsProps) {
 
   return html`
     <openclaw-modal-dialog
+      variant="reader"
       label=${detail?.skill?.displayName ?? props.clawhubDetailRef ?? t("skillsPage.notFound")}
-      style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
       @modal-cancel=${props.onClawHubDetailClose}
     >
       <div
@@ -635,8 +635,8 @@ function renderSkillDetail(skill: SkillStatusEntry, props: SkillsProps) {
 
   return html`
     <openclaw-modal-dialog
+      variant="reader"
       label=${skill.name}
-      style="--openclaw-modal-width: min(1040px, calc(100vw - 32px));"
       @modal-cancel=${props.onDetailClose}
     >
       <div class="md-preview-dialog__panel">

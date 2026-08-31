@@ -98,9 +98,9 @@ describeControlUiE2e("Control UI Markdown table interactions", () => {
       const inlineHeader = inlineTable.locator("th").first();
       const inlineCell = inlineTable.locator("td").first();
       await expand.click();
-      const dialog = page.locator("dialog.markdown-table-dialog");
-      await expect.poll(() => dialog.getAttribute("open")).toBe("");
-      const fullscreenTable = dialog.locator("table");
+      const dialog = page.locator("openclaw-modal-dialog");
+      await expect.poll(() => dialog.getAttribute("variant")).toBe("reader");
+      const fullscreenTable = dialog.locator(".markdown-table-dialog table");
       const fullscreenHeader = fullscreenTable.locator("th").first();
       const fullscreenCell = fullscreenTable.locator("td").first();
       expect(await fullscreenTable.textContent()).toContain("Gateway");
@@ -147,7 +147,7 @@ describeControlUiE2e("Control UI Markdown table interactions", () => {
         });
       }
 
-      const dialogBounds = await dialog.boundingBox();
+      const dialogBounds = await dialog.locator(".markdown-table-dialog").boundingBox();
       if (!dialogBounds) {
         throw new Error("Expanded table dialog has no layout bounds");
       }
@@ -161,7 +161,7 @@ describeControlUiE2e("Control UI Markdown table interactions", () => {
         .toBe(true);
 
       await expand.click();
-      await expect.poll(() => dialog.getAttribute("open")).toBe("");
+      await expect.poll(() => dialog.getAttribute("variant")).toBe("reader");
       await page.keyboard.press("Escape");
       await expect.poll(() => dialog.count()).toBe(0);
       await expect

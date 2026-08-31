@@ -264,12 +264,11 @@ export function renderCardDetailsPanel(props: WorkboardProps) {
   ];
   return html`
     <openclaw-modal-dialog
-      class="drawer"
+      variant="drawer"
       label=${card.title}
       description=${task && taskIsAuthoritative
         ? taskDetail(task)
         : (lifecycle.session?.displayName ?? formatted.detail)}
-      style="--openclaw-modal-width: min(460px, 100vw); --openclaw-modal-max-height: 100dvh;"
       @modal-cancel=${() => {
         closeCardDetails(state);
         props.onRequestUpdate?.();

@@ -16,16 +16,12 @@ class KeyboardShortcutsDialog extends OpenClawLitElement {
   static override styles = css`
     :host {
       display: contents;
-      --openclaw-modal-width: 560px;
     }
 
     .dialog {
       display: flex;
       max-height: min(720px, calc(100dvh - 64px));
       flex-direction: column;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--card);
       color: var(--text);
     }
 

@@ -383,7 +383,7 @@ class OnboardingMemoryImport extends OpenClawLightDomElement {
     const body = t("onboarding.memoryImport.body");
     return html`
       <openclaw-modal-dialog
-        class="onboarding-memory-import-dialog"
+        variant="large"
         label=${title}
         description=${body}
         @modal-cancel=${(event: Event) => this.handleModalCancel(event)}

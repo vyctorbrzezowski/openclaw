@@ -3327,10 +3327,8 @@ td.data-table-key-col {
   display: flex;
   flex-direction: column;
   background: color-mix(in srgb, var(--exec-approval-accent) 5%, var(--card));
-  border: 1px solid color-mix(in srgb, var(--exec-approval-accent) 45%, var(--border));
-  border-radius: var(--radius-lg);
+  border-inline-start: 3px solid color-mix(in srgb, var(--exec-approval-accent) 45%, var(--border));
   padding: 20px;
-  animation: scale-in 0.2s var(--ease-out);
 }
 
 .exec-approval-modal-stack {
@@ -3342,8 +3340,9 @@ td.data-table-key-col {
 }
 
 .exec-approval-card--inline {
+  border: 1px solid color-mix(in srgb, var(--exec-approval-accent) 45%, var(--border));
+  border-radius: var(--radius-lg);
   padding: 14px 16px;
-  animation: none;
 }
 
 .exec-approval-card--severity-info {
@@ -4137,12 +4136,7 @@ td.data-table-key-col {
   margin: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 84%, white 8%);
-  border-radius: calc(var(--radius-xl) + 6px);
   background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, black 6%), var(--panel));
-  box-shadow:
-    0 32px 96px rgba(0, 0, 0, 0.48),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset;
   overflow: hidden;
   transition:
     width var(--duration-normal) var(--ease-out),
@@ -5098,10 +5092,6 @@ td.data-table-key-col {
 .cmd-palette {
   width: 100%;
   overflow: hidden;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
 }
 
 .cmd-palette__label {
@@ -5238,10 +5228,7 @@ td.data-table-key-col {
 .device-pair-setup {
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--card) 96%, black 4%);
-  box-shadow: var(--shadow-xl);
 }
 
 .device-pair-setup__header {

@@ -703,7 +703,7 @@ suite.define(() => {
 
     await page.keyboard.press("Meta+K");
     const palette = page.locator(".cmd-palette");
-    const paletteDialog = page.locator("openclaw-modal-dialog.palette");
+    const paletteDialog = page.locator('openclaw-modal-dialog[variant="palette"]');
     await page.locator(".cmd-palette__input:not([disabled])").waitFor({ state: "visible" });
     const paletteAnimationName = await palette.evaluate(
       (element) => getComputedStyle(element).animationName,

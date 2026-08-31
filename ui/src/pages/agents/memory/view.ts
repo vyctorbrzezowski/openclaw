@@ -620,8 +620,8 @@ function renderWikiPreviewOverlay(props: DreamingProps) {
   }
   return html`
     <openclaw-modal-dialog
+      variant="reader"
       .label=${state.wikiPreviewTitle || t("dreaming.wiki.previewFallbackTitle")}
-      style="--openclaw-modal-width: 1120px"
       @modal-cancel=${() => closeWikiPreview(props)}
     >
       <div class="dreams-diary__preview-panel">

@@ -156,7 +156,6 @@ function renderRevisionDialog(props: SkillWorkshopProps, proposal: SkillWorkshop
     <openclaw-modal-dialog
       .label=${`${t("skillWorkshop.revision.title", { verb })}: ${proposal.slug}`}
       .description=${t("skillWorkshop.revision.description")}
-      style="--openclaw-modal-width: 560px"
       @modal-cancel=${cancelDisabled ? undefined : props.onRevisionCancel}
     >
       <section class="sw-revision-dialog ${busy ? "sw-revision-dialog--sending" : ""}">

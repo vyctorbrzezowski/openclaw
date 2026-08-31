@@ -561,6 +561,10 @@ suite.define(() => {
       await cardInColumn(writable.page, "Todo", editedCard.title).click();
       const details = writable.page.locator(".workboard-detail");
       await details.getByText(editedCard.title).waitFor({ state: "visible" });
+      const detailDialog = writable.page.getByRole("dialog", { name: editedCard.title });
+      expect(
+        await detailDialog.evaluate((element) => getComputedStyle(element).animationName),
+      ).toBe("openclaw-drawer-in");
       await details.getByText("Acceptance: mocked Gateway browser proof").waitFor({
         state: "visible",
       });
@@ -572,6 +576,15 @@ suite.define(() => {
       expect(await details.getByRole("button", { name: "Stop session" }).count()).toBe(0);
       await captureScreenshot(writable.page, artifacts, "05-detail-actions");
       await details.locator('button[aria-label="Cancel"]').click();
+
+      await writable.page.emulateMedia({ reducedMotion: "reduce" });
+      await cardInColumn(writable.page, "Todo", editedCard.title).click();
+      await details.getByText(editedCard.title).waitFor({ state: "visible" });
+      expect(
+        await detailDialog.evaluate((element) => getComputedStyle(element).animationName),
+      ).toBe("none");
+      await details.locator('button[aria-label="Cancel"]').click();
+      await writable.page.emulateMedia({ reducedMotion: "no-preference" });
 
       await writableGateway.deferNext("workboard.cards.move");
       const dragSource = cardInColumn(writable.page, "Todo", editedCard.title);

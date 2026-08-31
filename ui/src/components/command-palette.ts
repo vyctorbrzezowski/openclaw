@@ -191,9 +191,9 @@ function renderCommandPalette(props: CommandPaletteProps) {
 
   return html`
     <openclaw-modal-dialog
-      class="cmd-palette-overlay palette"
+      class="cmd-palette-overlay"
+      variant="palette"
       label=${paletteLabel}
-      style="--openclaw-modal-width: min(640px, calc(100vw - 32px));"
       @modal-cancel=${() => closePalette(props)}
     >
       <div

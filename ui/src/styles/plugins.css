@@ -754,13 +754,8 @@ h3.plugins-subheader {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(680px, 100%);
   max-height: min(85vh, 860px);
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .plugins-cover {
@@ -916,11 +911,7 @@ h3.plugins-subheader {
   max-height: min(85vh, 860px);
   gap: var(--space-4);
   overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
   padding: var(--space-5);
-  background: var(--popover);
-  box-shadow: var(--shadow-xl);
 }
 
 .plugins-consent__header {
