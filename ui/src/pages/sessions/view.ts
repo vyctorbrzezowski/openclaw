@@ -868,7 +868,7 @@ function renderCategoryCell(row: GatewaySessionRow, props: SessionsProps) {
         ?disabled=${props.loading || Boolean(props.groupWriteDisabledReason)}
         title=${props.groupWriteDisabledReason ?? nothing}
         aria-label=${t("sessionsView.moveToGroup")}
-        class="session-group-select"
+        class="settings-select session-group-select"
         @change=${(e: Event) => {
           if (props.groupWriteDisabledReason) {
             return;
@@ -1179,7 +1179,7 @@ function renderSessionsAdvancedFilters(props: SessionsProps) {
         <label class="session-groupby">
           <span class="session-groupby__label">${t("sessionsView.groupBy")}</span>
           <select
-            class="session-groupby__select"
+            class="settings-select session-groupby__select"
             @change=${(event: Event) =>
               props.onGroupByChange((event.target as HTMLSelectElement).value as SessionsGroupBy)}
           >
@@ -1355,7 +1355,7 @@ function renderSessionsTable(props: SessionsProps, ctx: SessionsTableContext) {
             </div>
             <div class="data-table-pagination__controls">
               <select
-                class="data-table-pagination__size"
+                class="settings-select data-table-pagination__size"
                 aria-label=${t("sessionsView.pageSize")}
                 .value=${String(props.pageSize)}
                 @change=${(e: Event) =>

@@ -103,6 +103,8 @@ function renderUserNotificationPreferences(
           title: t("configView.notifications.lockScreenDetail"),
           description: t("configView.notifications.lockScreenDetailHint"),
           control: html`<select
+            class="settings-select"
+            aria-label=${t("configView.notifications.lockScreenDetail")}
             .value=${preferences.detailLevel}
             @change=${(event: Event) =>
               patch({
@@ -231,6 +233,8 @@ function renderDeviceNotificationPreferences(
         ${renderSettingsRow({
           title: t("configView.notifications.lockScreenDetail"),
           control: html`<select
+            class="settings-select"
+            aria-label=${t("configView.notifications.lockScreenDetail")}
             .value=${preferences.detailLevel ?? "inherit"}
             @change=${(event: Event) => {
               const value = selectTarget(event).value;
@@ -248,6 +252,8 @@ function renderDeviceNotificationPreferences(
         ${renderSettingsRow({
           title: t("configView.notifications.quietHours"),
           control: html`<select
+            class="settings-select"
+            aria-label=${t("configView.notifications.quietHours")}
             .value=${preferences.quietHours === undefined
               ? "inherit"
               : preferences.quietHours.enabled
@@ -328,6 +334,8 @@ function renderDeviceNotificationPreferences(
         ${renderSettingsRow({
           title: t("configView.notifications.onlyAgents"),
           control: html`<select
+            class="settings-select"
+            aria-label=${t("configView.notifications.onlyAgents")}
             .value=${preferences.agentIds === undefined ? "inherit" : "override"}
             @change=${(event: Event) => {
               const value = selectTarget(event).value;
@@ -358,6 +366,8 @@ function renderDeviceNotificationPreferences(
           renderSettingsRow({
             title: label(),
             control: html`<select
+              class="settings-select"
+              aria-label=${label()}
               .value=${preferences.categories?.[key] === undefined
                 ? "inherit"
                 : preferences.categories[key]

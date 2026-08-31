@@ -836,6 +836,7 @@ describe("renderAgentFiles", () => {
 
     const picker = container.querySelector<HTMLSelectElement>(".agent-tab-add");
     expect(picker).not.toBeNull();
+    expect(picker?.classList.contains("settings-select")).toBe(true);
     expect(Array.from(picker?.options ?? []).map((option) => option.value)).toStrictEqual([
       "",
       "SOUL.md",

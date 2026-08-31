@@ -1073,6 +1073,7 @@ function renderSessionLogsCompact(
       ${refreshStatus}
       <div class="usage-filters-inline session-log-filters">
         <select
+          class="settings-select"
           multiple
           size="4"
           aria-label=${t("usage.details.filterByRole")}
@@ -1098,6 +1099,7 @@ function renderSessionLogsCompact(
           )}
         </select>
         <select
+          class="settings-select"
           multiple
           size="4"
           aria-label=${t("usage.details.filterByTool")}

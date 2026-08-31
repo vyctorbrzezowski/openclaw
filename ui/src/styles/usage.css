@@ -372,9 +372,7 @@
 }
 
 .usage-date-input,
-.usage-select,
 .usage-query-input,
-.usage-filters-inline select,
 .usage-filters-inline input[type="text"] {
   min-height: 32px;
   border: 1px solid var(--border);
@@ -394,15 +392,18 @@
   padding: 6px 10px;
 }
 
-.usage-date-input:hover,
-.usage-select:hover {
+.usage-select,
+.usage-filters-inline select {
+  width: auto;
+  font-size: 12px;
+}
+
+.usage-date-input:hover {
   border-color: var(--border-strong);
 }
 
 .usage-date-input:focus-visible,
-.usage-select:focus-visible,
 .usage-query-input:focus-visible,
-.usage-filters-inline select:focus-visible,
 .usage-filters-inline input[type="text"]:focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
@@ -1462,12 +1463,7 @@
 }
 
 .sessions-sort select {
-  min-height: 34px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  color: var(--text);
+  width: auto;
 }
 
 .session-bars {

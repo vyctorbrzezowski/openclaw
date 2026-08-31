@@ -3938,19 +3938,11 @@ td.data-table-key-col {
   gap: var(--space-2);
 }
 
-.agent-tab-add {
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
+select.agent-tab-add.settings-select {
+  width: auto;
   padding: 6px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
-  background: transparent;
-}
-
-.agent-tab-add:hover {
-  color: var(--text);
-  border-color: var(--accent);
 }
 
 .agent-identity-editor {

@@ -598,7 +598,7 @@ export function renderUsage(props: UsageProps) {
                   />
                 </div>
                 <select
-                  class="usage-select"
+                  class="settings-select usage-select"
                   title=${t("usage.filters.timeZone")}
                   aria-label=${t("usage.filters.timeZone")}
                   .value=${filters.timeZone}

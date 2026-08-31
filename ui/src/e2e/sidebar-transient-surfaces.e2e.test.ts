@@ -48,6 +48,59 @@ async function surfaceTokens(surface: Locator) {
 }
 
 suite.define(() => {
+  it("keeps the shared picker operable across dismissal, disabled, and input modes", async () => {
+    const context = await suite.newBrowserContext({
+      colorScheme: "light",
+      hasTouch: true,
+      locale: "en-US",
+      reducedMotion: "reduce",
+      serviceWorkers: "block",
+      viewport: { height: 900, width: 1440 },
+    });
+    const page = await context.newPage();
+    await installMockGateway(page);
+
+    try {
+      await page.goto(`${suite.server.baseUrl}settings/appearance`);
+      await waitForControlUiSettingsTakeover(page);
+      const select = page.locator("#settings-language wa-select");
+      const combobox = select.getByRole("combobox");
+      const listbox = select.locator('[part="listbox"]');
+
+      expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
+      await combobox.click();
+      await listbox.waitFor({ state: "visible" });
+      const contract = await select
+        .locator("wa-option")
+        .first()
+        .evaluate((option) => ({
+          height: option.getBoundingClientRect().height,
+          hideDuration: getComputedStyle(option.parentElement!).getPropertyValue("--hide-duration"),
+          showDuration: getComputedStyle(option.parentElement!).getPropertyValue("--show-duration"),
+        }));
+      expect(contract.height).toBe(44);
+      expect(Number.parseFloat(contract.hideDuration)).toBeCloseTo(0.01);
+      expect(Number.parseFloat(contract.showDuration)).toBeCloseTo(0.01);
+
+      await page.keyboard.press("Escape");
+      await expect.poll(() => select.getAttribute("open")).toBeNull();
+      expect(await combobox.evaluate((element) => element.matches(":focus"))).toBe(true);
+
+      await combobox.click();
+      await listbox.waitFor({ state: "visible" });
+      await page.locator(".settings-sidebar__title").click({ position: { x: 1, y: 1 } });
+      await expect.poll(() => select.getAttribute("open")).toBeNull();
+
+      await select.evaluate((element) => {
+        (element as HTMLElement & { disabled: boolean }).disabled = true;
+      });
+      await combobox.click({ force: true });
+      await expect.poll(() => select.getAttribute("open")).toBeNull();
+    } finally {
+      await suite.closeBrowserContext(context);
+    }
+  });
+
   it.each(themes)(
     "uses one transient surface contract in $theme $colorScheme",
     async ({ colorScheme, resolvedTheme, theme }) => {

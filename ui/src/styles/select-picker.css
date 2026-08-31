@@ -64,6 +64,19 @@ wa-select.settings-select wa-option::part(checked-icon) {
   color: color-mix(in srgb, var(--text) 80%, var(--accent));
 }
 
+@media (pointer: coarse) {
+  wa-select.settings-select wa-option {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  wa-select.settings-select {
+    --show-duration: 0.01ms;
+    --hide-duration: 0.01ms;
+  }
+}
+
 .picker-select [slot="start"] {
   display: inline-flex;
   align-items: center;

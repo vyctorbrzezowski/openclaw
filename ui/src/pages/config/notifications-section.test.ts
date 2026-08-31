@@ -74,6 +74,36 @@ describe("native notification test outcome", () => {
 });
 
 describe("Web Push preference saves", () => {
+  it("uses the shared select contract and accessible row names", () => {
+    const container = document.createElement("div");
+
+    render(
+      renderNotificationsSection({
+        connected: true,
+        webPush: {
+          supported: true,
+          permission: "granted",
+          subscription: "registered",
+          loading: false,
+          preferences: {
+            durableIdentity: true,
+            user: userPreferences,
+            device: { enabled: true, label: "phone" },
+            effective: { ...userPreferences, enabled: true, label: "phone" },
+          },
+        },
+      }),
+      container,
+    );
+
+    const selects = Array.from(container.querySelectorAll("select"));
+    expect(selects.length).toBeGreaterThan(1);
+    for (const select of selects) {
+      expect(select.classList.contains("settings-select")).toBe(true);
+      expect(select.getAttribute("aria-label")).toBeTruthy();
+    }
+  });
+
   it("disables every preference control while a save is in flight", () => {
     const container = document.createElement("div");
 

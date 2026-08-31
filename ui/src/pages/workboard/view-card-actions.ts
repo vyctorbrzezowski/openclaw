@@ -72,7 +72,7 @@ export function renderCardMoveControl(
     >
       <span class="workboard-card__move-icon" aria-hidden="true">${icons.cornerDownRight}</span>
       <select
-        class="workboard-card__move-select"
+        class="settings-select workboard-card__move-select"
         aria-keyshortcuts="ArrowLeft ArrowRight"
         aria-label=${`${t("workboard.fieldStatus")}: ${card.title}`}
         .value=${card.status}

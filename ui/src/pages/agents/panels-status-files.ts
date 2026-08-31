@@ -502,7 +502,7 @@ export function renderAgentFiles(params: {
                     ? nothing
                     : html`
                         <select
-                          class="agent-tab-add"
+                          class="settings-select agent-tab-add"
                           aria-label=${t("agents.files.addFile")}
                           .value=${""}
                           ?disabled=${params.agentFilesLoading}

@@ -54,10 +54,10 @@ function controlsHtml() {
       <div class="settings-row__control"><textarea class="settings-input">config textarea</textarea></div>
       <select class="settings-select"><option>settings select</option></select>
       <input class="usage-date-input" value="2026-05-31" />
-      <select class="usage-select"><option>usage select</option></select>
+      <select class="settings-select usage-select"><option>usage select</option></select>
       <input class="usage-query-input" value="usage query" />
       <div class="usage-filters-inline">
-        <select><option>inline usage select</option></select>
+        <select class="settings-select" multiple><option>inline usage select</option></select>
         <input type="text" value="inline usage input" />
       </div>
       <div class="agent-chat__composer-combobox"><textarea>chat composer</textarea></div>

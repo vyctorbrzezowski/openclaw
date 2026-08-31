@@ -1661,6 +1661,7 @@ describe("renderWorkboard", () => {
     const moveSelect = container.querySelector<HTMLSelectElement>(".workboard-card__move-select");
     expect(moveSelect?.value).toBe("todo");
     expect(moveSelect?.tagName).toBe("SELECT");
+    expect(moveSelect?.classList.contains("settings-select")).toBe(true);
     expect(moveSelect?.getAttribute("aria-keyshortcuts")).toBe("ArrowLeft ArrowRight");
     expect(moveSelect?.getAttribute("aria-label")).toBe("Status: Keyboard move");
 
