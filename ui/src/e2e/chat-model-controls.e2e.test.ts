@@ -6,6 +6,25 @@ import { createControlUiE2eSuite } from "./control-ui-e2e-suite.test-support.ts"
 const suite = createControlUiE2eSuite({ name: "Control UI model and effort controls" });
 
 suite.define(() => {
+  it("keeps the desktop permission icon visible without intrinsic SVG dimensions", async () => {
+    await suite.withPage({ viewport: { width: 1280, height: 900 } }, async ({ page }) => {
+      await installMockGateway(page);
+      await page.goto(`${suite.server.baseUrl}chat`);
+      await page.addStyleTag({
+        content: ":where(.chat-controls__permission-icon svg) { width: 0; height: 0; }",
+      });
+
+      const icon = page.locator(
+        '.agent-chat__input [data-chat-permission-select="true"] .chat-controls__permission-icon svg',
+      );
+      await icon.waitFor();
+      expect(await icon.evaluate((element) => element.namespaceURI)).toBe(
+        "http://www.w3.org/2000/svg",
+      );
+      expect(await icon.boundingBox()).toMatchObject({ width: 16, height: 16 });
+    });
+  });
+
   it.each(
     ["chat", "new"].flatMap((route) =>
       [false, true].map((tooltipOpen) => ({ route, tooltipOpen })),
