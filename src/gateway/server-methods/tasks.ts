@@ -115,16 +115,13 @@ export const tasksHandlers: GatewayRequestHandlers = {
       cfg,
       filter: canReadTask,
     };
+    // Page scans yield to active task updates. Restart the complete selection
+    // and authorization attempt so transient registry churn never reaches clients.
     for (let attempt = 0; attempt < TASKS_LIST_MAX_ATTEMPTS; attempt += 1) {
       const accessRevision = readGatewayAccessRevision();
       const pageResult = await listTaskRecordPage(pageParams);
       if (!pageResult.ok) {
-        respond(
-          false,
-          undefined,
-          errorShape(ErrorCodes.UNAVAILABLE, "task registry changed during tasks.list; retry"),
-        );
-        return;
+        continue;
       }
       const page = pageResult.value;
       // Sharing changes invalidate every access decision made before a yield.
@@ -145,7 +142,11 @@ export const tasksHandlers: GatewayRequestHandlers = {
     respond(
       false,
       undefined,
-      errorShape(ErrorCodes.UNAVAILABLE, "task access changed during tasks.list; retry"),
+      errorShape(
+        ErrorCodes.UNAVAILABLE,
+        "Task activity did not stabilize. Wait a moment, then refresh Tasks.",
+        { retryable: true, retryAfterMs: 250 },
+      ),
     );
   },
   "tasks.get": ({ params, respond, context, client }) => {

@@ -37,7 +37,7 @@ type RpcResponse<T extends Record<string, unknown>> = {
   id: string;
   ok: boolean;
   payload?: T;
-  error?: { code?: string; message?: string };
+  error?: { code?: string; message?: string; retryable?: boolean; retryAfterMs?: number };
   [key: string]: unknown;
 };
 
@@ -311,6 +311,49 @@ describe("tasks.list Gateway performance", () => {
           expect(accessOrder[0]).toBe("visibility");
           expect(Math.max(0, ...sortedInputLengths)).toBeLessThanOrEqual(35);
 
+          const convergingTasks = createTaskSnapshot();
+          const convergingTaskId = convergingTasks.keys().next().value;
+          if (!convergingTaskId) {
+            throw new Error("expected a converging task fixture");
+          }
+          resetTaskRegistryForTests({ persist: false });
+          let convergingChurnStarted = false;
+          let convergingRevision = 0;
+          const convergingRevisionTarget = 937;
+          const convergeTaskRegistry = () => {
+            if (convergingRevision >= convergingRevisionTarget) {
+              return;
+            }
+            convergingRevision += 1;
+            markTaskTerminalById({
+              taskId: convergingTaskId,
+              status: "succeeded",
+              endedAt: TASK_COUNT + convergingRevision,
+            });
+            setImmediate(convergeTaskRegistry);
+          };
+          configureTaskRegistryRuntime({
+            store: {
+              loadSnapshot: () => {
+                if (!convergingChurnStarted) {
+                  convergingChurnStarted = true;
+                  setImmediate(convergeTaskRegistry);
+                }
+                return { tasks: convergingTasks, deliveryStates: new Map() };
+              },
+              saveSnapshot: () => {},
+            },
+          });
+          const convergedRegistry = await sendRpc<TasksListResult>(
+            admin,
+            "tasks-converged-registry",
+            "tasks.list",
+            { limit: 1 },
+          );
+          expect(convergingRevision).toBe(convergingRevisionTarget);
+          expect(convergedRegistry.ok, JSON.stringify(convergedRegistry.error)).toBe(true);
+          expect(convergedRegistry.payload?.tasks).toHaveLength(1);
+
           const churnTasks = createTaskSnapshot();
           const churnTaskId = churnTasks.keys().next().value;
           if (!churnTaskId) {
@@ -357,7 +400,12 @@ describe("tasks.list Gateway performance", () => {
           expect(taskChurnRevision).toBeGreaterThanOrEqual(3);
           expect(unstableRegistry).toMatchObject({
             ok: false,
-            error: { code: "UNAVAILABLE", message: expect.stringContaining("retry") },
+            error: {
+              code: "UNAVAILABLE",
+              message: "Task activity did not stabilize. Wait a moment, then refresh Tasks.",
+              retryable: true,
+              retryAfterMs: 250,
+            },
           });
 
           const accessTasks = new Map([...createTaskSnapshot()].slice(0, 1_000));
@@ -404,7 +452,12 @@ describe("tasks.list Gateway performance", () => {
           expect(accessMutationCount).toBeGreaterThanOrEqual(3);
           expect(unstableAccess).toMatchObject({
             ok: false,
-            error: { code: "UNAVAILABLE", message: expect.stringContaining("retry") },
+            error: {
+              code: "UNAVAILABLE",
+              message: "Task activity did not stabilize. Wait a moment, then refresh Tasks.",
+              retryable: true,
+              retryAfterMs: 250,
+            },
           });
         } finally {
           sortSpy.mockRestore();
