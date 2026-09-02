@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The card is a separate lazy chunk; stubbing it keeps this suite on the showing
 // protocol instead of the dialog's shadow-DOM dependencies.
-vi.mock("../components/community-invite-dialog.ts", () => ({
+vi.mock("../components/community-invite-card.ts", () => ({
   COMMUNITY_INVITE_SETTLED_EVENT: "community-invite-settled",
 }));
 
@@ -15,7 +15,7 @@ import {
 } from "./community-invite.runtime.ts";
 
 const DWELL_MS = 5 * 60 * 1000;
-const CARD_TAG = "openclaw-community-invite-dialog";
+const CARD_TAG = "openclaw-community-invite-card";
 
 const stops: Array<() => void> = [];
 let visibility: DocumentVisibilityState = "visible";
@@ -104,7 +104,9 @@ async function runToPresentation(): Promise<void> {
 
 beforeEach(() => {
   localStorage.clear();
-  document.body.innerHTML = "";
+  document.body.innerHTML = `<div class="shell"><div class="shell-nav"><openclaw-app-sidebar>
+    <div class="sidebar-shell__footer"></div>
+  </openclaw-app-sidebar></div></div>`;
   visibility = "visible";
   focused = true;
   lockHolders = new Set();
@@ -238,6 +240,9 @@ describe("community invite showing protocol", () => {
     await runToPresentation();
 
     expect(mountedCards()).toBe(1);
+    expect(document.querySelector(CARD_TAG)?.parentElement?.className).toBe(
+      "sidebar-shell__footer",
+    );
     // Written and verified inside the claim, so it is already durable by the time
     // anything is on screen — no outcome required.
     expect(storedRecord()?.shownAtMs).toBeGreaterThan(0);
@@ -399,6 +404,18 @@ describe("community invite live eligibility", () => {
     expect(mountedCards()).toBe(1);
   });
 
+  it("allows the card inside the open navigation drawer", async () => {
+    seedRecord();
+    const drawer = document.createElement("div");
+    drawer.className = "nav-drawer";
+    drawer.append(document.querySelector("openclaw-app-sidebar")!);
+    document.body.append(drawer);
+    document.openClawModalToastLayers = new Set([drawer]);
+
+    await runToPresentation();
+    expect(mountedCards()).toBe(1);
+  });
+
   it("defers presentation while a toast is active, then presents once it clears", async () => {
     seedRecord();
     const toast = document.createElement("div");
@@ -414,6 +431,26 @@ describe("community invite live eligibility", () => {
     document.dispatchEvent(new Event("focusout"));
     await flushPresentation();
     expect(mountedCards()).toBe(1);
+  });
+
+  it("defers presentation while the sidebar is hidden, then mounts inside its footer", async () => {
+    seedRecord();
+    const shell = document.querySelector<HTMLElement>(".shell");
+    const navigation = document.querySelector<HTMLElement>(".shell-nav");
+    shell?.classList.add("shell--nav-collapsed");
+    navigation?.setAttribute("inert", "");
+    start();
+
+    await vi.advanceTimersByTimeAsync(DWELL_MS);
+    await flushPresentation();
+    expect(mountedCards()).toBe(0);
+    expect(storedRecord()?.shownAtMs).toBeUndefined();
+
+    navigation?.removeAttribute("inert");
+    shell?.classList.remove("shell--nav-collapsed");
+    await flushPresentation();
+    expect(mountedCards()).toBe(1);
+    expect(document.querySelector(CARD_TAG)?.closest(".sidebar-shell__footer")).not.toBeNull();
   });
 
   it("defers rather than settles when the state turns unquiet during the chunk import", async () => {

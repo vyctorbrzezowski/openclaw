@@ -207,13 +207,14 @@ export async function claimCommunityInviteShowing(): Promise<boolean> {
   }
 }
 
-/** True while any modal dialog is open. The card must never mount over one — a
- * modal traps focus and blocks whatever the operator is doing, so presenting
- * under it would burn the one-shot tombstone on a card nobody could see or
- * reach. Reads the same registry `modal-dialog.ts` keeps for toast handoff,
- * which every open `openclaw-modal-dialog` is already a member of. */
+/** True while a modal other than the navigation drawer is open. The card must
+ * never mount under blocked content and burn its one-shot tombstone unseen; the
+ * drawer is the exception because it contains the card's own sidebar target. */
 export function attentionModalOpen(): boolean {
-  return (document.openClawModalToastLayers?.size ?? 0) > 0;
+  return [...(document.openClawModalToastLayers ?? [])].some(
+    (modal) =>
+      !modal.classList.contains("nav-drawer") || !modal.querySelector("openclaw-app-sidebar"),
+  );
 }
 
 /** How one presentation attempt ended. `settled` means the invite is over for this
@@ -221,6 +222,15 @@ export function attentionModalOpen(): boolean {
  * one. `deferred` means nothing was claimed and nothing was recorded, so the watchers
  * must stay alive for the next visibility or focus event. */
 type PresentationOutcome = "settled" | "deferred";
+
+/** Resolves the visible app-sidebar footer at presentation time. The sidebar is
+ * moved between desktop and drawer slots, and its slot is inert while collapsed
+ * or off-canvas, so a document-body floater would either escape the sidebar or
+ * burn the one-shot tombstone on hidden UI. */
+function communityInviteMountTarget(): HTMLElement | null {
+  const footer = document.querySelector<HTMLElement>("openclaw-app-sidebar .sidebar-shell__footer");
+  return footer?.closest("[inert]") ? null : footer;
+}
 
 /** Starts the invite for a load the shell has already qualified. `isEligibleNow`
  * is checked live at presentation time, not only here: it covers state that can
@@ -249,6 +259,7 @@ export function runCommunityInvite(
   let dwellSatisfied = false;
   let dwellTimer: ReturnType<typeof setTimeout> | null = null;
   let listening = false;
+  let navigationObserver: MutationObserver | null = null;
   let card: HTMLElement | null = null;
 
   const clearDwellTimer = () => {
@@ -285,12 +296,19 @@ export function runCommunityInvite(
     // one showing this browser gets, and once the claim lands the card reaches the
     // DOM in the same task.
     const { COMMUNITY_INVITE_SETTLED_EVENT } =
-      await import("../components/community-invite-dialog.ts");
+      await import("../components/community-invite-card.ts");
     if (disposed) {
       return "settled";
     }
     if (!isQuietAndEligible()) {
       // Went unquiet inside the import; nothing claimed, so this must not retire.
+      return "deferred";
+    }
+    const mountTarget = communityInviteMountTarget();
+    if (!mountTarget) {
+      // The dwell can complete while desktop navigation is collapsed or the
+      // mobile drawer is closed. Keep the showing claim available until the
+      // sidebar itself is reachable again.
       return "deferred";
     }
     if (!(await claimCommunityInviteShowing())) {
@@ -301,7 +319,7 @@ export function runCommunityInvite(
       // re-shows; appending here would leave a card with no disposer to remove it.
       return "settled";
     }
-    const mounted = document.createElement("openclaw-community-invite-dialog");
+    const mounted = document.createElement("openclaw-community-invite-card");
     mounted.addEventListener(COMMUNITY_INVITE_SETTLED_EVENT, (event) => {
       // Metadata only. The tombstone already decided this browser is done, so a
       // failed write here costs the outcome, never the suppression.
@@ -314,7 +332,7 @@ export function runCommunityInvite(
       card = null;
     });
     card = mounted;
-    document.body.append(mounted);
+    mountTarget.append(mounted);
     return "settled";
   };
 
@@ -382,10 +400,20 @@ export function runCommunityInvite(
     document.addEventListener("focusout", onEnvironmentChange);
     window.addEventListener("focus", onEnvironmentChange);
     window.addEventListener("blur", onEnvironmentChange);
+    const shell = document.querySelector(".shell");
+    if (shell) {
+      // Collapse, drawer, and settings takeover all update the shell class. That
+      // gives a deferred invite an exact retry signal without polling or observing
+      // the sidebar's high-churn session subtree.
+      navigationObserver = new MutationObserver(tryPresent);
+      navigationObserver.observe(shell, { attributeFilter: ["class"] });
+    }
   };
 
   function stopWatching() {
     clearDwellTimer();
+    navigationObserver?.disconnect();
+    navigationObserver = null;
     if (!listening) {
       return;
     }

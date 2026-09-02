@@ -500,7 +500,7 @@ export const en: TranslationMap & {
     stylesFailed: "Styles failed to load, so the page may look broken.",
   },
   communityInvite: {
-    dialogLabel: "Join the OpenClaw community on Discord",
+    cardLabel: "Join the OpenClaw community on Discord",
     artAlt: "A lobster beside the Discord mark on a lit seafloor pedestal",
     eyebrow: "OpenClaw community",
     title: "Come build with us",
