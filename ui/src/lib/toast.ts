@@ -216,6 +216,11 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
   }
 }
 
+/** Read by attention-gated surfaces that defer to active operator feedback. */
+export function hasActiveToast(): boolean {
+  return document.querySelector(".app-toast") !== null;
+}
+
 export function showToast(options: ToastOptions): boolean {
   if (typeof document === "undefined") {
     return false;
