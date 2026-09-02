@@ -51,6 +51,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "sidebar"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -263,6 +264,7 @@ function buildUpdateFixture(fixture: CliOptions["fixture"], nowMs: number): Upda
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const uiRoot = path.join(repoRoot, "ui");
 const boardFixturePath = "/__fixtures/board/";
+const sidebarFixturePath = "/__fixtures/sidebar/";
 const boardFixtureHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -303,6 +305,20 @@ const boardFixtureHtml = `<!doctype html>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/test-helpers/board-fixture.ts"></script>
+  </body>
+</html>`;
+const sidebarFixtureHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OpenClaw sidebar row bench</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="/src/test-helpers/sidebar-bench-fixture.ts"></script>
   </body>
 </html>`;
 
@@ -354,6 +370,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "sidebar" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1643,6 +1660,54 @@ async function createChatPickerScenario(
       runtimeMs: 200_000,
     },
   );
+  const lifecycleParentKey = "agent:main:sidebar-lifecycle";
+  const lifecycleChildRows =
+    fixture === "sidebar"
+      ? [
+          sessionRow("agent:main:subagent:queued", "Queued child", baseTime - 6_000, {
+            spawnedBy: lifecycleParentKey,
+            hasActiveRun: true,
+            status: "queued",
+            startedAt: baseTime - 12_000,
+          }),
+          sessionRow("agent:main:subagent:running", "Running child", baseTime - 7_000, {
+            spawnedBy: lifecycleParentKey,
+            hasActiveRun: true,
+            status: "running",
+            startedAt: baseTime - 67_000,
+            runtimeMs: 67_000,
+          }),
+          sessionRow("agent:main:subagent:done", "Done child", baseTime - 8_000, {
+            spawnedBy: lifecycleParentKey,
+            status: "done",
+            startedAt: baseTime - 95_000,
+            endedAt: baseTime - 8_000,
+          }),
+          sessionRow("agent:main:subagent:killed", "Killed child", baseTime - 9_000, {
+            spawnedBy: lifecycleParentKey,
+            status: "killed",
+            startedAt: baseTime - 110_000,
+            endedAt: baseTime - 9_000,
+          }),
+          sessionRow("agent:main:subagent:timeout", "Timed out child", baseTime - 10_000, {
+            spawnedBy: lifecycleParentKey,
+            status: "timeout",
+            lastRunError: "The operation exceeded its time limit",
+            lastReadAt: baseTime,
+            startedAt: baseTime - 130_000,
+            endedAt: baseTime - 10_000,
+          }),
+          sessionRow("agent:main:subagent:failed", "Failed unread child", baseTime - 11_000, {
+            spawnedBy: lifecycleParentKey,
+            status: "failed",
+            lastRunError: "The provider rejected the request",
+            lastReadAt: baseTime,
+            unread: true,
+            startedAt: baseTime - 80_000,
+            endedAt: baseTime - 11_000,
+          }),
+        ]
+      : [];
   const swarmGroupId = "swarm:agent:main:main:mock-turn";
   const swarmChildRows =
     fixture === "swarm"
@@ -1740,6 +1805,100 @@ async function createChatPickerScenario(
       childSessions: ["agent:main:subagent:tax-receipts"],
       pinned: true,
     }),
+    ...(fixture === "sidebar"
+      ? [
+          sessionRow(lifecycleParentKey, "Child lifecycle", baseTime - 4_000, {
+            category: "Runtime states",
+            childSessions: lifecycleChildRows.map((row) => row.key),
+            icon: "bot",
+          }),
+          ...lifecycleChildRows,
+          sessionRow("agent:main:sidebar-queued", "Queued for execution", baseTime - 12_000, {
+            category: "Runtime states",
+            hasActiveRun: true,
+            status: "queued",
+          }),
+          sessionRow("agent:main:sidebar-running", "Running with unread data", baseTime - 13_000, {
+            category: "Runtime states",
+            hasActiveRun: true,
+            status: "running",
+            unread: true,
+          }),
+          sessionRow("agent:main:sidebar-unread", "Unread idle session", baseTime - 14_000, {
+            category: "Runtime states",
+            unread: true,
+          }),
+          sessionRow(
+            "agent:main:sidebar-agent-status",
+            "Agent-declared status",
+            baseTime - 16_000,
+            {
+              agentStatus: {
+                note: "Waiting for the deployment window",
+                attention: "hourglass",
+                expiresAt: Date.now() + 86_400_000,
+              },
+              category: "Attention and badges",
+              hasActiveRun: true,
+              status: "running",
+            },
+          ),
+          sessionRow("agent:main:sidebar-draft-owner", "My shared draft", baseTime - 17_000, {
+            category: "Attention and badges",
+            createdActor: { type: "human", id: "presence-riley", label: "Riley" },
+            sharingRole: "owner",
+            visibility: "draft",
+          }),
+          sessionRow("agent:main:sidebar-draft-other", "Mira's shared draft", baseTime - 18_000, {
+            category: "Attention and badges",
+            createdActor: MOCK_ACTOR_MIRA,
+            owner: { actor: MOCK_ACTOR_MIRA },
+            sharingRole: "viewer",
+            visibility: "draft",
+          }),
+          sessionRow("agent:main:sidebar-badges", "Dense metadata row", baseTime - 19_000, {
+            category: "Attention and badges",
+            forkSource: { sessionKey: "agent:main:main", sessionId: "mock-source-session" },
+            hasAutomation: true,
+            incognito: true,
+            icon: "coins",
+            participants: [MOCK_ACTOR_PETER, MOCK_ACTOR_MIRA],
+            participantCount: 4,
+            placement: {
+              state: "requested",
+              generation: 1,
+              createdAtMs: baseTime - 30_000,
+              updatedAtMs: baseTime - 19_000,
+              stateChangedAtMs: baseTime - 20_000,
+            },
+          }),
+          sessionRow("agent:main:sidebar-short", "Short", baseTime - 20_000, {
+            category: "Titles",
+          }),
+          sessionRow(
+            "agent:main:sidebar-long",
+            "A deliberately overlong session title that demonstrates the exact production ellipsis and hover marquee behavior",
+            baseTime - 21_000,
+            { category: "Titles", lastMessagePreview: "A compact final-message preview" },
+          ),
+          sessionRow("agent:main:sidebar-emoji", "Persistent emoji title", baseTime - 22_000, {
+            category: "Titles",
+            icon: "🦞",
+          }),
+          sessionRow("agent:main:sidebar-group", "Design review group", baseTime - 23_000, {
+            kind: "group",
+            participants: [MOCK_ACTOR_PETER, MOCK_ACTOR_MIRA],
+            participantCount: 7,
+          }),
+          sessionRow("agent:main:sidebar-work", "Sidebar narrow-width audit", baseTime - 24_000, {
+            worktree: {
+              id: "wt-sidebar-bench",
+              branch: "bench/sidebar-v2",
+              repoRoot: "/Users/demo/projects/openclaw",
+            },
+          }),
+        ]
+      : []),
     sessionRow(
       "agent:main:production-export",
       "Investigate transcript scroll-anchor regression when the final code block expands",
@@ -1840,7 +1999,7 @@ async function createChatPickerScenario(
   const profileUsage = buildProfileUsageMocks(Date.now());
   const modelProviders = buildModelProviderMocks(Date.now());
   const skillWorkshop = buildSkillWorkshopMocks(Date.now());
-  const richAttention = fixture === "approval";
+  const richAttention = fixture === "approval" || fixture === "sidebar";
   const cronMocks = buildCronMocks(Date.now(), { richAttention });
   const updateFixtureNow = Date.now();
   const updateFixture = buildUpdateFixture(fixture, updateFixtureNow);
@@ -1984,6 +2143,7 @@ async function createChatPickerScenario(
       "config.schema",
       "chat.metadata",
       "chat.startup",
+      "controlUi.sessionPullRequests.subscribe",
       "question.list",
       "openclaw.changes.list",
       "openclaw.chat",
@@ -2405,7 +2565,7 @@ async function createChatPickerScenario(
       // Pending exec approvals recover through the same list seam as the real
       // Inbox. Keep this fixture small enough to inspect both rows at once.
       "exec.approval.list":
-        fixture === "approval"
+        fixture === "approval" || fixture === "sidebar"
           ? [
               {
                 id: "mock-production-export-approval",
@@ -2925,6 +3085,14 @@ async function createChatPickerScenario(
             match: { spawnedBy: "agent:main:tax-research" },
             response: pagedSessionsListResponse([taxChildRow], 0),
           },
+          ...(fixture === "sidebar"
+            ? [
+                {
+                  match: { spawnedBy: lifecycleParentKey },
+                  response: pagedSessionsListResponse(lifecycleChildRows, 0),
+                },
+              ]
+            : []),
           ...buildSearchSessionListCases(telegramSessions, searchPrefixes("telegram")),
           ...buildSearchSessionListCases(claudeSessions, [
             ...searchPrefixes("claude"),
@@ -3256,6 +3424,26 @@ function createBoardFixturePlugin(): Plugin {
   };
 }
 
+function createSidebarFixturePlugin(): Plugin {
+  return {
+    name: "openclaw-control-ui-sidebar-fixture",
+    configureServer(server) {
+      server.middlewares.use(sidebarFixturePath, (_req, res, next) => {
+        void server
+          .transformIndexHtml(sidebarFixturePath, sidebarFixtureHtml)
+          .then((html) => {
+            res.statusCode = 200;
+            res.setHeader("content-type", "text/html; charset=utf-8");
+            res.end(html);
+          })
+          .catch((error: unknown) => {
+            next(error as Error);
+          });
+      });
+    },
+  };
+}
+
 function hostForUrl(boundAddress: string, requestedHost: string): string {
   const host = boundAddress === "0.0.0.0" || boundAddress === "::" ? requestedHost : boundAddress;
   const reachableHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
@@ -3305,14 +3493,24 @@ const server = await createServer({
   },
   logLevel: "error",
   optimizeDeps: {
-    ...(options.fixture === "board"
-      ? { entries: [path.join(uiRoot, "src", "test-helpers", "board-fixture.ts")] }
+    ...(options.fixture === "board" || options.fixture === "sidebar"
+      ? {
+          entries: [
+            path.join(
+              uiRoot,
+              "src",
+              "test-helpers",
+              options.fixture === "board" ? "board-fixture.ts" : "sidebar-bench-fixture.ts",
+            ),
+          ],
+        }
       : {}),
     include: ["lit/directives/repeat.js"],
   },
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
+    createSidebarFixturePlugin(),
     ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
   ],
   publicDir: path.join(uiRoot, "public"),
@@ -3336,6 +3534,9 @@ await server.listen();
 console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
+);
+console.log(
+  `[control-ui-mock] sidebar fixture: ${resolveServerUrl(server, options.host, sidebarFixturePath)}`,
 );
 await waitForShutdown();
 await server.close();
