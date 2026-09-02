@@ -40,4 +40,23 @@ describe("renderSidebarIssueItem", () => {
     container.querySelector<HTMLButtonElement>(".sidebar-issues-panel__dismiss")?.click();
     expect(onDismiss).toHaveBeenCalledOnce();
   });
+
+  it("links with route options and delegates opening to the owner", () => {
+    const onOpen = vi.fn();
+    const linkedItem: SidebarAttentionItem = {
+      ...item,
+      action: { kind: "navigate", routeId: "cron", options: { search: "?job=backup" } },
+    };
+    render(
+      renderSidebarIssueItem(linkedItem, { basePath: "/ui", onNavigate: vi.fn(), onOpen }),
+      container,
+    );
+
+    const link = container.querySelector<HTMLAnchorElement>(
+      ".sidebar-issues-panel__navigation-link",
+    );
+    expect(link?.getAttribute("href")).toBe("/ui/automations?job=backup");
+    link?.click();
+    expect(onOpen).toHaveBeenCalledWith(linkedItem);
+  });
 });

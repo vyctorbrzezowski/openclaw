@@ -82,7 +82,7 @@ class SidebarAttention extends OpenClawLightDomElement {
   @state() private overflowBelow = false;
 
   @property({ attribute: false }) activeRouteId?: NavigationRouteId;
-  @property({ attribute: false }) onNavigate?: (routeId: NavigationRouteId) => void;
+  @property({ attribute: false }) onNavigate?: ApplicationContext<NavigationRouteId>["navigate"];
   @property({ attribute: false }) watchUpdateProgress?: UpdateProgressWatcher;
 
   private loadedClient: GatewayBrowserClient | null = null;
@@ -562,7 +562,7 @@ class SidebarAttention extends OpenClawLightDomElement {
   private async open(item: SidebarAttentionItem) {
     this.closePanel(false);
     if (item.action.kind === "navigate") {
-      this.onNavigate?.(item.action.routeId);
+      this.onNavigate?.(item.action.routeId, item.action.options);
       return;
     }
     const { custodianAlertStore } = await import("../pages/custodian/custodian-alert-store.ts");

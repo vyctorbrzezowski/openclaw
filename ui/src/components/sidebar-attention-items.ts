@@ -1,4 +1,5 @@
 import type { CronJob, ModelAuthStatusResult } from "../api/types.ts";
+import { automationJobLocation } from "../app-route-paths.ts";
 import { t } from "../i18n/index.ts";
 import { isCronJobActiveFailure, isCronJobRunning } from "../lib/cron-status.ts";
 import { clampText, formatTimeAgo } from "../lib/format.ts";
@@ -27,6 +28,14 @@ type SidebarAttentionContent = Omit<
   SidebarAttentionItem,
   "category" | "dismissal" | "requiresAction" | "type"
 >;
+
+function automationNavigation(jobId: string): SidebarAttentionContent["action"] {
+  return {
+    kind: "navigate",
+    routeId: "cron",
+    options: { search: automationJobLocation(jobId).search },
+  };
+}
 
 export function buildSidebarAttentionEntries(params: {
   cronJobs: readonly CronJob[];
@@ -85,7 +94,7 @@ export function buildSidebarAttentionEntries(params: {
           label: jobName,
           detail: t("attention.automationFailed", { time }),
           meta: cronMeta(job, t("attention.failed"), time),
-          action: { kind: "navigate", routeId: "cron" },
+          action: automationNavigation(job.id),
           signature: job.id,
         },
         "automations",
@@ -122,7 +131,7 @@ export function buildSidebarAttentionEntries(params: {
           label: jobName,
           detail: t("attention.automationOverdue", { time }),
           meta: cronMeta(job, t("attention.overdue"), time),
-          action: { kind: "navigate", routeId: "cron" },
+          action: automationNavigation(job.id),
           signature,
         },
         "automations",

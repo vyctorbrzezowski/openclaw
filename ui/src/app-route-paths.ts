@@ -111,6 +111,15 @@ export function pathForRoute(routeId: RouteId, basePath = ""): string {
   return normalizedBasePath ? `${normalizedBasePath}${path}` : path;
 }
 
+export function automationJobLocation(
+  jobId: string,
+  basePath = "",
+): { pathname: string; search: string; href: string } {
+  const pathname = pathForRoute("cron", basePath);
+  const search = `?${new URLSearchParams({ job: jobId }).toString()}`;
+  return { pathname, search, href: `${pathname}${search}` };
+}
+
 /** Query key the Activity feed reads to scope its session list to one person. */
 export const ACTIVITY_PERSON_PARAM = "person";
 

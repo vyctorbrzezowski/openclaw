@@ -1,4 +1,5 @@
 import type { NavigationRouteId } from "../app-navigation.ts";
+import type { ApplicationNavigationOptions } from "../app/context.ts";
 import type { ScopeUpgradeState } from "../app/device-scope-upgrade-availability.ts";
 import type { ExecApprovalRequest } from "../app/exec-approval.ts";
 import type { CustodianAlert } from "./custodian-alert-contract.ts";
@@ -32,7 +33,11 @@ export type SidebarAttentionItem = SidebarInboxEntryBase<"automations" | "system
   detail: string;
   meta?: { context?: string; status: string; time: string };
   action:
-    | { kind: "navigate"; routeId: NavigationRouteId }
+    | {
+        kind: "navigate";
+        routeId: NavigationRouteId;
+        options?: ApplicationNavigationOptions;
+      }
     | { kind: "askCustodian"; alert: CustodianAlert };
   inlineAction?: { label: string; routeId: NavigationRouteId };
   signature: string;

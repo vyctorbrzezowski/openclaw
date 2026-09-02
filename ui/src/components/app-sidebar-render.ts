@@ -2,11 +2,7 @@ import { html, nothing } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { presenceUserKey } from "../../../src/shared/presence-user.ts";
 import type { GatewayControlUiPluginTab } from "../api/gateway.ts";
-import {
-  serializeSidebarEntry,
-  type NavigationRouteId,
-  type SidebarZoneEntry,
-} from "../app-navigation.ts";
+import { serializeSidebarEntry, type SidebarZoneEntry } from "../app-navigation.ts";
 import { isRouteId, isSessionRouteId } from "../app-route-paths.ts";
 import { resolveControlUiAuthToken } from "../app/control-ui-auth.ts";
 import { isNativeWebChromeHost } from "../app/native-web-chrome.ts";
@@ -479,7 +475,7 @@ function renderWorkboardBoard(
 function renderAppSidebarAttention(host: AppSidebarRenderHost) {
   return html`<openclaw-sidebar-attention
     .activeRouteId=${host.activeRouteId}
-    .onNavigate=${(routeId: NavigationRouteId) => host.onNavigate?.(routeId)}
+    .onNavigate=${host.onNavigate}
     .watchUpdateProgress=${host.watchUpdateProgress}
   ></openclaw-sidebar-attention>`;
 }

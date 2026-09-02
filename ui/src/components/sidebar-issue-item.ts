@@ -274,6 +274,8 @@ function renderNavigationItem(item: SidebarAttentionItem, handlers: SidebarIssue
     return nothing;
   }
   const routeId = item.action.routeId;
+  const options = item.action.options;
+  const href = `${options?.pathname ?? pathForRoute(routeId, handlers.basePath)}${options?.search ?? ""}${options?.hash ?? ""}`;
   return html`<div
     class="sidebar-issues-panel__details sidebar-issues-panel__details--${item.severity}"
     data-attention-kind=${item.kind}
@@ -281,14 +283,14 @@ function renderNavigationItem(item: SidebarAttentionItem, handlers: SidebarIssue
     <div class="sidebar-issues-panel__summary sidebar-issues-panel__summary--navigation">
       <a
         class="sidebar-issues-panel__navigation-link"
-        href=${pathForRoute(routeId, handlers.basePath)}
+        href=${href}
         data-issue-row-focus
         @click=${(event: MouseEvent) => {
           if (!shouldHandleNavigationClick(event)) {
             return;
           }
           event.preventDefault();
-          handlers.onNavigate(routeId);
+          handlers.onOpen(item);
         }}
       >
         <span class="sidebar-issues-panel__icon" aria-hidden="true">${icons[item.icon]}</span>

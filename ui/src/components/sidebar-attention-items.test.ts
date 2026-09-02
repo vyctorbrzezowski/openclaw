@@ -49,6 +49,9 @@ describe("automation attention", () => {
     expect(
       failed.every((item) => item.action.kind !== "navigate" || item.action.routeId === "cron"),
     ).toBe(true);
+    expect(
+      failed.map((item) => (item.action.kind === "navigate" ? item.action.options?.search : null)),
+    ).toEqual(["?job=primary", "?job=reason-id", "?job=unknown-id"]);
   });
 
   it("does not flag an actively running job as overdue", () => {
@@ -65,6 +68,11 @@ describe("automation attention", () => {
     );
 
     expect(overdue?.label).toBe("stalled-id");
+    expect(overdue?.action).toEqual({
+      kind: "navigate",
+      routeId: "cron",
+      options: { search: "?job=stalled-id" },
+    });
   });
 
   it("does not flag an enabled overdue job while the scheduler is disabled", () => {
