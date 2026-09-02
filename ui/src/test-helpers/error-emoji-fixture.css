@@ -1,0 +1,199 @@
+html {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+
+body {
+  height: auto;
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow: visible;
+  background: var(--bg);
+}
+
+.error-emoji-fixture {
+  box-sizing: border-box;
+  width: min(100%, 1480px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px;
+  color: var(--text);
+}
+
+.error-emoji-fixture__header {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: -32px -32px 22px;
+  padding: 26px 32px 18px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.error-emoji-fixture__eyebrow {
+  color: var(--muted);
+  font: 600 10px/1.2 ui-monospace, monospace;
+  letter-spacing: 0.14em;
+}
+
+.error-emoji-fixture__header h1 {
+  margin: 6px 0 3px;
+  color: var(--text-strong);
+  font-size: 26px;
+  letter-spacing: -0.04em;
+}
+
+.error-emoji-fixture__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.error-emoji-fixture__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-strong);
+  font-size: 12px;
+  cursor: var(--cursor-action);
+  user-select: none;
+}
+
+.error-emoji-fixture__toggle input {
+  accent-color: var(--accent);
+}
+
+.error-emoji-fixture__toggle strong {
+  min-width: 24px;
+  color: var(--accent);
+  font: 700 10px/1 ui-monospace, monospace;
+  text-align: right;
+}
+
+.error-emoji-fixture__columns,
+.error-emoji-fixture__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.error-emoji-fixture__columns {
+  position: sticky;
+  z-index: 8;
+  top: 102px;
+  margin-bottom: 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  color: var(--muted);
+  font: 600 10px/1.2 ui-monospace, monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+
+.error-emoji-fixture__list {
+  display: grid;
+  gap: 12px;
+}
+
+.error-emoji-fixture__item {
+  padding: 14px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-elevated) 58%, transparent);
+}
+
+.error-emoji-fixture__item[data-owner="channel"] {
+  border-style: dashed;
+}
+
+.error-emoji-fixture__meta {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.error-emoji-fixture__meta > span {
+  color: var(--text-strong);
+  font: 650 10px/1.2 ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.error-emoji-fixture__meta strong {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  font-size: 10px;
+}
+
+.error-emoji-fixture__meta code {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-emoji-fixture__meta small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.error-emoji-fixture__pair > div {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .error-emoji-fixture {
+    padding: 18px;
+  }
+
+  .error-emoji-fixture__header {
+    position: relative;
+    top: auto;
+    align-items: stretch;
+    flex-direction: column;
+    margin: -18px -18px 18px;
+    padding: 20px 18px 16px;
+  }
+
+  .error-emoji-fixture__toggle {
+    justify-content: center;
+  }
+
+  .error-emoji-fixture__columns {
+    top: 0;
+  }
+
+  .error-emoji-fixture__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .error-emoji-fixture__meta code {
+    text-align: left;
+  }
+}
