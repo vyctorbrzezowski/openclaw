@@ -201,9 +201,8 @@ export function renderReplyButton(
   `;
 }
 
-// Character length owns normal disclosure; this high line cap only bounds newline-heavy prompts.
-const USER_MESSAGE_COLLAPSED_CHAR_LIMIT = 1_200;
-const USER_MESSAGE_COLLAPSED_LINE_LIMIT = 40;
+const USER_MESSAGE_COLLAPSED_LINE_LIMIT = 5;
+const USER_MESSAGE_COLLAPSED_CHAR_LIMIT = 700;
 
 function shouldCollapseUserMessage(markdown: string): boolean {
   return (
@@ -254,21 +253,28 @@ export function renderUserMessageMarkdown(
   markdownRenderOptions: MarkdownRenderOptions,
   duplicateSuffix?: DuplicateSuffix,
 ) {
-  if (!opts.onToggleUserMessageExpanded || !shouldCollapseUserMessage(markdown)) {
+  if (!opts.onToggleUserMessageExpanded) {
     return renderMarkdownText(markdown, opts.isStreaming, markdownRenderOptions, duplicateSuffix);
   }
 
   const disclosureId = `user-message:${messageKey}`;
   const expanded = opts.isUserMessageExpanded?.(disclosureId) ?? false;
+  const likelyOverflow = shouldCollapseUserMessage(markdown);
   return html`
-    <div class="chat-message-disclosure ${expanded ? "is-expanded has-overflow" : ""}">
+    <div
+      class="chat-message-disclosure ${expanded
+        ? "is-expanded has-overflow"
+        : likelyOverflow
+          ? "has-overflow"
+          : ""}"
+    >
       <div class="chat-message-disclosure__content" ${ref(userMessageOverflowRef(expanded))}>
         ${renderMarkdownText(markdown, opts.isStreaming, markdownRenderOptions, duplicateSuffix)}
       </div>
       <button
         class="chat-message-disclosure__toggle"
         type="button"
-        ?hidden=${!expanded}
+        ?hidden=${!expanded && !likelyOverflow}
         aria-label=${t(expanded ? "chat.messages.showLess" : "chat.messages.showMore")}
         aria-expanded=${String(expanded)}
         @click=${() => opts.onToggleUserMessageExpanded?.(disclosureId)}
