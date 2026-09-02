@@ -56,6 +56,7 @@ type CliOptions = {
     | "board"
     | "code-fences"
     | "goal"
+    | "inbox-header"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -109,6 +110,7 @@ type UpdateFixture = {
 
 function buildUpdateFixture(fixture: CliOptions["fixture"], nowMs: number): UpdateFixture | null {
   if (
+    fixture !== "inbox-header" &&
     fixture !== "update-available" &&
     fixture !== "update-blocked" &&
     fixture !== "update-failed"
@@ -116,7 +118,7 @@ function buildUpdateFixture(fixture: CliOptions["fixture"], nowMs: number): Upda
     return null;
   }
 
-  if (fixture === "update-available") {
+  if (fixture === "update-available" || fixture === "inbox-header") {
     const available: UpdateAvailable = {
       currentVersion: "2026.8.1",
       latestVersion: "2026.8.2",
@@ -360,6 +362,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "board" &&
     value !== "code-fences" &&
     value !== "goal" &&
+    value !== "inbox-header" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -1902,6 +1905,17 @@ async function createChatPickerScenario(
   const skillWorkshop = buildSkillWorkshopMocks(Date.now());
   const richAttention = fixture === "approval";
   const cronMocks = buildCronMocks(Date.now(), { richAttention });
+  if (fixture === "inbox-header") {
+    cronMocks["cron.list"] = {
+      jobs: [],
+      snapshotRevision: "control-ui-mock-inbox-header",
+      total: 0,
+      offset: 0,
+      limit: 50,
+      hasMore: false,
+      nextOffset: null,
+    };
+  }
   const updateFixtureNow = Date.now();
   const updateFixture = buildUpdateFixture(fixture, updateFixtureNow);
   const updateSchedule = updateFixture?.schedule ?? null;
@@ -1915,7 +1929,9 @@ async function createChatPickerScenario(
         },
       }
     : null;
-  const modelAuthStatus = richAttention
+  const modelAuthStatus = fixture === "inbox-header"
+    ? { ...modelProviders.authStatus, providers: [] }
+    : richAttention
     ? {
         ...modelProviders.authStatus,
         providers: modelProviders.authStatus.providers.map((provider) =>
@@ -3270,6 +3286,36 @@ function createMockGatewayPlugin(
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const statefulInitScript = escapeScriptContent(createStatefulMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
+  const inboxHeaderAskToggle =
+    fixture === "inbox-header"
+      ? `    <style data-openclaw-control-ui-mock-ask-toggle>
+      html[data-mock-ask-openclaw="hidden"] .sidebar-issues-panel__ask { display: none !important; }
+      .control-ui-mock-ask-toggle { position: absolute; z-index: 4; inset: auto auto 8px 8px; min-height: 32px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--card); color: var(--text); box-shadow: var(--shadow-md); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+      .control-ui-mock-ask-toggle[aria-pressed="true"] { background: var(--bg-hover); }
+    </style>
+    <script data-openclaw-control-ui-mock-ask-toggle>
+      document.documentElement.dataset.mockAskOpenclaw = "hidden";
+      addEventListener("DOMContentLoaded", () => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "control-ui-mock-ask-toggle";
+        const apply = (visible) => {
+          document.documentElement.dataset.mockAskOpenclaw = visible ? "visible" : "hidden";
+          button.setAttribute("aria-pressed", String(visible));
+          button.textContent = \`Ask OpenClaw: \${visible ? "shown" : "hidden"}\`;
+        };
+        button.addEventListener("click", () => apply(button.getAttribute("aria-pressed") !== "true"));
+        const mount = () => {
+          const inbox = document.querySelector("#sidebar-issues-panel");
+          if (inbox && button.parentElement !== inbox) inbox.append(button);
+        };
+        new MutationObserver(mount).observe(document.body, { childList: true, subtree: true });
+        mount();
+        apply(false);
+      });
+    </script>
+`
+      : "";
   const attachmentThemeToggle =
     fixture === "attachments"
       ? `    <style data-openclaw-control-ui-mock-theme-toggle>
@@ -3323,7 +3369,7 @@ function createMockGatewayPlugin(
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `${attachmentThemeToggle}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
+        `${inboxHeaderAskToggle}${attachmentThemeToggle}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
       );
     },
   };
