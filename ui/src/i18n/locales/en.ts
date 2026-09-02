@@ -5844,6 +5844,7 @@ export const en: TranslationMap & {
       defaultWithMode: "Default ({mode})",
       fullRequiresAdmin: "Full access requires operator.admin access.",
       updateFailed: "Failed to update permissions: {error}",
+      refreshFailed: "Permissions were saved, but refreshing the session failed: {error}",
       modes: {
         "read-only": {
           label: "Read Only",
