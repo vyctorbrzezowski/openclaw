@@ -991,6 +991,11 @@ export async function createGatewaySession(params: {
         createdNewEntry = existingEntry === undefined;
         const requestedModel = normalizeOptionalString(params.model);
         const requestedThinkingLevel = normalizeOptionalString(params.thinkingLevel);
+        const category = normalizeOptionalString(
+          params.category === undefined && params.creation?.via === "spawn" && createdNewEntry
+            ? currentParentSessionEntry?.category
+            : params.category,
+        );
         if (existingEntry?.sessionId && params.allowExistingModelSelection !== true) {
           const gateDefaultModel = resolveDefaultModelForAgent({
             cfg: params.cfg,
@@ -1035,7 +1040,7 @@ export async function createGatewaySession(params: {
           patch: {
             key: target.canonicalKey,
             label: normalizeOptionalString(params.label),
-            category: normalizeOptionalString(params.category),
+            category,
             model: catalogModel ?? requestedModel,
             thinkingLevel: requestedThinkingLevel,
           },
