@@ -1,7 +1,11 @@
 /* @vitest-environment jsdom */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { COMMUNITY_INVITE_SETTLED_EVENT } from "./community-invite-card.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  COMMUNITY_INVITE_KEY,
+  COMMUNITY_INVITE_STATE_CHANGED_EVENT,
+  type CommunityInviteState,
+} from "./community-invite-card.ts";
 
 /** The invite link is the product contract this card exists to deliver, so the
  * test states it independently instead of reading back the value under test. */
@@ -9,13 +13,16 @@ const COMMUNITY_INVITE_URL = "https://discord.gg/clawd";
 
 // The tag map carries the element type, so no exported class is needed here.
 let card: HTMLElementTagNameMap["openclaw-community-invite-card"];
-let outcomes: string[];
+let states: Array<CommunityInviteState | null>;
 
 beforeEach(async () => {
-  outcomes = [];
+  vi.useFakeTimers();
+  vi.setSystemTime(1_760_000_000_000);
+  localStorage.clear();
+  states = [];
   card = document.createElement("openclaw-community-invite-card");
-  card.addEventListener(COMMUNITY_INVITE_SETTLED_EVENT, (event) => {
-    outcomes.push((event as CustomEvent<{ outcome: string }>).detail.outcome);
+  card.addEventListener(COMMUNITY_INVITE_STATE_CHANGED_EVENT, (event) => {
+    states.push((event as CustomEvent<{ state: CommunityInviteState | null }>).detail.state);
   });
   document.body.append(card);
   await card.updateComplete;
@@ -23,6 +30,8 @@ beforeEach(async () => {
 
 afterEach(() => {
   card.remove();
+  localStorage.clear();
+  vi.useRealTimers();
 });
 
 /** Every element the card exposes is an HTMLElement, so one concrete return type
@@ -45,34 +54,42 @@ describe("community invite card", () => {
     expect(card.shadowRoot?.querySelector("[autofocus]")).toBeNull();
   });
 
-  it("dismisses from the close button, whose label communicates permanence", () => {
+  it("records the first real mount once", () => {
+    expect(JSON.parse(localStorage.getItem(COMMUNITY_INVITE_KEY) ?? "null")).toEqual({
+      firstShownAtMs: 1_760_000_000_000,
+    });
+    expect(states).toEqual([{ firstShownAtMs: 1_760_000_000_000 }]);
+
+    card.remove();
+    document.body.append(card);
+    expect(JSON.parse(localStorage.getItem(COMMUNITY_INVITE_KEY) ?? "null")).toEqual({
+      firstShownAtMs: 1_760_000_000_000,
+    });
+  });
+
+  it("dismisses only from the close button and persists that decision", () => {
     const close = shadowQuery(".invite__close");
-    // A bare "Dismiss" reads as reversible; the card only ever shows once, so the
-    // label has to say so.
     expect(close.getAttribute("aria-label")).toBe("Dismiss and don't show again");
+    vi.setSystemTime(1_760_000_001_000);
     close.click();
-    expect(outcomes).toEqual(["dismissed"]);
+    expect(JSON.parse(localStorage.getItem(COMMUNITY_INVITE_KEY) ?? "null")).toEqual({
+      firstShownAtMs: 1_760_000_000_000,
+      dismissedAtMs: 1_760_000_001_000,
+    });
+    expect(states.at(-1)).toEqual({
+      firstShownAtMs: 1_760_000_000_000,
+      dismissedAtMs: 1_760_000_001_000,
+    });
   });
 
-  it("dismisses on Escape while focus is inside the card", () => {
-    shadowQuery(".invite").dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    );
-    expect(outcomes).toEqual(["dismissed"]);
-  });
-
-  it("settles as joined when the invite is opened in a new tab", () => {
+  it("keeps the invite active when the Discord link is opened", () => {
     const cta = shadowQuery(".invite__cta");
     expect(cta.getAttribute("href")).toBe(COMMUNITY_INVITE_URL);
     expect(cta.getAttribute("target")).toBe("_blank");
     expect(cta.getAttribute("rel")).toContain("noopener");
+    const before = localStorage.getItem(COMMUNITY_INVITE_KEY);
     cta.click();
-    expect(outcomes).toEqual(["joined"]);
-  });
-
-  it("reports one outcome even when both exits fire", () => {
-    shadowQuery(".invite__close").click();
-    shadowQuery(".invite__cta").click();
-    expect(outcomes).toEqual(["dismissed"]);
+    expect(localStorage.getItem(COMMUNITY_INVITE_KEY)).toBe(before);
+    expect(card.isConnected).toBe(true);
   });
 });

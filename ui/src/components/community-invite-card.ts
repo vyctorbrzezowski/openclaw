@@ -6,10 +6,61 @@ import { t } from "../i18n/index.ts";
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "../lib/external-link.ts";
 import { COMMUNITY_DISCORD_URL } from "../lib/product-links.ts";
 import { OpenClawLitElement } from "../lit/openclaw-element.ts";
+import { getSafeLocalStorage } from "../local-storage.ts";
 import { icons } from "./icons.ts";
 
-/** Read by the scheduler chunk, which owns settling the record on this event. */
-export const COMMUNITY_INVITE_SETTLED_EVENT = "community-invite-settled";
+export const COMMUNITY_INVITE_KEY = "openclaw:control-ui:community-invite";
+export const COMMUNITY_INVITE_STATE_CHANGED_EVENT = "community-invite-state-changed";
+
+export type CommunityInviteState = {
+  firstShownAtMs?: number;
+  dismissedAtMs?: number;
+};
+
+function timestamp(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+/** Null means storage itself is unavailable; an empty object is a new browser. */
+export function readCommunityInviteState(): CommunityInviteState | null {
+  const storage = getSafeLocalStorage();
+  if (!storage) {
+    return null;
+  }
+  try {
+    const raw = storage.getItem(COMMUNITY_INVITE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return {};
+    }
+    const record = value as Record<string, unknown>;
+    const firstShownAtMs = timestamp(record.firstShownAtMs);
+    const dismissedAtMs = timestamp(record.dismissedAtMs);
+    return {
+      ...(firstShownAtMs === undefined ? {} : { firstShownAtMs }),
+      ...(dismissedAtMs === undefined ? {} : { dismissedAtMs }),
+    };
+  } catch {
+    return {};
+  }
+}
+
+function writeCommunityInviteState(state: CommunityInviteState): boolean {
+  const storage = getSafeLocalStorage();
+  if (!storage) {
+    return false;
+  }
+  try {
+    const serialized = JSON.stringify(state);
+    storage.setItem(COMMUNITY_INVITE_KEY, serialized);
+    return storage.getItem(COMMUNITY_INVITE_KEY) === serialized;
+  } catch {
+    return false;
+  }
+}
 
 // Solid brand mark: the shared lucide set is stroked, so this one carries its own fill.
 const discordMark = html`
@@ -241,16 +292,14 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
   `;
 
-  private settled = false;
+  override connectedCallback() {
+    super.connectedCallback();
+    this.recordFirstShown();
+  }
 
   override render() {
     return html`
-      <aside
-        class="invite"
-        role="complementary"
-        aria-label=${t("communityInvite.cardLabel")}
-        @keydown=${this.handleKeydown}
-      >
+      <aside class="invite" role="complementary" aria-label=${t("communityInvite.cardLabel")}>
         <div class="invite__header">
           <img
             class="invite__art"
@@ -263,7 +312,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
             class="invite__close"
             type="button"
             aria-label=${t("communityInvite.dismissForever")}
-            @click=${() => this.settle("dismissed")}
+            @click=${this.dismiss}
           >
             ${icons.x}
           </button>
@@ -278,7 +327,6 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
             href=${COMMUNITY_DISCORD_URL}
             target=${EXTERNAL_LINK_TARGET}
             rel=${buildExternalLinkRel()}
-            @click=${() => this.settle("joined")}
           >
             ${discordMark}
             <span>${t("communityInvite.action")}</span>
@@ -288,29 +336,44 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     `;
   }
 
-  /** Esc dismisses only while focus is inside the card; a non-modal floater must
-   * not swallow Escape from the rest of the app. */
-  private handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.stopPropagation();
-      this.settle("dismissed");
-    }
-  };
-
-  /** Both exits are terminal, so the owner records one outcome and drops the card. */
-  private settle(outcome: "joined" | "dismissed") {
-    if (this.settled) {
-      return;
-    }
-    this.settled = true;
+  private publishState(state: CommunityInviteState | null) {
     this.dispatchEvent(
-      new CustomEvent(COMMUNITY_INVITE_SETTLED_EVENT, {
+      new CustomEvent(COMMUNITY_INVITE_STATE_CHANGED_EVENT, {
         bubbles: true,
         composed: true,
-        detail: { outcome },
+        detail: { state },
       }),
     );
   }
+
+  private recordFirstShown() {
+    const current = readCommunityInviteState();
+    if (current === null || current.dismissedAtMs !== undefined) {
+      this.publishState(current);
+      return;
+    }
+    if (current.firstShownAtMs !== undefined) {
+      this.publishState(current);
+      return;
+    }
+    const next = { ...current, firstShownAtMs: Date.now() };
+    this.publishState(writeCommunityInviteState(next) ? next : null);
+  }
+
+  private dismiss = () => {
+    const current = readCommunityInviteState();
+    if (current === null) {
+      this.publishState(null);
+      return;
+    }
+    const now = Date.now();
+    const next = {
+      ...current,
+      firstShownAtMs: current.firstShownAtMs ?? now,
+      dismissedAtMs: now,
+    };
+    this.publishState(writeCommunityInviteState(next) ? next : null);
+  };
 }
 
 if (!customElements.get("openclaw-community-invite-card")) {

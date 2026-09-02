@@ -55,7 +55,6 @@ import { ShellNavigationOwner, type ShellNavigationHost } from "./app-shell-navi
 import { renderApplicationShell, type ShellViewHost } from "./app-shell-view.ts";
 import { ShellWorkboardOwner, type ShellWorkboardHost } from "./app-shell-workboard.ts";
 import type { ApplicationRuntime } from "./bootstrap.ts";
-import { hasActiveRunOrSubagent, hasRecordedInteraction } from "./community-invite-cohort.ts";
 import type { ApplicationContext, ApplicationNavigationOptions } from "./context.ts";
 import { syncControlUiSystemChrome } from "./control-ui-presentation.ts";
 import {
@@ -183,7 +182,6 @@ class OpenClawShell
   private outboxStoreUnsubscribe: (() => void) | null = null;
   private lastDeletedSessions: ApplicationContext["sessions"]["state"]["deletedSessions"] | null =
     null;
-  private communityInviteCohort: { readonly hasInteractionHistory: boolean } | null = null;
   readonly outboxStoreImport = createIdleImport(
     () =>
       import("../lib/chat/outbox-store-projection.ts").then((module): OutboxStoreRuntime => module),
@@ -281,33 +279,6 @@ class OpenClawShell
     return routeId !== undefined && !isSettingsNavigationRoute(routeId) && !this.onboardingMode;
   }
 
-  private qualifiedCommunityInviteCohort(): { readonly hasInteractionHistory: boolean } | null {
-    if (this.communityInviteCohort) {
-      return this.communityInviteCohort;
-    }
-    const context = this.context;
-    const sessions = context?.sessions.state.result;
-    if (!context || !sessions || this.onboardingMode) {
-      return null;
-    }
-    if (context.gateway.snapshot.phase !== "connected") {
-      return null;
-    }
-    this.communityInviteCohort = {
-      hasInteractionHistory: hasRecordedInteraction(sessions.sessions),
-    };
-    return this.communityInviteCohort;
-  }
-
-  private readonly communityInviteEligibleNow = (): boolean => {
-    const context = this.context;
-    if (!context || context.gateway.snapshot.phase !== "connected" || this.onboardingMode) {
-      return false;
-    }
-    const sessions = context.sessions.state.result?.sessions;
-    return !sessions || !hasActiveRunOrSubagent(sessions);
-  };
-
   storedOutboxScopeHost(context: ApplicationContext<RouteId>): StoredOutboxScopeHost {
     const gatewaySnapshot = context.gateway.snapshot;
     return {
@@ -376,23 +347,6 @@ class OpenClawShell
       .effect(
         () => this.context?.gateway,
         (gateway) => gateway.subscribeEvents(this.handleGatewayEvent),
-      )
-      .effect(
-        () => this.qualifiedCommunityInviteCohort(),
-        ({ hasInteractionHistory }) => {
-          let stop: (() => void) | null = null;
-          let cancelled = false;
-          void import("./community-invite.runtime.ts").then(({ runCommunityInvite }) => {
-            if (!cancelled) {
-              stop = runCommunityInvite(hasInteractionHistory, this.communityInviteEligibleNow);
-            }
-          });
-          return () => {
-            cancelled = true;
-            stop?.();
-            stop = null;
-          };
-        },
       )
       .watch(
         () => this.context?.config,
