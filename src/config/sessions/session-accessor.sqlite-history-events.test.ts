@@ -9,6 +9,7 @@ import { closeOpenClawStateDatabaseForTest } from "../../state/openclaw-state-db
 import { appendTranscriptEvent, persistSessionTranscriptTurn } from "./session-accessor.js";
 import {
   readRecentSessionTranscriptHistoryEvents,
+  readSessionTranscriptHistoryEventPage,
   readSessionTranscriptHistoryEvents,
 } from "./session-accessor.sqlite-history-events.js";
 
@@ -184,6 +185,43 @@ describe("SQLite transcript history events", () => {
     vi.restoreAllMocks();
     closeOpenClawAgentDatabasesForTest();
     closeOpenClawStateDatabaseForTest();
+  });
+
+  it("continues an older-page scan from its original transcript boundary", async () => {
+    for (let index = 1; index <= 4; index += 1) {
+      await persistSessionTranscriptTurn(scope, {
+        messages: [
+          {
+            eventId: `message-${index}`,
+            parentId: index === 1 ? null : `message-${index - 1}`,
+            message: { role: "user", content: `message ${index}` },
+          },
+        ],
+        touchSessionEntry: false,
+      });
+    }
+    const newest = readSessionTranscriptHistoryEventPage(scope, {
+      maxMessages: 2,
+      offset: 0,
+    });
+    await persistSessionTranscriptTurn(scope, {
+      messages: [
+        {
+          eventId: "message-5",
+          parentId: "message-4",
+          message: { role: "user", content: "message 5" },
+        },
+      ],
+      touchSessionEntry: false,
+    });
+
+    const older = readSessionTranscriptHistoryEventPage(scope, {
+      maxMessages: 2,
+      offset: newest.events.length,
+    });
+
+    expect(newest.events.map(historyEventId)).toEqual(["message-3", "message-4"]);
+    expect(older.events.map(historyEventId)).toEqual(["message-1", "message-2"]);
   });
 
   it("retains an oversized newest history row without parsing excluded older payloads", async () => {

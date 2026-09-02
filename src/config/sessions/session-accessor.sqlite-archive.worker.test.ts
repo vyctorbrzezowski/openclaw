@@ -23,6 +23,7 @@ import {
   replaceSessionEntry,
 } from "./session-accessor.js";
 import { materializeSessionStateDeletePlans } from "./session-accessor.sqlite-archive.js";
+import { publishSessionStateArchives } from "./session-accessor.sqlite-archive-store.js";
 import {
   deleteMaterializedSessionStatePlans,
   planSessionStateDeleteIfUnreferenced,
@@ -219,6 +220,101 @@ describe("SQLite transcript archive worker", () => {
         .prepare("SELECT published_at FROM session_transcript_archives WHERE session_id = ?")
         .get(sessionId),
     ).toMatchObject({ published_at: expect.any(Number) });
+  });
+
+  it("does not reject a committed delete for an unrelated pending archive", async () => {
+    const pendingSessionId = "unrelated-pending-archive";
+    const pendingSessionKey = "agent:main:unrelated-pending-archive";
+    await replaceSessionEntry(
+      { sessionKey: pendingSessionKey, storePath },
+      { sessionId: pendingSessionId, updatedAt: 1 },
+    );
+    await replaceTranscriptEvents({ sessionKey: pendingSessionKey, sessionId: pendingSessionId, storePath }, [
+      createTranscriptEvent(pendingSessionId, "pending archive"),
+    ]);
+    const pending = await deleteSessionEntryLifecycle({
+      archiveTranscript: true,
+      storePath,
+      target: { canonicalKey: pendingSessionKey, storeKeys: [pendingSessionKey] },
+    });
+    const pendingArchive = pending.archivedTranscripts[0];
+    if (!pendingArchive) {
+      throw new Error("expected pending transcript archive");
+    }
+    fs.rmSync(pendingArchive.archivedPath);
+    const database = openLifecycleTestDatabase(storePath);
+    database.db
+      .prepare(
+        `UPDATE session_transcript_archives
+         SET archive_sha256 = '${"0".repeat(64)}', published_at = NULL
+         WHERE session_id = ? AND generation = ?`,
+      )
+      .run(pendingSessionId, pendingArchive.generation);
+
+    const sessionId = "unrelated-delete-success";
+    const sessionKey = "agent:main:unrelated-delete-success";
+    await replaceSessionEntry({ sessionKey, storePath }, { sessionId, updatedAt: 2 });
+    await replaceTranscriptEvents({ sessionKey, sessionId, storePath }, [
+      createTranscriptEvent(sessionId, "delete succeeds"),
+    ]);
+
+    const result = await deleteSessionEntryLifecycle({
+      archiveTranscript: true,
+      storePath,
+      target: { canonicalKey: sessionKey, storeKeys: [sessionKey] },
+    });
+
+    expect(result.deleted).toBe(true);
+    expect(loadSessionEntry({ sessionKey, storePath })).toBeUndefined();
+    expect(result.archivedTranscripts).toHaveLength(1);
+  });
+
+  it("publishes a valid archive behind four permanently corrupt rows", async () => {
+    const archives = [];
+    for (let index = 0; index < 5; index += 1) {
+      const sessionId = `starvation-${index}`;
+      const sessionKey = `agent:main:starvation-${index}`;
+      await replaceSessionEntry({ sessionKey, storePath }, { sessionId, updatedAt: index });
+      await replaceTranscriptEvents({ sessionKey, sessionId, storePath }, [
+        createTranscriptEvent(sessionId, `archive ${index}`),
+      ]);
+      const result = await deleteSessionEntryLifecycle({
+        archiveTranscript: true,
+        storePath,
+        target: { canonicalKey: sessionKey, storeKeys: [sessionKey] },
+      });
+      archives.push(result.archivedTranscripts[0]);
+    }
+    const database = openLifecycleTestDatabase(storePath);
+    for (const archive of archives) {
+      if (!archive) {
+        throw new Error("expected transcript archive");
+      }
+      fs.rmSync(archive.archivedPath);
+      database.db
+        .prepare(
+          `UPDATE session_transcript_archives
+           SET archive_sha256 = CASE WHEN session_id = 'starvation-4' THEN archive_sha256 ELSE ? END,
+               published_at = NULL,
+               publish_attempts = 0
+           WHERE session_id = ? AND generation = ?`,
+        )
+        .run(
+          "0".repeat(64),
+          archive.sessionId,
+          archive.generation,
+        );
+    }
+
+    await expect(publishSessionStateArchives({ agentId: "main", path: database.path }, [])).rejects.toThrow(
+      "remain pending in SQLite",
+    );
+
+    expect(
+      database.db
+        .prepare("SELECT publish_attempts FROM session_transcript_archives WHERE session_id = 'starvation-4'")
+        .get(),
+    ).toMatchObject({ publish_attempts: 1 });
   });
 
   it("archives a logical agent transcript through the exact database's physical owner", async () => {

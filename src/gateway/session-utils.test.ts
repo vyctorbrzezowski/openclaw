@@ -619,6 +619,28 @@ describe("gateway session utils", () => {
     expect(listed.hasMore).toBe(true);
   });
 
+  test("continues a session scan from its original roster boundary", () => {
+    const cfg = createModelDefaultsConfig({ primary: "openai/gpt-5.4" });
+    const store = Object.fromEntries(
+      ["a", "b", "c", "d"].map((key, index) => [
+        key,
+        { sessionId: key, updatedAt: 4 - index } satisfies SessionEntry,
+      ]),
+    );
+    const first = listSessionsFromStore({ cfg, storePath: "", store, opts: { limit: 2 } });
+    store.new = { sessionId: "new", updatedAt: 5 };
+
+    const second = listSessionsFromStore({
+      cfg,
+      storePath: "",
+      store,
+      opts: { limit: 2, offset: first.nextOffset ?? 0 },
+    });
+
+    expect(first.sessions.map((session) => session.key)).toEqual(["a", "b"]);
+    expect(second.sessions.map((session) => session.key)).toEqual(["c", "d"]);
+  });
+
   test("session list search includes direct-session origin display labels", () => {
     const cfg = { agents: { list: [{ id: "main", default: true }] } } as OpenClawConfig;
     const store: Record<string, SessionEntry> = {
