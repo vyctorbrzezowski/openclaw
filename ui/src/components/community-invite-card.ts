@@ -27,15 +27,10 @@ const arrowUpRight = strokeIcon(svg` <path d="M7 17 17 7" />
 
 class OpenClawCommunityInviteCard extends OpenClawLitElement {
   static override styles = css`
-    /* The footer is outside the scroll container. Anchoring here keeps the card at
-       the visible bottom of that area without adding to its scroll height. */
     :host {
-      position: absolute;
-      right: calc(var(--space-2, 8px) + var(--scrollbar-size, 12px));
-      bottom: calc(100% + var(--space-2, 8px));
-      left: var(--space-2, 8px);
-      z-index: 2;
       display: block;
+      flex: none;
+      margin: var(--sidebar-group-gap, 16px) calc(-1 * var(--sidebar-pad-x, 10px)) 0;
       animation: invite-enter var(--duration-normal, 180ms) var(--ease-out, ease-out) both;
     }
 
@@ -50,11 +45,11 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border: 1px solid rgb(255 255 255 / 12%);
-      border-radius: var(--radius-lg, 14px);
+      border: 0;
+      border-radius: 0;
       background: #10131c;
       color: #f3f5fb;
-      box-shadow: 0 18px 44px rgb(0 0 0 / 40%);
+      box-shadow: none;
     }
 
     .invite__header {
@@ -124,7 +119,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       display: flex;
       flex-direction: column;
       gap: var(--space-1, 4px);
-      padding: var(--space-3, 12px);
+      padding: var(--space-3, 12px) calc(var(--sidebar-pad-x, 10px) + var(--space-2, 8px));
     }
 
     .invite__eyebrow {
@@ -213,11 +208,6 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     @supports (corner-shape: superellipse(1.5)) {
-      .invite {
-        border-radius: calc(14px * var(--openclaw-corner-radius-scale, 1.25));
-        corner-shape: superellipse(1.5);
-      }
-
       .invite__cta {
         border-radius: calc(10px * var(--openclaw-corner-radius-scale, 1.25));
         corner-shape: superellipse(1.5);

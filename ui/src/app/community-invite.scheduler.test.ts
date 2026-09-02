@@ -105,6 +105,7 @@ async function runToPresentation(): Promise<void> {
 beforeEach(() => {
   localStorage.clear();
   document.body.innerHTML = `<div class="shell"><div class="shell-nav"><openclaw-app-sidebar>
+    <div class="sidebar-shell__body"></div>
     <div class="sidebar-shell__footer"></div>
   </openclaw-app-sidebar></div></div>`;
   visibility = "visible";
@@ -240,9 +241,7 @@ describe("community invite showing protocol", () => {
     await runToPresentation();
 
     expect(mountedCards()).toBe(1);
-    expect(document.querySelector(CARD_TAG)?.parentElement?.className).toBe(
-      "sidebar-shell__footer",
-    );
+    expect(document.querySelector(CARD_TAG)?.parentElement?.className).toBe("sidebar-shell__body");
     // Written and verified inside the claim, so it is already durable by the time
     // anything is on screen — no outcome required.
     expect(storedRecord()?.shownAtMs).toBeGreaterThan(0);
@@ -433,7 +432,7 @@ describe("community invite live eligibility", () => {
     expect(mountedCards()).toBe(1);
   });
 
-  it("defers presentation while the sidebar is hidden, then mounts inside its footer", async () => {
+  it("defers presentation while the sidebar is hidden, then mounts inside its scroller", async () => {
     seedRecord();
     const shell = document.querySelector<HTMLElement>(".shell");
     const navigation = document.querySelector<HTMLElement>(".shell-nav");
@@ -450,7 +449,7 @@ describe("community invite live eligibility", () => {
     shell?.classList.remove("shell--nav-collapsed");
     await flushPresentation();
     expect(mountedCards()).toBe(1);
-    expect(document.querySelector(CARD_TAG)?.closest(".sidebar-shell__footer")).not.toBeNull();
+    expect(document.querySelector(CARD_TAG)?.closest(".sidebar-shell__body")).not.toBeNull();
   });
 
   it("defers rather than settles when the state turns unquiet during the chunk import", async () => {
