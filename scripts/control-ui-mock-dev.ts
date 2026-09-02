@@ -55,6 +55,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "composer-stack"
     | "goal"
     | "swarm"
     | "update-available"
@@ -359,6 +360,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "composer-stack" &&
     value !== "goal" &&
     value !== "swarm" &&
     value !== "update-available" &&
@@ -1732,7 +1734,7 @@ async function createChatPickerScenario(
       hasActiveRun: true,
       totalTokens: 170_000,
       totalTokensFresh: true,
-      ...(fixture === "goal" ? { goal: activeGoal } : {}),
+      ...(fixture === "goal" || fixture === "composer-stack" ? { goal: activeGoal } : {}),
     }),
     ...swarmChildRows,
     sessionRow(OBSERVER_DEMO_SESSION_KEY, "Session observer demo", baseTime - 3_000, {
@@ -1956,7 +1958,7 @@ async function createChatPickerScenario(
     activeRunIds: [PLAN_DEMO_RUN_ID],
     hasActiveRun: true,
     key: "agent:main:main",
-    ...(fixture === "goal" ? { goal: activeGoal } : {}),
+    ...(fixture === "goal" || fixture === "composer-stack" ? { goal: activeGoal } : {}),
   };
   const planInFlightRun = {
     runId: PLAN_DEMO_RUN_ID,
@@ -2180,7 +2182,22 @@ async function createChatPickerScenario(
           },
         ],
       },
-      "progressCard.get": { card: null },
+      "progressCard.get": {
+        card:
+          fixture === "composer-stack"
+            ? {
+                sessionKey: "agent:main:main",
+                revision: 1,
+                updatedAt: baseTime,
+                markdown: "Progress note: aligning the complete composer stack.",
+                steps: [
+                  { step: "Audit every stacked surface", status: "completed" },
+                  { step: "Align cards to the composer", status: "in_progress" },
+                  { step: "Verify desktop and mobile", status: "pending" },
+                ],
+              }
+            : null,
+      },
       "users.self": { profile: selfProfile },
       // Talk settings page pickers: realtime catalog with the model/voice
       // suggestion lists the gateway emits for provider entries.
@@ -3270,6 +3287,38 @@ function createMockGatewayPlugin(
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const statefulInitScript = escapeScriptContent(createStatefulMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
+  const composerStackSeed =
+    fixture === "composer-stack"
+      ? `    <script data-openclaw-control-ui-mock-composer-stack>
+      const seedComposerStackQueue = () => {
+        const pane = document.querySelector("openclaw-chat-pane");
+        const state = pane?.chatState?.stateValue;
+        if (!state) {
+          setTimeout(seedComposerStackQueue, 50);
+          return;
+        }
+        state.chatQueue = [
+          {
+            id: "composer-stack-queued-1",
+            text: "Confirm the shared composer width across every attached surface.",
+            createdAt: Date.now() - 2000,
+            orderKey: 1,
+            pendingRunId: "composer-stack-fixture-run"
+          },
+          {
+            id: "composer-stack-queued-2",
+            text: "Capture the corrected mobile stack.",
+            createdAt: Date.now() - 1000,
+            orderKey: 2,
+            pendingRunId: "composer-stack-fixture-run"
+          }
+        ];
+        state.requestUpdate?.();
+      };
+      addEventListener("DOMContentLoaded", seedComposerStackQueue);
+    </script>
+`
+      : "";
   const attachmentThemeToggle =
     fixture === "attachments"
       ? `    <style data-openclaw-control-ui-mock-theme-toggle>
@@ -3323,7 +3372,7 @@ function createMockGatewayPlugin(
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `${attachmentThemeToggle}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
+        `${attachmentThemeToggle}${composerStackSeed}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
       );
     },
   };
