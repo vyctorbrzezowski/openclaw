@@ -459,6 +459,33 @@ function buildSessionRows(params: {
   });
 }
 
+function buildSidebarAlignmentStressRows(baseTime: number) {
+  const labels = [
+    "A",
+    "OK",
+    "🚀",
+    "短",
+    "Session with ordinary spacing",
+    "A title with emoji 🦞✨ and multilingual text 東京 café مرحبا",
+    "SupercalifragilisticexpialidociousWithoutAnySpacesAtAllToForceHardTruncation",
+    "a".repeat(180),
+    "An intentionally extremely long session title with many spaces that approaches every truncation boundary while badges and unread state remain visible at the trailing edge",
+  ];
+  return Array.from({ length: 60 }, (_value, index) => {
+    const ordinal = index + 1;
+    const key = `agent:main:sidebar-stress-${String(ordinal).padStart(2, "0")}`;
+    return sessionRow(key, `${labels[index % labels.length]} · ${ordinal}`, baseTime - ordinal * 1_000, {
+      category: index < 30 ? "ClawSweeper — Extremely Long Alignment Boundary Group" : "OpenClaw",
+      ...(index % 7 === 0 ? { pinned: true } : {}),
+      ...(index % 4 === 0 ? { unread: true } : {}),
+      ...(index % 11 === 0
+        ? { hasActiveRun: true, status: "running", activeRunIds: [`stress-run-${ordinal}`] }
+        : {}),
+      ...(index % 13 === 0 ? { incognito: true } : {}),
+    });
+  });
+}
+
 function buildSessionListCases(
   sessions: Array<{ key: string }>,
   matchBase: Record<string, unknown> = {},
@@ -1620,15 +1647,14 @@ async function createChatPickerScenario(
     source: "session-transcript",
     download: { mode: "bytes" },
   };
-  // Five-zone sidebar fixture: main session (hidden behind the identity card,
-  // its child promoted to Threads), threads with a running tree, group rows,
-  // and a worktree row for the Coding zone.
+  // Five-zone sidebar fixture: main session (hidden behind the identity card),
+  // threads with visible parent/child trees, group rows, and a worktree row
+  // for the Coding zone.
   const mainChildRow = sessionRow(
     "agent:main:lisbon-trip",
     "Lisbon trip planning",
     baseTime - 120_000,
     {
-      spawnedBy: "agent:main:main",
       unread: true,
     },
   );
@@ -1697,6 +1723,31 @@ async function createChatPickerScenario(
   const workboardMocks = buildWorkboardMocks(baseTime);
   const activityTime = Date.now();
   const activitySessions = buildActivitySessionRows(activityTime);
+  const deepLeafKey = "agent:main:sidebar-stress-depth-4";
+  const deepGrandchildKey = "agent:main:sidebar-stress-depth-3";
+  const deepChildKey = "agent:main:sidebar-stress-depth-2";
+  const deepParentKey = "agent:main:sidebar-stress-depth-1";
+  const deepHierarchyRows = [
+    sessionRow(deepParentKey, "Depth 1 — visible root with an extremely long hierarchy title", baseTime - 20_000, {
+      category: "ClawSweeper — Extremely Long Alignment Boundary Group",
+      childSessions: [deepChildKey],
+      unread: true,
+    }),
+    sessionRow(deepChildKey, "Depth 2 🦞", baseTime - 19_000, {
+      spawnedBy: deepParentKey,
+      childSessions: [deepGrandchildKey],
+      hasActiveRun: true,
+      status: "running",
+    }),
+    sessionRow(deepGrandchildKey, "Depth3WithoutSpacesAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", baseTime - 18_000, {
+      spawnedBy: deepChildKey,
+      childSessions: [deepLeafKey],
+      unread: true,
+    }),
+    sessionRow(deepLeafKey, "深度 4 · leaf · ✅", baseTime - 17_000, {
+      spawnedBy: deepGrandchildKey,
+    }),
+  ];
   const activeGoal = {
     schemaVersion: 1 as const,
     id: "goal-mobile-parity",
@@ -1713,6 +1764,7 @@ async function createChatPickerScenario(
   };
   const sessions = [
     ...activitySessions,
+    ...deepHierarchyRows,
     ...(fixture === "workboard"
       ? [
           sessionRow(workboardMocks.sessionKey, "Product operations dashboard", baseTime, {
@@ -1723,7 +1775,7 @@ async function createChatPickerScenario(
       : []),
     sessionRow("agent:main:main", "Molty", baseTime - 1_000, {
       activeRunIds: [PLAN_DEMO_RUN_ID],
-      childSessions: ["agent:main:lisbon-trip", ...swarmChildRows.map((row) => row.key)],
+      childSessions: swarmChildRows.map((row) => row.key),
       hasActiveRun: true,
       totalTokens: 170_000,
       totalTokensFresh: true,
@@ -1755,7 +1807,6 @@ async function createChatPickerScenario(
       hasActiveRun: true,
       status: "running",
       childSessions: ["agent:main:subagent:tax-receipts"],
-      pinned: true,
     }),
     sessionRow("agent:main:cloud-refactor", "Cloud refactor worker", baseTime - 70_000, {
       hasActiveRun: true,
@@ -1856,6 +1907,7 @@ async function createChatPickerScenario(
       keyPrefix: "main:history",
       labelPrefix: "Long running session",
     }),
+    ...buildSidebarAlignmentStressRows(baseTime - 500_000),
   ];
   const archivedSessions = [
     sessionRow("agent:main:archived-launch-notes", "Archived launch notes", baseTime - 86_400_000, {
@@ -2143,6 +2195,22 @@ async function createChatPickerScenario(
         timeZone: "Europe/Stockholm",
         watchedSessions: ["agent:activity:support-handoff"],
       },
+      ...Array.from({ length: 14 }, (_value, index) => ({
+        id: `presence-sidebar-stress-${index + 1}`,
+        name:
+          index % 3 === 0
+            ? `Very Long Online Collaborator Name ${index + 1} — 東京 🦞`
+            : index % 3 === 1
+              ? `User${index + 1}`
+              : `${"UnbrokenName".repeat(5)}${index + 1}`,
+        email: `sidebar-stress-${index + 1}@example.com`,
+        onlineSince: activityTime - (index + 1) * 60_000,
+        lastActivityAt: activityTime - index * 5_000,
+        deviceFamily: index % 2 === 0 ? "Mac" : "iPhone",
+        platform: index % 2 === 0 ? "macOS" : "iOS",
+        timeZone: index % 2 === 0 ? "America/Los_Angeles" : "Asia/Tokyo",
+        watchedSessions: [`agent:main:sidebar-stress-${String(index + 1).padStart(2, "0")}`],
+      })),
     ],
     methodResponses: {
       ...buildBackgroundTasksMock(baseTime),
@@ -3007,7 +3075,7 @@ async function createChatPickerScenario(
           // Child fetches must precede the catch-all page case (subset match).
           {
             match: { spawnedBy: "agent:main:main" },
-            response: pagedSessionsListResponse([mainChildRow, ...swarmChildRows], 0),
+            response: pagedSessionsListResponse(swarmChildRows, 0),
           },
           {
             match: { spawnedBy: "agent:main:tax-research" },
@@ -3266,6 +3334,57 @@ function createMockGatewayPlugin(
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const statefulInitScript = escapeScriptContent(createStatefulMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
+  const sidebarStressTuner = `    <style data-openclaw-sidebar-stress-tuner>
+      .sidebar-stress-tuner { position: fixed; inset: 12px 12px auto auto; z-index: 1200; display: grid; grid-template-columns: repeat(2, minmax(112px, 1fr)); gap: 6px; width: 258px; padding: 10px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--card); color: var(--text); box-shadow: var(--shadow-lg); font: 11px/1.2 ui-sans-serif, system-ui; }
+      .sidebar-stress-tuner strong { grid-column: 1 / -1; font-size: 12px; }
+      .sidebar-stress-tuner label { display: grid; gap: 3px; color: var(--muted); }
+      .sidebar-stress-tuner select, .sidebar-stress-tuner button { min-height: 28px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-elevated); color: var(--text); font: inherit; }
+      .sidebar-stress-tuner button { grid-column: 1 / -1; }
+      .sidebar-stress-guides { position: fixed; inset: 0 auto 0 0; z-index: 1190; width: var(--shell-nav-width); pointer-events: none; background: linear-gradient(90deg, transparent 17px, #ff2d55 17px 18px, transparent 18px 27px, #00d4ff 27px 28px, transparent 28px 45px, #ffd60a 45px 46px, transparent 46px); }
+    </style>
+    <script data-openclaw-sidebar-stress-tuner>
+      addEventListener("DOMContentLoaded", () => {
+        const root = document.documentElement;
+        const tuner = document.createElement("div");
+        tuner.className = "sidebar-stress-tuner";
+        tuner.innerHTML = '<strong>Sidebar stress tuner</strong>' +
+          '<label>Width (product)<select data-tune="width"><option value="240">Minimum · 240</option><option value="258" selected>Default · 258</option><option value="400">Maximum · 400</option></select></label>' +
+          '<label>Bench measurement guides<select data-tune="guides"><option value="off">Off</option><option value="on">On</option></select></label>' +
+          '<button type="button" data-expand>Expand 50+ sessions</button>';
+        tuner.querySelector('[data-tune="width"]').addEventListener("change", (event) => {
+          const shell = document.querySelector(".shell");
+          const resizer = document.querySelector(".sidebar-resizer");
+          const width = Number(event.target.value);
+          if (shell && resizer) resizer.dispatchEvent(new CustomEvent("resize", { bubbles: true, composed: true, detail: { splitRatio: width / shell.clientWidth } }));
+        });
+        tuner.querySelector('[data-tune="guides"]').addEventListener("change", (event) => {
+          document.querySelector(".sidebar-stress-guides")?.remove();
+          if (event.target.value === "on") { const guides = document.createElement("div"); guides.className = "sidebar-stress-guides"; document.body.append(guides); }
+        });
+        tuner.querySelector("[data-expand]").addEventListener("click", async () => {
+          const settle = () => new Promise((resolve) => setTimeout(resolve, 200));
+          for (let pass = 0; pass < 20; pass += 1) {
+            for (const toggle of document.querySelectorAll('.sidebar-session-group-toggle[aria-expanded="false"]')) toggle.click();
+            const buttons = [...document.querySelectorAll(".sidebar-session-pagination__button")].filter((button) => /Show more|Load more sessions/.test(button.textContent ?? ""));
+            if (!buttons.length) {
+              await settle();
+              if (![...document.querySelectorAll(".sidebar-session-pagination__button")].some((button) => /Show more|Load more sessions/.test(button.textContent ?? ""))) break;
+              continue;
+            }
+            for (const button of buttons) button.click();
+            await settle();
+          }
+          for (let pass = 0; pass < 8; pass += 1) {
+            const toggles = [...document.querySelectorAll('[data-child-session-toggle][aria-expanded="false"]')];
+            if (!toggles.length) break;
+            for (const toggle of toggles) toggle.click();
+            await settle();
+          }
+        });
+        document.body.append(tuner);
+      });
+    </script>
+`;
   const attachmentThemeToggle =
     fixture === "attachments"
       ? `    <style data-openclaw-control-ui-mock-theme-toggle>
@@ -3319,7 +3438,7 @@ function createMockGatewayPlugin(
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `${attachmentThemeToggle}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
+        `${sidebarStressTuner}${attachmentThemeToggle}    <script data-openclaw-control-ui-mock-locale>\n      try { localStorage.setItem("openclaw.i18n.locale", "en"); } catch {}\n    </script>\n    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${statefulInitScript}\n    </script>\n  </head>`,
       );
     },
   };
