@@ -1,6 +1,5 @@
-// Community invite card. A non-modal overlay anchored above the sidebar footer:
-// it never dims the app, traps focus, or changes the sidebar's scroll geometry.
-// Shadow DOM keeps this one-shot surface off the startup CSS budget.
+// Community invite card, embedded as the sidebar scroller's final item. It never
+// dims the app or traps focus; Shadow DOM keeps it off the startup CSS budget.
 import { css, html, svg } from "lit";
 import { inferControlUiPublicAssetPath } from "../app/public-assets.ts";
 import { t } from "../i18n/index.ts";

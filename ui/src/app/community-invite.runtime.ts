@@ -211,7 +211,7 @@ export async function claimCommunityInviteShowing(): Promise<boolean> {
  * never mount under blocked content and burn its one-shot tombstone unseen; the
  * drawer is the exception because it contains the card's own sidebar target. */
 export function attentionModalOpen(): boolean {
-  return [...(document.openClawModalToastLayers ?? [])].some(
+  return [...(document.openClawModalLayers ?? [])].some(
     (modal) =>
       !modal.classList.contains("nav-drawer") || !modal.querySelector("openclaw-app-sidebar"),
   );
@@ -324,6 +324,7 @@ export function runCommunityInvite(
       // failed write here costs the outcome, never the suppression.
       const answered = readCommunityInviteRecord();
       if (answered) {
+        // SAFETY: the invite card is the sole dispatcher for this private event name.
         const { outcome } = (event as CustomEvent<{ outcome: CommunityInviteOutcome }>).detail;
         writeCommunityInviteRecord({ ...answered, outcome });
       }

@@ -216,9 +216,7 @@ class OpenClawToastHost extends OpenClawLightDomContentsElement {
   }
 }
 
-/** Whether a toast is currently on screen. Read by attention-gated surfaces
- * (the community invite card) that must not compete with active operator
- * feedback for the same corner of the viewport. */
+/** Read by attention-gated surfaces that defer to active operator feedback. */
 export function hasActiveToast(): boolean {
   return document.querySelector(".app-toast") !== null;
 }

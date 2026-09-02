@@ -112,7 +112,7 @@ beforeEach(() => {
   focused = true;
   lockHolders = new Set();
   onLockAcquired = null;
-  document.openClawModalToastLayers = new Set();
+  document.openClawModalLayers = new Set();
   Object.defineProperty(document, "visibilityState", {
     configurable: true,
     get: () => visibility,
@@ -131,7 +131,7 @@ afterEach(() => {
   // lock manager would silently decide the next test.
   Reflect.deleteProperty(document, "activeElement");
   Reflect.deleteProperty(navigator, "locks");
-  Reflect.deleteProperty(document, "openClawModalToastLayers");
+  Reflect.deleteProperty(document, "openClawModalLayers");
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -390,14 +390,14 @@ describe("community invite live eligibility", () => {
 
   it("defers presentation while a modal is open, then presents once it closes", async () => {
     seedRecord();
-    document.openClawModalToastLayers = new Set([document.createElement("div")]);
+    document.openClawModalLayers = new Set([document.createElement("div")]);
     start();
 
     await vi.advanceTimersByTimeAsync(DWELL_MS);
     await flushPresentation();
     expect(mountedCards()).toBe(0);
 
-    document.openClawModalToastLayers.clear();
+    document.openClawModalLayers.clear();
     document.dispatchEvent(new Event("focusout"));
     await flushPresentation();
     expect(mountedCards()).toBe(1);
@@ -409,7 +409,7 @@ describe("community invite live eligibility", () => {
     drawer.className = "nav-drawer";
     drawer.append(document.querySelector("openclaw-app-sidebar")!);
     document.body.append(drawer);
-    document.openClawModalToastLayers = new Set([drawer]);
+    document.openClawModalLayers = new Set([drawer]);
 
     await runToPresentation();
     expect(mountedCards()).toBe(1);

@@ -376,10 +376,10 @@ describe("Control UI E2E resource ownership", () => {
         ),
       ),
     ).toEqual({
-      "ui-e2e-bundled": inventory.length - 30,
+      "ui-e2e-bundled": inventory.length - 31,
       "ui-e2e-standalone": 3,
       "ui-e2e-serial": 7,
-      "ui-e2e-serial-standalone": 20,
+      "ui-e2e-serial-standalone": 21,
     });
     for (const entry of result.files) {
       const serial = entry.project.startsWith("ui-e2e-serial");
