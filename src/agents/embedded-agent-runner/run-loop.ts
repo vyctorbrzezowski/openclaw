@@ -52,7 +52,6 @@ import {
   createRunRetryBudget,
   isRunRetryBudgetExhausted,
   recordRunRetry,
-  type RunRetryBudget,
 } from "./run/retry-budget.js";
 import { handleRetryLimitExhaustion } from "./run/retry-limit.js";
 import { prepareEmbeddedRunRuntime } from "./run/runtime-preparation.js";
@@ -191,7 +190,7 @@ export async function runPreparedEmbeddedLoop(
   const maxEmptyResponseRetryAttempts = DEFAULT_EMPTY_RESPONSE_RETRY_LIMIT;
 
   const MAX_RUN_RETRY_ATTEMPTS = resolveMaxRunRetryIterations(profileCandidates.length);
-  const runRetryBudget: RunRetryBudget = createRunRetryBudget(MAX_RUN_RETRY_ATTEMPTS);
+  const runRetryBudget = createRunRetryBudget(MAX_RUN_RETRY_ATTEMPTS);
   const contextRecoveryState = createEmbeddedRunContextRecoveryState();
   let bootstrapPromptWarningSignaturesSeen =
     params.bootstrapPromptWarningSignaturesSeen ??
@@ -673,6 +672,7 @@ export async function runPreparedEmbeddedLoop(
       return terminalResolution.result;
     }
   } finally {
+    postCompactionGuard.closePostCompactionWindow();
     if (params.isFinalFallbackAttempt !== false) {
       await maybeEmitFastModeAutoResetBestEffort();
     }

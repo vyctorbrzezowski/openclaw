@@ -38,6 +38,7 @@ type PostCompactionGuardVerdict =
 
 type PostCompactionLoopGuard = {
   armPostCompaction: () => void;
+  closePostCompactionWindow: () => void;
   observe: (call: PostCompactionGuardObservation) => PostCompactionGuardVerdict;
   snapshot: () => { armed: boolean; remainingAttempts: number };
 };
@@ -73,30 +74,38 @@ export function createPostCompactionLoopGuard(options?: {
     repeatTools: new Set<string>(),
   };
 
-  const armPostCompaction = (): void => {
-    // Snapshot the pre-compaction call tail before the new window starts. A re-arm
-    // mid-window replaces the unclosed window's counts; compaction success implies
-    // the prior attempt ended, so that loss is accepted.
-    state.baselineSignatures =
-      state.enabled && state.recentCalls.length > 0
-        ? new Set(state.recentCalls.map(observationSignature))
-        : undefined;
-    state.remainingAttempts = state.windowSize;
+  const closeWindow = (summarize: boolean): void => {
+    if (!state.baselineSignatures) {
+      return;
+    }
+    if (summarize) {
+      const tools = [...state.repeatTools].toSorted().join(",");
+      log.info(
+        `post-compaction window closed: toolCalls=${state.windowObserved} ` +
+          `preCompactionRepeats=${state.windowRepeats}${tools ? ` tools=${tools}` : ""}`,
+      );
+    }
+    state.remainingAttempts = 0;
+    state.baselineSignatures = undefined;
     state.history = [];
     state.windowObserved = 0;
     state.windowRepeats = 0;
     state.repeatTools = new Set<string>();
+  };
+
+  const closePostCompactionWindow = (): void => closeWindow(true);
+
+  const armPostCompaction = (): void => {
+    // A new compaction ends the prior diagnostic window even when it observed
+    // fewer than three calls; otherwise re-arming silently drops those facts.
+    closePostCompactionWindow();
+    state.baselineSignatures = state.enabled
+      ? new Set(state.recentCalls.map(observationSignature))
+      : undefined;
+    state.remainingAttempts = state.enabled ? state.windowSize : 0;
     if (state.enabled) {
       log.info(`post-compaction guard armed for ${state.windowSize} attempts`);
     }
-  };
-
-  const logWindowSummary = (): void => {
-    const tools = [...state.repeatTools].toSorted().join(",");
-    log.info(
-      `post-compaction window closed: toolCalls=${state.windowObserved} ` +
-        `preCompactionRepeats=${state.windowRepeats}${tools ? ` tools=${tools}` : ""}`,
-    );
   };
 
   const observe = (call: PostCompactionGuardObservation): PostCompactionGuardVerdict => {
@@ -132,9 +141,10 @@ export function createPostCompactionLoopGuard(options?: {
       log.error(
         `post-compaction loop persisted: tool=${call.toolName} repeated ${matches.length} times with identical args+result post-compaction`,
       );
+      closeWindow(false);
       return {
         shouldAbort: true,
-        armed: armedAfter,
+        armed: false,
         remainingAttempts: state.remainingAttempts,
         detector: "compaction_loop_persisted",
         count: matches.length,
@@ -144,11 +154,7 @@ export function createPostCompactionLoopGuard(options?: {
     }
 
     if (!armedAfter) {
-      logWindowSummary();
-      state.baselineSignatures = undefined;
-      state.windowObserved = 0;
-      state.windowRepeats = 0;
-      state.repeatTools = new Set<string>();
+      closePostCompactionWindow();
     }
 
     return { shouldAbort: false, armed: armedAfter, remainingAttempts: state.remainingAttempts };
@@ -159,7 +165,7 @@ export function createPostCompactionLoopGuard(options?: {
     remainingAttempts: state.remainingAttempts,
   });
 
-  return { armPostCompaction, observe, snapshot };
+  return { armPostCompaction, closePostCompactionWindow, observe, snapshot };
 }
 
 /** Error raised when the post-compaction loop guard aborts a run. */

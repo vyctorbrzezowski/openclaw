@@ -21,9 +21,11 @@ import {
 } from "./run.overflow-compaction.fixture.js";
 import {
   overflowBaseRunParams as baseParams,
+  mockedBuildEmbeddedRunPayloads,
   mockedCompactDirect,
   mockedIsCompactionFailureError,
   mockedIsLikelyContextOverflowError,
+  mockedPostCompactionLogInfo,
   mockedRunEmbeddedAttempt,
   resetSharedRunIntegrationHarnessMocks,
 } from "./run.overflow-compaction.harness.js";
@@ -186,6 +188,35 @@ describe("post-compaction loop guard wired into runEmbeddedAgent", () => {
     expect(attemptReturned).toBe(true);
     expect(attemptSignalAborted).toBe(true);
     expect(attemptSignalReason).toBeInstanceOf(PostCompactionLoopPersistedError);
+  });
+
+  it("closes a partial post-compaction window when the run completes", async () => {
+    const overflowError = makeOverflowError();
+    mockedRunEmbeddedAttempt.mockResolvedValueOnce(
+      makeAttemptResult({
+        terminal: { kind: "failed", source: "prompt", error: overflowError },
+      }),
+    );
+    mockedRunEmbeddedAttempt.mockImplementationOnce(async (attemptParams: unknown) => {
+      const onToolOutcome = (attemptParams as { onToolOutcome?: ToolOutcomeObserver })
+        .onToolOutcome;
+      await executeWrappedToolOutcome("read", { path: "/report.md" }, "content", onToolOutcome);
+      return makeAttemptResult({ assistantTexts: ["done"] });
+    });
+    mockedCompactDirect.mockResolvedValueOnce(
+      makeCompactionSuccess({
+        summary: "Compacted session",
+        firstKeptEntryId: "entry-5",
+        tokensBefore: 150000,
+      }),
+    );
+    mockedBuildEmbeddedRunPayloads.mockReturnValue([{ text: "done" }]);
+
+    await runEmbeddedAgent(baseParams);
+
+    expect(mockedPostCompactionLogInfo).toHaveBeenCalledWith(
+      expect.stringContaining("post-compaction window closed: toolCalls=1"),
+    );
   });
 
   it("releases the lane after a post-compaction abort when the backend ignores cancellation", async () => {

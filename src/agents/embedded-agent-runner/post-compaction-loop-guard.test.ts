@@ -189,6 +189,61 @@ describe("post-compaction re-read instrumentation", () => {
     expect(summary).toContain("toolCalls=3");
     expect(summary).toContain("preCompactionRepeats=1");
   });
+
+  it.each([
+    { outcomes: 0, expectedRepeats: 0 },
+    { outcomes: 1, expectedRepeats: 1 },
+    { outcomes: 2, expectedRepeats: 2 },
+    { outcomes: 3, expectedRepeats: 3 },
+  ])("closes a window after $outcomes tool outcomes", ({ outcomes, expectedRepeats }) => {
+    const guard = createPostCompactionLoopGuard();
+    guard.observe(callOutcome("read", { path: "/report.md" }, "before"));
+    guard.armPostCompaction();
+    for (let index = 0; index < outcomes; index += 1) {
+      guard.observe(callOutcome("read", { path: "/report.md" }, `after-${index}`));
+    }
+
+    guard.closePostCompactionWindow();
+
+    const summaries = logInfo.mock.calls
+      .map((call) => call[0] as string)
+      .filter((message) => message.includes("post-compaction window closed"));
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]).toContain(`toolCalls=${outcomes}`);
+    expect(summaries[0]).toContain(`preCompactionRepeats=${expectedRepeats}`);
+    expect(guard.snapshot()).toEqual({ armed: false, remainingAttempts: 0 });
+  });
+
+  it("closes a partial window before re-arming", () => {
+    const guard = createPostCompactionLoopGuard();
+    guard.observe(callOutcome("read", { path: "/report.md" }, "before"));
+    guard.armPostCompaction();
+    guard.observe(callOutcome("read", { path: "/report.md" }, "after"));
+
+    guard.armPostCompaction();
+
+    const summaries = logInfo.mock.calls
+      .map((call) => call[0] as string)
+      .filter((message) => message.includes("post-compaction window closed"));
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]).toContain("toolCalls=1");
+    expect(summaries[0]).toContain("preCompactionRepeats=1");
+    expect(guard.snapshot()).toEqual({ armed: true, remainingAttempts: 3 });
+  });
+
+  it("does not summarize a window that aborts for a persisted loop", () => {
+    const guard = createPostCompactionLoopGuard();
+    guard.armPostCompaction();
+    guard.observe(callOutcome("read", { path: "/x" }, "same"));
+    guard.observe(callOutcome("read", { path: "/x" }, "same"));
+    const verdict = guard.observe(callOutcome("read", { path: "/x" }, "same"));
+
+    expect(verdict.shouldAbort).toBe(true);
+    guard.closePostCompactionWindow();
+    expect(logInfo).not.toHaveBeenCalledWith(
+      expect.stringContaining("post-compaction window closed"),
+    );
+  });
 });
 
 describe("PostCompactionLoopPersistedError", () => {

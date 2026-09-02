@@ -264,6 +264,7 @@ export const mockedBuildEmbeddedRunPayloads = vi.fn<
     ...args: Parameters<typeof buildEmbeddedRunPayloads>
   ) => ReturnType<typeof buildEmbeddedRunPayloads>
 >(() => []);
+export const mockedPostCompactionLogInfo = vi.fn();
 const mockedRunContextEngineMaintenance = vi.fn(async () => undefined);
 const mockedWaitForDeferredTurnMaintenanceForSession = vi.fn(
   async (_sessionKey?: string) => undefined,
@@ -521,6 +522,7 @@ function resetRunOverflowCompactionHarnessMocks(): void {
   mockedRunEmbeddedAttempt.mockReset();
   mockedBuildEmbeddedRunPayloads.mockReset();
   mockedBuildEmbeddedRunPayloads.mockReturnValue([]);
+  mockedPostCompactionLogInfo.mockReset();
   mockedRunContextEngineMaintenance.mockReset();
   mockedRunContextEngineMaintenance.mockResolvedValue(undefined);
   mockedWaitForDeferredTurnMaintenanceForSession.mockReset();
@@ -669,6 +671,7 @@ export function resetSharedRunIntegrationHarnessMocks(): void {
 
   mockedBuildEmbeddedRunPayloads.mockReset();
   mockedBuildEmbeddedRunPayloads.mockReturnValue([]);
+  mockedPostCompactionLogInfo.mockClear();
   mockedClassifyFailoverReason.mockReset();
   mockedClassifyFailoverReason.mockReturnValue(null);
   mockedClassifyAssistantFailoverReason.mockReset();
@@ -1082,6 +1085,21 @@ export async function loadRunOverflowCompactionHarness(): Promise<{
   vi.doMock("./logger.js", () => ({
     log: mockedLog,
   }));
+
+  vi.doMock("../../logging/subsystem.js", async () => {
+    const actual = await vi.importActual<typeof import("../../logging/subsystem.js")>(
+      "../../logging/subsystem.js",
+    );
+    return {
+      ...actual,
+      createSubsystemLogger: (subsystem: string) => {
+        const logger = actual.createSubsystemLogger(subsystem);
+        return subsystem === "agents/post-compaction-guard"
+          ? { ...logger, info: mockedPostCompactionLogInfo }
+          : logger;
+      },
+    };
+  });
 
   vi.doMock("./run/payloads.js", () => ({
     buildEmbeddedRunPayloads: mockedBuildEmbeddedRunPayloads,

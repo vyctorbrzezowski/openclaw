@@ -1,6 +1,6 @@
 export type RunRetryKind = "progress_continuation" | "recovery";
 
-export type RunRetryBudget = {
+type RunRetryBudget = {
   attemptsDispatched: number;
   attemptsCounted: number;
   maxAttempts: number;
