@@ -65,6 +65,11 @@ export function focusNewSessionComposerForPrintableKey(root: HTMLElement, event:
   if (!composer || composer.disabled || composer.readOnly) {
     return;
   }
+  // Unmatched dropdown typeahead falls through while its document listener stays live.
+  // Retire only this page's dropdowns before handing input to the composer.
+  for (const dropdown of root.querySelectorAll<HTMLElement & { open: boolean }>("wa-dropdown")) {
+    dropdown.open = false;
+  }
   // Run at window bubble after menus/dropdowns have claimed their keys. Moving
   // focus before keydown completes keeps the browser's normal input pipeline.
   composer.focus({ preventScroll: true });

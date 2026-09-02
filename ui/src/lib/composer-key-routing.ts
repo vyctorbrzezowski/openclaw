@@ -1,7 +1,7 @@
 const COMPOSER_AUTOTYPE_EXEMPT_SELECTOR =
   "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='combobox'], [role='listbox'], [role='textbox'], [data-chat-autotype-exempt]";
 const SPACE_ACTIVATION_SELECTOR =
-  "a[href], button, summary, [role='button'], [role='checkbox'], [role='link'], [role='radio'], [role='switch']";
+  "a[href], button, summary, [role='button'], [role='checkbox'], [role='link'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio'], [role='radio'], [role='switch']";
 
 function eventPathMatches(event: KeyboardEvent, selector: string): boolean {
   return event
