@@ -50,11 +50,11 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border: 1px solid var(--border);
+      border: 1px solid rgb(255 255 255 / 12%);
       border-radius: var(--radius-lg, 14px);
-      background: var(--bg-elevated);
-      color: var(--text);
-      box-shadow: var(--shadow-md);
+      background: #10131c;
+      color: #f3f5fb;
+      box-shadow: 0 18px 44px rgb(0 0 0 / 40%);
     }
 
     .invite__header {
@@ -80,11 +80,10 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       height: 28px;
       place-items: center;
       padding: 0;
-      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border: 0;
       border-radius: var(--radius-sm, 6px);
-      background: color-mix(in srgb, var(--bg) 72%, transparent);
-      color: var(--text-strong);
-      box-shadow: var(--shadow-sm);
+      background: rgb(0 0 0 / 42%);
+      color: rgb(255 255 255 / 76%);
       cursor: var(--cursor-action, pointer);
       transition:
         background 120ms ease,
@@ -92,13 +91,13 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__close:hover {
-      background: var(--bg-hover);
-      color: var(--text-strong);
+      background: rgb(255 255 255 / 14%);
+      color: #fff;
     }
 
     .invite__close:focus-visible {
-      outline: none;
-      box-shadow: var(--focus-ring);
+      outline: 2px solid rgb(255 255 255 / 70%);
+      outline-offset: 1px;
     }
 
     .invite__close svg {
@@ -121,7 +120,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
 
     .invite__eyebrow {
       margin: 0;
-      color: var(--accent);
+      color: #a5b4ff;
       font-size: var(--control-ui-text-xs, 11px);
       font-weight: 700;
       letter-spacing: 0.12em;
@@ -130,7 +129,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
 
     .invite__title {
       margin: 0;
-      color: var(--text-strong);
+      color: #f3f5fb;
       font-size: var(--control-ui-text-lg, 16px);
       font-weight: 700;
       line-height: 1.2;
@@ -139,7 +138,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
 
     .invite__text {
       margin: 0;
-      color: var(--muted);
+      color: rgb(243 245 251 / 70%);
       font-size: var(--control-ui-text-sm, 12px);
       line-height: 1.45;
     }
@@ -153,8 +152,8 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       margin-top: var(--space-2, 8px);
       padding: var(--space-2, 8px) var(--space-3, 12px);
       border-radius: var(--radius-md, 10px);
-      background: var(--primary);
-      color: var(--primary-foreground);
+      background: #fff;
+      color: #10131c;
       font-size: var(--control-ui-text-sm, 12px);
       font-weight: 600;
       text-decoration: none;
@@ -164,7 +163,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__cta:hover {
-      background: var(--primary-hover);
+      background: #e8eaf2;
     }
 
     .invite__cta:active {
@@ -172,8 +171,8 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__cta:focus-visible {
-      outline: none;
-      box-shadow: var(--focus-ring);
+      outline: 2px solid #a5b4ff;
+      outline-offset: 2px;
     }
 
     .invite__cta svg {

@@ -55,6 +55,7 @@ import { ShellNavigationOwner, type ShellNavigationHost } from "./app-shell-navi
 import { renderApplicationShell, type ShellViewHost } from "./app-shell-view.ts";
 import { ShellWorkboardOwner, type ShellWorkboardHost } from "./app-shell-workboard.ts";
 import type { ApplicationRuntime } from "./bootstrap.ts";
+import { hasActiveRunOrSubagent, hasRecordedInteraction } from "./community-invite-cohort.ts";
 import type { ApplicationContext, ApplicationNavigationOptions } from "./context.ts";
 import { syncControlUiSystemChrome } from "./control-ui-presentation.ts";
 import {
@@ -182,21 +183,7 @@ class OpenClawShell
   private outboxStoreUnsubscribe: (() => void) | null = null;
   private lastDeletedSessions: ApplicationContext["sessions"]["state"]["deletedSessions"] | null =
     null;
-  private stopCommunityInvite: (() => void) | null = null;
-  private communityInviteDisconnected = false;
-  private readonly shellUpdateListeners = new Set<() => void>();
-  // Idle-imported rather than statically imported: the invite is an unsolicited
-  // nudge, so none of it — not even its terminal check — belongs in the bytes the
-  // operator waits for before first paint.
-  readonly communityInviteImport = createIdleImport(
-    () => import("./community-invite.ts"),
-    ({ startCommunityInvite }) => {
-      // The chunk can land after the shell disconnected.
-      if (!this.communityInviteDisconnected) {
-        this.stopCommunityInvite = startCommunityInvite(this);
-      }
-    },
-  );
+  private communityInviteCohort: { readonly hasInteractionHistory: boolean } | null = null;
   readonly outboxStoreImport = createIdleImport(
     () =>
       import("../lib/chat/outbox-store-projection.ts").then((module): OutboxStoreRuntime => module),
@@ -294,15 +281,32 @@ class OpenClawShell
     return routeId !== undefined && !isSettingsNavigationRoute(routeId) && !this.onboardingMode;
   }
 
-  /** Route-derived shell state, `context` among it, changes without any capability
-   * emitting: leaving onboarding is only a new route. Owners that read those
-   * getters subscribe here rather than polling the shell for them. */
-  subscribeShellUpdate(listener: () => void): () => void {
-    this.shellUpdateListeners.add(listener);
-    return () => {
-      this.shellUpdateListeners.delete(listener);
+  private qualifiedCommunityInviteCohort(): { readonly hasInteractionHistory: boolean } | null {
+    if (this.communityInviteCohort) {
+      return this.communityInviteCohort;
+    }
+    const context = this.context;
+    const sessions = context?.sessions.state.result;
+    if (!context || !sessions || this.onboardingMode) {
+      return null;
+    }
+    if (context.gateway.snapshot.phase !== "connected") {
+      return null;
+    }
+    this.communityInviteCohort = {
+      hasInteractionHistory: hasRecordedInteraction(sessions.sessions),
     };
+    return this.communityInviteCohort;
   }
+
+  private readonly communityInviteEligibleNow = (): boolean => {
+    const context = this.context;
+    if (!context || context.gateway.snapshot.phase !== "connected" || this.onboardingMode) {
+      return false;
+    }
+    const sessions = context.sessions.state.result?.sessions;
+    return !sessions || !hasActiveRunOrSubagent(sessions);
+  };
 
   storedOutboxScopeHost(context: ApplicationContext<RouteId>): StoredOutboxScopeHost {
     const gatewaySnapshot = context.gateway.snapshot;
@@ -372,6 +376,23 @@ class OpenClawShell
       .effect(
         () => this.context?.gateway,
         (gateway) => gateway.subscribeEvents(this.handleGatewayEvent),
+      )
+      .effect(
+        () => this.qualifiedCommunityInviteCohort(),
+        ({ hasInteractionHistory }) => {
+          let stop: (() => void) | null = null;
+          let cancelled = false;
+          void import("./community-invite.runtime.ts").then(({ runCommunityInvite }) => {
+            if (!cancelled) {
+              stop = runCommunityInvite(hasInteractionHistory, this.communityInviteEligibleNow);
+            }
+          });
+          return () => {
+            cancelled = true;
+            stop?.();
+            stop = null;
+          };
+        },
       )
       .watch(
         () => this.context?.config,
@@ -456,8 +477,6 @@ class OpenClawShell
       this.installOutboxStoreRuntime(this.outboxStoreRuntime);
     }
     this.outboxStoreImport.schedule();
-    this.communityInviteDisconnected = false;
-    this.communityInviteImport.schedule();
     this.shellChrome.connect();
     // Write-through of synced display prefs to config ui.prefs. Server-applied
     // deltas are suppressed so a reconcile never echoes back to the gateway.
@@ -480,10 +499,6 @@ class OpenClawShell
   override disconnectedCallback() {
     this.shellChrome.disconnect();
     syncControlUiSystemChrome();
-    this.communityInviteDisconnected = true;
-    this.communityInviteImport.dispose();
-    this.stopCommunityInvite?.();
-    this.stopCommunityInvite = null;
     this.outboxStoreImport.dispose();
     this.sidebarUpdateCardImport.dispose();
     this.outboxStoreUnsubscribe?.();
@@ -689,9 +704,6 @@ class OpenClawShell
       this.querySelector("openclaw-sidebar-update-card")
     ) {
       this.loadSidebarUpdateCard();
-    }
-    for (const listener of this.shellUpdateListeners) {
-      listener();
     }
     const chatPage = this.querySelector<ChatPage>("openclaw-chat-page");
     if (chatPage) {
