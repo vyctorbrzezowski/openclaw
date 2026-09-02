@@ -357,7 +357,7 @@ export function createSessionsTool(opts: SessionsToolOptions = {}): AnyAgentTool
     label: "Sessions",
     name: "sessions",
     description:
-      "Session settings, ownership, reset, delete, and groups: patch label/icon/category/status, unread, pin, archive/restore, model/thinking override; patch_many changes category/unread for up to 100 visible sessions; assign_owner hands responsibility to a human or agent; reset/delete visible sessions; group_list/group_set/group_rename/group_delete.",
+      "Session settings, ownership, reset, delete, and groups: patch label/icon/category/status, unread, pin, archive/restore, model/thinking override; patch_many changes category for up to 100 visible sessions; assign_owner hands responsibility to a human or agent; reset/delete visible sessions; group_list/group_set/group_rename/group_delete.",
     parameters: SessionsToolSchema,
     execute: async (_toolCallId, rawArgs) => {
       const params = rawArgs as Record<string, unknown>;
@@ -510,9 +510,6 @@ export function createSessionsTool(opts: SessionsToolOptions = {}): AnyAgentTool
         key,
         ...lifecycleIdentity,
         ...(params.label !== undefined ? { label: readClearableString(params, "label") } : {}),
-        ...(params.category !== undefined
-          ? { category: readClearableString(params, "category") }
-          : {}),
         ...(params.unread !== undefined ? { unread: readBooleanParam(params, "unread") } : {}),
         ...(params.icon !== undefined ? { icon: readClearableString(params, "icon") } : {}),
         ...(params.category !== undefined

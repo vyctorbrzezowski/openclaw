@@ -10,6 +10,7 @@ const RESULT_OMITTED_REASON = "response_budget_exceeded";
 const UNSUPPORTED_PATCH_MANY_FIELDS = [
   "label",
   "icon",
+  "unread",
   "statusNote",
   "attention",
   "ttlMinutes",
@@ -36,17 +37,6 @@ function readPatchCategory(params: Record<string, unknown>): string | null | und
   return value.trim() || null;
 }
 
-function readPatchUnread(params: Record<string, unknown>): boolean | undefined {
-  const value = params.unread;
-  if (value === undefined) {
-    return undefined;
-  }
-  if (typeof value !== "boolean") {
-    throw new ToolInputError("unread must be boolean");
-  }
-  return value;
-}
-
 export async function executeSessionsPatchMany(params: {
   raw: Record<string, unknown>;
   callGateway: AgentToolGatewayRequestCaller;
@@ -66,13 +56,8 @@ export async function executeSessionsPatchMany(params: {
     }
   }
   const category = readPatchCategory(params.raw);
-  const unread = readPatchUnread(params.raw);
-  const patch = {
-    ...(category !== undefined ? { category } : {}),
-    ...(unread !== undefined ? { unread } : {}),
-  };
-  if (Object.keys(patch).length === 0) {
-    throw new ToolInputError("patch_many requires category or unread");
+  if (category === undefined) {
+    throw new ToolInputError("patch_many requires category");
   }
   const targets = await Promise.all(
     targetsInput.map(async (rawTarget, index) => {
@@ -106,7 +91,7 @@ export async function executeSessionsPatchMany(params: {
   );
   const result = await params.callGateway<SessionsPatchManyResult>({
     method: "sessions.patchMany",
-    params: { targets, patch },
+    params: { targets, patch: { category } },
   });
   const failed = result.outcomes.flatMap((outcome) =>
     outcome.ok

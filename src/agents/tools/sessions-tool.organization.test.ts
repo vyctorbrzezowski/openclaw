@@ -22,6 +22,7 @@ describe("sessions organization", () => {
       statusNote: "Blocked: need the staging password",
       attention: "key",
       ttlMinutes: 45,
+      unread: true,
       archived: true,
     });
     await tool.execute("clear-empty", {
@@ -45,6 +46,7 @@ describe("sessions organization", () => {
             statusNote: "Blocked: need the staging password",
             attention: "key",
             ttlMinutes: 45,
+            unread: true,
             archived: true,
             expectedSessionId: "session-main",
           },
@@ -126,7 +128,6 @@ describe("sessions organization", () => {
       action: "patch_many",
       targets: [{ sessionKey: "agent:main:main" }, { sessionKey: "agent:main:dashboard:changed" }],
       category: "Research",
-      unread: false,
     });
 
     expect(callGateway).toHaveBeenCalledWith({
@@ -136,7 +137,7 @@ describe("sessions organization", () => {
           { key: "agent:main:main", expectedSessionId: "main-session" },
           { key: "agent:main:dashboard:changed" },
         ],
-        patch: { category: "Research", unread: false },
+        patch: { category: "Research" },
       },
     });
     expect(result.details).toEqual({
@@ -155,10 +156,17 @@ describe("sessions organization", () => {
       }),
     ).rejects.toThrow("patch_many does not support archived");
     await expect(
+      tool.execute("batch-unread", {
+        action: "patch_many",
+        targets: [{ sessionKey: "agent:main:main" }],
+        unread: false,
+      }),
+    ).rejects.toThrow("patch_many does not support unread");
+    await expect(
       tool.execute("batch-stale-current", {
         action: "patch_many",
         targets: [{ sessionKey: "agent:main:main", expectedSessionId: "stale-session" }],
-        unread: false,
+        category: "Research",
       }),
     ).rejects.toThrow("Session changed after access was granted");
   });
@@ -186,7 +194,7 @@ describe("sessions organization", () => {
     const result = await tool.execute("batch-bounded", {
       action: "patch_many",
       targets: [{ sessionKey: targetKey, expectedSessionId: "scoped-session" }],
-      unread: false,
+      category: "Research",
     });
 
     expect(result.details).toEqual({

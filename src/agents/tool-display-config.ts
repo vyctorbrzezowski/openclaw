@@ -387,7 +387,7 @@ export const TOOL_DISPLAY_CONFIG: ToolDisplayConfig = {
             "thinkingLevel",
           ],
         },
-        patch_many: { label: "update many", detailKeys: ["category", "unread", "targets"] },
+        patch_many: { label: "update many", detailKeys: ["category", "targets"] },
         group_list: { label: "groups" },
         group_set: { label: "set groups", detailKeys: ["names"] },
         group_rename: { label: "rename group", detailKeys: ["name", "to"] },
