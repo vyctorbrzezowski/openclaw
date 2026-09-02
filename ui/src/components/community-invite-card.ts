@@ -1,7 +1,6 @@
-// Community invite card. A non-modal floater in the trailing bottom corner: it
-// never dims the app, never traps focus and never takes focus, so it cannot
-// interrupt whatever the operator is doing. Shadow DOM keeps its art-directed
-// dark styling out of the global stylesheets and off the startup CSS budget.
+// Community invite card. A non-modal overlay anchored above the sidebar footer:
+// it never dims the app, traps focus, or changes the sidebar's scroll geometry.
+// Shadow DOM keeps this one-shot surface off the startup CSS budget.
 import { css, html, svg } from "lit";
 import { inferControlUiPublicAssetPath } from "../app/public-assets.ts";
 import { t } from "../i18n/index.ts";
@@ -26,35 +25,18 @@ const discordMark = html`
 const arrowUpRight = strokeIcon(svg` <path d="M7 17 17 7" />
   <path d="M7 7h10v10" />`);
 
-class OpenClawCommunityInviteDialog extends OpenClawLitElement {
+class OpenClawCommunityInviteCard extends OpenClawLitElement {
   static override styles = css`
-    /* Trailing bottom corner: the opposite end from .app-toast, which pins to the
-       viewport top (styles/components.css), so the two floaters never contend for
-       the same space and neither has to reserve room for the other. */
+    /* The footer is outside the scroll container. Anchoring here keeps the card at
+       the visible bottom of that area without adding to its scroll height. */
     :host {
-      position: fixed;
-      right: calc(20px + var(--safe-area-right, 0px));
-      bottom: calc(20px + var(--safe-area-bottom, 0px));
-      z-index: var(--z-floater, 1900);
-      width: min(340px, calc(100vw - 32px));
-      animation: invite-enter 180ms ease-out both;
-    }
-
-    /* Same phone idiom .app-toast uses: a corner card degenerates at these widths.
-       The bottom offset also grows here: on a phone this is where the chat
-       composer and other bottom-docked controls live, and a fixed-position card
-       would paint on top of them instead of beside them like it does at desktop
-       width. There is no shared "current bottom chrome height" signal across
-       routes to measure against, so this clears the tallest ordinary composer
-       instead of the exact one — an accepted fixed margin over a live measurement. */
-    @media (max-width: 768px),
-      (max-width: 932px) and (max-height: 500px) and (orientation: landscape) {
-      :host {
-        left: max(12px, var(--safe-area-left, 0px));
-        right: max(12px, var(--safe-area-right, 0px));
-        bottom: calc(84px + var(--safe-area-bottom, 0px));
-        width: auto;
-      }
+      position: absolute;
+      right: var(--space-2, 8px);
+      bottom: calc(100% + var(--space-2, 8px));
+      left: var(--space-2, 8px);
+      z-index: 2;
+      display: block;
+      animation: invite-enter var(--duration-normal, 180ms) var(--ease-out, ease-out) both;
     }
 
     @keyframes invite-enter {
@@ -68,64 +50,41 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border: 1px solid rgb(255 255 255 / 12%);
-      border-radius: 14px;
-      /* Art-directed dark in both app themes: it frames a dark photo, and a light
-         variant would wash the header seam out. */
-      background: #10131c;
-      color: #f3f5fb;
-      box-shadow: 0 18px 44px rgb(0 0 0 / 40%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg, 14px);
+      background: var(--bg-elevated);
+      color: var(--text);
+      box-shadow: var(--shadow-md);
     }
 
     .invite__header {
       position: relative;
-      height: 132px;
+      aspect-ratio: 1.9;
       flex: none;
+      overflow: hidden;
     }
 
     .invite__art {
       display: block;
       width: 100%;
       height: 100%;
-      /* Calibrated against the header height: air above the antennae, the pedestal
-         base grounded in the fade, both subjects centred. Changing the header
-         height means re-checking this crop. */
       object-fit: cover;
-      object-position: center 70%;
-    }
-
-    .invite__fade {
-      position: absolute;
-      inset: auto 0 -1px 0;
-      height: 64px;
-      background: linear-gradient(to bottom, rgb(16 19 28 / 0%), #10131c);
-      pointer-events: none;
-    }
-
-    /* Minimal local scrim so the ghost X keeps contrast over any part of the
-       photo without wearing a ring or a filled chip. */
-    .invite__header::after {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto auto;
-      width: 92px;
-      height: 68px;
-      background: radial-gradient(ellipse at top right, rgb(0 0 0 / 42%), rgb(0 0 0 / 0%) 72%);
-      pointer-events: none;
+      object-position: center;
     }
 
     .invite__close {
       position: absolute;
-      inset: 6px 6px auto auto;
+      inset: var(--space-2, 8px) var(--space-2, 8px) auto auto;
       display: grid;
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       place-items: center;
       padding: 0;
-      border: 0;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
       border-radius: var(--radius-sm, 6px);
-      background: transparent;
-      color: rgb(255 255 255 / 76%);
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      color: var(--text-strong);
+      box-shadow: var(--shadow-sm);
       cursor: var(--cursor-action, pointer);
       transition:
         background 120ms ease,
@@ -133,13 +92,13 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
     }
 
     .invite__close:hover {
-      background: rgb(255 255 255 / 14%);
-      color: #fff;
+      background: var(--bg-hover);
+      color: var(--text-strong);
     }
 
     .invite__close:focus-visible {
-      outline: 2px solid rgb(255 255 255 / 70%);
-      outline-offset: 1px;
+      outline: none;
+      box-shadow: var(--focus-ring);
     }
 
     .invite__close svg {
@@ -156,14 +115,14 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
     .invite__body {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      padding: 2px 16px 16px;
+      gap: var(--space-1, 4px);
+      padding: var(--space-3, 12px);
     }
 
     .invite__eyebrow {
       margin: 0;
-      color: #a5b4ff;
-      font-size: 10.5px;
+      color: var(--accent);
+      font-size: var(--control-ui-text-xs, 11px);
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -171,7 +130,8 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
 
     .invite__title {
       margin: 0;
-      font-size: 19px;
+      color: var(--text-strong);
+      font-size: var(--control-ui-text-lg, 16px);
       font-weight: 700;
       line-height: 1.2;
       letter-spacing: -0.01em;
@@ -179,8 +139,8 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
 
     .invite__text {
       margin: 0;
-      color: rgb(243 245 251 / 70%);
-      font-size: 13px;
+      color: var(--muted);
+      font-size: var(--control-ui-text-sm, 12px);
       line-height: 1.45;
     }
 
@@ -189,12 +149,13 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 12px;
-      padding: 10px 14px;
-      border-radius: 9px;
-      background: #fff;
-      color: #10131c;
-      font-size: 13.5px;
+      min-height: 36px;
+      margin-top: var(--space-2, 8px);
+      padding: var(--space-2, 8px) var(--space-3, 12px);
+      border-radius: var(--radius-md, 10px);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-size: var(--control-ui-text-sm, 12px);
       font-weight: 600;
       text-decoration: none;
       transition:
@@ -203,16 +164,16 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
     }
 
     .invite__cta:hover {
-      background: #e8eaf2;
+      background: var(--primary-hover);
     }
 
     .invite__cta:active {
-      transform: translateY(1px);
+      transform: scale(0.96);
     }
 
     .invite__cta:focus-visible {
-      outline: 2px solid #a5b4ff;
-      outline-offset: 2px;
+      outline: none;
+      box-shadow: var(--focus-ring);
     }
 
     .invite__cta svg {
@@ -260,7 +221,7 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
       <aside
         class="invite"
         role="complementary"
-        aria-label=${t("communityInvite.dialogLabel")}
+        aria-label=${t("communityInvite.cardLabel")}
         @keydown=${this.handleKeydown}
       >
         <div class="invite__header">
@@ -271,7 +232,6 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
             width="1024"
             height="538"
           />
-          <div class="invite__fade"></div>
           <button
             class="invite__close"
             type="button"
@@ -326,12 +286,12 @@ class OpenClawCommunityInviteDialog extends OpenClawLitElement {
   }
 }
 
-if (!customElements.get("openclaw-community-invite-dialog")) {
-  customElements.define("openclaw-community-invite-dialog", OpenClawCommunityInviteDialog);
+if (!customElements.get("openclaw-community-invite-card")) {
+  customElements.define("openclaw-community-invite-card", OpenClawCommunityInviteCard);
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "openclaw-community-invite-dialog": OpenClawCommunityInviteDialog;
+    "openclaw-community-invite-card": OpenClawCommunityInviteCard;
   }
 }

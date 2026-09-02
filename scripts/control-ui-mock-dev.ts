@@ -2433,9 +2433,32 @@ function createCustodianMockInitScript(): string {
   return `(() => { const __name = (target) => target; (${installControlUiCustodianMock.toString()})(${CUSTODIAN_CHAT_REPLY_DELAY_MS}); })();`;
 }
 
+function createCommunityInviteMockInitScript(): string {
+  return `(() => {
+    localStorage.setItem("openclaw:control-ui:community-invite:v1", JSON.stringify({
+      firstQualifiedAtMs: Date.now() - 3600000,
+      qualifiedLoads: 1,
+      established: true
+    }));
+    const schedule = window.setTimeout.bind(window);
+    window.setTimeout = (handler, timeout = 0, ...args) => {
+      if (timeout >= 299000 && timeout <= 300000) {
+        return schedule(handler, 0, ...args);
+      }
+      return schedule(handler, timeout, ...args);
+    };
+    window.addEventListener("load", () => {
+      void import("/src/app/community-invite.runtime.ts").then(({ runCommunityInvite }) => {
+        runCommunityInvite(true, () => true);
+      });
+    }, { once: true });
+  })();`;
+}
+
 function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin {
   const initScript = escapeScriptContent(createControlUiMockGatewayInitScript(scenario));
   const custodianInitScript = escapeScriptContent(createCustodianMockInitScript());
+  const communityInviteInitScript = escapeScriptContent(createCommunityInviteMockInitScript());
   const bootstrapBody = JSON.stringify(createControlUiMockBootstrapConfig(scenario));
   return {
     configureServer(server) {
@@ -2453,7 +2476,7 @@ function createMockGatewayPlugin(scenario: ControlUiMockGatewayScenario): Plugin
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${custodianInitScript}\n    </script>\n  </head>`,
+        `    <script data-openclaw-control-ui-mock-gateway>\n${initScript}\n${custodianInitScript}\n${communityInviteInitScript}\n    </script>\n  </head>`,
       );
     },
   };
@@ -2537,6 +2560,26 @@ const server = await createServer({
       ...resolveExternalPackageAliasesForVite(),
       ...resolveSourcePackageAliasesForVite(),
       ...resolveTsconfigPathAliasesForVite(),
+      {
+        find: /^markdown-it(?:\/(.*))?$/,
+        replacement: path.join(
+          repoRoot,
+          ".artifacts/control-ui-e2e/discord-invite-sidebar/markdown-it-14.3.0/package/$1",
+        ),
+      },
+      ...[
+        ["entities", "entities-4.5.0", "lib/esm/index.js"],
+        ["linkify-it", "linkify-it-5.0.2", "index.mjs"],
+        ["mdurl", "mdurl-2.0.0", "index.mjs"],
+        ["punycode.js", "punycode.js-2.3.1", "punycode.es6.js"],
+        ["uc.micro", "uc.micro-2.1.0", "index.mjs"],
+      ].map(([packageName, directory, entry]) => ({
+        find: packageName,
+        replacement: path.join(
+          repoRoot,
+          `.artifacts/control-ui-e2e/discord-invite-sidebar/markdown-it-deps/${directory}/package/${entry}`,
+        ),
+      })),
     ],
   },
   root: uiRoot,

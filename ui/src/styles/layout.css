@@ -1029,6 +1029,9 @@ openclaw-settings-save-indicator {
 }
 
 .sidebar-shell__footer {
+  /* Floating sidebar surfaces anchor above this fixed ledge without changing
+     the scroll container's height. */
+  position: relative;
   flex-shrink: 0;
   padding: 4px 0 0;
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
