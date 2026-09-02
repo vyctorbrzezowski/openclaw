@@ -59,9 +59,18 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
 
     .invite__header {
       position: relative;
-      aspect-ratio: 1.9;
+      aspect-ratio: 2.3;
       flex: none;
       overflow: hidden;
+    }
+
+    .invite__header::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 48px;
+      background: linear-gradient(to bottom, rgb(16 19 28 / 0%), #10131c);
+      pointer-events: none;
     }
 
     .invite__art {
@@ -144,13 +153,14 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__cta {
+      box-sizing: border-box;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      min-height: 36px;
+      min-height: 34px;
       margin-top: var(--space-2, 8px);
-      padding: var(--space-2, 8px) var(--space-3, 12px);
+      padding: var(--space-1, 4px) var(--space-2, 8px);
       border-radius: var(--radius-md, 10px);
       background: #fff;
       color: #10131c;
