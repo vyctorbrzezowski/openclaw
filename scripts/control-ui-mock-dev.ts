@@ -55,6 +55,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "file-open-panel"
     | "goal"
     | "swarm"
     | "update-available"
@@ -359,6 +360,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "file-open-panel" &&
     value !== "goal" &&
     value !== "swarm" &&
     value !== "update-available" &&
@@ -1356,6 +1358,27 @@ function buildScrollableChatHistory(baseTime: number): unknown[] {
   return messages;
 }
 
+function buildFileOpenPanelChatHistory(baseTime: number): unknown[] {
+  return [
+    chatHistoryMessage(
+      "user",
+      "Can you show me the implementation, the release note, and the patch?",
+      baseTime,
+    ),
+    chatHistoryMessage(
+      "assistant",
+      [
+        "Open each file to inspect the current side-panel behavior:",
+        "",
+        "- Code: `ui/src/ui/views/chat.ts:2`",
+        "- Text: `notes/file-open-panel.txt`",
+        "- Diff: `patches/file-open-panel.diff`",
+      ].join("\n"),
+      baseTime + 1_000,
+    ),
+  ];
+}
+
 function buildCodeFenceChatHistory(baseTime: number): unknown[] {
   const proseFence = (language: string, label: string) => {
     const lines = Array.from({ length: 16 }, (_, index) => `${label} line ${index + 1}`);
@@ -1502,6 +1525,22 @@ async function createChatPickerScenario(
       size: 16542,
       updatedAtMs: baseTime - 420_000,
     },
+    {
+      kind: "read",
+      missing: false,
+      name: "file-open-panel.txt",
+      path: "notes/file-open-panel.txt",
+      size: 238,
+      updatedAtMs: baseTime - 12_000,
+    },
+    {
+      kind: "modified",
+      missing: false,
+      name: "file-open-panel.diff",
+      path: "patches/file-open-panel.diff",
+      size: 412,
+      updatedAtMs: baseTime - 8_000,
+    },
   ];
   const sessionWorkspaceRoot = repoRoot;
   const sessionFileContentByPath = new Map([
@@ -1520,6 +1559,25 @@ async function createChatPickerScenario(
     [
       "packages/gateway-protocol/src/schema/sessions.ts",
       "export const SessionsFilesListParamsSchema = Type.Object({ sessionKey: NonEmptyString });\n",
+    ],
+    [
+      "notes/file-open-panel.txt",
+      "Current behavior notes\n\nClicking a transcript file link opens Review immediately, then loads the file into that tab.\nThe bench intentionally preserves the current timing, position, dimensions, and focus behavior.\n",
+    ],
+    [
+      "patches/file-open-panel.diff",
+      [
+        "diff --git a/ui/src/ui/views/chat.ts b/ui/src/ui/views/chat.ts",
+        "index 1111111..2222222 100644",
+        "--- a/ui/src/ui/views/chat.ts",
+        "+++ b/ui/src/ui/views/chat.ts",
+        "@@ -1,3 +1,4 @@",
+        " export function renderChat() {",
+        "+  // Mock diff preview for the existing Review panel.",
+        "   return html`<main></main>`;",
+        " }",
+        "",
+      ].join("\n"),
     ],
     [
       "package.json",
@@ -1577,33 +1635,37 @@ async function createChatPickerScenario(
       },
     },
   ];
-  const sessionFileGetCases = sessionFiles.map((file) => ({
-    match: { sessionKey: "agent:alpha", path: file.path },
-    response: {
-      file: {
-        ...file,
-        content: sessionFileContentByPath.get(file.path) ?? "",
-        // Fake CAS token so the file panel offers edit mode against the mock.
-        hash: mockFileHash(sessionFileContentByPath.get(file.path) ?? ""),
+  const sessionFileGetCases = ["agent:alpha", "agent:main:main"].flatMap((sessionKey) =>
+    sessionFiles.map((file) => ({
+      match: { sessionKey, path: file.path },
+      response: {
+        file: {
+          ...file,
+          content: sessionFileContentByPath.get(file.path) ?? "",
+          // Fake CAS token so the file panel offers edit mode against the mock.
+          hash: mockFileHash(sessionFileContentByPath.get(file.path) ?? ""),
+        },
+        root: sessionWorkspaceRoot,
+        sessionKey,
       },
-      root: sessionWorkspaceRoot,
-      sessionKey: "agent:main:main",
-    },
-  }));
-  const sessionFileSetCases = sessionFiles.map((file) => ({
-    match: { sessionKey: "agent:alpha", path: file.path },
-    response: {
-      file: {
-        ...file,
-        kind: "modified",
-        workspacePath: file.path,
-        hash: mockFileHash(`${file.path}:saved`),
-        updatedAtMs: baseTime,
+    })),
+  );
+  const sessionFileSetCases = ["agent:alpha", "agent:main:main"].flatMap((sessionKey) =>
+    sessionFiles.map((file) => ({
+      match: { sessionKey, path: file.path },
+      response: {
+        file: {
+          ...file,
+          kind: "modified",
+          workspacePath: file.path,
+          hash: mockFileHash(`${file.path}:saved`),
+          updatedAtMs: baseTime,
+        },
+        root: sessionWorkspaceRoot,
+        sessionKey,
       },
-      root: sessionWorkspaceRoot,
-      sessionKey: "agent:main:main",
-    },
-  }));
+    })),
+  );
   const lobsterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
   <rect width="640" height="360" fill="#10151d"/>
   <circle cx="320" cy="185" r="76" fill="#e23f3f"/>
@@ -1947,7 +2009,9 @@ async function createChatPickerScenario(
     workboardEnabled: fixture === "workboard",
   });
   const historyMessages =
-    fixture === "attachments"
+    fixture === undefined || fixture === "file-open-panel"
+      ? buildFileOpenPanelChatHistory(baseTime)
+      : fixture === "attachments"
       ? buildChatAttachmentHistory(baseTime)
       : fixture === "code-fences"
         ? buildCodeFenceChatHistory(baseTime)
