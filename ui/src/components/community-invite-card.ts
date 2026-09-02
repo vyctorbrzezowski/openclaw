@@ -31,7 +31,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
        the visible bottom of that area without adding to its scroll height. */
     :host {
       position: absolute;
-      right: var(--space-2, 8px);
+      right: calc(var(--space-2, 8px) + var(--scrollbar-size, 12px));
       bottom: calc(100% + var(--space-2, 8px));
       left: var(--space-2, 8px);
       z-index: 2;
@@ -210,6 +210,23 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     .invite__cta:hover .invite__cta-trailing,
     .invite__cta:focus-visible .invite__cta-trailing {
       opacity: 0.5;
+    }
+
+    @supports (corner-shape: superellipse(1.5)) {
+      .invite {
+        border-radius: calc(14px * var(--openclaw-corner-radius-scale, 1.25));
+        corner-shape: superellipse(1.5);
+      }
+
+      .invite__cta {
+        border-radius: calc(10px * var(--openclaw-corner-radius-scale, 1.25));
+        corner-shape: superellipse(1.5);
+      }
+
+      .invite__close {
+        border-radius: calc(6px * var(--openclaw-corner-radius-scale, 1.25));
+        corner-shape: superellipse(1.5);
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
