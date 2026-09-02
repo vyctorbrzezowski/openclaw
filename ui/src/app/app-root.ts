@@ -89,6 +89,7 @@ export class OpenClawApp extends OpenClawLightDomElement {
   private savedTranscriptLocation = "";
   private savedTranscriptNavigationGeneration = 0;
   private savedTranscriptAuthorizationEpoch = 0;
+  private initialRenderReady: Promise<void> = Promise.resolve();
   private focusDashboardAbort: AbortController | null = null;
   private readonly lazyCustomElements = new LazyCustomElementRequestController(this, () =>
     this.closeDocument(this.context?.basePath ?? ""),
@@ -141,6 +142,11 @@ export class OpenClawApp extends OpenClawLightDomElement {
       .effect(() => this.ownerDocument, installNativeTitleGuard);
   }
 
+  protected override async scheduleUpdate(): Promise<void> {
+    await this.initialRenderReady;
+    await super.scheduleUpdate();
+  }
+
   override connectedCallback() {
     super.connectedCallback();
     void import("../components/session-progress-hovercard-registration.ts");
@@ -171,18 +177,13 @@ export class OpenClawApp extends OpenClawLightDomElement {
     const navigationGeneration = runtime.navigationGeneration;
     const gateway = context.gateway;
     const authorizationEpoch = this.savedTranscriptAuthorizationEpoch;
-    if (runtime.canPaintSavedTranscript) {
-      void import("./saved-transcript-probe.runtime.ts")
-        .then((probe) =>
-          probe.hasSavedTranscript({
-            basePath: context.basePath,
-            pathname,
-            persistedSessionKey: context.gateway.snapshot.sessionKey,
-          }),
-        )
-        .then((ready) => {
+    const startup = runtime.start();
+    this.initialRenderReady = runtime.savedTranscriptReady
+      .then(async (ready) => {
+        if (ready) {
+          runtime.releaseStartupRouteGate();
+          await startup;
           if (
-            ready &&
             this.runtime === runtime &&
             this.context?.gateway === gateway &&
             runtime.navigationGeneration === navigationGeneration &&
@@ -192,16 +193,14 @@ export class OpenClawApp extends OpenClawLightDomElement {
             this.savedTranscriptReady = true;
             this.savedTranscriptLocation = location;
             this.savedTranscriptNavigationGeneration = navigationGeneration;
-            runtime.releaseStartupRouteGate();
           }
-        })
-        .catch(() => undefined);
-    }
+        }
+      })
+      .catch(() => undefined);
     // The runtime is created after controller hostConnected hooks run. Ensure
     // their lazy source getters bind on both the initial mount and reconnect.
     this.requestUpdate();
-    void this.runtime
-      .start()
+    void startup
       .then(() => this.resolveFocusDashboard())
       .catch((error: unknown) => {
         console.error("[openclaw] application start failed", error);

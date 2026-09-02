@@ -3,13 +3,19 @@ import { sessionRefFromPath } from "../app-session-route-paths.ts";
 import { normalizeAgentId, parseAgentSessionKey } from "../lib/sessions/session-key.ts";
 import { sessionKeyUuid } from "../pages/chat/route-loader-short-cache.ts";
 import { resolveChatSnapshotKey } from "../pages/chat/session-snapshot-invalidation.ts";
-import { readStoredChatSnapshot } from "../pages/chat/session-snapshot-store.ts";
+import { resolveSnapshotScope } from "../pages/chat/session-snapshot-scope.ts";
+import {
+  primeStoredChatSnapshot,
+  readStoredChatSnapshot,
+} from "../pages/chat/session-snapshot-store.ts";
 import { isDefaultChatLanding } from "../pages/model-setup/first-run.ts";
+import type { ApplicationGatewayConnection } from "./gateway.ts";
 
 type SavedTranscriptProbe = {
   basePath: string;
   pathname: string;
   persistedSessionKey: string;
+  connection: ApplicationGatewayConnection;
 };
 
 function localSessionKey(probe: SavedTranscriptProbe): string | null {
@@ -47,11 +53,18 @@ export async function hasSavedTranscript(probe: SavedTranscriptProbe): Promise<b
   if (!sessionKey) {
     return false;
   }
-  const snapshot = await readStoredChatSnapshot(
-    resolveChatSnapshotKey(
-      { assistantAgentId: null, agentsList: null, hello: null },
-      { sessionKey },
-    ),
+  const scope = await resolveSnapshotScope(probe.connection);
+  if (!scope) {
+    return false;
+  }
+  const snapshotKey = resolveChatSnapshotKey(
+    { assistantAgentId: null, agentsList: null, hello: null },
+    { sessionKey },
   );
-  return Boolean(snapshot?.messages.length);
+  const snapshot = await readStoredChatSnapshot(snapshotKey, scope);
+  if (!snapshot?.messages.length) {
+    return false;
+  }
+  primeStoredChatSnapshot(snapshotKey, snapshot);
+  return true;
 }

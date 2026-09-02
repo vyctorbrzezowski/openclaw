@@ -29,6 +29,7 @@ import { locationWithoutDraft } from "./route-draft.ts";
 import type { SessionChatRouteData } from "./route-loader.ts";
 import { observeChatCache, type ChatMessageCache } from "./session-message-cache.ts";
 import { installSessionPrefetch } from "./session-prefetch.ts";
+import { resolveSnapshotScope } from "./session-snapshot-scope.ts";
 import { SessionSnapshotStore } from "./session-snapshot-store.ts";
 import {
   resolveSplitDropZone,
@@ -80,7 +81,12 @@ export class ChatPage extends OpenClawLightDomElement {
   private consumedDraftData: SessionChatRouteData | null = null;
   private readonly draftFocus = new RouteDraftComposerFocus(this);
   private readonly messageCache: ChatMessageCache = new Map();
-  private readonly snapshotStore = new SessionSnapshotStore(this.messageCache);
+  private readonly snapshotStore = new SessionSnapshotStore(this.messageCache, () => {
+    const gateway = this.context?.gateway;
+    return gateway
+      ? resolveSnapshotScope(gateway.connection, gateway.snapshot.selfUser?.id)
+      : undefined;
+  });
   private classicColumnId = "c1";
   private classicPaneId = "p1";
   private routeHref = "";

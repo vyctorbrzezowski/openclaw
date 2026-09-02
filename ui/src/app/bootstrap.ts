@@ -242,7 +242,7 @@ export type ApplicationRuntime = {
   } | null;
   readonly confirmPendingGatewayConnection: () => void;
   readonly cancelPendingGatewayConnection: () => void;
-  readonly canPaintSavedTranscript: boolean;
+  readonly savedTranscriptReady: Promise<boolean>;
   readonly releaseStartupRouteGate: () => void;
   readonly navigationGeneration: number;
   start: () => Promise<void>;
@@ -339,6 +339,18 @@ export function bootstrapApplication(
         : {}),
     },
   );
+  const savedTranscriptReady = canPaintSavedTranscript
+    ? import("./saved-transcript-probe.runtime.ts")
+        .then((probe) =>
+          probe.hasSavedTranscript({
+            basePath,
+            pathname: applicationLocation.pathname,
+            persistedSessionKey: settings.sessionKey,
+            connection: gateway.connection,
+          }),
+        )
+        .catch(() => false)
+    : Promise.resolve(false);
   const agents = createAgentCapability(gateway);
   const startupLifecycle = createStartupLifecycle();
   const startupRouteId = routeIdFromPath(applicationLocation.pathname, basePath);
@@ -580,7 +592,7 @@ export function bootstrapApplication(
     },
     confirmPendingGatewayConnection,
     cancelPendingGatewayConnection,
-    canPaintSavedTranscript,
+    savedTranscriptReady,
     releaseStartupRouteGate: () => resolveInitialFirstRunDecision?.(),
     get navigationGeneration() {
       return navigationGeneration;
@@ -596,6 +608,7 @@ export function bootstrapApplication(
           return () => gateway.stop();
         },
         () => sessionPathBuilderReady,
+        () => savedTranscriptReady.then(() => undefined),
       ];
       // Resolve first-run setup before routing: the default Chat route owns the
       // workspace graph, which setup users would otherwise fetch and discard.

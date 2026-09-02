@@ -19,6 +19,7 @@ import {
 } from "./session-snapshot-database.ts";
 import { subscribeSnapshotInvalidation } from "./session-snapshot-invalidation-events.ts";
 import { deleteStoredChatSnapshot } from "./session-snapshot-invalidation.ts";
+import type { SnapshotScope } from "./session-snapshot-scope.ts";
 const CHAT_SNAPSHOT_WRITE_DELAY_MS = 500;
 
 const paginationSchema = z.discriminatedUnion("hasMore", [
@@ -53,6 +54,14 @@ const recordSchema = z
     savedAt: z.number().finite().nonnegative(),
     sessionId: z.string().nullable(),
     sessionKey: z.string().min(1),
+    scope: z
+      .object({
+        normalizedGatewayEndpoint: z.string().min(1),
+        credentialLineageFingerprint: z.string().min(1),
+        authenticatedPrincipalFingerprint: z.string().min(1).optional(),
+      })
+      .strict()
+      .nullable(),
     snapshot: snapshotSchema,
   })
   .strict()
@@ -73,6 +82,7 @@ type PendingSessionState = {
 };
 
 const activeStores = new Set<SessionSnapshotStore>();
+const startupSnapshots = new Map<string, ChatSessionSnapshot>();
 let snapshotStoreGeneration = 0;
 
 function debugSnapshotStore(message: string, error?: unknown): void {
@@ -120,9 +130,18 @@ function parseSnapshotRecord(value: unknown, sessionKey?: string): SessionSnapsh
     : null;
 }
 
+function snapshotScopeMatches(left: SnapshotScope, right: SnapshotScope): boolean {
+  return (
+    left.normalizedGatewayEndpoint === right.normalizedGatewayEndpoint &&
+    left.credentialLineageFingerprint === right.credentialLineageFingerprint &&
+    left.authenticatedPrincipalFingerprint === right.authenticatedPrincipalFingerprint
+  );
+}
+
 function createSnapshotRecord(
   sessionKey: string,
   pending: PendingSessionState,
+  scope: SnapshotScope | null,
 ): SessionSnapshotRecord | null {
   const sanitizedSnapshot = sanitizeSnapshot(pending.snapshot);
   if (!sanitizedSnapshot) {
@@ -132,6 +151,7 @@ function createSnapshotRecord(
     savedAt: pending.savedAt,
     sessionId: pending.snapshot.sessionId,
     sessionKey,
+    scope,
     snapshot: sanitizedSnapshot,
   });
   return parsed.success ? parsed.data : null;
@@ -169,8 +189,19 @@ async function readSnapshotRecord(sessionKey: string): Promise<SessionSnapshotRe
 
 export async function readStoredChatSnapshot(
   sessionKey: string,
+  scope: SnapshotScope | null = null,
 ): Promise<ChatSessionSnapshot | null> {
-  return (await readSnapshotRecord(sessionKey))?.snapshot ?? null;
+  const record = await readSnapshotRecord(sessionKey);
+  return record &&
+    (scope === null
+      ? record.scope === null
+      : record.scope && snapshotScopeMatches(record.scope, scope))
+    ? record.snapshot
+    : null;
+}
+
+export function primeStoredChatSnapshot(sessionKey: string, snapshot: ChatSessionSnapshot): void {
+  startupSnapshots.set(sessionKey, snapshot);
 }
 
 async function readSnapshotRecords(): Promise<SessionSnapshotRecord[] | null> {
@@ -292,7 +323,24 @@ export class SessionSnapshotStore implements ChatCacheObserver {
   private writeTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private writeChain = Promise.resolve();
 
-  constructor(private readonly memoryCache?: ChatMessageCache) {}
+  constructor(
+    private readonly memoryCache?: ChatMessageCache,
+    private readonly snapshotScope: () =>
+      | SnapshotScope
+      | null
+      | undefined
+      | Promise<SnapshotScope | null | undefined> = () => null,
+  ) {
+    if (memoryCache) {
+      for (const [sessionKey, snapshot] of startupSnapshots) {
+        const weight = measureChatSnapshotWeight(snapshot);
+        if (weight !== null) {
+          setSessionCacheValue(memoryCache, sessionKey, { snapshot, weight });
+        }
+        startupSnapshots.delete(sessionKey);
+      }
+    }
+  }
 
   connect(): void {
     this.connected = true;
@@ -311,9 +359,16 @@ export class SessionSnapshotStore implements ChatCacheObserver {
   async read(sessionKey: string): Promise<ChatSessionSnapshot | null> {
     const generation = snapshotStoreGeneration;
     const revision = this.revisions.get(sessionKey) ?? 0;
+    const scope = await this.snapshotScope();
+    if (scope === undefined) {
+      return null;
+    }
     const record = await readSnapshotRecord(sessionKey);
     if (
       !record ||
+      (scope === null
+        ? record.scope !== null
+        : !record.scope || !snapshotScopeMatches(record.scope, scope)) ||
       generation !== snapshotStoreGeneration ||
       revision !== (this.revisions.get(sessionKey) ?? 0)
     ) {
@@ -366,8 +421,12 @@ export class SessionSnapshotStore implements ChatCacheObserver {
     );
     this.pending.clear();
     const records: SessionSnapshotRecord[] = [];
+    const scope = await this.snapshotScope();
+    if (scope === undefined) {
+      return;
+    }
     for (const [sessionKey, state] of pending) {
-      const record = createSnapshotRecord(sessionKey, state);
+      const record = createSnapshotRecord(sessionKey, state, scope);
       if (record) {
         records.push(record);
       } else {

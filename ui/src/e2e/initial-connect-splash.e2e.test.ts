@@ -90,6 +90,31 @@ async function traceLoginGateMounts(page: Page): Promise<() => Promise<boolean>>
     );
 }
 
+async function traceConnectSplashMounts(page: Page): Promise<() => Promise<boolean>> {
+  await page.addInitScript(() => {
+    const trace = { mounted: false };
+    (
+      window as Window & {
+        openclawConnectSplashMountTrace?: typeof trace;
+      }
+    ).openclawConnectSplashMountTrace = trace;
+    new MutationObserver(() => {
+      if (document.querySelector(".connect-splash")) {
+        trace.mounted = true;
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
+  return () =>
+    page.evaluate(
+      () =>
+        (
+          window as Window & {
+            openclawConnectSplashMountTrace?: { mounted: boolean };
+          }
+        ).openclawConnectSplashMountTrace?.mounted ?? false,
+    );
+}
+
 async function seedStoredTranscript(
   page: Page,
   messages: unknown[],
@@ -165,6 +190,46 @@ async function seedCachedSessionSettings(page: Page): Promise<void> {
   );
 }
 
+async function waitForScopedStoredTranscript(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(async (sessionKey) => {
+        const request = indexedDB.open("openclaw-chat-snapshots", 2);
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          request.addEventListener("success", () => resolve(request.result));
+          request.addEventListener("error", () => reject(request.error));
+        });
+        const value = await new Promise<unknown>((resolve, reject) => {
+          const transaction = database.transaction("snapshots", "readonly");
+          const read = transaction.objectStore("snapshots").get(sessionKey);
+          read.addEventListener("success", () => resolve(read.result));
+          read.addEventListener("error", () => reject(read.error));
+        });
+        database.close();
+        return Boolean(
+          value &&
+          typeof value === "object" &&
+          "scope" in value &&
+          (value as { scope?: unknown }).scope,
+        );
+      }, cachedSessionKey),
+    )
+    .toBe(true);
+}
+
+async function warmStoredTranscript(
+  page: Page,
+  gateway: Awaited<ReturnType<typeof installMockGateway>>,
+): Promise<void> {
+  await page.goto(new URL("favicon.svg", server.baseUrl).href);
+  await seedCachedSessionSettings(page);
+  await page.goto(new URL(cachedSessionPath, server.baseUrl).href);
+  await gateway.waitForRequest("connect");
+  await gateway.resolveDeferred("connect");
+  await page.getByText(cachedTranscriptMarker, { exact: true }).first().waitFor();
+  await waitForScopedStoredTranscript(page);
+}
+
 describeControlUiE2e("Control UI initial connect splash E2E", () => {
   beforeAll(async () => {
     if (!chromiumAvailable) {
@@ -189,20 +254,17 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
 
   it("paints a stored transcript before a delayed first hello", async () => {
     const page = await createPage();
-    await page.goto(new URL("favicon.svg", server.baseUrl).href);
-    await seedStoredTranscript(page, [
-      { role: "assistant", content: cachedTranscriptMarker, timestamp: 1 },
-    ]);
-    await seedCachedSessionSettings(page);
     const gateway = await installMockGateway(page, {
       deferredMethods: ["connect"],
       historyMessages: [
         { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
       ],
     });
+    await warmStoredTranscript(page, gateway);
+    const splashMounted = await traceConnectSplashMounts(page);
     const startedAt = performance.now();
 
-    await page.goto(new URL(cachedSessionPath, server.baseUrl).href);
+    await page.reload();
     await gateway.waitForRequest("connect");
     const helloTimer = builtControlUi
       ? setTimeout(() => void gateway.resolveDeferred("connect"), delayedHelloMs)
@@ -219,10 +281,126 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
 
     expect(visibleAfterMs).toBeLessThan(builtControlUi ? delayedHelloMs : 10_000);
     expect(await page.locator(".connect-splash").count()).toBe(0);
+    expect(await splashMounted()).toBe(false);
     await captureProof(page, "cached-transcript-connecting");
     await gateway.resolveDeferred("connect");
     await page.locator("openclaw-app-shell").waitFor();
     await captureProof(page, "cached-transcript-reconciled");
+  });
+
+  it("keeps a prior Gateway transcript behind the splash before hello", async () => {
+    const page = await createPage();
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(page, gateway);
+    const previousGatewayUrl = server.baseUrl.replace(/^http/, "ws").replace(/\/$/, "");
+    const nextGatewayUrl = "wss://other-gateway.example.test";
+    await page.evaluate(
+      ({ pageGatewayUrl, priorGatewayUrl, replacementGatewayUrl, sessionKey }) => {
+        localStorage.setItem(
+          `openclaw.control.settings.v1:${priorGatewayUrl}`,
+          JSON.stringify({
+            gatewayUrl: priorGatewayUrl,
+            sessionsByGateway: {
+              [priorGatewayUrl]: { sessionKey, lastActiveSessionKey: sessionKey },
+            },
+          }),
+        );
+        localStorage.setItem(
+          `openclaw.control.settings.v1:${replacementGatewayUrl}`,
+          JSON.stringify({
+            gatewayUrl: replacementGatewayUrl,
+            sessionsByGateway: {
+              [replacementGatewayUrl]: { sessionKey, lastActiveSessionKey: sessionKey },
+            },
+          }),
+        );
+        localStorage.setItem(
+          `openclaw.control.currentGateway.v1:${pageGatewayUrl}`,
+          replacementGatewayUrl,
+        );
+      },
+      {
+        pageGatewayUrl: previousGatewayUrl,
+        priorGatewayUrl: previousGatewayUrl,
+        replacementGatewayUrl: nextGatewayUrl,
+        sessionKey: cachedSessionKey,
+      },
+    );
+    await page.reload();
+    await gateway.waitForRequest("connect");
+    await page.locator(".connect-splash").waitFor();
+    expect(await page.getByText(cachedTranscriptMarker, { exact: true }).count()).toBe(0);
+  });
+
+  it("keeps a prior credential transcript behind the splash before hello", async () => {
+    const page = await createPage();
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(page, gateway);
+    await page.evaluate(() => {
+      const identityRaw = localStorage.getItem("openclaw-device-identity-v1");
+      const authKey = Object.keys(localStorage).find((key) =>
+        key.startsWith("openclaw.device.auth.v1:"),
+      );
+      if (!authKey) {
+        throw new Error("expected warmed device auth key");
+      }
+      const authRaw = localStorage.getItem(authKey);
+      if (!identityRaw || !authRaw) {
+        throw new Error("expected warmed device credential");
+      }
+      const deviceId = (JSON.parse(identityRaw) as { deviceId: string }).deviceId;
+      const auth = JSON.parse(authRaw) as {
+        version: 1;
+        tokens: { operator: { token: string; role: string; scopes: string[] } };
+      };
+      localStorage.setItem(
+        authKey,
+        JSON.stringify({
+          ...auth,
+          deviceId,
+          tokens: {
+            ...auth.tokens,
+            operator: {
+              ...auth.tokens.operator,
+              token: `${auth.tokens.operator.token}-replacement`,
+              updatedAtMs: Date.now(),
+            },
+          },
+        }),
+      );
+    });
+
+    await page.reload();
+    await gateway.waitForRequest("connect");
+    await page.locator(".connect-splash").waitFor();
+    expect(await page.getByText(cachedTranscriptMarker, { exact: true }).count()).toBe(0);
+  });
+
+  it("keeps a principal-bound transcript behind the splash before hello", async () => {
+    const page = await createPage();
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+      presenceUsers: [{ self: true, id: "principal-a" }],
+    });
+    await warmStoredTranscript(page, gateway);
+
+    await page.reload();
+    await gateway.waitForRequest("connect");
+    await page.locator(".connect-splash").waitFor();
+    expect(await page.getByText(cachedTranscriptMarker, { exact: true }).count()).toBe(0);
   });
 
   afterAll(() => {
@@ -233,14 +411,15 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
 
   it("keeps the cached shell through retry and removes it on rejected credentials", async () => {
     const page = await createPage();
-    await page.goto(new URL("favicon.svg", server.baseUrl).href);
-    await seedStoredTranscript(page, [
-      { role: "assistant", content: cachedTranscriptMarker, timestamp: 1 },
-    ]);
-    await seedCachedSessionSettings(page);
-    const gateway = await installMockGateway(page, { deferredMethods: ["connect"] });
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(page, gateway);
 
-    await page.goto(new URL(cachedSessionPath, server.baseUrl).href);
+    await page.reload();
     await gateway.waitForRequest("connect");
     await page.getByText(cachedTranscriptMarker, { exact: true }).first().waitFor();
     const initialConnectCount = (await gateway.getRequests("connect")).length;
@@ -272,11 +451,13 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
     const context = await browser.newContext({ viewport });
     openContexts.add(context);
     const writer = await createPageIn(context);
-    await writer.goto(new URL("favicon.svg", server.baseUrl).href);
-    await seedStoredTranscript(writer, [
-      { role: "assistant", content: cachedTranscriptMarker, timestamp: 1 },
-    ]);
-    await seedCachedSessionSettings(writer);
+    const writerGateway = await installMockGateway(writer, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(writer, writerGateway);
 
     const pages = await Promise.all([createPageIn(context), createPageIn(context)]);
     const gateways = await Promise.all(
@@ -343,14 +524,15 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
 
   it("does not remount a cached conversation after navigation before hello", async () => {
     const page = await createPage();
-    await page.goto(new URL("favicon.svg", server.baseUrl).href);
-    await seedStoredTranscript(page, [
-      { role: "assistant", content: cachedTranscriptMarker, timestamp: 1 },
-    ]);
-    await seedCachedSessionSettings(page);
-    const gateway = await installMockGateway(page, { deferredMethods: ["connect"] });
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(page, gateway);
 
-    await page.goto(new URL(cachedSessionPath, server.baseUrl).href);
+    await page.reload();
     await gateway.waitForRequest("connect");
     await page.getByText(cachedTranscriptMarker, { exact: true }).first().waitFor();
     await page.evaluate(() => {
@@ -369,14 +551,15 @@ describeControlUiE2e("Control UI initial connect splash E2E", () => {
 
   it("clears a cached conversation when a pending navigation is cancelled", async () => {
     const page = await createPage();
-    await page.goto(new URL("favicon.svg", server.baseUrl).href);
-    await seedStoredTranscript(page, [
-      { role: "assistant", content: cachedTranscriptMarker, timestamp: 1 },
-    ]);
-    await seedCachedSessionSettings(page);
-    const gateway = await installMockGateway(page, { deferredMethods: ["connect"] });
+    const gateway = await installMockGateway(page, {
+      deferredMethods: ["connect"],
+      historyMessages: [
+        { role: "assistant", content: cachedTranscriptMarker, timestamp: Date.now() },
+      ],
+    });
+    await warmStoredTranscript(page, gateway);
 
-    await page.goto(new URL(cachedSessionPath, server.baseUrl).href);
+    await page.reload();
     await gateway.waitForRequest("connect");
     await page.getByText(cachedTranscriptMarker, { exact: true }).first().waitFor();
     await page.evaluate(() => {

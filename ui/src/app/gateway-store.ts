@@ -526,6 +526,7 @@ export function createApplicationGateway(
       canvasPluginSurfaceUrl: null,
       assistantAgentId: null,
       selfUser: null,
+      authenticatedPrincipalId: null,
       sessionKey: nextSessionKey,
       lastError: null,
       lastErrorCode: null,

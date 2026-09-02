@@ -16,7 +16,13 @@ import {
   CHAT_SNAPSHOT_STORE_NAME,
 } from "./session-snapshot-database.ts";
 import { clearStoredChatSnapshots } from "./session-snapshot-invalidation.ts";
+import type { SnapshotScope } from "./session-snapshot-scope.ts";
 import { readStoredChatSnapshot, SessionSnapshotStore } from "./session-snapshot-store.ts";
+
+const SNAPSHOT_SCOPE = {
+  normalizedGatewayEndpoint: "wss://gateway.example.test",
+  credentialLineageFingerprint: "credential-a",
+} satisfies SnapshotScope;
 
 function snapshot(message: unknown, sessionId = "session-1"): ChatSessionSnapshot {
   return {
@@ -173,12 +179,32 @@ describe("persistent chat session snapshots", () => {
   it("serves large snapshots to the startup reader and rejects an empty cache miss", async () => {
     const sessionKey = "agent:main:startup-large";
     const largeBody = "x".repeat(5 * 1024 * 1024);
-    const writer = new SessionSnapshotStore();
+    const writer = new SessionSnapshotStore(undefined, () => SNAPSHOT_SCOPE);
     writer.write(sessionKey, snapshot(largeBody));
     await writer.flush();
 
-    expect((await readStoredChatSnapshot(sessionKey))?.messages[0]).toBe(largeBody);
-    expect(await readStoredChatSnapshot("agent:main:missing")).toBeNull();
+    expect((await readStoredChatSnapshot(sessionKey, SNAPSHOT_SCOPE))?.messages[0]).toBe(largeBody);
+    expect(
+      await readStoredChatSnapshot(sessionKey, {
+        ...SNAPSHOT_SCOPE,
+        credentialLineageFingerprint: "credential-b",
+      }),
+    ).toBeNull();
+    expect(await readStoredChatSnapshot("agent:main:missing", SNAPSHOT_SCOPE)).toBeNull();
+  });
+
+  it("does not admit a principal-bound snapshot without the same principal", async () => {
+    const sessionKey = "agent:main:principal";
+    const principalScope = {
+      ...SNAPSHOT_SCOPE,
+      authenticatedPrincipalFingerprint: "principal-a",
+    };
+    const writer = new SessionSnapshotStore(undefined, () => principalScope);
+    writer.write(sessionKey, snapshot("private"));
+    await writer.flush();
+
+    expect(await readStoredChatSnapshot(sessionKey, SNAPSHOT_SCOPE)).toBeNull();
+    expect(await readStoredChatSnapshot(sessionKey, principalScope)).toEqual(snapshot("private"));
   });
 
   it("does not let an append miss replace a richer persisted snapshot", async () => {
