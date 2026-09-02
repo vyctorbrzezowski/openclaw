@@ -28,30 +28,34 @@ describe("parseControlUiAutomationPath", () => {
   it("round-trips an encoded job route", () => {
     const path = buildControlUiAutomationPath("nightly.digest", { tab: "runs" });
     expect(path && parseControlUiAutomationPath(path)).toEqual({
+      kind: "runs",
       jobId: "nightly.digest",
-      tab: "runs",
     });
   });
 
   it("accepts the legacy route alias", () => {
     expect(parseControlUiAutomationPath("/cron/nightly%2Edigest/runs")).toEqual({
+      kind: "runs",
       jobId: "nightly.digest",
-      tab: "runs",
     });
+  });
+
+  it.each(["/automations", "/cron/"])("recognizes the list route %s", (path) => {
+    expect(parseControlUiAutomationPath(path)).toEqual({ kind: "list" });
   });
 
   it.each(["/automations/%", "/automations/job/runs/extra", "/automations/job/unknown"])(
     "rejects the malformed route %s",
     (path) => {
-      expect(parseControlUiAutomationPath(path)).toBeNull();
+      expect(parseControlUiAutomationPath(path)).toEqual({ kind: "invalid" });
     },
   );
 
   it("decodes an encoded slash without accepting a nested route", () => {
     expect(parseControlUiAutomationPath("/automations/job%2Fchild")).toEqual({
+      kind: "detail",
       jobId: "job/child",
-      tab: "settings",
     });
-    expect(parseControlUiAutomationPath("/automations/job/child")).toBeNull();
+    expect(parseControlUiAutomationPath("/automations/job/child")).toEqual({ kind: "invalid" });
   });
 });

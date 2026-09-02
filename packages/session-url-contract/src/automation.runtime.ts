@@ -3,10 +3,11 @@ import { encodeControlUiPathSegment, normalizeControlUiBasePath } from "./gramma
 
 export type ControlUiAutomationTab = "settings" | "runs";
 
-export type ControlUiAutomationRoute = {
-  jobId: string;
-  tab: ControlUiAutomationTab;
-};
+export type ControlUiAutomationRoute =
+  | { kind: "list" }
+  | { kind: "detail"; jobId: string }
+  | { kind: "runs"; jobId: string }
+  | { kind: "invalid" };
 
 export const CONTROL_UI_AUTOMATIONS_PATH = "/automations";
 export const CONTROL_UI_AUTOMATIONS_PATH_ALIAS = "/cron";
@@ -43,19 +44,24 @@ export function parseControlUiAutomationPath(
   const roots = [CONTROL_UI_AUTOMATIONS_PATH, CONTROL_UI_AUTOMATIONS_PATH_ALIAS].map(
     (path) => `${normalizedBasePath}${path}`,
   );
-  const root = roots.find((candidate) =>
-    normalizedPath.toLowerCase().startsWith(`${candidate.toLowerCase()}/`),
-  );
+  const pathKey = normalizedPath.toLowerCase();
+  const root = roots.find((candidate) => {
+    const candidateKey = candidate.toLowerCase();
+    return pathKey === candidateKey || pathKey.startsWith(`${candidateKey}/`);
+  });
   if (!root) {
     return null;
   }
+  if (pathKey === root.toLowerCase()) {
+    return { kind: "list" };
+  }
   const segments = normalizedPath.slice(root.length + 1).split("/");
   if (segments.length > 2 || !segments[0] || (segments[1] && segments[1] !== "runs")) {
-    return null;
+    return { kind: "invalid" };
   }
   const jobId = decodePathSegment(segments[0]);
   if (jobId === null || !jobId.trim()) {
-    return null;
+    return { kind: "invalid" };
   }
-  return { jobId, tab: segments[1] === "runs" ? "runs" : "settings" };
+  return { kind: segments[1] === "runs" ? "runs" : "detail", jobId };
 }

@@ -129,6 +129,18 @@ suite.define(() => {
       });
       await page.locator('[data-test-id="cron-back"]').click();
       await waitForControlUiRoute(page, { pathname: "/automations", routeId: "cron" });
+
+      await page.goto(`${suite.server.baseUrl}automations/job/unknown`);
+      await waitForControlUiRoute(page, {
+        pathname: "/automations/job/unknown",
+        routeId: "cron",
+      });
+      await page.getByText("Automation not found", { exact: true }).waitFor();
+      expect(await gateway.getRequests("cron.get")).toHaveLength(0);
+      await page.screenshot({
+        fullPage: true,
+        path: path.join(artifactDir, "05-invalid-route.png"),
+      });
     } finally {
       await closeRecordedPage(recorded);
     }

@@ -96,7 +96,7 @@ type CronProps = {
   fieldErrors: CronFieldErrors;
   canSubmit: boolean;
   editingJob: CronJob | null;
-  missingJobId: string | null;
+  routeNotFound: boolean;
   createOpen: boolean;
   listTab: CronListTab;
   detailTab: CronDetailTab;
@@ -425,7 +425,7 @@ function renderToggleRow(
 // ── Main render ──
 
 export function renderCron(props: CronProps) {
-  const mode: CronPanelMode = props.missingJobId
+  const mode: CronPanelMode = props.routeNotFound
     ? "notFound"
     : props.editingJob
       ? "job"

@@ -447,8 +447,8 @@ describe("Automation route paths", () => {
     const pathname = pathForAutomation("nightly.digest", "runs", "/ui");
     expect(pathname).toBe("/ui/automations/nightly%2Edigest/runs");
     expect(automationRouteFromPath(pathname, "/ui")).toEqual({
+      kind: "runs",
       jobId: "nightly.digest",
-      tab: "runs",
     });
     expect(inferBasePathFromPathname(pathname)).toBe("/ui");
   });

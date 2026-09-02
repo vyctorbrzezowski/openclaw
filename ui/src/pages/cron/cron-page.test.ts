@@ -221,7 +221,7 @@ describe("CronPage editor state sync", () => {
     );
     const page = createPage(context, {
       render: true,
-      routeData: { jobId: job.id, detailTab: "history" },
+      routeData: { kind: "runs", jobId: job.id },
     });
 
     await waitForCronPage(() => expect(page.cron.cronEditingJobId).toBe(job.id));
@@ -305,7 +305,7 @@ describe("CronPage editor state sync", () => {
     );
     const page = createPage(context, {
       render: true,
-      routeData: { jobId: "missing.job", detailTab: "settings" },
+      routeData: { kind: "detail", jobId: "missing.job" },
     });
 
     await waitForCronPage(() => expect(page.textContent).toContain("Automation not found"));
