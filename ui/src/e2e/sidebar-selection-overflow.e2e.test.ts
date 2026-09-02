@@ -51,12 +51,12 @@ suite.define(() => {
       );
       await active.waitFor();
       const geometry = await active.evaluate((row) => {
-        const section = row.closest<HTMLElement>(".sidebar-sessions");
         const scroller = row.closest<HTMLElement>(".sidebar-shell__body");
-        if (!section || !scroller) {
+        if (!scroller) {
           throw new Error("sidebar session geometry owner not found");
         }
         const rowRect = row.getBoundingClientRect();
+<<<<<<< HEAD
         const sectionRect = section.getBoundingClientRect();
         const scrollerStyle = getComputedStyle(scroller);
         return {
@@ -64,12 +64,20 @@ suite.define(() => {
           maskImage: scrollerStyle.maskImage,
           maskPosition: scrollerStyle.maskPosition,
           maskSize: scrollerStyle.maskSize,
+=======
+        return {
+          contentEdge:
+            scroller.getBoundingClientRect().right - (scroller.offsetWidth - scroller.clientWidth),
+          rowRight: rowRect.right,
+>>>>>>> d8f8c8958a6 (fix(ui): align sidebar sections)
           overflows: scroller.scrollHeight > scroller.clientHeight,
-          sectionPaddingEnd: Number.parseFloat(getComputedStyle(section).paddingRight),
+          scrollbarGutter: getComputedStyle(scroller).scrollbarGutter,
+          scrollbarWidth: scroller.offsetWidth - scroller.clientWidth,
         };
       });
 
       expect(geometry.overflows).toBe(true);
+<<<<<<< HEAD
       expect(geometry.inset, JSON.stringify(geometry)).toBeGreaterThanOrEqual(
         geometry.sectionPaddingEnd,
       );
@@ -82,6 +90,11 @@ suite.define(() => {
         return getComputedStyle(row.closest<HTMLElement>(".sidebar-shell__body")!).maskPosition;
       });
       expect(rtlMaskPosition.split(", ").at(-1)?.split(" ")[0]).toBe("0%");
+=======
+      expect(geometry.scrollbarGutter).toBe("stable");
+      expect(geometry.scrollbarWidth).toBeGreaterThan(0);
+      expect(geometry.contentEdge - geometry.rowRight, JSON.stringify(geometry)).toBeCloseTo(4, 1);
+>>>>>>> d8f8c8958a6 (fix(ui): align sidebar sections)
 
       if (captureProof) {
         await page.screenshot({
