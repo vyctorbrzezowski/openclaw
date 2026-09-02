@@ -58,6 +58,7 @@ type CliOptions = {
     | "board"
     | "code-fences"
     | "goal"
+    | "model-loading"
     | "swarm"
     | "update-available"
     | "update-blocked"
@@ -362,6 +363,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "board" &&
     value !== "code-fences" &&
     value !== "goal" &&
+    value !== "model-loading" &&
     value !== "swarm" &&
     value !== "update-available" &&
     value !== "update-blocked" &&
@@ -2029,6 +2031,7 @@ async function createChatPickerScenario(
     serverBuildId: "mock",
     updateSchedule,
     updateAvailable: updateFixture?.available ?? null,
+    heldMethods: fixture === "model-loading" ? ["chat.metadata"] : undefined,
     // Advertised Gateway methods gate session actions (see
     // ui/src/lib/session-method-access.ts). Omitting the mutation methods left
     // every session context-menu row disabled, so the harness could not show
@@ -2170,7 +2173,9 @@ async function createChatPickerScenario(
                 mainKey: "main",
                 scope: "agent",
               },
-              metadata: { models: modelProviders.models },
+              ...(fixture === "model-loading"
+                ? {}
+                : { metadata: { models: modelProviders.models } }),
             },
           },
         ],
