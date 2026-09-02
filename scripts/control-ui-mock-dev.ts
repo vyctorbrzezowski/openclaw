@@ -263,6 +263,22 @@ function buildUpdateFixture(fixture: CliOptions["fixture"], nowMs: number): Upda
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const uiRoot = path.join(repoRoot, "ui");
 const boardFixturePath = "/__fixtures/board/";
+const sidebarBenchPath = "/bench/sidebar";
+const sidebarBenchHtml = `<!doctype html>
+<html lang="en" data-theme="dark" data-theme-mode="dark" data-theme-resolved="dark" class="wa-dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Sidebar Bench</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/test-helpers/sidebar-bench.css" />
+  </head>
+  <body data-sidebar-bench-page>
+    <div id="sidebar-bench"></div>
+    <script type="module" src="/src/test-helpers/sidebar-bench.ts"></script>
+  </body>
+</html>`;
 const boardFixtureHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -3256,6 +3272,26 @@ function createBoardFixturePlugin(): Plugin {
   };
 }
 
+function createSidebarBenchPlugin(): Plugin {
+  return {
+    name: "openclaw-control-ui-sidebar-bench",
+    configureServer(server) {
+      server.middlewares.use(sidebarBenchPath, (_req, res, next) => {
+        void server
+          .transformIndexHtml(sidebarBenchPath, sidebarBenchHtml)
+          .then((html) => {
+            res.statusCode = 200;
+            res.setHeader("content-type", "text/html; charset=utf-8");
+            res.end(html);
+          })
+          .catch((error: unknown) => {
+            next(error as Error);
+          });
+      });
+    },
+  };
+}
+
 function hostForUrl(boundAddress: string, requestedHost: string): string {
   const host = boundAddress === "0.0.0.0" || boundAddress === "::" ? requestedHost : boundAddress;
   const reachableHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
@@ -3313,6 +3349,7 @@ const server = await createServer({
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
+    createSidebarBenchPlugin(),
     ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
   ],
   publicDir: path.join(uiRoot, "public"),
@@ -3337,5 +3374,11 @@ console.log(`[control-ui-mock] ${resolveServerUrl(server, options.host)}`);
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
 );
+console.log(
+  `[control-ui-mock] sidebar bench: ${resolveServerUrl(server, options.host, sidebarBenchPath)}`,
+);
+if (options.port === 5312) {
+  console.log("PRONTO-BENCH 5312");
+}
 await waitForShutdown();
 await server.close();
