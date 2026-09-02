@@ -1718,6 +1718,22 @@ async function createChatPickerScenario(
   };
   const sessions = [
     ...activitySessions,
+    sessionRow("agent:main:marquee-short", "Short title", baseTime - 500),
+    sessionRow(
+      "agent:main:marquee-long",
+      "Review the sidebar session title marquee with hover actions visible",
+      baseTime - 600,
+    ),
+    sessionRow(
+      "agent:main:marquee-very-long",
+      "Investigate the complete session title while pin and overflow menu controls compete for the available sidebar width",
+      baseTime - 700,
+    ),
+    sessionRow(
+      "agent:main:marquee-cjk",
+      "排查 team.openclaw.ai 页面 sidebar marquee 与 pin 和 overflow 控件",
+      baseTime - 800,
+    ),
     ...(fixture === "workboard"
       ? [
           sessionRow(workboardMocks.sessionKey, "Product operations dashboard", baseTime, {
