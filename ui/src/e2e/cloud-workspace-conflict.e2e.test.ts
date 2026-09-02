@@ -231,7 +231,7 @@ describeControlUiE2e("Control UI cloud workspace conflict recovery", () => {
       await capture(page, "03-dismissed-live-notice.png");
 
       await page.setViewportSize({ width: 1440, height: 900 });
-      await gateway.setMethodResponse("sessions.list", sessionsList(false));
+      await gateway.setSessionsListResponse(sessionsList(false));
       await page.reload();
       await page.locator(".chat-workspace-conflict-event").waitFor({ timeout: 10_000 });
       await sessionRow.getByText("Cloud conflict cleared", { exact: true }).waitFor();
@@ -322,10 +322,7 @@ describeControlUiE2e("Control UI cloud workspace conflict recovery", () => {
           await rename.press("Enter");
           await gateway.waitForRequest("sessions.patch");
         } else {
-          await gateway.setMethodResponse(
-            "sessions.list",
-            workerRecoverySessionsList(true, failedState),
-          );
+          await gateway.setSessionsListResponse(workerRecoverySessionsList(true, failedState));
           await page.reload();
         }
         const alert = page
