@@ -1,0 +1,7 @@
+issue=134155
+pr=134161
+issue_url=https://github.com/openclaw/openclaw/issues/134155
+pr_url=https://github.com/openclaw/openclaw/pull/134161
+branch=fix/split-pane-transcript-fade
+sha40=5fd9bd9502e63018c265deec80c4c1e1a37fe08f
+summary=Split-only transcript fade now matches the panel surface; normal chat remains unchanged; browser regression coverage added.
