@@ -94,6 +94,9 @@ describe("plugin subagent sessions_yield follow-up", () => {
     let distinctFollowupRun: boolean;
 
     try {
+      const outboundBeforeFollowup = state
+        .getSnapshot()
+        .messages.filter((message) => message.direction === "outbound").length;
       const followUpResponse = await fetch(`${gateway.baseUrl}/qa/self-yield/follow-up`, {
         method: "POST",
         headers: {
@@ -108,6 +111,10 @@ describe("plugin subagent sessions_yield follow-up", () => {
         runId: string;
       };
       expect(followUp.runId).toBeTruthy();
+      await transport.waitForNoOutbound({
+        sinceIndex: outboundBeforeFollowup,
+        quietMs: 5_000,
+      });
       const releaseResponse = await fetch(`${gateway.baseUrl}/qa/self-yield/release`, {
         method: "POST",
         headers: { Authorization: `Bearer ${gateway.token}` },
