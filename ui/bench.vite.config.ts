@@ -19,8 +19,8 @@ import {
 } from "./vite.config.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const outDir = path.resolve(here, "../.artifacts/control-ui-bench");
-const benchRoot = path.join(here, "node_modules", ".cache", "control-ui-bench");
+const outDir = path.resolve(here, "../.artifacts/composer-webui-oc");
+const benchRoot = path.join(here, "node_modules", ".cache", "composer-webui-oc");
 
 // The generated page IS the Vite root so the emitted index.html stays flat;
 // the markup's "/src/..." references are rewritten to relative paths up to
@@ -36,7 +36,7 @@ export default defineConfig({
   base: "./",
   root: benchRoot,
   publicDir: false,
-  cacheDir: path.resolve(here, "../.artifacts/control-ui-bench-vite"),
+  cacheDir: path.resolve(here, "../.artifacts/composer-webui-oc-vite"),
   define: {
     "globalThis.OPENCLAW_CONTROL_UI_BUILD_INFO": JSON.stringify(resolveControlUiBuildInfo()),
   },
