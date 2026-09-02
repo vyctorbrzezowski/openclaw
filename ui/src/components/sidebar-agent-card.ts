@@ -93,12 +93,19 @@ class SidebarAgentCard extends OpenClawLightDomContentsElement {
               : html`<span class="sidebar-agent-card__avatar-text" aria-hidden="true"
                   >${this.avatarText}</span
                 >`}
+            ${this.menuUnread && !this.menuOpen
+              ? html`<span
+                  class="session-unread-dot sidebar-agent-card__menu-unread"
+                  role="img"
+                  aria-label=${t("sessionsView.unread")}
+                ></span>`
+              : nothing}
           </span>
           <span class="sidebar-agent-card__text">
             <span class="sidebar-agent-card__name">
-              ${this.agentName}
+              <span class="sidebar-agent-card__name-text">${this.agentName}</span>
               <span class="sidebar-agent-card__chevron" aria-hidden="true"
-                >${icons.chevronDown}</span
+                >${icons.chevronsUpDown}</span
               >
             </span>
             ${this.subtitle || this.environment
@@ -114,13 +121,6 @@ class SidebarAgentCard extends OpenClawLightDomContentsElement {
                 </span>`
               : nothing}
           </span>
-          ${this.menuUnread && !this.menuOpen
-            ? html`<span
-                class="session-unread-dot sidebar-agent-card__menu-unread"
-                role="img"
-                aria-label=${t("sessionsView.unread")}
-              ></span>`
-            : nothing}
         </button>
       </div>
     `;
