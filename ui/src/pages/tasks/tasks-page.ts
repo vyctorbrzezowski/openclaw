@@ -173,6 +173,7 @@ class TasksPage extends OpenClawLightDomElement {
           "tasks.list",
           {
             status: ["completed", "failed", "timed_out", "cancelled"],
+            sortBy: "endedAt",
             limit: 200,
             ...(agentId ? { agentId } : {}),
           },

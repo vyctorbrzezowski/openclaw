@@ -184,6 +184,7 @@ describe("TasksPage concurrent refresh events", () => {
     expect(refreshCalls[0]?.[1]).toMatchObject({ status: ["queued", "running"] });
     expect(refreshCalls[1]?.[1]).toMatchObject({
       status: ["completed", "failed", "timed_out", "cancelled"],
+      sortBy: "endedAt",
     });
     refresh.active.resolve({ tasks: [initial] });
     refresh.recent.resolve({ tasks: [recent] });
@@ -383,6 +384,7 @@ describe("TasksPage active pagination", () => {
         agentId: "writer",
         limit: 200,
         status: ["completed", "failed", "timed_out", "cancelled"],
+        sortBy: "endedAt",
       }),
       { signal: expect.any(AbortSignal) },
     );
