@@ -147,9 +147,6 @@ function mergeManagedMediaIntoAssistantContent(params: {
     ? (params.message.content as AssistantDisplayContentBlock[])
     : [];
   const managedBlocks = params.replacement.filter((block) => block?.type !== "text");
-  if (managedBlocks.length === 0) {
-    return null;
-  }
   const mediaFailureWarning = appendReplyMediaFailureWarning(undefined);
   const preserveMediaFailureWarning = params.replacement.some(
     (block) =>
@@ -181,6 +178,18 @@ function mergeManagedMediaIntoAssistantContent(params: {
       merged.push(...managedBlocks);
       replaced = true;
     }
+  }
+  if (
+    replaced &&
+    preserveMediaFailureWarning &&
+    !merged.some(
+      (block) =>
+        block?.type === "text" &&
+        typeof block.text === "string" &&
+        block.text.includes(mediaFailureWarning),
+    )
+  ) {
+    merged.push({ type: "text", text: mediaFailureWarning });
   }
   return replaced ? merged : null;
 }

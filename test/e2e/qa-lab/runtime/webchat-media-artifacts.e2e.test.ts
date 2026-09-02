@@ -57,8 +57,21 @@ const REJECTED_FIXTURES = FIXTURES.filter((fixture) => fixture[3] === "visible-e
 let harness: Awaited<ReturnType<typeof startQaLiveLaneGateway>> | undefined;
 let bus: Awaited<ReturnType<typeof startQaBusServer>> | undefined;
 let client: GatewayClient | undefined;
+const pendingChatSettlements = new Map<
+  string,
+  {
+    resolve: () => void;
+    reject: (error: Error) => void;
+    timeout: NodeJS.Timeout;
+  }
+>();
 
 afterEach(async () => {
+  for (const pending of pendingChatSettlements.values()) {
+    clearTimeout(pending.timeout);
+    pending.reject(new Error("WebChat media artifact test stopped before the run settled"));
+  }
+  pendingChatSettlements.clear();
   client?.stop();
   client = undefined;
   await harness?.stop().catch(() => undefined);
@@ -177,6 +190,29 @@ async function connectWebchat(url: string, token: string): Promise<GatewayClient
       role: "operator",
       scopes: ["operator.read", "operator.write", "operator.admin"],
       platform: "qa",
+      onEvent: (event) => {
+        if (
+          event.event !== "sessions.changed" ||
+          !event.payload ||
+          typeof event.payload !== "object"
+        ) {
+          return;
+        }
+        const payload = event.payload as {
+          sessionKey?: unknown;
+          reason?: unknown;
+        };
+        if (typeof payload.sessionKey !== "string" || payload.reason !== "chat.run.settled") {
+          return;
+        }
+        const pending = pendingChatSettlements.get(payload.sessionKey);
+        if (!pending) {
+          return;
+        }
+        pendingChatSettlements.delete(payload.sessionKey);
+        clearTimeout(pending.timeout);
+        pending.resolve();
+      },
       onHelloOk: () => resolve(connecting),
       onConnectError: reject,
       onClose: (code, reason) => reject(new Error(`Gateway closed ${code}: ${reason}`)),
@@ -185,29 +221,37 @@ async function connectWebchat(url: string, token: string): Promise<GatewayClient
   });
 }
 
-async function sendMediaReply(
-  gatewayClient: GatewayClient,
-  sessionKey: string,
-  fixtureNames: readonly string[],
-): Promise<unknown[]> {
+async function sendMediaReply(gatewayClient: GatewayClient, fixtureNames: readonly string[]) {
   const runId = randomUUID();
   const exactReply = `Artifacts ready\n${fixtureNames.map((name) => `MEDIA:./${name}`).join("\n")}`;
-  const started = await gatewayClient.request<{ runId?: string }>("chat.send", {
-    sessionKey,
-    message: `Reply exactly \`${exactReply}\``,
-    deliver: false,
-    idempotencyKey: runId,
+  const settled = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingChatSettlements.delete(SESSION_KEY);
+      reject(new Error(`timed out waiting for WebChat run ${runId} to settle`));
+    }, 125_000);
+    pendingChatSettlements.set(SESSION_KEY, { resolve, reject, timeout });
   });
-  await gatewayClient.request(
-    "agent.wait",
-    { runId: started.runId ?? runId, timeoutMs: 120_000 },
-    { timeoutMs: 125_000 },
-  );
-  const history = await gatewayClient.request<{
-    messages?: Array<{ role?: string; content?: unknown }>;
-  }>("chat.history", { sessionKey, limit: 20 });
-  const assistant = history.messages?.findLast((message) => message.role === "assistant");
-  return Array.isArray(assistant?.content) ? assistant.content : [];
+  try {
+    await gatewayClient.request("chat.send", {
+      sessionKey: SESSION_KEY,
+      message: `Reply exactly \`${exactReply}\``,
+      deliver: false,
+      idempotencyKey: runId,
+    });
+    await settled;
+    const history = await gatewayClient.request<{
+      messages?: Array<{ role?: string; content?: unknown }>;
+    }>("chat.history", { sessionKey: SESSION_KEY, limit: 20 });
+    const assistant = history.messages?.findLast((message) => message.role === "assistant");
+    return Array.isArray(assistant?.content) ? assistant.content : [];
+  } catch (error) {
+    const pending = pendingChatSettlements.get(SESSION_KEY);
+    if (pending) {
+      pendingChatSettlements.delete(SESSION_KEY);
+      clearTimeout(pending.timeout);
+    }
+    throw error;
+  }
 }
 
 describe("WebChat managed media artifact matrix", () => {
@@ -231,9 +275,9 @@ describe("WebChat managed media artifact matrix", () => {
       await transport.waitReady({ gateway: harness.gateway });
       await writeFixtures(harness.gateway.workspaceDir);
       client = await connectWebchat(harness.gateway.wsUrl, harness.gateway.token);
+      await client.request("sessions.subscribe");
       const content = await sendMediaReply(
         client,
-        SESSION_KEY,
         ARTIFACT_FIXTURES.map((fixture) => fixture[0]),
       );
       const accepted = ARTIFACT_FIXTURES.map((fixture) => ({
@@ -251,16 +295,19 @@ describe("WebChat managed media artifact matrix", () => {
         present: boolean;
       }> = [];
       for (const fixture of REJECTED_FIXTURES) {
-        const sessionKey = `agent:qa:rejected-${fixture[0].replace(/[^a-z0-9]+/giu, "-")}`;
-        const rejectedContent = await sendMediaReply(client, sessionKey, [fixture[0]]);
+        const rejectedContent = await sendMediaReply(client, [fixture[0]]);
         const serialized = JSON.stringify(rejectedContent);
         expect(serialized, fixture[0]).toContain(MEDIA_FAILURE_WARNING);
         expect(rejectedContent.some((block) => isExpectedMediaBlock(block, fixture))).toBe(false);
         expect(serialized).not.toContain("MEDIA:./");
-        const artifactList = await client.request<{ artifacts?: unknown[] }>("artifacts.list", {
-          sessionKey,
-        });
-        expect(artifactList.artifacts ?? [], fixture[0]).toEqual([]);
+        const artifactList = await client.request<{ artifacts?: Array<{ title?: string }> }>(
+          "artifacts.list",
+          { sessionKey: SESSION_KEY },
+        );
+        expect(
+          (artifactList.artifacts ?? []).some((artifact) => artifact.title === fixture[0]),
+          fixture[0],
+        ).toBe(false);
         rejected.push({
           name: fixture[0],
           mimeType: fixture[1],
@@ -270,11 +317,12 @@ describe("WebChat managed media artifact matrix", () => {
         });
       }
       const observed = [...accepted, ...rejected];
+      const serialized = JSON.stringify(content);
       const verdict = {
         expected: FIXTURES.length,
         observed: observed.filter((entry) => entry.present).length,
         missing: observed.filter((entry) => !entry.present).map((entry) => entry.name),
-        rawMediaVisible: JSON.stringify(content).includes("MEDIA:./"),
+        rawMediaVisible: serialized.includes("MEDIA:./"),
       };
 
       expect(verdict).toEqual({ expected: 20, observed: 20, missing: [], rawMediaVisible: false });

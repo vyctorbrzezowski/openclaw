@@ -3378,6 +3378,42 @@ describe("chat directive tag stripping for non-streaming final payloads", () => 
     );
   });
 
+  it("replaces a rejected runtime media reference with visible guidance", async () => {
+    await withTranscriptFixtureState(
+      "openclaw-chat-send-rejected-runtime-media-",
+      async (fixtureDir) => {
+        const mediaUrl = path.join(fixtureDir, "script.js");
+        await fs.promises.writeFile(mediaUrl, "export default true;\n");
+        mockState.triggerAgentRunStart = true;
+        mockState.runtimeAssistantTextsBeforeDelivery = [`Artifacts ready\nMEDIA:${mediaUrl}`];
+        mockState.dispatchedReplies = [
+          {
+            kind: "final",
+            payload: setReplyPayloadMetadata(
+              {
+                text: "Artifacts ready\n⚠️ Media failed. Try sending a smaller supported file or a different format.",
+              },
+              { assistantMessageIndex: 1, assistantTranscriptMediaUrls: [mediaUrl] },
+            ),
+          },
+        ];
+        const { send } = createChatRequestFixture();
+
+        await send({
+          idempotencyKey: "idem-rejected-runtime-media",
+          expectBroadcast: false,
+          waitFor: "dedupe",
+        });
+
+        const messages = await readActiveAssistantTranscriptMessages();
+        expect(JSON.stringify(messages)).toContain(
+          "⚠️ Media failed. Try sending a smaller supported file or a different format.",
+        );
+        expect(JSON.stringify(messages)).not.toContain("MEDIA:");
+      },
+    );
+  });
+
   it("materializes each distinct assistant media row once", async () => {
     await withTranscriptFixtureState(
       "openclaw-chat-send-multiple-assistant-media-",

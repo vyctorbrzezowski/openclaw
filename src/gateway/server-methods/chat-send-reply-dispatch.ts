@@ -137,6 +137,12 @@ export function createChatSendReplyDispatch(params: {
   const deliveredReplies: DeliveredChatSendReply[] = [];
   const finalizedAgentMediaTranscriptKeys = new Set<string>();
   let appendedWebchatAgentMedia = false;
+  const hasAgentTranscriptMedia = (payload: ReplyPayload): boolean =>
+    isMediaBearingPayload(payload) ||
+    Boolean(
+      getReplyPayloadMetadata(payload)?.assistantMessageIndex !== undefined &&
+      getReplyPayloadMetadata(payload)?.assistantTranscriptMediaUrls?.length,
+    );
   const agentMediaTranscriptKey = (payload: ReplyPayload): string => {
     const metadata = getReplyPayloadMetadata(payload);
     const ownedIdempotencyKey =
@@ -152,7 +158,7 @@ export function createChatSendReplyDispatch(params: {
     return "unkeyed";
   };
   const appendWebchatAgentMediaTranscriptIfNeeded = async (payload: ReplyPayload) => {
-    if (!isAgentRunStarted() || !isMediaBearingPayload(payload)) {
+    if (!isAgentRunStarted() || !hasAgentTranscriptMedia(payload)) {
       return;
     }
     const finalizationKey = agentMediaTranscriptKey(payload);
@@ -202,9 +208,15 @@ export function createChatSendReplyDispatch(params: {
       assistantContent,
       mediaMessage,
     );
-    const persistedContentForAppend = hasAssistantDisplayMediaContent(persistedAssistantContent)
-      ? persistedAssistantContent
-      : undefined;
+    const payloadMetadata = getReplyPayloadMetadata(payload);
+    const assistantMessageIndex = payloadMetadata?.assistantMessageIndex;
+    const rejectedCurrentTurnMedia =
+      assistantMessageIndex !== undefined &&
+      Boolean(payloadMetadata?.assistantTranscriptMediaUrls?.length);
+    const persistedContentForAppend =
+      hasAssistantDisplayMediaContent(persistedAssistantContent) || rejectedCurrentTurnMedia
+        ? persistedAssistantContent
+        : undefined;
     if (!persistedContentForAppend?.length) {
       return;
     }
@@ -215,7 +227,6 @@ export function createChatSendReplyDispatch(params: {
     if (!transcriptReply && !persistedAssistantContent?.length && !assistantContent?.length) {
       return;
     }
-    const payloadMetadata = getReplyPayloadMetadata(payload);
     const ownedTranscriptIdempotencyKey =
       payloadMetadata?.assistantTranscriptOwned === true
         ? payloadMetadata.assistantTranscriptIdempotencyKey?.trim()
@@ -254,7 +265,6 @@ export function createChatSendReplyDispatch(params: {
       );
       return;
     }
-    const assistantMessageIndex = payloadMetadata?.assistantMessageIndex;
     if (assistantMessageIndex !== undefined && transcriptScope) {
       // Embedded runtimes identify their owned turn by message index, not a persisted key.
       // Require that exact current-turn row and media set so a sibling reply cannot be rewritten.
@@ -299,6 +309,7 @@ export function createChatSendReplyDispatch(params: {
         }
         return;
       }
+      return;
     }
     const appended = await appendAssistantTranscriptMessage({
       sessionKey,
@@ -366,7 +377,7 @@ export function createChatSendReplyDispatch(params: {
     const latestPayloadByKey = new Map<string, ReplyPayload>();
     const orderedKeys: string[] = [];
     for (const { payload } of deliveredReplies) {
-      if (!isMediaBearingPayload(payload)) {
+      if (!hasAgentTranscriptMedia(payload)) {
         continue;
       }
       const key = agentMediaTranscriptKey(payload);
