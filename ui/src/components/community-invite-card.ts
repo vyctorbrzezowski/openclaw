@@ -1,12 +1,11 @@
-// Community invite card, embedded as the sidebar scroller's final item. It never
-// dims the app or traps focus; Shadow DOM keeps it off the startup CSS budget.
-import { css, html, svg } from "lit";
+// Community invite card, anchored above the sidebar footer. It never dims the
+// app or traps focus; Shadow DOM keeps it off the startup CSS budget.
+import { css, html } from "lit";
 import { inferControlUiPublicAssetPath } from "../app/public-assets.ts";
 import { t } from "../i18n/index.ts";
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "../lib/external-link.ts";
 import { COMMUNITY_DISCORD_URL } from "../lib/product-links.ts";
 import { OpenClawLitElement } from "../lit/openclaw-element.ts";
-import { strokeIcon } from "./icons-tools.ts";
 import { icons } from "./icons.ts";
 
 /** Read by the scheduler chunk, which owns settling the record on this event. */
@@ -20,9 +19,6 @@ const discordMark = html`
     />
   </svg>
 `;
-
-const arrowUpRight = strokeIcon(svg` <path d="M7 17 17 7" />
-  <path d="M7 7h10v10" />`);
 
 class OpenClawCommunityInviteCard extends OpenClawLitElement {
   static override styles = css`
@@ -46,25 +42,74 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       overflow: hidden;
       border: 0;
       border-radius: 0;
-      background: #10131c;
-      color: #f3f5fb;
+      background: var(--community-invite-surface-current, var(--sidebar-bg, var(--bg)));
+      color: var(--text);
       box-shadow: none;
     }
 
     .invite__header {
       position: relative;
-      aspect-ratio: 2.3;
+      height: var(--community-invite-image-height, 100px);
       flex: none;
       overflow: hidden;
     }
 
+    .invite__header::before,
     .invite__header::after {
       content: "";
       position: absolute;
-      inset: auto 0 0;
-      height: 48px;
-      background: linear-gradient(to bottom, rgb(16 19 28 / 0%), #10131c);
+      z-index: 1;
       pointer-events: none;
+    }
+
+    .invite__header::before {
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 45%,
+        var(--community-invite-photo-base-shade-current, transparent) 100%
+      );
+    }
+
+    .invite__header::after {
+      inset: auto 0 0;
+      height: var(--community-invite-fade-height-current, 48px);
+      background: var(
+        --community-invite-fade-gradient-current,
+        linear-gradient(
+          to bottom,
+          transparent 0%,
+          color-mix(
+              in srgb,
+              var(--community-invite-surface-current, var(--sidebar-bg, var(--bg)))
+                var(--community-invite-fade-opacity-20-current, 6%),
+              transparent
+            )
+            20%,
+          color-mix(
+              in srgb,
+              var(--community-invite-surface-current, var(--sidebar-bg, var(--bg)))
+                var(--community-invite-fade-opacity-45-current, 22%),
+              transparent
+            )
+            45%,
+          color-mix(
+              in srgb,
+              var(--community-invite-surface-current, var(--sidebar-bg, var(--bg)))
+                var(--community-invite-fade-opacity-70-current, 60%),
+              transparent
+            )
+            70%,
+          color-mix(
+              in srgb,
+              var(--community-invite-surface-current, var(--sidebar-bg, var(--bg)))
+                var(--community-invite-fade-opacity-88-current, 86%),
+              transparent
+            )
+            88%,
+          var(--community-invite-surface-current, var(--sidebar-bg, var(--bg))) 100%
+        )
+      );
     }
 
     .invite__art {
@@ -72,11 +117,12 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
+      object-position: center var(--community-invite-object-y, 87%);
     }
 
     .invite__close {
       position: absolute;
+      z-index: 2;
       inset: var(--space-2, 8px) var(--space-2, 8px) auto auto;
       display: grid;
       width: 28px;
@@ -84,7 +130,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       place-items: center;
       padding: 0;
       border: 0;
-      border-radius: var(--radius-sm, 6px);
+      border-radius: 50%;
       background: rgb(0 0 0 / 42%);
       color: rgb(255 255 255 / 76%);
       cursor: var(--cursor-action, pointer);
@@ -117,22 +163,14 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     .invite__body {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1, 4px);
-      padding: var(--space-3, 12px) calc(var(--sidebar-pad-x, 10px) + var(--space-2, 8px));
-    }
-
-    .invite__eyebrow {
-      margin: 0;
-      color: #a5b4ff;
-      font-size: var(--control-ui-text-xs, 11px);
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      gap: var(--community-invite-body-gap, 5px);
+      padding: var(--community-invite-body-pad-top, 11px) var(--community-invite-body-pad-x, 18px)
+        var(--community-invite-body-pad-bottom, 20px);
     }
 
     .invite__title {
       margin: 0;
-      color: #f3f5fb;
+      color: var(--text-strong);
       font-size: var(--control-ui-text-lg, 16px);
       font-weight: 700;
       line-height: 1.2;
@@ -141,7 +179,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
 
     .invite__text {
       margin: 0;
-      color: rgb(243 245 251 / 70%);
+      color: var(--muted);
       font-size: var(--control-ui-text-sm, 12px);
       line-height: 1.45;
     }
@@ -152,12 +190,12 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      min-height: 34px;
-      margin-top: var(--space-2, 8px);
-      padding: var(--space-1, 4px) var(--space-2, 8px);
+      min-height: var(--community-invite-cta-min-height, 38px);
+      margin-top: var(--community-invite-cta-gap, var(--space-3, 12px));
+      padding: var(--community-invite-cta-pad-y, 6px) var(--space-2, 8px);
       border-radius: var(--radius-md, 10px);
-      background: #fff;
-      color: #10131c;
+      background: var(--community-invite-cta-bg-current, var(--text-strong));
+      color: var(--community-invite-cta-fg-current, var(--bg));
       font-size: var(--control-ui-text-sm, 12px);
       font-weight: 600;
       text-decoration: none;
@@ -167,7 +205,8 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__cta:hover {
-      background: #e8eaf2;
+      background: var(--community-invite-cta-hover-bg-current, var(--text));
+      color: var(--community-invite-cta-fg-current, var(--bg));
     }
 
     .invite__cta:active {
@@ -175,7 +214,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     }
 
     .invite__cta:focus-visible {
-      outline: 2px solid #a5b4ff;
+      outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
 
@@ -185,35 +224,9 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
       flex: none;
     }
 
-    /* Same box as the leading brand mark so the label stays optically centred
-       whether or not the trailing affordance is visible. */
-    .invite__cta-trailing {
-      display: grid;
-      width: 17px;
-      height: 17px;
-      place-items: center;
-      opacity: 0;
-      transition: opacity 120ms ease;
-    }
-
-    .invite__cta-trailing svg {
-      width: 13px;
-      height: 13px;
-    }
-
-    .invite__cta:hover .invite__cta-trailing,
-    .invite__cta:focus-visible .invite__cta-trailing {
-      opacity: 0.5;
-    }
-
     @supports (corner-shape: superellipse(1.5)) {
       .invite__cta {
         border-radius: calc(10px * var(--openclaw-corner-radius-scale, 1.25));
-        corner-shape: superellipse(1.5);
-      }
-
-      .invite__close {
-        border-radius: calc(6px * var(--openclaw-corner-radius-scale, 1.25));
         corner-shape: superellipse(1.5);
       }
     }
@@ -221,8 +234,7 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
     @media (prefers-reduced-motion: reduce) {
       :host,
       .invite__close,
-      .invite__cta,
-      .invite__cta-trailing {
+      .invite__cta {
         animation: none;
         transition: none;
       }
@@ -257,9 +269,10 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
           </button>
         </div>
         <div class="invite__body">
-          <p class="invite__eyebrow">${t("communityInvite.eyebrow")}</p>
           <h2 class="invite__title">${t("communityInvite.title")}</h2>
-          <p class="invite__text">${t("communityInvite.body")}</p>
+          <p class="invite__text">
+            ${t("communityInvite.body")}<br />${t("communityInvite.bodyGreeting")}
+          </p>
           <a
             class="invite__cta"
             href=${COMMUNITY_DISCORD_URL}
@@ -269,7 +282,6 @@ class OpenClawCommunityInviteCard extends OpenClawLitElement {
           >
             ${discordMark}
             <span>${t("communityInvite.action")}</span>
-            <span class="invite__cta-trailing" aria-hidden="true">${arrowUpRight}</span>
           </a>
         </div>
       </aside>

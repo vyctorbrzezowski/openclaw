@@ -502,9 +502,9 @@ export const en: TranslationMap & {
   communityInvite: {
     cardLabel: "Join the OpenClaw community on Discord",
     artAlt: "A lobster beside the Discord mark on a lit seafloor pedestal",
-    eyebrow: "OpenClaw community",
     title: "Come build with us",
-    body: "Ask questions, report bugs, and show other builders what you're making.",
+    body: "Ask anything, show what you're making, and find out what everyone else is building.",
+    bodyGreeting: "Or just say hi.",
     action: "Join us on Discord",
     dismissForever: "Dismiss and don't show again",
   },

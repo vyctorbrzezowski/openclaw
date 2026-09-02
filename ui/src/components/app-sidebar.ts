@@ -547,6 +547,7 @@ class AppSidebar extends AppSidebarSessionNavigationElement implements SessionLi
                   className: "sidebar-session-error sidebar-session-catalog-error",
                 })}
           </div>
+          <div class="sidebar-shell__invite"></div>
           <div class="sidebar-shell__footer">
             <openclaw-lobster-pet
               .seed=${lobsterPetSeed(this.sessionKey)}

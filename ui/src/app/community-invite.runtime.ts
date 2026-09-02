@@ -223,12 +223,12 @@ export function attentionModalOpen(): boolean {
  * must stay alive for the next visibility or focus event. */
 type PresentationOutcome = "settled" | "deferred";
 
-/** Resolves the visible app-sidebar scroller at presentation time. The sidebar is
- * moved between desktop and drawer slots, and its slot is inert while collapsed
+/** Resolves the visible app-sidebar invite slot at presentation time. The sidebar
+ * is moved between desktop and drawer slots, and its slot is inert while collapsed
  * or off-canvas, so a hidden mount would burn the one-shot tombstone unseen. */
 function communityInviteMountTarget(): HTMLElement | null {
-  const scroller = document.querySelector<HTMLElement>("openclaw-app-sidebar .sidebar-shell__body");
-  return scroller?.closest("[inert]") ? null : scroller;
+  const slot = document.querySelector<HTMLElement>("openclaw-app-sidebar .sidebar-shell__invite");
+  return slot?.closest("[inert]") ? null : slot;
 }
 
 /** Starts the invite for a load the shell has already qualified. `isEligibleNow`
