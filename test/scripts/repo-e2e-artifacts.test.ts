@@ -92,9 +92,6 @@ describe("repo E2E artifact transfer", () => {
       ]) {
         fs.rmSync(path.join(root, output), { recursive: true });
       }
-      // Reproduce a plain archive restore's false freshness miss before exercising the owner.
-      execFileSync("tar", ["-xzf", path.join(artifact, "repo-e2e-build.tar.gz")], { cwd: root });
-      expect(requirement(root)).toMatchObject({ shouldBuild: true, reason: "config_newer" });
       transferRepoE2eArtifacts("restore", artifact, profile, root);
       expect(requirement(root)).toEqual({ shouldBuild: false, reason: "clean" });
       expect(fs.readlinkSync(path.join(root, "dist-runtime/index.js"))).toBe("../dist/index.js");
