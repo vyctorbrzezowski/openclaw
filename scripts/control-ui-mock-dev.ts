@@ -2098,6 +2098,16 @@ async function createChatPickerScenario(
     historyMessages,
     sessionGroups: ["Research"],
     sessionTranscripts: {
+      // Bench-only fixture: the scenario seeds a transcript for `agent:main:main` alone,
+      // so every other session renders empty once it is opened in a split pane. Seeding
+      // each listed session keeps both panes scrollable whichever one is selected.
+      // Purpose-built transcripts below still win, so demo states stay intact.
+      ...Object.fromEntries(
+        sessions.map((row, index) => [
+          row.key,
+          { messages: buildScrollableChatHistory(baseTime - (index + 1) * 3_600_000) },
+        ]),
+      ),
       ...backgroundTasks.sessionTranscripts,
       "agent:main:main": { messages: historyMessages, inFlightRun: planInFlightRun },
     },
