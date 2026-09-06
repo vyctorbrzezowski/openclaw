@@ -44,6 +44,10 @@ import {
 } from "./control-ui-mock-channels.ts";
 import { buildCronMocks } from "./control-ui-mock-cron.ts";
 import {
+  createErrorEmojiFixturePlugin,
+  ERROR_EMOJI_FIXTURE_PATH,
+} from "./control-ui-mock-error-emoji.ts";
+import {
   buildPluginCatalogMock,
   buildPluginInspectMock,
   buildPluginSetEnabledMock,
@@ -57,6 +61,7 @@ type CliOptions = {
     | "attachments"
     | "board"
     | "code-fences"
+    | "error-emoji"
     | "goal"
     | "swarm"
     | "update-available"
@@ -318,7 +323,12 @@ function mockFileHash(value: string): string {
 }
 
 function parseArgs(args: string[]): CliOptions {
-  const options: CliOptions = { allowedHosts: [], host: "127.0.0.1", port: 5187 };
+  const options: CliOptions = {
+    allowedHosts: [],
+    fixture: "error-emoji",
+    host: "127.0.0.1",
+    port: 5187,
+  };
   for (let i = 0; i < args.length; i += 1) {
     const arg = expectDefined(args[i], `control UI mock argument at index ${i}`);
     if (arg === "--allowed-host") {
@@ -361,6 +371,7 @@ function parseFixture(value: string | undefined): CliOptions["fixture"] {
     value !== "attachments" &&
     value !== "board" &&
     value !== "code-fences" &&
+    value !== "error-emoji" &&
     value !== "goal" &&
     value !== "swarm" &&
     value !== "update-available" &&
@@ -3394,14 +3405,24 @@ const server = await createServer({
   },
   logLevel: "error",
   optimizeDeps: {
-    ...(options.fixture === "board"
-      ? { entries: [path.join(uiRoot, "src", "test-helpers", "board-fixture.ts")] }
+    ...(options.fixture === "board" || options.fixture === "error-emoji"
+      ? {
+          entries: [
+            path.join(
+              uiRoot,
+              "src",
+              "test-helpers",
+              options.fixture === "board" ? "board-fixture.ts" : "error-emoji-fixture.ts",
+            ),
+          ],
+        }
       : {}),
     include: ["lit/directives/repeat.js"],
   },
   plugins: [
     createMockGatewayPlugin(scenario, options.fixture),
     createBoardFixturePlugin(),
+    ...(options.fixture === "error-emoji" ? [createErrorEmojiFixturePlugin()] : []),
     ...(options.fixture === "attachments" ? [createChatAttachmentFixturePlugin()] : []),
   ],
   publicDir: path.join(uiRoot, "public"),
@@ -3428,5 +3449,10 @@ console.log(
 console.log(
   `[control-ui-mock] board fixture: ${resolveServerUrl(server, options.host, boardFixturePath)}`,
 );
+if (options.fixture === "error-emoji") {
+  console.log(
+    `[control-ui-mock] error emoji fixture: ${resolveServerUrl(server, options.host, ERROR_EMOJI_FIXTURE_PATH)}`,
+  );
+}
 await waitForShutdown();
 await server.close();
