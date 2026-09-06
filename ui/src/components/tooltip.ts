@@ -129,6 +129,7 @@ class Tooltip extends OpenClawLitElement {
   private contentHovered = false;
   private describedBy: string | null = null;
   private descriptionCaptured = false;
+  private suppressNextFocusOpen = false;
   private descriptionElement: HTMLSpanElement | null = null;
   private richContentObserver: MutationObserver | null = null;
   private tooltipProvider: TooltipProvider | null = null;
@@ -358,6 +359,11 @@ class Tooltip extends OpenClawLitElement {
     this.close();
   };
   private readonly handleFocusIn = () => {
+    if (this.suppressNextFocusOpen) {
+      this.suppressNextFocusOpen = false;
+      this.close();
+      return;
+    }
     if (this.tooltipProvider?.focusOpensTooltip() !== false) {
       this.show();
     }
@@ -627,6 +633,26 @@ class Tooltip extends OpenClawLitElement {
       </wa-tooltip>
     `;
   }
+
+  focusTriggerWithoutOpening(target: HTMLElement) {
+    if (target !== this.triggerElement || target.matches(":focus")) {
+      target.focus();
+      return;
+    }
+    // Navigation can replace a focused toggle with its inverse. Preserve the
+    // focus handoff without presenting it as fresh tooltip intent.
+    this.suppressNextFocusOpen = true;
+    target.focus();
+  }
+}
+
+export function focusWithoutTooltip(target: HTMLElement) {
+  const tooltip = target.closest<Tooltip>("openclaw-tooltip");
+  if (tooltip) {
+    tooltip.focusTriggerWithoutOpening(target);
+    return;
+  }
+  target.focus();
 }
 
 if (!customElements.get("openclaw-tooltip-provider")) {

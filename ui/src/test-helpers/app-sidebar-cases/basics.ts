@@ -47,14 +47,26 @@ describe("AppSidebar new session navigation", () => {
       agentsList,
     );
     const onOpenNewSession = vi.fn();
+    const onOpenPalette = vi.fn();
+    const onToggleSidebar = vi.fn();
     sidebar.basePath = "/control";
     sidebar.connected = false;
     sidebar.onOpenNewSession = onOpenNewSession;
+    sidebar.onOpenPalette = onOpenPalette;
+    sidebar.onToggleSidebar = onToggleSidebar;
     await sidebar.updateComplete;
 
     const actions = sidebar.querySelector(".sidebar-brand__actions");
     const brandLink = sidebar.querySelector<HTMLAnchorElement>(".sidebar-brand__new-thread");
-    expect(actions?.firstElementChild?.querySelector(".sidebar-brand__new-thread")).toBe(brandLink);
+    expect(
+      Array.from(actions?.querySelectorAll("[aria-label]") ?? [], (action) =>
+        action.getAttribute("aria-label"),
+      ),
+    ).toEqual(["Collapse sidebar", "Open command palette", "New session"]);
+    sidebar.querySelector<HTMLButtonElement>(".sidebar-brand__collapse")?.click();
+    sidebar.querySelector<HTMLButtonElement>(".sidebar-brand__search")?.click();
+    expect(onToggleSidebar).toHaveBeenCalledOnce();
+    expect(onOpenPalette).toHaveBeenCalledOnce();
     expect(brandLink?.getAttribute("aria-label")).toBe("New session");
     expect(brandLink).toBeInstanceOf(HTMLAnchorElement);
     expect(brandLink?.getAttribute("aria-disabled")).toBe("true");
@@ -62,8 +74,6 @@ describe("AppSidebar new session navigation", () => {
     expect(brandLink?.tabIndex).toBe(-1);
     brandLink?.click();
     expect(onOpenNewSession).not.toHaveBeenCalled();
-    expect(sidebar.querySelector(".sidebar-search")).toBeNull();
-    expect(sidebar.querySelector(".sidebar-brand__collapse")).toBeNull();
 
     sidebar.connected = true;
     await sidebar.updateComplete;

@@ -17,6 +17,15 @@ type ViteImportMeta = ImportMeta & {
 const isProd = (import.meta as ViteImportMeta).env?.PROD === true;
 const currentControlUiBuildId = CONTROL_UI_BUILD_INFO.buildId;
 
+// The isolated sidebar-header design gateway is a disposable workbench. Keep
+// its controls out of every normal Control UI origin and production commit.
+if (
+  ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
+  window.location.port === "18889"
+) {
+  void import("./test-helpers/sidebar-header-tuner.ts");
+}
+
 syncDocumentPublicAssetLinks();
 installStaleChunkReloadListener();
 installMissingStylesheetRecovery();
