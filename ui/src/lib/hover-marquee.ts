@@ -53,6 +53,7 @@ function observeMarquee(label: HTMLElement): void {
           continue;
         }
         const width = resizedLabel.clientWidth;
+        marqueeLog("RO: entry", "w=", width, "prev=", marqueeWidths.get(resizedLabel));
         // ResizeObserver can redeliver unchanged geometry. Restarting for that
         // no-op would remove the scrolling class on every animation frame.
         if (marqueeWidths.get(resizedLabel) === width) {
@@ -71,21 +72,40 @@ function observeMarquee(label: HTMLElement): void {
   }
 }
 
+function marqueeLog(...args: unknown[]): void {
+  // TEMP-DEBUG
+  console.log("[marquee]", performance.now().toFixed(0), ...args);
+}
+
 function startHoverMarquee(host: HTMLElement): void {
   const label = findMarqueeLabel(host);
   if (!label) {
+    marqueeLog("start: no label");
     return;
   }
   observeMarquee(label);
   if (label.classList.contains("hover-marquee--scrolling") || pendingMarquees.has(label)) {
+    marqueeLog(
+      "start: bail already",
+      label.classList.contains("hover-marquee--scrolling"),
+      pendingMarquees.has(label),
+    );
     return;
   }
+  marqueeLog("start: scheduling rAF", label.clientWidth, label.scrollWidth);
   // Hover-only row actions change the title width in CSS after mouseenter.
   // Measure on the next frame so the animation owns the visible width instead
   // of depending on a later ResizeObserver notification to correct it.
   const pending: PendingMarquee = {
     frame: window.requestAnimationFrame(() => {
       if (pendingMarquees.get(label) !== pending || !isMarqueeHostActive(host)) {
+        marqueeLog(
+          "rAF: bail",
+          "stale=",
+          pendingMarquees.get(label) !== pending,
+          "active=",
+          isMarqueeHostActive(host),
+        );
         return;
       }
       // A negative mid-transition indent (re-hover while snapping back) shrinks
@@ -93,7 +113,17 @@ function startHoverMarquee(host: HTMLElement): void {
       const indent = Number.parseFloat(getComputedStyle(label).textIndent) || 0;
       marqueeWidths.set(label, label.clientWidth);
       const overflow = label.scrollWidth - indent - label.clientWidth;
+      marqueeLog(
+        "rAF: measured",
+        "cw=",
+        label.clientWidth,
+        "sw=",
+        label.scrollWidth,
+        "ovf=",
+        overflow,
+      );
       if (overflow <= 1) {
+        marqueeLog("rAF: no overflow, bail");
         pendingMarquees.delete(label);
         label.style.removeProperty("--hover-marquee-shift");
         label.style.removeProperty("--hover-marquee-duration");
@@ -113,6 +143,7 @@ function startHoverMarquee(host: HTMLElement): void {
         () => {
           pendingMarquees.delete(label);
           label.classList.add("hover-marquee--scrolling");
+          marqueeLog("timer: SCROLLING ON");
         },
         Number.isFinite(hoverDelay) ? Math.max(0, hoverDelay) : MARQUEE_HOVER_DELAY_MS,
       );
@@ -126,6 +157,7 @@ function stopHoverMarquee(host: HTMLElement): void {
   if (!label) {
     return;
   }
+  marqueeLog("STOP", "hover=", host.matches(":hover"), "connected=", host.isConnected);
   clearPendingMarquee(label);
   label.classList.remove("hover-marquee--scrolling");
   marqueeResizeObserver?.unobserve(label);
