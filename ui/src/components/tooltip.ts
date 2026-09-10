@@ -120,6 +120,8 @@ class Tooltip extends OpenClawLitElement {
 
   @property() content = "";
 
+  @property() placement: WaTooltip["placement"] = "top";
+
   @property({ type: Number }) closeDelay = RICH_CONTENT_CLOSE_DELAY;
 
   @property({ type: Number }) delay?: number;
@@ -335,6 +337,18 @@ class Tooltip extends OpenClawLitElement {
     void tooltip.updateComplete.then(() => {
       if (this.webAwesomeTooltip === tooltip && this.triggerElement === trigger) {
         tooltip.anchor = trigger;
+        // Side placement may fit neither side of a chart on a narrow viewport.
+        // Let the positioning owner try the vertical axis before clipping content.
+        const fallbacks = this.placement.startsWith("right")
+          ? "left bottom top"
+          : this.placement.startsWith("left")
+            ? "right bottom top"
+            : this.placement.startsWith("top")
+              ? this.placement.replace("top", "bottom")
+              : this.placement.replace("bottom", "top");
+        // The public attribute converter turns the space-separated list into
+        // the placement array consumed by Floating UI.
+        tooltip.popup.setAttribute("flip-fallback-placements", fallbacks);
       }
     });
   }
@@ -451,6 +465,7 @@ class Tooltip extends OpenClawLitElement {
     Tooltip.activeByDocument.set(this.ownerDocument, this);
     this.tooltipProvider?.openTooltip();
     this.syncDescription();
+    tooltip.inert = false;
     tooltip.open = true;
     // Light-DOM owners can retain a revealed trigger without another popup lifecycle.
     this.setAttribute("open", "");
@@ -482,6 +497,11 @@ class Tooltip extends OpenClawLitElement {
     this.ownerDocument.removeEventListener("focusin", this.handleDocumentDismiss, true);
     this.ownerDocument.defaultView?.removeEventListener("keydown", this.handleWindowKeyDown, true);
     this.clearTimers();
+    // A closing popup may remain painted for its exit animation, but must stop
+    // intercepting pointerup on the control that dismissed it.
+    if (this.webAwesomeTooltip) {
+      this.webAwesomeTooltip.inert = true;
+    }
     if (this.webAwesomeTooltip?.open) {
       this.webAwesomeTooltip.open = false;
     }
@@ -646,7 +666,13 @@ class Tooltip extends OpenClawLitElement {
   override render() {
     return html`
       <slot @slotchange=${() => this.attachTrigger()}></slot>
-      <wa-tooltip id=${this.tooltipId} trigger="manual" @wa-hide=${() => this.close()}>
+      <wa-tooltip
+        id=${this.tooltipId}
+        .placement=${this.placement}
+        trigger="manual"
+        inert
+        @wa-hide=${() => this.close()}
+      >
         <span class="tooltip-content">${this.content}</span>
         <span
           class="tooltip-rich-content"
