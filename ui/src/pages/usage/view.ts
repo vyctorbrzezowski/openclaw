@@ -288,15 +288,6 @@ export function renderUsage(
     </div>`;
   const headerActions = html`<button
       type="button"
-      class="btn btn--sm usage-icon-button usage-pin-btn"
-      aria-label=${display.headerPinned ? t("usage.filters.pinned") : t("usage.filters.pin")}
-      title=${display.headerPinned ? t("usage.filters.pinned") : t("usage.filters.pin")}
-      aria-pressed=${display.headerPinned}
-      @click=${filterActions.onToggleHeaderPinned}
-    >
-      ${icons.pin}</button
-    ><button
-      type="button"
       class="btn btn--sm usage-icon-button"
       aria-label=${t("common.refresh")}
       title=${t("common.refresh")}
@@ -372,13 +363,15 @@ export function renderUsage(
   return renderSettingsPage(
     html`
       <div class="usage-page">
-        <header class="usage-header ${display.headerPinned ? "pinned" : ""}">
+        <header class="usage-header">
           <div class="usage-header-top">
             <div class="usage-header-copy">
               <h1>${titleForRoute("usage")}</h1>
             </div>
             <div class="usage-header-actions">${headerActions}</div>
           </div>
+        </header>
+        <div class="usage-toolbar">
           <div class="usage-header-toolbar">
             <div class="usage-header-scope">
               <button
@@ -421,7 +414,7 @@ export function renderUsage(
             ${queryControl}
           </div>
           ${renderFilterChips(props)}
-        </header>
+        </div>
         ${data.totals && !isEmpty
           ? html`${renderUsageHero({
               sessions: scopedSessions,

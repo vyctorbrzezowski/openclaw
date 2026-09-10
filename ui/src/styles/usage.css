@@ -289,13 +289,7 @@
 }
 
 .usage-header {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  gap: var(--space-4);
-  background: transparent;
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--border);
+  margin-bottom: calc(-1 * var(--space-4));
 }
 
 .usage-header-copy,
@@ -515,17 +509,19 @@
   min-height: calc(var(--space-7) * 2);
 }
 
-.usage-header.pinned {
+.usage-toolbar {
   position: sticky;
   top: 0;
   z-index: 4;
+  display: grid;
+  gap: var(--space-3);
   padding-block: var(--space-3);
   background: var(--bg-content, var(--bg));
   border-bottom: 1px solid var(--border);
 }
 
 /* The content scroller keeps its 16px top inset above sticky descendants. */
-.usage-header.pinned::before {
+.usage-toolbar::before {
   content: "";
   position: absolute;
   inset-inline: 0;
@@ -3685,11 +3681,13 @@ openclaw-usage-dimensions {
   }
   .usage-header-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: var(--space-3);
   }
 
   .usage-header-actions {
+    align-self: center;
     flex-wrap: nowrap;
     justify-content: flex-end;
   }
