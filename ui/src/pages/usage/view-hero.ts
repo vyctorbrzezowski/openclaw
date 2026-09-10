@@ -381,136 +381,134 @@ export function renderUsageHero(props: HeroProps) {
       </div>
       ${days.length
         ? html`<div class="usage-hero-plot">
-              <div class="usage-hero-y-axis">
-                ${[maximum, compressed ? maximum / 4 : maximum / 2, 0].map(
-                  (value) =>
-                    html`<span
-                      >${isTokens ? "" : "$"}${axisFormat.format(value).replace("K", "k")}</span
-                    >`,
-                )}
-              </div>
-              <div class="usage-hero-canvas">
-                <svg viewBox="0 0 800 240" preserveAspectRatio="none" aria-hidden="true">
-                  <defs>
-                    <clipPath id="usage-hero-complete">
-                      <rect width=${partialX} height=${height}></rect>
-                    </clipPath>
-                    <clipPath id="usage-hero-partial">
-                      <rect x=${partialX} width=${width - partialX} height=${height}></rect>
-                    </clipPath>
-                    ${series.map(
-                      ({ color }, i) =>
-                        svg`<linearGradient id=${`usage-hero-gradient-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color=${color} stop-opacity=".36"></stop><stop offset="100%" stop-color=${color} stop-opacity=".025"></stop></linearGradient>`,
-                    )}
-                  </defs>
-                  ${[0, height / 2, height].map(
-                    (y) =>
-                      svg`<line class="usage-hero-gridline" x1="0" x2=${width} y1=${y} y2=${y}></line>`,
+            <div class="usage-hero-y-axis">
+              ${[maximum, compressed ? maximum / 4 : maximum / 2, 0].map(
+                (value) =>
+                  html`<span
+                    >${isTokens ? "" : "$"}${axisFormat.format(value).replace("K", "k")}</span
+                  >`,
+              )}
+            </div>
+            <div class="usage-hero-canvas">
+              <svg viewBox="0 0 800 240" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <clipPath id="usage-hero-complete">
+                    <rect width=${partialX} height=${height}></rect>
+                  </clipPath>
+                  <clipPath id="usage-hero-partial">
+                    <rect x=${partialX} width=${width - partialX} height=${height}></rect>
+                  </clipPath>
+                  ${series.map(
+                    ({ color }, i) =>
+                      svg`<linearGradient id=${`usage-hero-gradient-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color=${color} stop-opacity=".36"></stop><stop offset="100%" stop-color=${color} stop-opacity=".025"></stop></linearGradient>`,
                   )}
-                  ${series.map(({ upper, lower, color }, i) => {
-                    const top = smoothPath(upper, xs, width, height, maximum, compressed);
-                    const bottom = smoothPath(
-                      lower.toReversed(),
-                      xs.toReversed().map((x) => width - x),
-                      width,
-                      height,
-                      maximum,
-                      compressed,
-                    );
-                    // Reflect the reversed lower boundary to close the band without changing its interpolation.
-                    return svg`<path d=${`${top} L${width},${height} L0,${height} Z`} fill=${`url(#usage-hero-gradient-${i})`} mask=${`url(#usage-hero-band-${i})`}></path>
+                </defs>
+                ${[0, height / 2, height].map(
+                  (y) =>
+                    svg`<line class="usage-hero-gridline" x1="0" x2=${width} y1=${y} y2=${y}></line>`,
+                )}
+                ${series.map(({ upper, lower, color }, i) => {
+                  const top = smoothPath(upper, xs, width, height, maximum, compressed);
+                  const bottom = smoothPath(
+                    lower.toReversed(),
+                    xs.toReversed().map((x) => width - x),
+                    width,
+                    height,
+                    maximum,
+                    compressed,
+                  );
+                  // Reflect the reversed lower boundary to close the band without changing its interpolation.
+                  return svg`<path d=${`${top} L${width},${height} L0,${height} Z`} fill=${`url(#usage-hero-gradient-${i})`} mask=${`url(#usage-hero-band-${i})`}></path>
                 <mask id=${`usage-hero-band-${i}`}><rect width=${width} height=${height} fill="white"></rect><path d=${`${bottom} L${width},${height} L0,${height} Z`} transform=${`translate(${width},0) scale(-1,1)`} fill="black"></path></mask>
                 <path d=${top} fill="none" stroke=${color} stroke-width="2" vector-effect="non-scaling-stroke" clip-path="url(#usage-hero-complete)"></path>
                 <path d=${top} fill="none" stroke=${color} stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" clip-path="url(#usage-hero-partial)"></path>`;
-                  })}
-                </svg>
-                <div class="usage-hero-hit-layer">
-                  ${days.map(({ day, providers }, i) => {
-                    const left = i === 0 ? 0 : (xs[i - 1] + xs[i]) / 2;
-                    const right = i === days.length - 1 ? width : (xs[i] + xs[i + 1]) / 2;
-                    const context = isTokens
-                      ? formatAnalysisCost(day.totalCost, day.missingCostEntries)
-                      : `${formatUsageTokens(day.totalTokens)} ${t("usage.metrics.tokens")}`;
-                    const tooltip = [
-                      formatFullDate(day.date),
-                      ...seriesIds.map(
-                        (provider) =>
-                          `${providerLabel(provider)}: ${format(providers.get(provider)?.[metric] ?? 0)}`,
-                      ),
-                      `${t("usage.breakdown.total")}: ${isTokens ? formatUsageTokens(day.totalTokens) : formatAnalysisCost(day.totalCost, day.missingCostEntries)}`,
-                      ...USAGE_TOKEN_CATEGORIES.map(
-                        ({ key, costKey, labelKey }) =>
-                          `${t(labelKey)}: ${formatUsageTokens(day[key])} ${t("usage.metrics.tokens")} · ${formatAnalysisCost(day[costKey])}`,
-                      ),
-                      context,
-                      day.date === today ? t("usage.hero.partialToday") : "",
-                    ]
-                      .filter(Boolean)
-                      .join("\n");
-                    return html`<openclaw-tooltip placement="right"
-                      ><button
-                        type="button"
-                        class="usage-hero-day"
-                        style=${`left:${(left / width) * 100}%;width:${((right - left) / width) * 100}%`}
-                        data-usage-day=${day.date}
-                        aria-label=${tooltip}
-                        aria-pressed=${selected.has(day.date)}
-                        @click=${(event: MouseEvent) => props.onSelectDay(day.date, event.shiftKey)}
-                        @keydown=${(event: KeyboardEvent) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            props.onSelectDay(day.date, event.shiftKey);
-                          } else focusHeroDay(event);
-                        }}
-                      ></button>
-                      <div slot="content" class="usage-hero-tooltip">
-                        <strong>${formatFullDate(day.date)}</strong>
-                        <dl>
-                          ${providerSeries.map(
-                            ({ provider, color }) => html`<div>
+                })}
+              </svg>
+              <div class="usage-hero-hit-layer">
+                ${days.map(({ day, providers }, i) => {
+                  const left = i === 0 ? 0 : (xs[i - 1] + xs[i]) / 2;
+                  const right = i === days.length - 1 ? width : (xs[i] + xs[i + 1]) / 2;
+                  const context = isTokens
+                    ? formatAnalysisCost(day.totalCost, day.missingCostEntries)
+                    : `${formatUsageTokens(day.totalTokens)} ${t("usage.metrics.tokens")}`;
+                  const tooltip = [
+                    formatFullDate(day.date),
+                    ...seriesIds.map(
+                      (provider) =>
+                        `${providerLabel(provider)}: ${format(providers.get(provider)?.[metric] ?? 0)}`,
+                    ),
+                    `${t("usage.breakdown.total")}: ${isTokens ? formatUsageTokens(day.totalTokens) : formatAnalysisCost(day.totalCost, day.missingCostEntries)}`,
+                    ...USAGE_TOKEN_CATEGORIES.map(
+                      ({ key, costKey, labelKey }) =>
+                        `${t(labelKey)}: ${formatUsageTokens(day[key])} ${t("usage.metrics.tokens")} · ${formatAnalysisCost(day[costKey])}`,
+                    ),
+                    context,
+                    day.date === today ? t("usage.hero.partialToday") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n");
+                  return html`<openclaw-tooltip placement="right"
+                    ><button
+                      type="button"
+                      class="usage-hero-day"
+                      style=${`left:${(left / width) * 100}%;width:${((right - left) / width) * 100}%`}
+                      data-usage-day=${day.date}
+                      aria-label=${tooltip}
+                      aria-pressed=${selected.has(day.date)}
+                      @click=${(event: MouseEvent) => props.onSelectDay(day.date, event.shiftKey)}
+                      @keydown=${(event: KeyboardEvent) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          props.onSelectDay(day.date, event.shiftKey);
+                        } else focusHeroDay(event);
+                      }}
+                    ></button>
+                    <div slot="content" class="usage-hero-tooltip">
+                      <strong>${formatFullDate(day.date)}</strong>
+                      <dl>
+                        ${providerSeries.map(
+                          ({ provider, color }) => html`<div>
+                            <dt>
+                              <span
+                                class="usage-hero-tooltip-dot"
+                                style=${`background:${color}`}
+                              ></span
+                              >${providerLabel(provider)}
+                            </dt>
+                            <dd>${format(providers.get(provider)?.[metric] ?? 0)}</dd>
+                          </div>`,
+                        )}
+                        ${USAGE_TOKEN_CATEGORIES.map(
+                          ({ key, costKey, labelKey, color }) =>
+                            html`<div>
                               <dt>
                                 <span
                                   class="usage-hero-tooltip-dot"
-                                  style=${`background:${color}`}
+                                  style=${`background:var(${color})`}
                                 ></span
-                                >${providerLabel(provider)}
+                                >${t(labelKey)}
                               </dt>
-                              <dd>${format(providers.get(provider)?.[metric] ?? 0)}</dd>
+                              <dd>
+                                ${formatUsageTokens(day[key])} · ${formatAnalysisCost(day[costKey])}
+                              </dd>
                             </div>`,
-                          )}
-                          ${USAGE_TOKEN_CATEGORIES.map(
-                            ({ key, costKey, labelKey, color }) =>
-                              html`<div>
-                                <dt>
-                                  <span
-                                    class="usage-hero-tooltip-dot"
-                                    style=${`background:var(${color})`}
-                                  ></span
-                                  >${t(labelKey)}
-                                </dt>
-                                <dd>
-                                  ${formatUsageTokens(day[key])} ·
-                                  ${formatAnalysisCost(day[costKey])}
-                                </dd>
-                              </div>`,
-                          )}
-                          <div class="usage-hero-tooltip-total">
-                            <dt>${t("usage.breakdown.total")}</dt>
-                            <dd>
-                              ${isTokens
-                                ? formatUsageTokens(day.totalTokens)
-                                : formatAnalysisCost(day.totalCost, day.missingCostEntries)}
-                            </dd>
-                          </div>
-                        </dl>
-                        <small>${context}</small>
-                        ${day.date === today
-                          ? html`<small>${t("usage.hero.partialToday")}</small>`
-                          : nothing}
-                      </div>
-                    </openclaw-tooltip>`;
-                  })}
-                </div>
+                        )}
+                        <div class="usage-hero-tooltip-total">
+                          <dt>${t("usage.breakdown.total")}</dt>
+                          <dd>
+                            ${isTokens
+                              ? formatUsageTokens(day.totalTokens)
+                              : formatAnalysisCost(day.totalCost, day.missingCostEntries)}
+                          </dd>
+                        </div>
+                      </dl>
+                      <small>${context}</small>
+                      ${day.date === today
+                        ? html`<small>${t("usage.hero.partialToday")}</small>`
+                        : nothing}
+                    </div>
+                  </openclaw-tooltip>`;
+                })}
               </div>
             </div>
             <div class="usage-hero-x-axis">
@@ -520,7 +518,8 @@ export function renderUsageHero(props: HeroProps) {
                     >${formatDayLabel(new Date(date).toISOString().slice(0, 10), spansYears)}</span
                   >`,
               )}
-            </div>`
+            </div>
+          </div>`
         : html`<p class="usage-hero-empty">${t("usage.analytics.noDailyData")}</p>`}
       ${exceedsReported
         ? html`<p class="usage-hero-note">${t("usage.analytics.componentTotals")}</p>`
