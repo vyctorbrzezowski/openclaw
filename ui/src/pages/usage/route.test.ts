@@ -67,6 +67,7 @@ describe("usage route", () => {
     setAvatarGatewayOrigin(null);
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it.each(["navigation", "disconnect", "reconnect", "client", "set", "setScope"] as const)(
@@ -117,6 +118,8 @@ describe("usage route", () => {
   it.each(["navigation", "preload"] as const)(
     "preserves query and %s cancellation ownership for all aggregate requests",
     async (kind) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(2026, 0, 15, 12));
       const { router, context, request, usageCalls } = createUsageRouter();
       const started = createDeferred();
       const response = createDeferred<typeof payload>();
@@ -153,8 +156,8 @@ describe("usage route", () => {
       const data = router.getState().matches[0]?.data;
       expect(data?.result).toEqual(payload);
       expect(data?.query).toEqual({
-        startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-        endDate: data?.query.startDate,
+        startDate: "2025-12-17",
+        endDate: "2026-01-15",
         scope: "family",
         timeZone: "local",
         agentId: "main",

@@ -7,12 +7,8 @@ import {
   formatMissingOperatorReadScopeMessage,
   isMissingOperatorReadScopeError,
 } from "../../lib/gateway-errors.ts";
+import { currentLocalDate } from "./helpers.ts";
 import type { UsageRouteData } from "./usage-page.ts";
-
-function currentLocalDate(): string {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 function errorMessage(error: unknown): string {
   if (isMissingOperatorReadScopeError(error)) {
@@ -27,10 +23,9 @@ async function loadUsageRouteData(
 ): Promise<UsageRouteData> {
   const gateway = context.gateway;
   const gatewaySnapshot = gateway.snapshot;
-  const startDate = currentLocalDate();
   const query: UsageRouteData["query"] = {
-    startDate,
-    endDate: startDate,
+    startDate: currentLocalDate(29),
+    endDate: currentLocalDate(),
     scope: "family",
     timeZone: "local",
     agentId: context.agentSelection.state.scopeId,

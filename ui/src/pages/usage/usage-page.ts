@@ -57,7 +57,7 @@ class UsagePage extends OpenClawLightDomElement {
   @state() private providerUsageUnavailable = false;
   @state() private providerUsageIncomplete = false;
   @state() private usageError: string | null = null;
-  @state() private usageStartDate = currentLocalDate();
+  @state() private usageStartDate = currentLocalDate(29);
   @state() private usageEndDate = currentLocalDate();
   @state() private usageLoadStartDate = this.usageStartDate;
   @state() private usageLoadEndDate = this.usageEndDate;
