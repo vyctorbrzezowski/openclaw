@@ -5,6 +5,7 @@ import {
   renderPanelRefreshStatus,
   type PanelRefreshStatus,
 } from "../../components/panel-refresh-status.ts";
+import { renderProviderBrandIcon } from "../../components/provider-icon.ts";
 import { renderSettingsSegmented } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import {
@@ -395,7 +396,12 @@ function renderSessionDetailPanel(
                       <span class="session-detail-identity-label"
                         >${t(`usage.filters.${badge.label}`)}</span
                       >
-                      <span class="session-detail-identity-value">${badge.value}</span>
+                      <span class="session-detail-identity-value">
+                        ${badge.label === "provider"
+                          ? renderProviderBrandIcon(badge.value)
+                          : nothing}
+                        ${badge.value}</span
+                      >
                     </span>`,
                   )}
                 </div>`

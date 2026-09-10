@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import "../../components/tooltip.ts";
 import "../../components/web-awesome.ts";
 import { icons } from "../../components/icons.ts";
+import { renderProviderBrandIcon } from "../../components/provider-icon.ts";
 import { t } from "../../i18n/index.ts";
 import { extractQueryTerms } from "./helpers.ts";
 import {
@@ -128,6 +129,9 @@ export function renderUsageQuery(
               value=${`option:${encodeURIComponent(value)}`}
               .checked=${checked}
             >
+              ${key === "provider"
+                ? html`<span slot="icon">${renderProviderBrandIcon(value)}</span>`
+                : nothing}
               ${value}
             </wa-dropdown-item>
           `;
@@ -290,6 +294,9 @@ export function renderUsageQuery(
                 const label = term.raw;
                 return html`
                   <span class="usage-query-chip">
+                    ${normalizeQueryText(term.key ?? "") === "provider"
+                      ? renderProviderBrandIcon(term.value)
+                      : nothing}
                     ${label}
                     <openclaw-tooltip .content=${t("usage.filters.remove")}>
                       <button

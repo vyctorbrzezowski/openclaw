@@ -19,6 +19,17 @@
   min-width: 0;
 }
 
+:where(.usage-page) .provider-brand-icon {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: none;
+  color: var(--usage-data-accent);
+}
+
+.usage-page :is(.btn:not(.settings-segmented__btn), select, .settings-input, textarea) {
+  border-radius: var(--radius-md);
+}
+
 /* Escape-hatch padding for dashboard content inside a .settings-group;
    matches the .settings-row inline padding. */
 .usage-panel {
@@ -336,10 +347,16 @@
   min-width: 0;
 }
 
-.usage-composition,
-.usage-cost-windows-section {
-  padding-block: var(--space-6);
+.usage-composition {
+  padding-block: var(--space-6) 0;
   border-block-start: 1px solid var(--border);
+}
+
+.usage-cost-windows-section {
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-muted) 50%, var(--bg));
 }
 
 .usage-section-heading {
@@ -367,19 +384,51 @@
 .usage-composition .cost-breakdown-legend {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-7);
+  gap: var(--space-8);
 }
 
 .usage-composition .cost-breakdown-bar {
-  min-height: var(--space-1);
+  min-height: var(--space-2);
   border: 0;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
+}
+
+.usage-composition .cost-segment:not(:last-child) {
+  box-shadow: inset -2px 0 var(--bg);
 }
 
 .usage-composition-metric {
   display: grid;
   min-width: 0;
   gap: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.usage-composition-metric:focus-visible {
+  outline: 2px solid var(--usage-data-accent);
+  outline-offset: var(--space-1);
+}
+
+.usage-composition
+  .cost-breakdown:has(.cost-segment:hover, .usage-composition-metric:is(:hover, :focus-visible)) {
+  & .cost-segment,
+  & .usage-composition-metric {
+    opacity: 0.5;
+  }
+}
+
+.usage-composition .cost-breakdown {
+  &:has(.usage-token-output:is(:hover, :focus-visible)) .usage-token-output,
+  &:has(.usage-token-input:is(:hover, :focus-visible)) .usage-token-input,
+  &:has(.usage-token-cache-write:is(:hover, :focus-visible)) .usage-token-cache-write,
+  &:has(.usage-token-cache-read:is(:hover, :focus-visible)) .usage-token-cache-read {
+    opacity: 1;
+
+    &.usage-composition-metric {
+      background: var(--bg-hover);
+      box-shadow: 0 0 0 var(--space-2) var(--bg-hover);
+    }
+  }
 }
 
 .usage-composition-label {
@@ -393,6 +442,13 @@
 .usage-composition-value {
   font-size: var(--space-6);
   font-weight: 500;
+  line-height: 1.2;
+}
+
+.usage-composition-share {
+  margin-inline-start: auto;
+  font-size: var(--control-ui-text-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .usage-composition-context {
@@ -554,7 +610,7 @@
   max-width: 100%;
   padding: var(--space-2) var(--space-7) var(--space-2) var(--space-3);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -670,7 +726,6 @@
   width: var(--space-4);
   height: var(--space-4);
   flex: none;
-  color: var(--text);
 }
 
 .usage-hero-provider-track {
@@ -736,7 +791,6 @@
   width: var(--space-4);
   height: var(--space-4);
   flex: none;
-  color: var(--series-color);
 }
 
 .usage-hero-plot {
@@ -1198,7 +1252,6 @@ openclaw-usage-dimensions {
   flex: 0 0 var(--space-4);
   width: var(--space-4);
   height: var(--space-4);
-  color: var(--muted);
 }
 
 .usage-dimensions__table .is-selected {
@@ -1313,8 +1366,9 @@ openclaw-usage-dimensions {
 
 .usage-limits-content {
   display: grid;
+  align-items: start;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-7);
+  gap: var(--space-4);
 }
 
 .usage-limit-provider,
@@ -1326,7 +1380,15 @@ openclaw-usage-dimensions {
 }
 
 .usage-limit-provider {
-  gap: var(--space-6);
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.usage-limit-provider-header {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .usage-limit-provider-name {
@@ -1340,6 +1402,12 @@ openclaw-usage-dimensions {
 
 .usage-limit-provider-name strong {
   font-weight: 500;
+}
+
+.usage-limit-provider-name .provider-brand-icon {
+  width: var(--space-5);
+  height: var(--space-5);
+  flex: none;
 }
 
 .usage-limit-details {
@@ -1370,6 +1438,11 @@ openclaw-usage-dimensions {
 
 .usage-limits .provider-usage-billing-row {
   align-items: baseline;
+}
+
+.usage-limits .provider-usage-card > .provider-usage-billing:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .usage-limits .provider-usage-billing-row strong {
@@ -2625,6 +2698,9 @@ openclaw-usage-dimensions {
 }
 
 .session-detail-identity-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--text);
@@ -3045,6 +3121,7 @@ openclaw-usage-dimensions {
 .usage-cost-windows > div,
 .usage-cost-windows dd {
   display: grid;
+  align-content: start;
   gap: var(--space-2);
 }
 
@@ -3058,6 +3135,11 @@ openclaw-usage-dimensions {
   color: var(--muted);
   font-size: var(--control-ui-text-sm);
   line-height: 1.5;
+}
+
+.usage-cost-window-context > span {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .usage-timeline-scroll,
@@ -3275,7 +3357,8 @@ openclaw-usage-dimensions {
 }
 
 .usage-session-channel,
-.usage-session-model {
+.usage-session-model,
+.usage-session-provider {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -3286,7 +3369,8 @@ openclaw-usage-dimensions {
 }
 
 .usage-session-channel > span,
-.usage-session-model > span:last-child {
+.usage-session-model > span:last-child,
+.usage-session-provider > span:last-child {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3311,7 +3395,6 @@ openclaw-usage-dimensions {
 .usage-session-model .provider-brand-icon {
   width: 100%;
   height: 100%;
-  color: inherit;
 }
 
 .usage-session-row:hover,

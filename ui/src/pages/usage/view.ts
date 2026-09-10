@@ -483,11 +483,6 @@ export function renderUsage(
                             : "usage.breakdown.costByType",
                         )}
                       </h2>
-                      <openclaw-tooltip .content=${t("usage.summary.cacheSavingsHint")}
-                        ><span class="usage-savings-note" tabindex="0"
-                          >${t("usage.hero.savingsUnavailable")}</span
-                        ></openclaw-tooltip
-                      >
                     </header>
                     ${renderCostBreakdownCompact({
                       mode: display.chartMode,

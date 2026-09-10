@@ -68,7 +68,7 @@ class UsagePage extends OpenClawLightDomElement {
   @state() private usageSelectedDays: string[] = [];
   @state() private usageSelectedHours: number[] = [];
   @state() private usageChartMode: "tokens" | "cost" = "cost";
-  @state() private usageDailyChartMode: "total" | "by-type" | "by-provider" = "total";
+  @state() private usageDailyChartMode: "total" | "by-type" | "by-provider" = "by-provider";
   @state() private usageTimeSeriesMode: "cumulative" | "per-turn" = "cumulative";
   @state() private usageDetailTab: UsageDetailTab = "tools-models";
   @state() private usageDetailOpen = false;

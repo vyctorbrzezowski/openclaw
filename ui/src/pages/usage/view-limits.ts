@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { renderProviderBrandIcon } from "../../components/provider-icon.ts";
 import {
   renderProviderUsageDetails,
   renderProviderWindows,
@@ -27,6 +28,7 @@ export function renderUsageLimits(
                 <article class="usage-limit-provider">
                   <header class="usage-limit-provider-header">
                     <div class="usage-limit-provider-name">
+                      ${renderProviderBrandIcon(provider.provider)}
                       <strong>${provider.displayName}</strong>
                       ${provider.plan
                         ? html`<span class="provider-usage-plan">${provider.plan}</span>`

@@ -198,21 +198,22 @@ export function renderUsageHero(props: HeroProps) {
         ? "var(--muted)"
         : `oklch(from var(--usage-data-accent, var(--info)) l c calc(h + ${index * 137.508}))`,
   }));
-  const chartSeries = byType
-    ? USAGE_TOKEN_CATEGORIES.map((category) => ({
-        label: t(category.labelKey),
-        values: days.map(({ day }) => day[isTokens ? category.key : category.costKey]),
-        color: `var(${category.color})`,
-      }))
-    : props.dailyChartMode === "by-provider"
-      ? providerSeries
-      : [
-          {
-            label: t("usage.daily.total"),
-            values: chartValues,
-            color: "var(--usage-data-accent, var(--info))",
-          },
-        ];
+  const chartSeries: { label: string; values: number[]; color: string; provider?: string }[] =
+    byType
+      ? USAGE_TOKEN_CATEGORIES.map((category) => ({
+          label: t(category.labelKey),
+          values: days.map(({ day }) => day[isTokens ? category.key : category.costKey]),
+          color: `var(${category.color})`,
+        }))
+      : props.dailyChartMode === "by-provider"
+        ? providerSeries
+        : [
+            {
+              label: t("usage.daily.total"),
+              values: chartValues,
+              color: "var(--usage-data-accent, var(--info))",
+            },
+          ];
   const cumulative = new Array<number>(days.length).fill(0);
   const series = chartSeries.map((entry) => {
     const lower = [...cumulative];
@@ -367,13 +368,16 @@ export function renderUsageHero(props: HeroProps) {
         ${props.dailyChartMode !== "total"
           ? html`<div class="usage-hero-legend">
               ${series.map(
-                ({ label, color }) =>
+                ({ label, color, provider }) =>
                   html`<span
                     class="usage-hero-legend-item"
                     style=${`--series-color:${color}`}
                     title=${label}
                     ><span class="usage-hero-tooltip-dot" style=${`background:${color}`}></span
-                    ><span class="usage-hero-legend-name">${label}</span></span
+                    >${provider ? renderProviderBrandIcon(provider) : nothing}<span
+                      class="usage-hero-legend-name"
+                      >${label}</span
+                    ></span
                   >`,
               )}
             </div>`
@@ -473,7 +477,9 @@ export function renderUsageHero(props: HeroProps) {
                                 class="usage-hero-tooltip-dot"
                                 style=${`background:${color}`}
                               ></span
-                              >${providerLabel(provider)}
+                              >${provider
+                                ? renderProviderBrandIcon(provider)
+                                : nothing}${providerLabel(provider)}
                             </dt>
                             <dd>${format(providers.get(provider)?.[metric] ?? 0)}</dd>
                           </div>`,

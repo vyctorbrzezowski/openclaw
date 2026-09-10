@@ -190,11 +190,13 @@ function renderCostWindowComparison(
               ${formatAnalysisCost(summary.totals.totalCost, summary.totals.missingCostEntries)}
               <span class="usage-cost-window-context"
                 >${formatUsageTokens(summary.totals.totalTokens)} ${t("usage.metrics.tokens")} ·
-                ${formatAnalysisCost(
-                  summary.totals.totalCost / summary.days,
-                  summary.totals.missingCostEntries,
-                )}
-                ${t("usage.costWindows.perDay")}</span
+                <span
+                  >${formatAnalysisCost(
+                    summary.totals.totalCost / summary.days,
+                    summary.totals.missingCostEntries,
+                  )}
+                  ${t("usage.costWindows.perDay")}</span
+                ></span
               >
             </dd>
           </div>
@@ -264,17 +266,22 @@ function renderCostBreakdownCompact(
             ${formatted}`;
           return timeline
             ? html`<div class="legend-item" title=${t(hintKey)}>${label}</div>`
-            : html`<div class="usage-composition-metric" title=${t(hintKey)}>
+            : html`<div
+                class="usage-composition-metric ${className}"
+                tabindex="0"
+                title=${t(hintKey)}
+              >
                 <span class="usage-composition-label"
-                  ><span class="legend-dot ${className}"></span>${t(labelKey)}</span
+                  ><span class="legend-dot ${className}"></span>${t(labelKey)}
+                  <span class="usage-composition-share">${percentage.toFixed(1)}%</span></span
                 >
                 <strong class="usage-composition-value">${formatted}</strong>
-                <span class="usage-composition-context"
-                  >${options.mode === "cost" && options.tokenValues
-                    ? html`${formatUsageTokens(options.tokenValues[key])}
-                      ${t("usage.metrics.tokens")} · `
-                    : nothing}${percentage.toFixed(1)}%</span
-                >
+                ${options.mode === "cost" && options.tokenValues
+                  ? html`<span class="usage-composition-context"
+                      >${formatUsageTokens(options.tokenValues[key])}
+                      ${t("usage.metrics.tokens")}</span
+                    >`
+                  : nothing}
               </div>`;
         })}
       </div>
