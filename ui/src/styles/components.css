@@ -515,30 +515,46 @@ openclaw-session-owner-chip {
   background: var(--card);
 }
 
-/* The copy glyph swap normally ships with chat styles, which the gate renders
-   without; own it here so the check never shows beside the copy icon. */
-.login-gate .chat-copy-btn__icon {
+/* Copy controls also render on routes that never load the chat stylesheet. */
+.chat-copy-btn__icon {
   position: relative;
   display: inline-flex;
   width: 14px;
   height: 14px;
 }
 
-.login-gate .chat-copy-btn__icon-copy,
-.login-gate .chat-copy-btn__icon-check {
+.chat-copy-btn__icon-copy,
+.chat-copy-btn__icon-check {
   position: absolute;
   top: 0;
   left: 0;
   transition: opacity var(--duration-fast) ease;
 }
 
-.login-gate .chat-copy-btn__icon-check,
-.login-gate .chat-copy-btn[data-copy-state="copied"] .chat-copy-btn__icon-copy {
+.chat-copy-btn__icon-check,
+.chat-copy-btn[data-copy-state="copied"] .chat-copy-btn__icon-copy {
   opacity: 0;
 }
 
-.login-gate .chat-copy-btn[data-copy-state="copied"] .chat-copy-btn__icon-check {
+.chat-copy-btn[data-copy-state="copied"] .chat-copy-btn__icon-check {
   opacity: 1;
+}
+
+.chat-copy-btn[data-copy-state="copying"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chat-copy-btn[data-copy-state="error"] {
+  border-color: var(--danger-subtle);
+  background: var(--danger-subtle);
+  color: var(--danger);
+}
+
+.chat-copy-btn[data-copy-state="copied"] {
+  border-color: var(--ok-subtle);
+  background: var(--ok-subtle);
+  color: var(--ok);
 }
 
 /* ── Steps ── */
