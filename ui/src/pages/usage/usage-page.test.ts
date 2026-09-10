@@ -191,7 +191,7 @@ describe("UsagePage cache convergence", () => {
       });
       const page = await createPage({ request } as unknown as GatewayBrowserClient, true);
       await preloadUsage(page);
-      page.querySelector<HTMLButtonElement>(".session-bar-selection")!.click();
+      page.querySelector<HTMLButtonElement>(".usage-session-open")!.click();
       await vi.advanceTimersByTimeAsync(0);
       expect(page.querySelector(".usage-cache-warning")?.textContent).toContain(
         "Checking for updated totals",
@@ -258,14 +258,14 @@ describe("UsagePage cache convergence", () => {
     });
     const page = await createPage({ request } as unknown as GatewayBrowserClient, true);
     await preloadUsage(page);
-    page.querySelectorAll<HTMLButtonElement>(".session-bar-selection")[0]!.click();
+    page.querySelectorAll<HTMLButtonElement>(".usage-session-open")[0]!.click();
     await vi.waitFor(() =>
       expect(page.querySelector(".session-log-content")?.textContent).toBe(keys[0]),
     );
 
     refreshing = true;
     refreshButton(page).click();
-    page.querySelectorAll<HTMLButtonElement>(".session-bar-selection")[1]!.click();
+    page.querySelectorAll<HTMLButtonElement>(".usage-session-open")[1]!.click();
     await vi.waitFor(() =>
       expect(page.querySelector(".session-log-content")?.textContent).toBe(keys[1]),
     );

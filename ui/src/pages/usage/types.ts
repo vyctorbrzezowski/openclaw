@@ -2,7 +2,6 @@ import type { CostUsageSummary } from "../../api/types.ts";
 import type { ApplicationContext, ApplicationGatewaySnapshot } from "../../app/context.ts";
 import type { PanelRefreshStatus } from "../../components/panel-refresh-status.ts";
 import type { UsageRetryState } from "../../lib/incomplete-usage-retry.ts";
-// Control UI view renders usageTypes screen content.
 import type {
   CostUsageDailyEntry,
   ProviderUsageSummary,
@@ -59,16 +58,7 @@ export type UsageColumnId =
   | "errors"
   | "duration";
 
-export const DEFAULT_VISIBLE_COLUMNS: UsageColumnId[] = [
-  "channel",
-  "agent",
-  "provider",
-  "model",
-  "messages",
-  "tools",
-  "errors",
-  "duration",
-];
+export const DEFAULT_VISIBLE_COLUMNS: UsageColumnId[] = ["agent", "model"];
 
 export type TimeSeriesPoint = SessionUsageTimePoint;
 
@@ -102,10 +92,22 @@ export type UsageFilterState = {
   timeZone: "local" | "utc";
 };
 
+export type UsageSessionSort =
+  | "label"
+  | "channel"
+  | "model"
+  | "tools"
+  | "duration"
+  | "tokens"
+  | "cost"
+  | "recent"
+  | "messages"
+  | "errors";
+
 type UsageDisplayState = {
   chartMode: "tokens" | "cost";
-  dailyChartMode: "total" | "by-type";
-  sessionSort: "tokens" | "cost" | "recent" | "messages" | "errors";
+  dailyChartMode: "total" | "by-type" | "by-provider";
+  sessionSort: UsageSessionSort;
   sessionSortDir: "asc" | "desc";
   recentSessions: string[];
   sessionsTab: "all" | "recent";
@@ -114,7 +116,11 @@ type UsageDisplayState = {
   headerPinned: boolean;
 };
 
+export type UsageDetailTab = "tools-models" | "conversation" | "context";
+
 type UsageDetailState = {
+  open: boolean;
+  tab: UsageDetailTab;
   context: UsageContextDetail;
   timeSeriesMode: "cumulative" | "per-turn";
   timeSeriesBreakdownMode: "total" | "by-type";
@@ -157,13 +163,14 @@ type UsageCallbacks = {
   display: {
     onExportJson: (data: UsageJsonExport) => void;
     onChartModeChange: (mode: "tokens" | "cost") => void;
-    onDailyChartModeChange: (mode: "total" | "by-type") => void;
-    onSessionSortChange: (sort: "tokens" | "cost" | "recent" | "messages" | "errors") => void;
+    onDailyChartModeChange: (mode: "total" | "by-type" | "by-provider") => void;
+    onSessionSortChange: (sort: UsageSessionSort) => void;
     onSessionSortDirChange: (dir: "asc" | "desc") => void;
     onSessionsTabChange: (tab: "all" | "recent") => void;
     onToggleColumn: (column: UsageColumnId) => void;
   };
   details: {
+    onTabChange: (tab: UsageDetailTab) => void;
     onToggleContextExpanded: () => void;
     onToggleSessionLogsExpanded: () => void;
     onLogFilterRolesChange: (next: SessionLogRole[]) => void;
@@ -172,6 +179,7 @@ type UsageCallbacks = {
     onLogFilterQueryChange: (next: string) => void;
     onLogFilterClear: () => void;
     onSelectSession: (key: string, shiftKey: boolean, orderedKeys: string[]) => void;
+    onToggleSession: (key: string) => void;
     onTimeSeriesModeChange: (mode: "cumulative" | "per-turn") => void;
     onTimeSeriesBreakdownChange: (mode: "total" | "by-type") => void;
     onTimeSeriesCursorRangeChange: (start: number | null, end: number | null) => void;

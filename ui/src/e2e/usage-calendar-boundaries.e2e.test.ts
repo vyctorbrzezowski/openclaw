@@ -94,7 +94,10 @@ suite.define(() => {
           },
         });
         await page.goto(`${suite.server.baseUrl}usage`);
+        await page.locator("#usage-scope-trigger").click();
         await page.locator(".usage-select").selectOption("local");
+        await page.locator("#usage-scope-trigger").click();
+        await page.locator("#usage-dates-trigger").click();
         const dateInputs = await page.locator(".usage-date-input").all();
         expect(dateInputs).toHaveLength(2);
         for (const input of dateInputs) {
@@ -109,8 +112,13 @@ suite.define(() => {
             mode: "specific",
             timeZone: "America/Santiago",
           });
+        await page.locator("#usage-dates-trigger").click();
         await page.getByRole("button", { name: "Skipped midnight", exact: true }).click();
         await gateway.waitForRequest("sessions.usage.timeseries");
+        await page
+          .locator(".session-detail-panel")
+          .getByRole("button", { name: "Per sample", exact: true })
+          .click();
         const bars = page.locator(".session-detail-panel .ts-bar");
         await expect.poll(() => bars.count()).toBe(2);
         await expect

@@ -169,7 +169,7 @@ suite.define(() => {
                 .click();
 
               const otherRow = page.locator(
-                `.session-bar-row[title="agent:opus:${PROOF_SESSION_ID}"]`,
+                `.usage-session-row[title="agent:opus:${PROOF_SESSION_ID}"]`,
               );
               // A rendered usage row proves the handshake and requested report both arrived.
               await otherRow.waitFor();
@@ -178,20 +178,23 @@ suite.define(() => {
               await capture(page, "01-other-owner.png");
 
               // The named family stays visible before its new current instance has a transcript.
-              const row = page.locator(`.session-bar-row[title="${PROOF_STORE_KEY}"]`);
+              const row = page.locator(`.usage-session-row[title="${PROOF_STORE_KEY}"]`);
               await row.waitFor();
               await expect.poll(() => row.count()).toBe(1);
-              const meta = row.locator(".session-bar-meta");
+              const meta = row.locator('[data-column="agent"]');
+              await expect.poll(async () => (await meta.textContent())?.trim() ?? "").toBe("main");
               await expect
-                .poll(async () => (await meta.textContent()) ?? "")
-                .toContain("agent:main");
+                .poll(async () => (await meta.textContent())?.trim() ?? "")
+                .not.toContain("opus");
               await expect
-                .poll(async () => (await meta.textContent()) ?? "")
-                .not.toContain("agent:opus");
-              await expect
-                .poll(() => otherRow.locator(".session-bar-meta").textContent())
-                .toContain("agent:opus");
-              await expect.poll(() => page.locator(".session-bar-row").count()).toBe(2);
+                .poll(() =>
+                  otherRow
+                    .locator('[data-column="agent"]')
+                    .textContent()
+                    .then((text) => text?.trim()),
+                )
+                .toBe("opus");
+              await expect.poll(() => page.locator(".usage-session-row").count()).toBe(2);
 
               await row.scrollIntoViewIfNeeded();
               await capture(page, "02-current-owner.png");

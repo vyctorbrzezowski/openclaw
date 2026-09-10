@@ -201,7 +201,7 @@ describe("UsagePage detail requests", () => {
     const page = await createPage(client, true, context);
     await preloadUsage(page);
     context.setGatewaySnapshot({ suspensionPhase: "draining" });
-    page.querySelector<HTMLButtonElement>(".session-bar-selection")!.click();
+    page.querySelector<HTMLButtonElement>(".usage-session-open")!.click();
     await vi.waitFor(() => {
       expect(page.details.timeSeries.status.awaitingGateway).toBe(true);
       expect(page.details.sessionLogs.status.awaitingGateway).toBe(true);
@@ -358,7 +358,7 @@ describe("UsagePage detail requests", () => {
     expect(request.mock.calls.filter(([, params]) => params?.key)).toHaveLength(0);
 
     const selectSession = (index: number) => {
-      page.querySelectorAll<HTMLButtonElement>(".session-bar-selection")[index]!.click();
+      page.querySelectorAll<HTMLButtonElement>(".usage-session-open")[index]!.click();
     };
     selectSession(0);
     await vi.waitFor(() =>
@@ -485,7 +485,7 @@ describe("UsagePage detail requests", () => {
     });
     const page = await createPage({ request } as unknown as GatewayBrowserClient, true);
     await preloadUsage(page);
-    page.querySelector<HTMLButtonElement>(".session-bar-selection")!.click();
+    page.querySelector<HTMLButtonElement>(".usage-session-open")!.click();
     await vi.waitFor(() =>
       expect(page.querySelector(".context-details-panel")?.textContent).toContain(report),
     );

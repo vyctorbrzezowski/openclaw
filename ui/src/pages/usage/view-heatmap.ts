@@ -1,5 +1,4 @@
 import { html, nothing, svg } from "lit";
-import { renderSettingsSection } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import { buildUsageHeatmap, type UsageHeatmap } from "./heatmap.ts";
 import { formatFullDate } from "./metrics.ts";
@@ -19,7 +18,8 @@ const WEEKDAY_LABEL_ROWS = [
 ];
 
 function renderHeatmapSvg(heatmap: UsageHeatmap) {
-  const width = HEATMAP_LEFT + heatmap.weeks.length * HEATMAP_PITCH;
+  // Keep the final month label inside the SVG even for a one-week range.
+  const width = HEATMAP_LEFT * 2 + heatmap.weeks.length * HEATMAP_PITCH;
   const height = HEATMAP_TOP + 7 * HEATMAP_PITCH;
   const numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
   const weekdayFormat = new Intl.DateTimeFormat(undefined, {
@@ -61,7 +61,7 @@ function renderHeatmapSvg(heatmap: UsageHeatmap) {
               rx="2.5"
               data-tooltip=${tooltip}
               aria-label=${tooltip}
-            ></rect>
+            ><title>${tooltip}</title></rect>
           `;
         }),
       )}
@@ -87,12 +87,14 @@ export function renderUsageHeatmap(
       <span>${t("usage.heatmap.more")}</span>
     </div>
   `;
-  return renderSettingsSection(
-    {
-      title: t("usage.heatmap.title"),
-      description: t("usage.heatmap.subtitle"),
-      actions: legend,
-    },
-    html`<div class="usage-panel usage-heatmap">${renderHeatmapSvg(heatmap)}</div>`,
-  );
+  return html`<section class="usage-pattern-section">
+    <div class="usage-pattern-header">
+      <div>
+        <h3>${t("usage.heatmap.title")}</h3>
+        <p class="usage-pattern-description">${t("usage.heatmap.subtitle")}</p>
+      </div>
+      ${legend}
+    </div>
+    <div class="usage-heatmap">${renderHeatmapSvg(heatmap)}</div>
+  </section>`;
 }

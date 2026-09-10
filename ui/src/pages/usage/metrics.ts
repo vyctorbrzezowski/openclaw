@@ -1,18 +1,33 @@
 import { normalizeLowercaseStringOrEmpty } from "@openclaw/normalization-core/string-coerce";
-// Control UI view renders usage metrics screen content.
-import { html } from "lit";
+import { html, nothing } from "lit";
 import {
   addCostUsageTotals,
   createEmptyCostUsageTotals,
 } from "../../../../src/infra/session-cost-usage-totals.js";
 import { createUsageAggregateAccumulator } from "../../../../src/shared/usage-aggregates.js";
-import { renderSettingsSection } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import { formatCompactTokenCount } from "../../lib/format.ts";
 import type { UsageSessionEntry, UsageTotals, UsageAggregates } from "./types.ts";
 
 const CHARS_PER_TOKEN = 4;
 const DAY_MS = 86_400_000;
+
+export const USAGE_TOKEN_CATEGORIES = (
+  [
+    ["output", "usage.details.assistantOutputTokens", "Out", "--usage-token-output"],
+    ["input", "usage.details.userToolInputTokens", "In", "--usage-token-input"],
+    ["cacheWrite", "usage.details.tokensWrittenToCache", "CW", "--usage-token-cache-write"],
+    ["cacheRead", "usage.details.tokensReadFromCache", "CR", "--usage-token-cache-read"],
+  ] as const
+).map(([key, hintKey, short, color]) => ({
+  key,
+  costKey: `${key}Cost` as const,
+  className: `usage-token-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
+  labelKey: `usage.breakdown.${key}`,
+  hintKey,
+  short,
+  color,
+}));
 
 type UsageCostWindowSummary = {
   days: number;
@@ -32,7 +47,20 @@ function formatUsageTokens(n: number): string {
 // Usage charts choose fixed precision from the surrounding scale; the shared
 // adaptive cost formatter would change labels as values cross its thresholds.
 function formatUsageCost(n: number, decimals = 2): string {
-  return `$${n.toFixed(decimals)}`;
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+}
+
+function formatAnalysisCost(value: number, missingCostEntries = 0): string {
+  if (value === 0 && missingCostEntries > 0) return "—";
+  const magnitude = Math.abs(value);
+  const decimals = magnitude === 0 || magnitude >= 0.01 ? 2 : magnitude >= 0.0001 ? 4 : 6;
+  const formatted =
+    magnitude > 0 && magnitude < 0.0000005
+      ? value < 0
+        ? ">-$0.000001"
+        : "<$0.000001"
+      : formatUsageCost(value, decimals);
+  return missingCostEntries > 0 ? `${formatted}*` : formatted;
 }
 
 function formatHourLabel(hour: number): string {
@@ -150,7 +178,7 @@ function buildPeakErrorHours(sessions: UsageSessionEntry[], timeZone: "local" | 
     .map((entry) => ({
       label: formatHourLabel(entry.hour),
       value: `${(entry.rate * 100).toFixed(2)}%`,
-      sub: `${Math.round(entry.errors)} ${normalizeLowercaseStringOrEmpty(t("usage.overview.errors"))} · ${Math.round(entry.msgs)} ${t("usage.overview.messagesAbbrev")}`,
+      sub: `${t(Math.round(entry.errors) === 1 ? "usage.overview.errorCountOne" : "usage.overview.errorCountOther", { count: Math.round(entry.errors).toLocaleString("en-US") }).replaceAll(" ", "\u00a0")} · ${formatUsageTokens(Math.round(entry.msgs))}\u00a0${t("usage.overview.messagesAbbrev")}`,
     }));
 }
 
@@ -170,23 +198,11 @@ function getZonedWeekday(date: Date, zone: "local" | "utc"): number {
 }
 
 function getUtcQuarterHourBucketDate(dateStr: string, quarterIndex: number): Date | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-  if (!match || !Number.isInteger(quarterIndex) || quarterIndex < 0 || quarterIndex > 95) {
+  if (!Number.isInteger(quarterIndex) || quarterIndex < 0 || quarterIndex > 95) {
     return null;
   }
-  const [, yStr, mStr, dStr] = match;
-  const y = Number(yStr);
-  const m = Number(mStr);
-  const d = Number(dStr);
-  const date = new Date(Date.UTC(y, m - 1, d, 0, quarterIndex * 15));
-  if (
-    Number.isNaN(date.valueOf()) ||
-    date.getUTCFullYear() !== y ||
-    date.getUTCMonth() !== m - 1 ||
-    date.getUTCDate() !== d
-  ) {
-    return null;
-  }
+  const date = parseYmdDate(dateStr, "utc");
+  date?.setUTCMinutes(quarterIndex * 15);
   return date;
 }
 
@@ -352,85 +368,81 @@ function renderUsageMosaic(
 ) {
   const stats = buildUsageMosaicStats(sessions, timeZone);
   if (!stats.hasData) {
-    return renderSettingsSection(
-      {
-        title: t("usage.mosaic.title"),
-        description: t("usage.mosaic.subtitleEmpty"),
-        actions: html`
-          <div class="usage-mosaic-total">
-            ${formatUsageTokens(0)} ${normalizeLowercaseStringOrEmpty(t("usage.metrics.tokens"))}
-          </div>
-        `,
-      },
-      html`
-        <div class="usage-panel usage-mosaic">
-          <div class="usage-empty-block usage-empty-block--compact">
-            ${t("usage.mosaic.noTimelineData")}
-          </div>
-        </div>
-      `,
-    );
+    return html`<section class="usage-pattern-section">
+      <h3>${t("usage.mosaic.title")}</h3>
+      <p class="usage-pattern-description">${t("usage.mosaic.subtitleEmpty")}</p>
+      <p class="usage-pattern-description">${t("usage.mosaic.noTimelineData")}</p>
+    </section>`;
   }
 
+  const hourLabelKeys = ["midnight", "fourAm", "eightAm", "noon", "fourPm", "eightPm"];
   const maxHour = Math.max(...stats.hourTotals, 1);
   const maxWeekday = Math.max(...stats.weekdayTotals.map((d) => d.tokens), 1);
 
-  return renderSettingsSection(
-    {
-      title: t("usage.mosaic.title"),
-      description: t("usage.mosaic.subtitle", {
-        zone:
-          timeZone === "utc" ? t("usage.filters.timeZoneUtc") : t("usage.filters.timeZoneLocal"),
-      }),
-      actions: html`
-        <div class="usage-mosaic-total">
-          ${formatUsageTokens(stats.totalTokens)}
-          ${normalizeLowercaseStringOrEmpty(t("usage.metrics.tokens"))}
-        </div>
-      `,
-    },
-    html`
-      <div class="usage-panel usage-mosaic">
-        <div class="usage-mosaic-grid">
-          <div class="usage-mosaic-section">
-            <div class="usage-mosaic-section-title">${t("usage.mosaic.dayOfWeek")}</div>
-            <div class="usage-daypart-grid">
-              ${stats.weekdayTotals.map((part) => {
-                const intensity = Math.min(part.tokens / maxWeekday, 1);
-                const bg =
-                  part.tokens > 0
-                    ? `color-mix(in srgb, var(--accent) ${(12 + intensity * 60).toFixed(1)}%, transparent)`
-                    : "transparent";
-                return html`
-                  <div class="usage-daypart-cell" style="background: ${bg};">
-                    <div class="usage-daypart-label">${part.label}</div>
-                    <div class="usage-daypart-value">${formatUsageTokens(part.tokens)}</div>
+  return html`<section class="usage-pattern-section">
+    <div class="usage-pattern-header">
+      <div>
+        <h3>${t("usage.mosaic.title")}</h3>
+        <p class="usage-pattern-description">
+          ${t("usage.mosaic.subtitle", {
+            zone:
+              timeZone === "utc"
+                ? t("usage.filters.timeZoneUtc")
+                : t("usage.filters.timeZoneLocal"),
+          })}
+        </p>
+      </div>
+      <span class="usage-mosaic-total"
+        >${formatUsageTokens(stats.totalTokens)}
+        ${normalizeLowercaseStringOrEmpty(t("usage.metrics.tokens"))}</span
+      >
+    </div>
+    <div class="usage-mosaic">
+      <div class="usage-mosaic-grid">
+        <div class="usage-mosaic-section">
+          <div class="usage-mosaic-section-title">${t("usage.mosaic.dayOfWeek")}</div>
+          <div class="usage-daypart-grid">
+            ${stats.weekdayTotals.map((part) => {
+              const intensity = Math.min(part.tokens / maxWeekday, 1);
+              return html`
+                <div class="usage-daypart-cell">
+                  <div class="usage-daypart-label">${part.label}</div>
+                  <div class="usage-daypart-value" title=${part.tokens.toLocaleString("en-US")}>
+                    ${part.tokens.toLocaleString("en-US", {
+                      notation: "compact",
+                      maximumSignificantDigits: 3,
+                    })}
                   </div>
-                `;
-              })}
-            </div>
+                  <div class="usage-daypart-track" aria-hidden="true">
+                    <span style="width: ${(intensity * 100).toFixed(1)}%"></span>
+                  </div>
+                </div>
+              `;
+            })}
           </div>
-          <div class="usage-mosaic-section">
-            <div class="usage-mosaic-section-title">
-              <span>${t("usage.filters.hours")}</span>
-              <span class="usage-mosaic-sub">0 → 23</span>
-            </div>
-            <div class="usage-hour-grid">
-              ${stats.hourTotals.map((value, hour) => {
-                const intensity = Math.min(value / maxHour, 1);
-                const bg =
-                  value > 0
-                    ? `color-mix(in srgb, var(--accent) ${(8 + intensity * 70).toFixed(1)}%, transparent)`
-                    : "transparent";
-                const title = `${hour}:00 · ${formatUsageTokens(value)} ${normalizeLowercaseStringOrEmpty(
-                  t("usage.metrics.tokens"),
-                )}`;
-                const border =
-                  intensity > 0.7
-                    ? "color-mix(in srgb, var(--accent) 60%, transparent)"
-                    : "color-mix(in srgb, var(--accent) 24%, transparent)";
-                const selected = selectedHours.includes(hour);
-                return html`
+        </div>
+        <div class="usage-mosaic-section">
+          <div class="usage-mosaic-section-title">
+            <span>${t("usage.filters.hours")}</span>
+            <span class="usage-mosaic-sub">0 → 23</span>
+          </div>
+          <div class="usage-hour-grid">
+            ${stats.hourTotals.map((value, hour) => {
+              const intensity = Math.min(value / maxHour, 1);
+              const bg =
+                value > 0
+                  ? `color-mix(in srgb, var(--usage-data-accent) ${(8 + intensity * 70).toFixed(1)}%, transparent)`
+                  : "transparent";
+              const title = `${hour}:00 · ${formatUsageTokens(value)} ${normalizeLowercaseStringOrEmpty(
+                t("usage.metrics.tokens"),
+              )}`;
+              const border =
+                intensity > 0.7
+                  ? "color-mix(in srgb, var(--usage-data-accent) 60%, transparent)"
+                  : "color-mix(in srgb, var(--usage-data-accent) 24%, transparent)";
+              const selected = selectedHours.includes(hour);
+              return html`
+                <div class="usage-hour-column">
                   <button
                     type="button"
                     class="usage-hour-cell ${selected ? "selected" : ""}"
@@ -440,47 +452,45 @@ function renderUsageMosaic(
                     aria-pressed=${selected ? "true" : "false"}
                     @click=${(e: MouseEvent) => onSelectHour(hour, e.shiftKey)}
                   ></button>
-                `;
-              })}
-            </div>
-            <div class="usage-hour-labels">
-              <span>${t("usage.mosaic.midnight")}</span>
-              <span>${t("usage.mosaic.fourAm")}</span>
-              <span>${t("usage.mosaic.eightAm")}</span>
-              <span>${t("usage.mosaic.noon")}</span>
-              <span>${t("usage.mosaic.fourPm")}</span>
-              <span>${t("usage.mosaic.eightPm")}</span>
-            </div>
-            <div class="usage-hour-legend">
-              <span></span>
-              ${t("usage.mosaic.legend")}
-            </div>
+                  ${hour % 4 === 0
+                    ? html`<span class="usage-hour-label" aria-hidden="true"
+                        >${t(`usage.mosaic.${hourLabelKeys[hour / 4]}`)}</span
+                      >`
+                    : nothing}
+                </div>
+              `;
+            })}
+          </div>
+          <div class="usage-hour-legend">
+            <span></span>
+            ${t("usage.mosaic.legend")}
           </div>
         </div>
       </div>
-    `,
-  );
+    </div>
+  </section>`;
 }
 
 function formatIsoDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function parseYmdDate(dateStr: string): Date | null {
+function parseYmdDate(dateStr: string, zone: "local" | "utc"): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
   if (!match) {
     return null;
   }
-  const [, y, m, d] = match;
-  const year = Number(y);
-  const monthIndex = Number(m) - 1;
-  const day = Number(d);
-  const date = new Date(year, monthIndex, day);
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const utc = zone === "utc";
+  const date = utc ? new Date(Date.UTC(year, monthIndex, day)) : new Date(year, monthIndex, day);
+  // Round-trip in the same calendar, retaining rejection of years 0000–0099
+  // and local dates skipped by a time-zone transition.
   if (
-    Number.isNaN(date.valueOf()) ||
-    date.getFullYear() !== year ||
-    date.getMonth() !== monthIndex ||
-    date.getDate() !== day
+    (utc ? date.getUTCFullYear() : date.getFullYear()) !== year ||
+    (utc ? date.getUTCMonth() : date.getMonth()) !== monthIndex ||
+    (utc ? date.getUTCDate() : date.getDate()) !== day
   ) {
     return null;
   }
@@ -488,39 +498,28 @@ function parseYmdDate(dateStr: string): Date | null {
 }
 
 function parseIsoDayIndex(dateStr: string): number | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-  if (!match) {
-    return null;
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const timestamp = Date.UTC(year, month - 1, day);
-  const date = new Date(timestamp);
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return null;
-  }
-  return timestamp / DAY_MS;
+  const date = parseYmdDate(dateStr, "utc");
+  return date === null ? null : date.getTime() / DAY_MS;
 }
 
 function formatIsoDayIndex(dayIndex: number): string {
   return new Date(dayIndex * DAY_MS).toISOString().slice(0, 10);
 }
 
-function formatDayLabel(dateStr: string): string {
-  const date = parseYmdDate(dateStr);
+function formatDayLabel(dateStr: string, includeYear = false): string {
+  const date = parseYmdDate(dateStr, "local");
   if (!date) {
     return dateStr;
   }
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: includeYear ? "numeric" : undefined,
+  });
 }
 
 function formatFullDate(dateStr: string): string {
-  const date = parseYmdDate(dateStr);
+  const date = parseYmdDate(dateStr, "local");
   if (!date) {
     return dateStr;
   }
@@ -603,13 +602,11 @@ const buildAggregatesFromSessions = (
 };
 
 type UsageInsightStats = {
-  durationSumMs: number;
   durationCount: number;
   avgDurationMs: number;
   throughputTokensPerMin?: number;
   throughputCostPerMin?: number;
   errorRate: number;
-  peakErrorDay?: { date: string; errors: number; messages: number; rate: number };
 };
 
 const buildUsageInsightStats = (
@@ -636,34 +633,13 @@ const buildUsageInsightStats = (
   const errorRate = aggregates.messages.total
     ? aggregates.messages.errors / aggregates.messages.total
     : 0;
-  let peakErrorDay: UsageInsightStats["peakErrorDay"];
-  for (const day of aggregates.daily) {
-    if (day.messages <= 0 || day.errors <= 0) {
-      continue;
-    }
-    const candidate = {
-      date: day.date,
-      errors: day.errors,
-      messages: day.messages,
-      rate: day.errors / day.messages,
-    };
-    if (
-      !peakErrorDay ||
-      candidate.rate > peakErrorDay.rate ||
-      (candidate.rate === peakErrorDay.rate && candidate.errors > peakErrorDay.errors)
-    ) {
-      peakErrorDay = candidate;
-    }
-  }
 
   return {
-    durationSumMs,
     durationCount,
     avgDurationMs,
     throughputTokensPerMin,
     throughputCostPerMin,
     errorRate,
-    peakErrorDay,
   };
 };
 
@@ -675,6 +651,7 @@ export {
   buildPeakErrorHours,
   buildUsageInsightStats,
   charsToTokens,
+  formatAnalysisCost,
   formatUsageCost,
   formatDayLabel,
   formatFullDate,

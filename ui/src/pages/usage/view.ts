@@ -1,53 +1,43 @@
-// Control UI view renders usage screen content.
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import {
   addCostUsageTotals,
   createEmptyCostUsageTotals,
 } from "../../../../src/infra/session-cost-usage-totals.js";
-import { renderProviderUsageDetails } from "../../components/provider-usage.ts";
-import {
-  renderSettingsPage,
-  renderSettingsSection,
-  renderSettingsSegmented,
-} from "../../components/settings-ui.ts";
+import { titleForRoute } from "../../app-navigation.ts";
+import "../../components/web-awesome-popover.ts";
+import { icons } from "../../components/icons.ts";
+import { renderSettingsPage, renderSettingsSegmented } from "../../components/settings-ui.ts";
 import "../../components/tooltip.ts";
 import "../../components/web-awesome.ts";
 import { t } from "../../i18n/index.ts";
 import { downloadTextFile } from "../../lib/download.ts";
 import "../../styles/usage.css";
-import type { ProviderUsageSummary } from "./data-types.ts";
-import { extractQueryTerms, filterSessionsByQuery } from "./helpers.ts";
+import { filterSessionsByQuery } from "./helpers.ts";
 import {
   buildAggregatesFromSessions,
   buildPeakErrorHours,
   buildUsageInsightStats,
-  formatUsageCost,
   formatIsoDate,
-  formatUsageTokens,
+  formatDayLabel,
   renderUsageMosaic,
   sessionTouchesSelectedHours,
 } from "./metrics.ts";
-import {
-  applySuggestionToQuery,
-  buildDailyCsv,
-  buildQuerySuggestions,
-  buildSessionsCsv,
-  buildUsageFilterOptions,
-  normalizeQueryText,
-  removeQueryToken,
-  setQueryTokensForKey,
-} from "./query.ts";
-import type { UsageFilterState, UsageProps, UsageSessionEntry, UsageTotals } from "./types.ts";
+import { buildDailyCsv, buildSessionsCsv, normalizeQueryText } from "./query.ts";
+import type { UsageProps, UsageSessionEntry, UsageTotals } from "./types.ts";
 import { renderSessionDetailPanel, usageDateKey } from "./view-details.ts";
+import { renderUsageDimensions } from "./view-dimensions.ts";
 import { renderUsageHeatmap } from "./view-heatmap.ts";
+import { renderUsageHero } from "./view-hero.ts";
+import { renderUsageLimits } from "./view-limits.ts";
+import { renderUsageLoadingState } from "./view-loading.ts";
 import {
   renderCostBreakdownCompact,
   renderCostWindowComparison,
-  renderDailyChartCompact,
   renderFilterChips,
   renderSessionsCard,
-  renderUsageInsights,
 } from "./view-overview.ts";
+import { renderUsageQuery } from "./view-query.ts";
+import { renderUsageOperations } from "./view-summary.ts";
 
 function renderUsageLoadingStatus(label: unknown) {
   return html`
@@ -58,117 +48,29 @@ function renderUsageLoadingStatus(label: unknown) {
   `;
 }
 
-function renderUsageLoadingState(filters: UsageFilterState) {
-  return renderSettingsSection(
-    {
-      title: t("usage.loading.title"),
-      actions: renderUsageLoadingStatus(t("usage.loading.badge")),
-    },
-    html`
-      <div class="usage-panel usage-loading-card">
-        <div class="usage-loading-header">
-          <div class="usage-loading-controls">
-            <div class="usage-date-range usage-date-range--loading">
-              <input class="usage-date-input" type="date" .value=${filters.startDate} disabled />
-              <span class="usage-separator">${t("usage.filters.to")}</span>
-              <input class="usage-date-input" type="date" .value=${filters.endDate} disabled />
-            </div>
-          </div>
-        </div>
-        <div class="usage-loading-grid">
-          <div class="skeleton usage-skeleton-block usage-skeleton-block--tall"></div>
-          <div class="skeleton usage-skeleton-block"></div>
-          <div class="skeleton usage-skeleton-block"></div>
-        </div>
-      </div>
-    `,
-  );
-}
-
 function renderUsageEmptyState(onRefresh: () => void) {
   return html`
     <section class="settings-group usage-panel usage-empty-state">
       <div class="usage-empty-state__title">${t("usage.empty.title")}</div>
       <div class="card-sub usage-empty-state__subtitle">${t("usage.empty.subtitle")}</div>
-      <div class="usage-empty-state__features">
-        <span class="usage-empty-state__feature">${t("usage.empty.featureOverview")}</span>
-        <span class="usage-empty-state__feature">${t("usage.empty.featureSessions")}</span>
-        <span class="usage-empty-state__feature">${t("usage.empty.featureTimeline")}</span>
-      </div>
       <div class="usage-empty-state__actions">
-        <button class="btn primary" @click=${onRefresh}>${t("common.refresh")}</button>
+        <button class="btn" @click=${onRefresh}>${t("common.refresh")}</button>
       </div>
     </section>
   `;
 }
 
-type ProviderUsageSnapshot = ProviderUsageSummary["providers"][number];
-
-function renderProviderUsage(
-  providers: ProviderUsageSnapshot[],
-  unavailable: boolean,
-  stalled: boolean,
+export function renderUsage(
+  props: UsageProps,
+  agentScopeControl: TemplateResult | typeof nothing = nothing,
 ) {
-  const notice = stalled
-    ? html`<div class="callout warning usage-callout">${t("usage.providerUsage.stalled")}</div>`
-    : unavailable
-      ? html`<div class="callout warning usage-callout">
-          ${t("usage.providerUsage.unavailable")}
-        </div>`
-      : nothing;
-  if (providers.length === 0) {
-    return notice;
-  }
-  return renderSettingsSection(
-    {
-      title: t("usage.providerUsage.title"),
-      count: providers.length,
-      description: t("usage.providerUsage.subtitle"),
-    },
-    html`
-      ${notice}
-      <div class="usage-panel provider-usage-section">
-        <div class="provider-usage-grid">
-          ${providers.map(
-            (provider) => html`
-              <article class="provider-usage-card">
-                <div class="provider-usage-card__header">
-                  <div>
-                    <div class="provider-usage-card__name">${provider.displayName}</div>
-                    <div class="provider-usage-card__id">${provider.provider}</div>
-                  </div>
-                  ${
-                    provider.plan
-                      ? html`<span class="provider-usage-plan">${provider.plan}</span>`
-                      : nothing
-                  }
-                </div>
-                ${renderProviderUsageDetails(provider)}
-              </article>
-            `,
-          )}
-        </div>
-      </div>
-    `,
-  );
-}
-
-export function renderUsage(props: UsageProps) {
   const { data, filters, display, detail, callbacks } = props;
   const filterActions = callbacks.filters;
   const displayActions = callbacks.display;
   const detailActions = callbacks.details;
 
-  if (data.loading && !data.totals) {
-    return renderSettingsPage(
-      html`<div class="usage-page">${renderUsageLoadingState(filters)}</div>`,
-      { wide: true },
-    );
-  }
-
   const isTokenMode = display.chartMode === "tokens";
   const hasQuery = filters.query.trim().length > 0;
-  const hasDraftQuery = filters.queryDraft.trim().length > 0;
   const selectedDaySet = new Set(filters.selectedDays);
   const selectedSessionSet = new Set(filters.selectedSessions);
 
@@ -204,23 +106,11 @@ export function renderUsage(props: UsageProps) {
     );
   };
   const filteredSessions = queryResult.sessions.filter(matchesSelectedDays);
-  const queryWarnings = queryResult.warnings;
-  const filterOptions = buildUsageFilterOptions(agentScopedSessions, data.aggregates);
-  const querySuggestions = buildQuerySuggestions(filters.queryDraft, filterOptions);
-  const queryTerms = extractQueryTerms(filters.queryDraft);
-  const selectedValuesFor = (key: string): string[] => {
-    const normalized = normalizeQueryText(key);
-    return queryTerms
-      .filter((term) => normalizeQueryText(term.key ?? "") === normalized)
-      .map((term) => term.value)
-      .filter(Boolean);
-  };
 
   // Get first selected session for detail view (timeseries, logs)
   const primarySelectedEntry =
-    filters.selectedSessions.length === 1
-      ? (data.sessions.find((s) => s.key === filters.selectedSessions[0]) ??
-        filteredSessions.find((s) => s.key === filters.selectedSessions[0]))
+    props.detail.open && filters.selectedSessions.length === 1
+      ? data.sessions.find((s) => s.key === filters.selectedSessions[0])
       : null;
 
   const scopedSessions = selectedSessionSet.size
@@ -233,7 +123,8 @@ export function renderUsage(props: UsageProps) {
     filters.selectedHours.length > 0 ||
     Boolean(filters.agentId);
   const hasAggregateFilters = hasSessionFilters || selectedDaySet.size > 0;
-  const computeTotals = (sources: Iterable<UsageTotals | null | undefined>): UsageTotals => {
+  const computeTotals = (sources: Array<UsageTotals | null | undefined>): UsageTotals | null => {
+    if (sources.length > 0 && sources.every((source) => !source)) return null;
     const totals = createEmptyCostUsageTotals();
     for (const source of sources) {
       if (source) {
@@ -263,11 +154,13 @@ export function renderUsage(props: UsageProps) {
     : hasSessionFilters
       ? computeTotals(aggregateSessions.map((session) => session.usage))
       : data.totals;
-  const displaySessionCount = aggregateSessions.length;
   const totalSessions = agentScopedSessions.length;
-  const activeAggregates = hasAggregateFilters
-    ? buildAggregatesFromSessions(aggregateSessions)
+  const scopedAggregates = hasSessionFilters
+    ? buildAggregatesFromSessions(scopedSessions)
     : buildAggregatesFromSessions([], data.aggregates);
+  const activeAggregates = selectedDaySet.size
+    ? buildAggregatesFromSessions(aggregateSessions)
+    : scopedAggregates;
   const insightsUseVisiblePage = data.sessionsLimitReached && !hasAggregateFilters;
   const insightTotals = insightsUseVisiblePage
     ? computeTotals(aggregateSessions.map((session) => session.usage))
@@ -280,7 +173,15 @@ export function renderUsage(props: UsageProps) {
     ? nothing
     : renderCostWindowComparison(data.costDaily, filters.startDate, filters.endDate);
 
-  const insightStats = buildUsageInsightStats(aggregateSessions, insightTotals, insightAggregates);
+  // Session duration and message counters have no daily equivalent in this response.
+  const operationsTotals = selectedDaySet.size
+    ? computeTotals(aggregateSessions.map((session) => session.usage))
+    : insightTotals;
+  const operationsStats = buildUsageInsightStats(
+    aggregateSessions,
+    operationsTotals,
+    insightAggregates,
+  );
   // The gateway always returns a totals object (all-zero when idle), so key
   // the empty state off content — and never render it under an error callout,
   // where "no usage data yet" would misexplain the failure.
@@ -290,14 +191,14 @@ export function renderUsage(props: UsageProps) {
     data.sessions.length === 0 &&
     (data.totals?.totalTokens ?? 0) === 0;
   const hasMissingCost =
-    (insightTotals?.missingCostEntries ?? 0) > 0 ||
-    (insightTotals
-      ? insightTotals.totalTokens > 0 &&
-        insightTotals.totalCost === 0 &&
-        insightTotals.input +
-          insightTotals.output +
-          insightTotals.cacheRead +
-          insightTotals.cacheWrite >
+    (operationsTotals?.missingCostEntries ?? 0) > 0 ||
+    (operationsTotals
+      ? operationsTotals.totalTokens > 0 &&
+        operationsTotals.totalCost === 0 &&
+        operationsTotals.input +
+          operationsTotals.output +
+          operationsTotals.cacheRead +
+          operationsTotals.cacheWrite >
           0
       : false);
   const datePresets = [
@@ -318,540 +219,365 @@ export function renderUsage(props: UsageProps) {
     filterActions.onStartDateChange("1970-01-01");
     filterActions.onEndDateChange(formatIsoDate(new Date()));
   };
-  const renderFilterSelect = (key: string, label: string, options: string[]) => {
-    if (options.length === 0) {
-      return nothing;
-    }
-    const selected = selectedValuesFor(key);
-    const selectedSet = new Set(selected.map((value) => normalizeQueryText(value)));
-    const allSelected =
-      options.length > 0 && options.every((value) => selectedSet.has(normalizeQueryText(value)));
-    const selectedCount = selected.length;
-    return html`
-      <wa-dropdown
-        class="usage-filter-select"
-        placement="bottom-start"
-        @wa-select=${(event: CustomEvent<{ item: { value?: string; checked: boolean } }>) => {
-          event.preventDefault();
-          const value = event.detail.item.value;
-          if (value === "command:select-all") {
-            filterActions.onQueryDraftChange(
-              setQueryTokensForKey(filters.queryDraft, key, options),
-            );
-            return;
-          }
-          if (value === "command:clear") {
-            filterActions.onQueryDraftChange(setQueryTokensForKey(filters.queryDraft, key, []));
-            return;
-          }
-          if (value?.startsWith("option:")) {
-            const optionValue = decodeURIComponent(value.slice("option:".length));
-            filterActions.onQueryDraftChange(
-              setQueryTokensForKey(
-                filters.queryDraft,
-                key,
-                event.detail.item.checked
-                  ? [...selected, optionValue]
-                  : selected.filter(
-                      (entry) => normalizeQueryText(entry) !== normalizeQueryText(optionValue),
-                    ),
-              ),
-            );
-          }
-        }}
-      >
-        <button slot="trigger" type="button" class="usage-filter-trigger">
-          <span>${label}</span>
-          ${
-            selectedCount > 0
-              ? html`<span class="settings-count">${selectedCount}</span>`
-              : html` <span class="settings-count">${t("usage.filters.all")}</span> `
-          }
-        </button>
-        <wa-dropdown-item value="command:select-all" ?disabled=${allSelected}>
-          ${t("usage.filters.selectAll")}
-        </wa-dropdown-item>
-        <wa-dropdown-item value="command:clear" ?disabled=${selectedCount === 0}>
-          ${t("usage.filters.clear")}
-        </wa-dropdown-item>
-        <div class="session-menu__separator" role="separator"></div>
-        ${options.map((value) => {
-          const checked = selectedSet.has(normalizeQueryText(value));
-          return html`
-            <wa-dropdown-item
-              class="usage-filter-option"
-              type="checkbox"
-              value=${`option:${encodeURIComponent(value)}`}
-              .checked=${checked}
-            >
-              ${value}
-            </wa-dropdown-item>
-          `;
-        })}
-      </wa-dropdown>
-    `;
-  };
   const exportStamp = formatIsoDate(new Date());
+  const rangeDays =
+    Math.round((Date.parse(filters.endDate) - Date.parse(filters.startDate)) / 86400000) + 1;
+  const dateInputs = [
+    { key: "startDate", onChange: filterActions.onStartDateChange },
+    { key: "endDate", onChange: filterActions.onEndDateChange },
+  ] as const;
 
+  const dateControls = html`<div class="usage-date-range">
+      ${dateInputs.map(
+        ({ key, onChange }) => html`<label class="usage-date-field">
+          <span>${t(`usage.filters.${key}`)}</span>
+          <input
+            class="settings-input usage-date-input"
+            type="date"
+            ?disabled=${data.loading && !data.totals}
+            .value=${filters[key]}
+            aria-label=${t(`usage.filters.${key}`)}
+            @change=${(event: Event) => onChange((event.target as HTMLInputElement).value)}
+          />
+        </label>`,
+      )}
+    </div>
+    <div class="usage-presets">
+      ${renderSettingsSegmented({
+        mode: "buttons",
+        value: filters.startDate === "1970-01-01" ? "all" : String(rangeDays),
+        onChange: (value) => (value === "all" ? applyAllRange() : applyPreset(Number(value))),
+        options: [
+          ...datePresets.map((preset) => ({ value: String(preset.days), label: preset.label })),
+          { value: "all", label: t("usage.presets.all") },
+        ],
+      })}
+    </div>`;
+  const scopeControls = html`<label class="usage-date-field">
+      <span>${t("usage.filters.timeZone")}</span>
+      <select
+        class="settings-select usage-select"
+        aria-label=${t("usage.filters.timeZone")}
+        .value=${filters.timeZone}
+        @change=${(event: Event) =>
+          filterActions.onTimeZoneChange(
+            (event.target as HTMLSelectElement).value as "local" | "utc",
+          )}
+      >
+        <option value="local">${t("usage.filters.timeZoneLocal")}</option>
+        <option value="utc">${t("usage.filters.timeZoneUtc")}</option>
+      </select></label
+    >
+    ${renderSettingsSegmented({
+      mode: "buttons",
+      ariaPressed: false,
+      value: filters.scope,
+      onChange: filterActions.onScopeChange,
+      onReselect: filterActions.onScopeChange,
+      options: [
+        {
+          value: "instance",
+          label: t("usage.scope.instance"),
+          title: t("usage.scope.instanceHint"),
+        },
+        { value: "family", label: t("usage.scope.family"), title: t("usage.scope.familyHint") },
+      ],
+    })}`;
+  const headerActions = html`<button
+      type="button"
+      class="btn btn--sm usage-icon-button usage-pin-btn"
+      aria-label=${display.headerPinned ? t("usage.filters.pinned") : t("usage.filters.pin")}
+      title=${display.headerPinned ? t("usage.filters.pinned") : t("usage.filters.pin")}
+      aria-pressed=${display.headerPinned}
+      @click=${filterActions.onToggleHeaderPinned}
+    >
+      ${icons.pin}</button
+    ><button
+      type="button"
+      class="btn btn--sm usage-icon-button"
+      aria-label=${t("common.refresh")}
+      title=${t("common.refresh")}
+      @click=${filterActions.onRefresh}
+      ?disabled=${data.loading}
+    >
+      ${data.loading ? renderUsageLoadingStatus(nothing) : icons.refresh}
+    </button>
+    <wa-dropdown
+      class="usage-export-menu"
+      placement="bottom-end"
+      @wa-select=${(event: CustomEvent<{ item: { value?: string } }>) => {
+        switch (event.detail.item.value) {
+          case "sessions-csv":
+            downloadTextFile(
+              `openclaw-usage-sessions-${exportStamp}.csv`,
+              buildSessionsCsv(filteredSessions),
+              "text/csv;charset=utf-8",
+            );
+            break;
+          case "daily-csv":
+            downloadTextFile(
+              `openclaw-usage-daily-${exportStamp}.csv`,
+              buildDailyCsv(filteredDaily),
+              "text/csv;charset=utf-8",
+            );
+            break;
+          case "json":
+            displayActions.onExportJson({
+              totals: displayTotals,
+              sessions: filteredSessions,
+              daily: filteredDaily,
+              aggregates: activeAggregates,
+            });
+            break;
+          case undefined:
+            break;
+        }
+      }}
+    >
+      <button
+        slot="trigger"
+        type="button"
+        class="btn btn--sm usage-export-trigger"
+        aria-label=${t("usage.export.label")}
+        title=${t("usage.export.label")}
+        aria-busy=${data.exporting}
+        ?disabled=${data.exporting}
+      >
+        ${data.exporting ? renderUsageLoadingStatus(nothing) : t("usage.export.label")}
+        ${icons.chevronDown}
+      </button>
+      <wa-dropdown-item value="sessions-csv" ?disabled=${filteredSessions.length === 0}>
+        ${t("usage.export.sessionsCsv")}
+      </wa-dropdown-item>
+      <wa-dropdown-item value="daily-csv" ?disabled=${filteredDaily.length === 0}>
+        ${t("usage.export.dailyCsv")}
+      </wa-dropdown-item>
+      <wa-dropdown-item
+        value="json"
+        ?disabled=${data.exporting ||
+        data.loading ||
+        (filteredSessions.length === 0 && filteredDaily.length === 0)}
+      >
+        ${t("usage.export.json")}
+      </wa-dropdown-item>
+    </wa-dropdown>`;
+  const queryControl = renderUsageQuery(props, {
+    sessions: agentScopedSessions,
+    matchedCount: filteredSessions.length,
+    warnings: queryResult.warnings,
+  });
+  const rangeCrossesYears = filters.startDate.slice(0, 4) !== filters.endDate.slice(0, 4);
   return renderSettingsPage(
     html`
       <div class="usage-page">
-        <section class="settings-section">
-          <div class="settings-section__header">
-            <h2 class="settings-section__heading">${t("usage.filters.title")}</h2>
-            <div class="settings-section__actions">
-              ${data.loading ? renderUsageLoadingStatus(t("usage.loading.badge")) : nothing}
-              ${
-                isEmpty
-                  ? html`<span class="usage-query-hint">${t("usage.empty.hint")}</span>`
-                  : nothing
-              }
+        <header class="usage-header ${display.headerPinned ? "pinned" : ""}">
+          <div class="usage-header-top">
+            <div class="usage-header-copy">
+              <h1>${titleForRoute("usage")}</h1>
             </div>
+            <div class="usage-header-actions">${headerActions}</div>
           </div>
-          <div
-            class="settings-group usage-panel usage-header ${display.headerPinned ? "pinned" : ""}"
-          >
-            <div class="usage-header-row">
-              <div class="usage-header-metrics">
-                ${
-                  displayTotals
-                    ? html`
-                        <span class="usage-metric-badge">
-                          <strong>${formatUsageTokens(displayTotals.totalTokens)}</strong>
-                          ${t("usage.metrics.tokens")}
-                        </span>
-                        <span class="usage-metric-badge">
-                          <strong>${formatUsageCost(displayTotals.totalCost)}</strong>
-                          ${t("usage.metrics.cost")}
-                        </span>
-                        <span class="usage-metric-badge">
-                          <strong>${displaySessionCount}</strong>
-                          ${
-                            displaySessionCount === 1
-                              ? t("usage.metrics.session")
-                              : t("usage.metrics.sessions")
-                          }
-                        </span>
-                      `
-                    : nothing
-                }
-                <button
-                  class="btn btn--sm usage-pin-btn ${display.headerPinned ? "active" : ""}"
-                  @click=${filterActions.onToggleHeaderPinned}
-                >
-                  ${display.headerPinned ? t("usage.filters.pinned") : t("usage.filters.pin")}
-                </button>
-                <wa-dropdown
-                  class="usage-export-menu"
-                  placement="bottom-end"
-                  @wa-select=${(event: CustomEvent<{ item: { value?: string } }>) => {
-                    switch (event.detail.item.value) {
-                      case "sessions-csv":
-                        downloadTextFile(
-                          `openclaw-usage-sessions-${exportStamp}.csv`,
-                          buildSessionsCsv(filteredSessions),
-                          "text/csv;charset=utf-8",
-                        );
-                        break;
-                      case "daily-csv":
-                        downloadTextFile(
-                          `openclaw-usage-daily-${exportStamp}.csv`,
-                          buildDailyCsv(filteredDaily),
-                          "text/csv;charset=utf-8",
-                        );
-                        break;
-                      case "json":
-                        displayActions.onExportJson({
-                          totals: displayTotals,
-                          sessions: filteredSessions,
-                          daily: filteredDaily,
-                          aggregates: activeAggregates,
-                        });
-                        break;
-                      case undefined:
-                        break;
-                    }
-                  }}
-                >
-                  <button
-                    slot="trigger"
-                    type="button"
-                    class="btn btn--sm"
-                    aria-busy=${data.exporting}
-                  >
-                    ${data.exporting ? t("common.loading") : t("usage.export.label")} ▾
-                  </button>
-                  <wa-dropdown-item value="sessions-csv" ?disabled=${filteredSessions.length === 0}>
-                    ${t("usage.export.sessionsCsv")}
-                  </wa-dropdown-item>
-                  <wa-dropdown-item value="daily-csv" ?disabled=${filteredDaily.length === 0}>
-                    ${t("usage.export.dailyCsv")}
-                  </wa-dropdown-item>
-                  <wa-dropdown-item
-                    value="json"
-                    ?disabled=${
-                      data.exporting ||
-                      data.loading ||
-                      (filteredSessions.length === 0 && filteredDaily.length === 0)
-                    }
-                  >
-                    ${t("usage.export.json")}
-                  </wa-dropdown-item>
-                </wa-dropdown>
-              </div>
+          <div class="usage-header-toolbar">
+            <div class="usage-header-scope">
+              <button
+                id="usage-dates-trigger"
+                type="button"
+                class="btn btn--sm usage-range-trigger"
+                aria-haspopup="dialog"
+              >
+                ${icons.calendarClock}<span
+                  >${formatDayLabel(filters.startDate, rangeCrossesYears)} –
+                  ${formatDayLabel(filters.endDate, rangeCrossesYears)}</span
+                >${icons.chevronDown}
+              </button>
+              <wa-popover
+                class="usage-more-filters"
+                for="usage-dates-trigger"
+                placement="bottom-start"
+                without-arrow
+              >
+                <div class="usage-more-filters-panel">${dateControls}</div>
+              </wa-popover>
+              ${agentScopeControl}
+              <button
+                id="usage-scope-trigger"
+                type="button"
+                class="btn btn--sm"
+                aria-haspopup="dialog"
+              >
+                ${t("usage.scope.title")}${icons.chevronDown}
+              </button>
+              <wa-popover
+                class="usage-more-filters"
+                for="usage-scope-trigger"
+                placement="bottom-start"
+                without-arrow
+              >
+                <div class="usage-more-filters-panel">${scopeControls}</div>
+              </wa-popover>
             </div>
-
-            <div class="usage-header-row">
-              <div class="usage-controls">
-                ${renderFilterChips(
-                  filters.selectedDays,
-                  filters.selectedHours,
-                  filters.selectedSessions,
-                  data.sessions,
-                  filterActions.onClearDays,
-                  filterActions.onClearHours,
-                  filterActions.onClearSessions,
-                  filterActions.onClearFilters,
+            ${queryControl}
+          </div>
+          ${renderFilterChips(props)}
+        </header>
+        ${data.totals && !isEmpty
+          ? html`${renderUsageHero({
+              sessions: scopedSessions,
+              aggregates: scopedAggregates,
+              totals: displayTotals,
+              timeZone: filters.timeZone,
+              daily: filteredDaily,
+              selectedDays: filters.selectedDays,
+              chartMode: display.chartMode,
+              dailyChartMode: display.dailyChartMode,
+              onDailyChartModeChange: displayActions.onDailyChartModeChange,
+              onChartModeChange: displayActions.onChartModeChange,
+              onSelectDay: filterActions.onSelectDay,
+            })}`
+          : nothing}
+        ${data.error
+          ? html`<div class="callout danger usage-callout">${data.error}</div>`
+          : nothing}
+        ${data.cacheRefresh !== "complete"
+          ? html`
+              <div
+                class="callout warning usage-callout usage-cache-warning"
+                role="status"
+                aria-live="polite"
+              >
+                ${t(
+                  data.cacheRefresh === "exhausted"
+                    ? "usage.cacheStatus.paused"
+                    : "usage.cacheStatus.warning",
                 )}
-                <div class="usage-presets">
-                  ${datePresets.map(
-                    (preset) => html`
-                      <button class="btn btn--sm" @click=${() => applyPreset(preset.days)}>
-                        ${preset.label}
-                      </button>
-                    `,
-                  )}
-                  <button class="btn btn--sm" @click=${applyAllRange}>
-                    ${t("usage.presets.all")}
-                  </button>
-                </div>
-                <div class="usage-date-range">
-                  <input
-                    class="usage-date-input"
-                    type="date"
-                    .value=${filters.startDate}
-                    title=${t("usage.filters.startDate")}
-                    aria-label=${t("usage.filters.startDate")}
-                    @change=${(e: Event) =>
-                      filterActions.onStartDateChange((e.target as HTMLInputElement).value)}
-                  />
-                  <span class="usage-separator">${t("usage.filters.to")}</span>
-                  <input
-                    class="usage-date-input"
-                    type="date"
-                    .value=${filters.endDate}
-                    title=${t("usage.filters.endDate")}
-                    aria-label=${t("usage.filters.endDate")}
-                    @change=${(e: Event) =>
-                      filterActions.onEndDateChange((e.target as HTMLInputElement).value)}
-                  />
-                </div>
-                <select
-                  class="usage-select"
-                  title=${t("usage.filters.timeZone")}
-                  aria-label=${t("usage.filters.timeZone")}
-                  .value=${filters.timeZone}
-                  @change=${(e: Event) =>
-                    filterActions.onTimeZoneChange(
-                      (e.target as HTMLSelectElement).value as "local" | "utc",
-                    )}
-                >
-                  <option value="local">${t("usage.filters.timeZoneLocal")}</option>
-                  <option value="utc">${t("usage.filters.timeZoneUtc")}</option>
-                </select>
-                ${renderSettingsSegmented({
-                  mode: "buttons",
-                  variant: "accent",
-                  ariaPressed: false,
-                  value: filters.scope,
-                  onChange: filterActions.onScopeChange,
-                  onReselect: filterActions.onScopeChange,
-                  options: [
-                    {
-                      value: "instance",
-                      label: t("usage.scope.instance"),
-                      title: t("usage.scope.instanceHint"),
-                    },
-                    {
-                      value: "family",
-                      label: t("usage.scope.family"),
-                      title: t("usage.scope.familyHint"),
-                    },
-                  ],
-                })}
-                ${renderSettingsSegmented({
-                  mode: "buttons",
-                  variant: "accent",
-                  ariaPressed: false,
-                  value: isTokenMode ? "tokens" : "cost",
-                  onChange: displayActions.onChartModeChange,
-                  onReselect: displayActions.onChartModeChange,
-                  options: [
-                    { value: "tokens", label: t("usage.metrics.tokens") },
-                    { value: "cost", label: t("usage.metrics.cost") },
-                  ],
-                })}
-                <button
-                  class="btn btn--sm primary"
-                  @click=${filterActions.onRefresh}
-                  ?disabled=${data.loading}
-                >
-                  ${t("common.refresh")}
-                </button>
               </div>
-            </div>
-
-            <div class="usage-query-section">
-              <div class="usage-query-bar">
-                <input
-                  class="usage-query-input"
-                  type="text"
-                  .value=${filters.queryDraft}
-                  placeholder=${t("usage.query.placeholder")}
-                  @input=${(e: Event) =>
-                    filterActions.onQueryDraftChange((e.target as HTMLInputElement).value)}
-                  @keydown=${(e: KeyboardEvent) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      filterActions.onApplyQuery();
-                    }
-                  }}
-                />
-                <div class="usage-query-actions">
-                  <button
-                    class="btn btn--sm"
-                    @click=${filterActions.onApplyQuery}
-                    ?disabled=${data.loading || (!hasDraftQuery && !hasQuery)}
-                  >
-                    ${t("usage.query.apply")}
-                  </button>
-                  ${
-                    hasDraftQuery || hasQuery
-                      ? html`
-                          <button class="btn btn--sm" @click=${filterActions.onClearQuery}>
-                            ${t("usage.filters.clear")}
-                          </button>
-                        `
-                      : nothing
-                  }
-                  <span class="usage-query-hint">
-                    ${
-                      hasQuery
-                        ? t("usage.query.matching", {
-                            shown: String(filteredSessions.length),
-                            total: String(totalSessions),
-                          })
-                        : t("usage.query.inRange", { total: String(totalSessions) })
-                    }
-                  </span>
-                </div>
-              </div>
-              <div class="usage-filter-row">
-                ${renderFilterSelect("channel", t("usage.filters.channel"), filterOptions.channel)}
-                ${renderFilterSelect("provider", t("usage.filters.provider"), filterOptions.provider)}
-                ${renderFilterSelect("model", t("usage.filters.model"), filterOptions.model)}
-                ${renderFilterSelect("tool", t("usage.filters.tool"), filterOptions.tool)}
-                <span class="usage-query-hint">${t("usage.query.tip")}</span>
-              </div>
-              ${
-                queryTerms.length > 0
-                  ? html`
-                      <div class="usage-query-chips">
-                        ${queryTerms.map((term) => {
-                          const label = term.raw;
-                          return html`
-                            <span class="usage-query-chip">
-                              ${label}
-                              <openclaw-tooltip .content=${t("usage.filters.remove")}>
-                                <button
-                                  aria-label=${t("usage.filters.remove")}
-                                  @click=${() =>
-                                    filterActions.onQueryDraftChange(
-                                      removeQueryToken(filters.queryDraft, label),
-                                    )}
-                                >
-                                  ×
-                                </button>
-                              </openclaw-tooltip>
-                            </span>
-                          `;
-                        })}
-                      </div>
-                    `
-                  : nothing
-              }
-              ${
-                querySuggestions.length > 0
-                  ? html`
-                      <div class="usage-query-suggestions">
-                        ${querySuggestions.map(
-                          (suggestion) => html`
-                            <button
-                              class="usage-query-suggestion"
-                              @click=${() =>
-                                filterActions.onQueryDraftChange(
-                                  applySuggestionToQuery(filters.queryDraft, suggestion.value),
-                                )}
-                            >
-                              ${suggestion.label}
-                            </button>
-                          `,
-                        )}
-                      </div>
-                    `
-                  : nothing
-              }
-              ${
-                queryWarnings.length > 0
-                  ? html`
-                      <div class="callout warning usage-callout usage-callout--tight">
-                        ${queryWarnings.join(" · ")}
-                      </div>
-                    `
-                  : nothing
-              }
-            </div>
-
-            ${
-              data.error
-                ? html`<div class="callout danger usage-callout">${data.error}</div>`
-                : nothing
-            }
-            ${
-              data.cacheRefresh !== "complete"
-                ? html`
-                    <div
-                      class="callout warning usage-callout usage-cache-warning"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      ${t(
-                        data.cacheRefresh === "exhausted"
-                          ? "usage.cacheStatus.paused"
-                          : "usage.cacheStatus.warning",
-                      )}
-                    </div>
-                  `
-                : nothing
-            }
-            ${
-              data.sessionsLimitReached
-                ? html`
-                    <div class="callout warning usage-callout">
-                      ${t("usage.sessions.limitReached")}
-                    </div>
-                  `
-                : nothing
-            }
-          </div>
-        </section>
-
-        ${renderProviderUsage(
-          data.providerUsage,
-          data.providerUsageUnavailable,
-          data.providerUsageStalled,
-        )}
-        ${
-          isEmpty
+            `
+          : nothing}
+        ${data.sessionsLimitReached
+          ? html`
+              <div class="callout warning usage-callout">${t("usage.sessions.limitReached")}</div>
+            `
+          : nothing}
+        ${data.loading && !data.totals
+          ? renderUsageLoadingState()
+          : isEmpty
             ? renderUsageEmptyState(filterActions.onRefresh)
-            : html`
-                ${renderUsageInsights(
-                  insightTotals,
-                  insightAggregates,
-                  insightStats,
-                  hasMissingCost,
-                  // Day totals are exact daily buckets; category rollups remain full-session totals.
-                  // Hide shares instead of mixing those scopes into percentages above 100%.
-                  filters.selectedDays.length === 0,
-                  buildPeakErrorHours(aggregateSessions, filters.timeZone),
-                  displaySessionCount,
-                  totalSessions,
-                )}
-                ${renderUsageHeatmap(filteredDaily, filters.startDate, filters.endDate)}
+            : nothing}
+        ${((data.loading || data.error) && !data.totals) || isEmpty
+          ? renderUsageLimits(
+              data.providerUsage,
+              data.providerUsageUnavailable,
+              data.providerUsageStalled,
+            )
+          : nothing}
+        ${((data.loading || data.error) && !data.totals) || isEmpty
+          ? nothing
+          : html`
+              ${displayTotals
+                ? html`<section class="usage-composition">
+                    <header class="usage-section-heading">
+                      <h2>
+                        ${t(
+                          isTokenMode
+                            ? "usage.breakdown.tokensByType"
+                            : "usage.breakdown.costByType",
+                        )}
+                      </h2>
+                      <openclaw-tooltip .content=${t("usage.summary.cacheSavingsHint")}
+                        ><span class="usage-savings-note" tabindex="0"
+                          >${t("usage.hero.savingsUnavailable")}</span
+                        ></openclaw-tooltip
+                      >
+                    </header>
+                    ${renderCostBreakdownCompact({
+                      mode: display.chartMode,
+                      values: displayTotals,
+                      total: isTokenMode ? displayTotals.totalTokens : displayTotals.totalCost,
+                      tokenValues: displayTotals,
+                      variant: "overview",
+                    })}
+                  </section>`
+                : nothing}
+              ${costWindowComparison !== nothing
+                ? html`<section class="usage-cost-windows-section">
+                    <h2>${t("usage.costWindows.title")}</h2>
+                    ${costWindowComparison}
+                  </section>`
+                : nothing}
+              ${renderUsageOperations(
+                operationsTotals,
+                insightAggregates,
+                operationsStats,
+                hasMissingCost,
+                aggregateSessions.length,
+                selectedDaySet.size > 0,
+              )}
+              ${renderUsageLimits(
+                data.providerUsage,
+                data.providerUsageUnavailable,
+                data.providerUsageStalled,
+              )}
+              <section class="usage-analysis-row" aria-label=${t("usage.patterns.title")}>
+                <h2>${t("usage.patterns.title")}</h2>
+                ${renderUsageDimensions({
+                  mode: "rankings",
+                  aggregates: insightAggregates,
+                  totals: insightTotals,
+                  showCostShares: selectedDaySet.size === 0,
+                  selectedDays: filters.selectedDays,
+                  onSelectDay: filterActions.onSelectDay,
+                  errorHours: buildPeakErrorHours(aggregateSessions, filters.timeZone),
+                })}
+              </section>
+              <section class="usage-activity" aria-label=${t("usage.mosaic.title")}>
                 ${renderUsageMosaic(
                   aggregateSessions,
                   filters.timeZone,
                   filters.selectedHours,
                   filterActions.onSelectHour,
                 )}
-
-                <div class="usage-grid">
-                  <div class="usage-grid-column">
-                    <div class="settings-group usage-panel usage-left-card">
-                      ${costWindowComparison}
-                      ${renderDailyChartCompact(
-                        filteredDaily,
-                        filters.selectedDays,
-                        display.chartMode,
-                        display.dailyChartMode,
-                        displayActions.onDailyChartModeChange,
-                        filterActions.onSelectDay,
-                      )}
-                      ${
-                        displayTotals
-                          ? renderCostBreakdownCompact(displayTotals, display.chartMode)
-                          : nothing
-                      }
-                    </div>
-                    ${renderSessionsCard(
-                      filteredSessions,
-                      filters.selectedSessions,
-                      filters.selectedDays,
-                      isTokenMode,
-                      display.sessionSort,
-                      display.sessionSortDir,
-                      display.recentSessions,
-                      display.sessionsTab,
-                      detailActions.onSelectSession,
-                      displayActions.onSessionSortChange,
-                      displayActions.onSessionSortDirChange,
-                      displayActions.onSessionsTabChange,
-                      display.visibleColumns,
-                      totalSessions,
-                      filterActions.onClearSessions,
-                    )}
-                  </div>
-                  ${
-                    primarySelectedEntry
-                      ? html`<div class="usage-grid-column">
-                          ${renderSessionDetailPanel(
-                            primarySelectedEntry,
-                            detail.timeSeries,
-                            detail.timeSeriesLoading,
-                            detail.timeSeriesStatus,
-                            detail.timeSeriesMode,
-                            detailActions.onTimeSeriesModeChange,
-                            detail.timeSeriesBreakdownMode,
-                            detailActions.onTimeSeriesBreakdownChange,
-                            detail.timeSeriesCursorStart,
-                            detail.timeSeriesCursorEnd,
-                            detailActions.onTimeSeriesCursorRangeChange,
-                            filters.startDate,
-                            filters.endDate,
-                            filters.selectedDays,
-                            filters.timeZone,
-                            detail.sessionLogs,
-                            detail.sessionLogsLoading,
-                            detail.sessionLogsStatus,
-                            detail.sessionLogsExpanded,
-                            detailActions.onToggleSessionLogsExpanded,
-                            detail.logFilters,
-                            detailActions.onLogFilterRolesChange,
-                            detailActions.onLogFilterToolsChange,
-                            detailActions.onLogFilterHasToolsChange,
-                            detailActions.onLogFilterQueryChange,
-                            detailActions.onLogFilterClear,
-                            detail.context,
-                            display.contextExpanded,
-                            detailActions.onToggleContextExpanded,
-                            filterActions.onClearSessions,
-                          )}
-                        </div>`
-                      : nothing
-                  }
+                <section class="usage-activity-calendar" aria-label=${t("usage.heatmap.title")}>
+                  ${renderUsageHeatmap(filteredDaily, filters.startDate, filters.endDate)}
+                </section>
+                <div class="usage-activity-errors">
+                  ${renderUsageDimensions({
+                    mode: "errors",
+                    aggregates: insightAggregates,
+                    totals: insightTotals,
+                    showCostShares: selectedDaySet.size === 0,
+                    selectedDays: filters.selectedDays,
+                    onSelectDay: filterActions.onSelectDay,
+                    errorHours: buildPeakErrorHours(aggregateSessions, filters.timeZone),
+                  })}
                 </div>
-              `
-        }
+              </section>
+              <div class="usage-sessions-section">
+                ${renderSessionsCard(
+                  filteredSessions,
+                  filters.selectedSessions,
+                  filters.selectedDays,
+                  isTokenMode,
+                  display.sessionSort,
+                  display.sessionSortDir,
+                  display.recentSessions,
+                  display.sessionsTab,
+                  detailActions.onSelectSession,
+                  displayActions.onSessionSortChange,
+                  displayActions.onSessionSortDirChange,
+                  displayActions.onSessionsTabChange,
+                  display.visibleColumns,
+                  totalSessions,
+                  filterActions.onClearSessions,
+                  detailActions.onToggleSession,
+                  nothing,
+                  nothing,
+                  displayActions.onToggleColumn,
+                )}
+              </div>
+              ${primarySelectedEntry
+                ? renderSessionDetailPanel(primarySelectedEntry, props)
+                : nothing}
+            `}
       </div>
     `,
     { wide: true },

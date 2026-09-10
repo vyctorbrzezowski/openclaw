@@ -147,7 +147,7 @@ suite.define(() => {
         }
         await expect.poll(() => count.textContent()).toBe("2");
         const readRow = panel.locator(".usage-list-item").filter({ hasText: "read" });
-        expect(await readRow.locator(".usage-list-value > span").first().textContent()).toBe("2");
+        expect((await readRow.locator(".usage-list-value").textContent())?.trim()).toBe("2 calls");
         expect(await panel.locator(".session-log-tools-pill").first().textContent()).toContain(
           "read × 2",
         );

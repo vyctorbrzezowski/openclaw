@@ -196,7 +196,10 @@ suite.define(() => {
             },
           });
           await page.goto(`${suite.server.baseUrl}usage`);
+          await page.locator("#usage-scope-trigger").click();
           await page.locator(".usage-select").selectOption(timeZone);
+          await page.locator("#usage-scope-trigger").click();
+          await page.locator("#usage-dates-trigger").click();
           const dateInputs = await page.locator(".usage-date-input").all();
           expect(dateInputs).toHaveLength(2);
           for (const input of dateInputs) {
@@ -206,10 +209,11 @@ suite.define(() => {
           await expect
             .poll(async () => (await gateway.getRequests("sessions.usage")).at(-1)?.params)
             .toMatchObject(match);
-          const hours = page.locator(".usage-error-list--hours");
+          await page.locator("#usage-dates-trigger").click();
+          const hours = page.getByRole("table", { name: "Peak error hours", exact: true });
           const cells = page.locator(".usage-hour-cell");
           const refresh = page
-            .locator(".usage-controls")
+            .locator(".usage-header")
             .getByRole("button", { name: "Refresh", exact: true });
           for (const [stage, now] of [
             ["control", "2026-03-07T17:00:00Z"],
@@ -225,11 +229,14 @@ suite.define(() => {
               .poll(() => cells.nth(2).getAttribute("aria-label"))
               .toBe("2:00 · 100 tokens");
             await expect
-              .poll(() => page.locator(".daily-bar-label").allTextContents())
-              .toEqual(["Jan 15"]);
+              .poll(() => page.locator(".usage-hero-x-axis span").allTextContents())
+              .toEqual(["Jan 15", "Jan 15", "Jan 15"]);
             await expect
-              .poll(() => page.locator(".daily-bar-wrapper").getAttribute("aria-label"))
-              .toBe("January 15, 2026: 100 tokens, $0.00");
+              .poll(() => page.locator(".usage-hero-day").getAttribute("aria-label"))
+              .toContain("January 15, 2026");
+            await expect
+              .poll(() => page.locator(".usage-hero-day").getAttribute("aria-label"))
+              .toContain("Output: 100 Tokens · $0.00");
             await hours.scrollIntoViewIfNeeded();
             await expect.poll(() => hours.isVisible()).toBe(true);
             if (artifactDir) {
@@ -240,14 +247,14 @@ suite.define(() => {
             }
             await expect
               .poll(async () => ({
-                labels: (await hours.locator(".usage-error-date").allTextContents()).map((text) =>
-                  text.trim(),
+                labels: (await hours.locator("tbody th").allTextContents()).map((text) =>
+                  text.replace(/\s+/g, " ").trim(),
                 ),
-                rates: (await hours.locator(".usage-error-rate").allTextContents()).map((text) =>
-                  text.trim(),
+                rates: (await hours.locator("tbody td:first-of-type").allTextContents()).map(
+                  (text) => text.replace(/\s+/g, " ").trim(),
                 ),
-                details: (await hours.locator(".usage-error-sub").allTextContents()).map((text) =>
-                  text.trim(),
+                details: (await hours.locator("tbody td:last-child").allTextContents()).map(
+                  (text) => text.replace(/\s+/g, " ").trim(),
                 ),
               }))
               .toEqual({ labels: ["2 AM"], rates: ["50.00%"], details: ["5 errors · 10 msgs"] });
@@ -255,18 +262,35 @@ suite.define(() => {
           await cells.nth(2).click();
           await expect.poll(() => cells.nth(2).getAttribute("aria-pressed")).toBe("true");
           await expect
-            .poll(() => page.locator(".session-bar-title").allTextContents())
+            .poll(() =>
+              page
+                .locator(".usage-session-open")
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim())),
+            )
             .toEqual(["Historical hour"]);
-          await expect.poll(() => hours.locator(".usage-error-date").textContent()).toBe("2 AM");
+          await expect.poll(() => hours.locator("tbody th").textContent()).toBe("2 AM");
           await cells.nth(2).click();
           await cells.nth(3).click();
-          await expect.poll(() => page.locator(".session-bar-title").allTextContents()).toEqual([]);
+          await expect
+            .poll(() =>
+              page
+                .locator(".usage-session-open")
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim())),
+            )
+            .toEqual([]);
           await expect.poll(() => hours.count()).toBe(0);
           await page.getByRole("button", { name: "Remove hours filter", exact: true }).click();
           await expect
-            .poll(() => page.locator(".session-bar-title").allTextContents())
+            .poll(() =>
+              page
+                .locator(".usage-session-open")
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim())),
+            )
             .toEqual(["Historical hour"]);
-          await expect.poll(() => hours.locator(".usage-error-date").textContent()).toBe("2 AM");
+          await expect.poll(() => hours.locator("tbody th").textContent()).toBe("2 AM");
         },
       );
     },
@@ -302,28 +326,44 @@ suite.define(() => {
             },
           });
           await page.goto(`${suite.server.baseUrl}usage`);
-          const card = page.locator(".sessions-card");
-          let list = card.locator(".session-bars").first();
+          const card = page.locator(".usage-sessions");
+          let list = card.locator(".usage-session-table").first();
           await expect
-            .poll(() => list.locator(".session-bar-title").allTextContents())
+            .poll(() =>
+              list
+                .locator(".usage-session-open")
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim())),
+            )
             .toEqual(sessions.map((session) => session.label));
           if (scenario === "filtered") {
             await page.locator(".usage-query-input").fill("label:Visible");
             await page.locator(".usage-query-input").press("Enter");
-            await expect.poll(() => list.locator(".session-bar-row").count()).toBe(3);
+            await expect.poll(() => list.locator(".usage-session-row").count()).toBe(3);
           }
           if (scenario === "recent-tab") {
             for (const name of ["Visible C", "Visible A", "Visible B"]) {
               await list.getByRole("button", { name, exact: true }).click();
             }
             await card.getByRole("button", { name: "Recently viewed", exact: true }).click();
-            list = card.locator(".session-bars--recent");
+            list = card.locator(".usage-session-table");
             await expect
-              .poll(() => list.locator(".session-bar-title").allTextContents())
+              .poll(() =>
+                list
+                  .locator(".usage-session-open")
+                  .allTextContents()
+                  .then((labels) => labels.map((label) => label.trim())),
+              )
               .toEqual(["Visible B", "Visible A", "Visible C"]);
-            await card.getByRole("button", { name: "Clear Selection", exact: true }).click();
+            await card
+              .locator(".usage-session-selection")
+              .getByRole("button", { name: "Clear selection", exact: true })
+              .click();
           }
-          const names = await list.locator(".session-bar-title").allTextContents();
+          const names = await list
+            .locator(".usage-session-open")
+            .allTextContents()
+            .then((labels) => labels.map((label) => label.trim()));
           await list.getByRole("button", { name: names[0], exact: true }).click();
           await list
             .getByRole("button", { name: "Visible C", exact: true })
@@ -335,19 +375,22 @@ suite.define(() => {
           await expect
             .poll(async () =>
               (
-                await list.locator('[aria-pressed="true"] .session-bar-title').allTextContents()
+                await list
+                  .locator('[aria-selected="true"] .usage-session-open')
+                  .allTextContents()
+                  .then((labels) => labels.map((label) => label.trim()))
               ).toSorted(),
             )
             .toEqual(names.toSorted());
           if (scenario === "filtered") {
             await page.locator(".usage-query-input").fill("");
             await page.locator(".usage-query-input").press("Enter");
-            await expect.poll(() => list.locator(".session-bar-row").count()).toBe(4);
+            await expect.poll(() => list.locator(".usage-session-row").count()).toBe(4);
             await expect
               .poll(() =>
                 list
-                  .getByRole("button", { name: "Hidden", exact: true })
-                  .getAttribute("aria-pressed"),
+                  .locator(".usage-session-row", { hasText: "Hidden" })
+                  .getAttribute("aria-selected"),
               )
               .toBe("false");
           }
@@ -519,16 +562,20 @@ suite.define(() => {
         });
 
         await page.goto(`${suite.server.baseUrl}usage`);
-        const pendingRow = page.locator(".session-bar-row").filter({ hasText: "Pending session" });
-        const cachedRow = page.locator(".session-bar-row").filter({ hasText: "Cached session" });
+        const pendingRow = page
+          .locator(".usage-session-row")
+          .filter({ hasText: "Pending session" });
+        const cachedRow = page.locator(".usage-session-row").filter({ hasText: "Cached session" });
         await expect.poll(() => pendingRow.count(), { timeout: 10_000 }).toBe(1);
 
+        await page.locator("#usage-scope-trigger").click();
         await page.locator(".usage-select").selectOption("utc");
         await expect
           .poll(async () => (await gateway.getRequests("sessions.usage")).at(-1)?.params)
           .toMatchObject({ mode: "utc" });
         await expect.poll(() => cachedRow.count(), { timeout: 10_000 }).toBe(1);
-        await page.locator(".daily-bar-wrapper").click();
+        await page.locator("#usage-scope-trigger").click();
+        await page.locator(".usage-hero-day").click();
 
         await expect.poll(() => cachedRow.count()).toBe(1);
         await expect.poll(() => pendingRow.count()).toBe(1);
@@ -588,19 +635,32 @@ suite.define(() => {
         });
 
         await page.goto(`${suite.server.baseUrl}usage`);
-        const sessionLabels = page.locator(".session-bar-title");
+        const sessionLabels = page.locator(".usage-session-open");
         await expect
-          .poll(async () => (await sessionLabels.allTextContents()).toSorted())
+          .poll(async () =>
+            (
+              await sessionLabels
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim()))
+            ).toSorted(),
+          )
           .toEqual(["Research Review", "Team Planning"]);
 
         const providerFilter = page.locator(".usage-filter-select").filter({
           has: page.locator(".usage-filter-trigger", { hasText: "Provider" }),
         });
+        await page.locator("#usage-query-filters-trigger").click();
         await providerFilter.locator(".usage-filter-trigger").click();
         await providerFilter.locator('wa-dropdown-item[value="command:select-all"]').click();
         await expect.poll(() => providerFilter.locator(".settings-count").textContent()).toBe("2");
         await expect
-          .poll(async () => (await sessionLabels.allTextContents()).toSorted())
+          .poll(async () =>
+            (
+              await sessionLabels
+                .allTextContents()
+                .then((labels) => labels.map((label) => label.trim()))
+            ).toSorted(),
+          )
           .toEqual(["Research Review", "Team Planning"]);
         if (recordVisuals) {
           await writeFile(
@@ -616,23 +676,40 @@ suite.define(() => {
 
         const query = page.locator(".usage-query-input");
         await page.keyboard.press("Escape");
+        await page.keyboard.press("Escape");
         for (const token of ["PROVIDER:OpenAI", 'provider:"openai"']) {
           await query.fill(`${token} provider:anthropic`);
           await query.press("Enter");
           await expect
-            .poll(async () => (await sessionLabels.allTextContents()).toSorted())
+            .poll(async () =>
+              (
+                await sessionLabels
+                  .allTextContents()
+                  .then((labels) => labels.map((label) => label.trim()))
+              ).toSorted(),
+            )
             .toEqual(["Research Review", "Team Planning"]);
+          await page.locator("#usage-query-filters-trigger").click();
           await providerFilter.locator(".usage-filter-trigger").click();
           const openai = providerFilter.locator('wa-dropdown-item[value="option:openai"]');
           await expect.poll(() => openai.getAttribute("aria-checked")).toBe("true");
           await openai.click();
-          await expect.poll(() => sessionLabels.allTextContents()).toEqual(["Research Review"]);
+          await expect
+            .poll(() =>
+              sessionLabels.allTextContents().then((labels) => labels.map((label) => label.trim())),
+            )
+            .toEqual(["Research Review"]);
           await expect.poll(() => query.inputValue()).toBe("provider:anthropic ");
+          await page.keyboard.press("Escape");
           await page.keyboard.press("Escape");
         }
         await query.fill('label:"Team Planning"');
         await query.press("Enter");
-        await expect.poll(() => sessionLabels.allTextContents()).toEqual(["Team Planning"]);
+        await expect
+          .poll(() =>
+            sessionLabels.allTextContents().then((labels) => labels.map((label) => label.trim())),
+          )
+          .toEqual(["Team Planning"]);
         if (recordVisuals) {
           await writeFile(
             path.join(
@@ -879,7 +956,7 @@ suite.define(() => {
         });
 
         await page.goto(`${suite.server.baseUrl}usage`);
-        await page.locator(".daily-chart-compact").waitFor({ state: "visible", timeout: 10_000 });
+        await page.locator(".usage-hero-chart").waitFor({ state: "visible", timeout: 10_000 });
         const agentScope = page.locator(".agent-scope-control openclaw-agent-select");
         await agentScope.locator(".agent-select__trigger").click();
         await agentScope
@@ -890,60 +967,63 @@ suite.define(() => {
           .poll(async () => (await gateway.getRequests("usage.cost")).at(-1)?.params)
           .toMatchObject({ agentScope: "all" });
         const costRequestsBeforeRangeChange = (await gateway.getRequests("usage.cost")).length;
+        await page.locator("#usage-dates-trigger").click();
         await page.getByRole("button", { name: "90d", exact: true }).click();
+        await page.locator("#usage-dates-trigger").click();
         await expect
           .poll(async () => (await gateway.getRequests("usage.cost")).length)
           .toBeGreaterThan(costRequestsBeforeRangeChange);
-        await page.getByRole("button", { name: "Cost", exact: true }).click();
+        await page
+          .locator(".usage-hero-controls")
+          .getByRole("button", { name: "Cost", exact: true })
+          .click();
 
-        const windowCards = page.locator(".cost-window-card");
+        const windowCards = page.locator(".usage-cost-windows > div");
         await expect.poll(() => windowCards.count()).toBe(4);
         await expect
           .poll(async () => ({
-            labels: await windowCards.locator(".cost-window-card__label").allTextContents(),
-            values: (await windowCards.locator(".cost-window-card__value").allTextContents()).map(
-              (value) => value.trim(),
-            ),
+            labels: await windowCards.locator("dt").allTextContents(),
+            values: (
+              await windowCards.locator("dd").evaluateAll((elements) =>
+                elements.map((element) =>
+                  Array.from(element.childNodes)
+                    .filter((node) => node.nodeType === Node.TEXT_NODE)
+                    .map((node) => node.textContent)
+                    .join(""),
+                ),
+              )
+            ).map((value) => value.trim()),
           }))
           .toEqual({
-            labels: ["Selected Range", "Today", "Last 7 days", "Last 30 days"],
+            labels: ["Selected range", "Today", "Last 7 days", "Last 30 days"],
             values: ["$32.00", "$11.00", "$20.00", "$27.00"],
           });
         await expect
-          .poll(() => page.locator(".daily-chart-scale span").allTextContents())
-          .toEqual(["$11.00", "$5.50", "$0.00"]);
+          .poll(() => page.locator(".usage-hero-y-axis span").allTextContents())
+          .toEqual(["$20", "$10", "$0"]);
         await expect
-          .poll(() =>
-            page.locator(".usage-insight-card", { hasText: "Top Providers" }).textContent(),
-          )
-          .toContain("openai");
-        const messagesHint = page.locator("#usage-summary-hint-messages");
-        const messagesTooltipHost = messagesHint.locator("xpath=..");
-        const messagesTooltip = messagesTooltipHost.locator("wa-tooltip");
-        await messagesHint.hover();
+          .poll(() => page.locator(".usage-hero-providers").textContent())
+          .toContain("OpenAI");
+        await expect
+          .poll(() => page.locator(`[data-usage-day="${dayOffset(0)}"]`).getAttribute("aria-label"))
+          .toContain("$11.00");
+        const messagesMetric = page.locator(".usage-operation-row").filter({
+          has: page.locator("dt", { hasText: /^Messages$/ }),
+        });
+        const messagesTooltip = messagesMetric.locator("xpath=..").locator("wa-tooltip");
+        await messagesMetric.hover();
         await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
+        await expect
+          .poll(() => messagesTooltip.textContent())
+          .toContain("Total user and assistant messages in range.");
         await page.mouse.move(1, 1);
         await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
-
         await page.keyboard.press("Tab");
-        await messagesHint.focus();
+        await messagesMetric.focus();
         await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
-        await page.getByRole("button", { name: "Cost", exact: true }).focus();
+        await messagesMetric.press("Escape");
         await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
-
-        await messagesHint.click();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
-        await expect
-          .poll(() => messagesTooltipHost.locator('[slot="content"]').textContent())
-          .toContain("Total user and assistant messages in range.");
-        await page.getByRole("button", { name: "Cost", exact: true }).click();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
-        await page.keyboard.press("Tab");
-        await messagesHint.focus();
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBe("");
-        await messagesHint.press("Escape");
-        await expect.poll(() => messagesTooltip.getAttribute("open")).toBeNull();
-        const providerCards = page.locator(".provider-usage-card");
+        const providerCards = page.locator(".usage-limit-provider");
         await expect.poll(() => providerCards.count()).toBe(3);
         await expect
           .poll(async () => (await gateway.getRequests("usage.status")).length)
@@ -960,9 +1040,11 @@ suite.define(() => {
 
         await page.locator(".usage-query-input").fill("missing-session");
         await page.locator(".usage-query-input").press("Enter");
-        const topProviders = page.locator(".usage-insight-card", { hasText: "Top Providers" });
-        await expect.poll(() => topProviders.textContent()).toContain("No provider data");
-        await expect.poll(() => topProviders.textContent()).not.toContain("openai");
+        const providerComposition = page.locator(".usage-hero-providers");
+        await expect
+          .poll(() => providerComposition.locator(".usage-hero-provider").count())
+          .toBe(0);
+        await expect.poll(() => providerComposition.textContent()).not.toContain("OpenAI");
 
         if (process.env.OPENCLAW_CAPTURE_UI_PROOF === "1") {
           const artifactDir = path.join(suite.artifactDir, "provider-plans");

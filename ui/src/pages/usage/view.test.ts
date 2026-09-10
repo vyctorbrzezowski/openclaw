@@ -51,12 +51,6 @@ function usageSession(
   };
 }
 
-function insightCard(container: ParentNode, title: string): Element | undefined {
-  return Array.from(container.querySelectorAll(".usage-insight-card")).find(
-    (card) => card.querySelector(".usage-insight-title")?.textContent === title,
-  );
-}
-
 function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
   return {
     data: {
@@ -98,6 +92,8 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
       headerPinned: false,
     },
     detail: {
+      open: true,
+      tab: "tools-models",
       context: {
         weight: undefined,
         loading: false,
@@ -150,6 +146,8 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
         onToggleColumn: noop,
       },
       details: {
+        onTabChange: noop,
+        onToggleSession: noop,
         onToggleContextExpanded: noop,
         onToggleSessionLogsExpanded: noop,
         onLogFilterRolesChange: noop,
@@ -245,9 +243,14 @@ it.each([
     ),
     container,
   );
-  expect(
-    [...container.querySelectorAll(".usage-metric-badge strong")].map((el) => el.textContent),
-  ).toEqual(["99", "$10.00", "1"]);
+  expect(container.querySelector(".usage-hero-secondary strong")?.textContent?.trim()).toBe(
+    "$10.00",
+  );
+  expect(container.querySelector(".usage-hero-number")?.textContent?.trim()).toBe("99");
+  const sessionsRow = [...container.querySelectorAll(".usage-operation-row")].find(
+    (row) => row.querySelector("dt")?.textContent?.trim() === "Sessions",
+  );
+  expect(sessionsRow?.querySelector("dd")?.textContent?.trim()).toBe("1");
   container.querySelector(".usage-export-menu")!.dispatchEvent(
     new CustomEvent("wa-select", {
       detail: { item: { value: "json" } },
@@ -270,9 +273,9 @@ it("renders shared skeletons while initial usage is loading", () => {
   const props = createUsageProps();
   render(renderUsage(createUsageProps({ data: { ...props.data, loading: true } })), container);
 
-  const blocks = container.querySelectorAll(".usage-skeleton-block");
-  expect(blocks).toHaveLength(3);
-  expect([...blocks].every((block) => block.classList.contains("skeleton"))).toBe(true);
+  const loading = container.querySelector('[role="status"][aria-busy="true"]');
+  expect(loading?.textContent).toContain("Loading");
+  expect(container.querySelector(".usage-session-table")).toBeNull();
 });
 
 describe("renderUsage", () => {
@@ -341,7 +344,7 @@ describe("renderUsage", () => {
           container,
         );
 
-        expect(container.querySelector(".session-bar-row") !== null).toBe(visible);
+        expect(container.querySelector(".usage-session-row") !== null).toBe(visible);
       }
     } finally {
       localYear.mockRestore();
@@ -372,9 +375,9 @@ describe("renderUsage", () => {
       container,
     );
 
-    const providers = insightCard(container, "Top Providers");
-    expect(providers?.textContent).toContain("anthropic");
-    expect(providers?.textContent).not.toContain("openai");
+    const providers = container.querySelector(".usage-hero-providers");
+    expect(providers?.textContent).toContain("Anthropic");
+    expect(providers?.textContent).not.toContain("OpenAI");
   });
 
   it("does not fall back to global insights when a query matches no sessions", () => {
@@ -400,9 +403,9 @@ describe("renderUsage", () => {
       container,
     );
 
-    const providers = insightCard(container, "Top Providers");
-    expect(providers?.textContent).toContain("No provider data");
-    expect(providers?.textContent).not.toContain("openai");
+    const providers = container.querySelector(".usage-hero-providers");
+    expect(providers?.querySelectorAll(".usage-hero-provider")).toHaveLength(0);
+    expect(providers?.textContent).not.toContain("OpenAI");
   });
 
   it.each(["session", "day"] as const)(
@@ -482,19 +485,18 @@ describe("renderUsage", () => {
     expect(container.querySelector(".filter-chip-label")?.textContent).toContain(
       `${"a".repeat(19)}…`,
     );
-    expect(container.querySelector(".session-detail-title")?.textContent?.trim()).toBe(
-      `${"a".repeat(19)}🚀${"b".repeat(28)}…`,
-    );
+    expect(container.querySelector(".session-detail-title")?.textContent?.trim()).toBe(label);
   });
 
-  it("omits the duplicate inner page heading because the shell owns tab headings", () => {
+  it("renders one page heading in the usage header", () => {
     const container = document.createElement("div");
 
     render(renderUsage(createUsageProps()), container);
 
-    expect(container.querySelector(".usage-page-header")).toBeNull();
-    expect(container.querySelector(".usage-page-title")).toBeNull();
-    expect(container.querySelector(".usage-header")).not.toBeNull();
+    const headings = [...container.querySelectorAll("h1")];
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.textContent?.trim()).toBe("Usage");
+    expect(headings[0]?.closest(".usage-header")).not.toBeNull();
   });
 
   it("leaves agent scoping to the shared page header control", () => {
@@ -674,7 +676,7 @@ describe("renderUsage", () => {
     expect(container.querySelector(".usage-callout")?.textContent).toContain(
       "Provider usage did not finish loading",
     );
-    const card = container.querySelector(".provider-usage-card");
+    const card = container.querySelector(".usage-limit-provider");
     expect(card?.textContent).toContain("OpenAI");
     expect(card?.textContent).toContain("Weekly");
   });
@@ -718,7 +720,7 @@ describe("renderUsage", () => {
       container,
     );
 
-    const card = container.querySelector(".provider-usage-card");
+    const card = container.querySelector(".usage-limit-provider");
     expect(card?.textContent).toContain("OpenRouter");
     expect(card?.textContent).toContain("Production");
     expect(card?.textContent).toContain("75% left");
@@ -847,9 +849,9 @@ describe("renderUsage", () => {
       container,
     );
 
-    const messagesValue = container.querySelector(
-      ".usage-overview-card .usage-summary-card--hero .usage-summary-value",
-    );
+    const messagesValue = [...container.querySelectorAll(".usage-operation-row")]
+      .find((row) => row.querySelector("dt")?.textContent?.trim() === "Messages")
+      ?.querySelector("dd");
     expect(messagesValue?.textContent?.trim()).toBe("2");
   });
 
@@ -883,7 +885,7 @@ describe("renderUsage", () => {
 
     const unfiltered = document.createElement("div");
     render(renderUsage(createUsageProps({ data })), unfiltered);
-    expect(unfiltered.querySelector(".cost-window-analysis")).not.toBeNull();
+    expect(unfiltered.querySelector(".usage-cost-windows-section")).not.toBeNull();
 
     for (const filterCase of filterCases) {
       const container = document.createElement("div");
@@ -896,7 +898,7 @@ describe("renderUsage", () => {
         ),
         container,
       );
-      expect(container.querySelector(".cost-window-analysis")).toBeNull();
+      expect(container.querySelector(".usage-cost-windows-section")).toBeNull();
     }
   });
 

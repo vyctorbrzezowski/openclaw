@@ -69,7 +69,7 @@ function mount(
   errors: {
     timeSeries?: string;
     sessionLogs?: string;
-    sessionLogsData?: SessionLogEntry[];
+    sessionLogsData?: SessionLogEntry[] | null;
     session?: UsageSessionEntry;
     stale?: boolean;
     contextWeight?: UsageSessionEntry["contextWeight"];
@@ -87,39 +87,49 @@ function mount(
   render(
     renderSessionDetailPanel(
       { ...(errors.session ?? session()), contextWeight: errors.contextWeight },
-      { points },
-      false,
-      status(errors.timeSeries),
-      "per-turn",
-      vi.fn(),
-      breakdownMode,
-      vi.fn(),
-      start,
-      end,
-      vi.fn(),
-      filters.startDate ?? "",
-      filters.endDate ?? "",
-      filters.selectedDays ?? [],
-      filters.timeZone ?? "local",
-      errors.sessionLogsData ?? [],
-      false,
-      status(errors.sessionLogs),
-      false,
-      vi.fn(),
-      { roles: [], tools: [], hasTools: false, query: "" },
-      vi.fn(),
-      vi.fn(),
-      vi.fn(),
-      vi.fn(),
-      vi.fn(),
       {
-        weight: errors.contextWeight,
-        loading: false,
-        status: status(),
+        detail: {
+          open: true,
+          tab: "tools-models",
+          timeSeries: { points },
+          timeSeriesLoading: false,
+          timeSeriesStatus: status(errors.timeSeries),
+          timeSeriesMode: "per-turn",
+          timeSeriesBreakdownMode: breakdownMode,
+          timeSeriesCursorStart: start,
+          timeSeriesCursorEnd: end,
+          sessionLogs: errors.sessionLogsData === undefined ? [] : errors.sessionLogsData,
+          sessionLogsLoading: false,
+          sessionLogsStatus: status(errors.sessionLogs),
+          sessionLogsExpanded: false,
+          logFilters: { roles: [], tools: [], hasTools: false, query: "" },
+          context: { weight: errors.contextWeight, loading: false, status: status() },
+        },
+        filters: {
+          startDate: filters.startDate ?? "",
+          endDate: filters.endDate ?? "",
+          selectedDays: filters.selectedDays ?? [],
+          timeZone: filters.timeZone ?? "local",
+        },
+        display: { contextExpanded: errors.contextExpanded ?? false },
+        callbacks: {
+          details: {
+            onTabChange: vi.fn(),
+            onToggleSession: vi.fn(),
+            onTimeSeriesModeChange: vi.fn(),
+            onTimeSeriesBreakdownChange: vi.fn(),
+            onTimeSeriesCursorRangeChange: vi.fn(),
+            onToggleSessionLogsExpanded: vi.fn(),
+            onLogFilterRolesChange: vi.fn(),
+            onLogFilterToolsChange: vi.fn(),
+            onLogFilterHasToolsChange: vi.fn(),
+            onLogFilterQueryChange: vi.fn(),
+            onLogFilterClear: vi.fn(),
+            onToggleContextExpanded: errors.onToggleContextExpanded ?? vi.fn(),
+          },
+          filters: { onClearSessions: vi.fn() },
+        },
       },
-      errors.contextExpanded ?? false,
-      errors.onToggleContextExpanded ?? vi.fn(),
-      vi.fn(),
     ),
     container,
   );
@@ -193,52 +203,95 @@ describe("renderSessionDetailPanel filtered usage", () => {
     }
   });
 
-  it("aggregates token, cost, type, message, and duration data inside the selected range", () => {
-    const container = mount(
-      [
-        point({
-          timestamp: 1000,
-          totalTokens: 100,
-          cost: 0.1,
-          input: 10,
-          output: 0,
-          cacheRead: 5,
-          cacheWrite: 2,
-        }),
-        point({
-          timestamp: 2000,
-          totalTokens: 200,
-          cost: 0.2,
-          input: 0,
-          output: 20,
-          cacheRead: 7,
-          cacheWrite: 3,
-        }),
-        point({ timestamp: 3000, totalTokens: 300, cost: 0.3 }),
+  it.each<{ logs: SessionLogEntry[] | null; messages: string; messageMeta: string }>([
+    {
+      logs: [
+        { timestamp: 1000, role: "user", content: "Question" },
+        { timestamp: 1200, role: "assistant", content: "[Tool: read]" },
+        { timestamp: 1400, role: "toolResult", content: "Result" },
+        { timestamp: 2000, role: "assistant", content: "Answer" },
+        { timestamp: 3000, role: "user", content: "Outside selection" },
       ],
-      1000,
-      2000,
-      "by-type",
-    );
+      messages: "3",
+      messageMeta: "1 user · 2 assistant",
+    },
+    { logs: [], messages: "0", messageMeta: "0 user · 0 assistant" },
+    { logs: null, messages: "—", messageMeta: "" },
+  ])(
+    "aggregates range usage with $messages visible messages",
+    ({ logs, messages, messageMeta }) => {
+      const start = Date.parse("2026-08-20T12:00:00Z");
+      const entry = session();
+      entry.usage.messageCounts = { ...entry.usage.messageCounts!, errors: 4 };
+      const container = mount(
+        [
+          point({
+            timestamp: start + 1000,
+            totalTokens: 100,
+            cost: 0.1,
+            input: 10,
+            output: 0,
+            cacheRead: 5,
+            cacheWrite: 2,
+          }),
+          point({
+            timestamp: start + 2000,
+            totalTokens: 200,
+            cost: 0.2,
+            input: 0,
+            output: 20,
+            cacheRead: 7,
+            cacheWrite: 3,
+          }),
+          point({ timestamp: start + 3000, totalTokens: 300, cost: 0.3 }),
+        ],
+        start + 1000,
+        start + 2000,
+        "by-type",
+        {},
+        {
+          session: entry,
+          sessionLogsData:
+            logs?.map((log) => ({ ...log, timestamp: start + log.timestamp })) ?? null,
+        },
+      );
 
-    expect(container.querySelector(".session-detail-stats")?.textContent).toContain("300");
-    expect(container.querySelector(".session-detail-stats")?.textContent).toContain("$0.30");
-    expect(container.querySelector(".session-detail-indicator")).not.toBeNull();
-    const summary = [...container.querySelectorAll(".session-summary-card")];
-    expect(summary[0]?.textContent).toContain("2");
-    const messageSummary = summary[0]?.textContent?.replaceAll(/\s+/g, " ");
-    expect(messageSummary).toContain("1 user");
-    expect(messageSummary).toContain("1 assistant");
-    expect(summary[3]?.textContent).toContain("1s");
-    expect(
-      [...container.querySelectorAll(".timeseries-breakdown .legend-item")].map((item) =>
-        item.textContent?.replaceAll(/\s+/g, " ").trim(),
-      ),
-    ).toEqual(["Output 20", "Input 10", "Cache Write 5", "Cache Read 12"]);
-    expect(
-      container.querySelector(".timeseries-breakdown .cost-breakdown-total")?.textContent,
-    ).toContain("47");
-  });
+      expect(container.querySelector(".session-detail-stats")?.textContent).toContain("300");
+      expect(container.querySelector(".session-detail-stats")?.textContent).toContain("$0.30");
+      expect(container.querySelector(".session-detail-indicator")).not.toBeNull();
+      const summary = [...container.querySelectorAll(".session-summary-card")];
+      expect(summary[0]?.querySelector(".session-summary-title")?.textContent).toBe(
+        "Visible messages",
+      );
+      expect(summary[0]?.querySelector(".session-summary-value")?.textContent?.trim()).toBe(
+        messages,
+      );
+      expect(
+        summary[0]
+          ?.querySelector(".session-summary-meta")
+          ?.textContent?.replaceAll(/\s+/g, " ")
+          .trim(),
+      ).toBe(messageMeta);
+      expect(summary[2]?.querySelector(".session-summary-title")?.textContent).toBe(
+        "Errors · Full session",
+      );
+      expect(summary[2]?.querySelector(".session-summary-value")?.textContent?.trim()).toBe("4");
+      expect(container.textContent).toContain("Model mix · Full session");
+      expect(container.textContent).toContain("Samples 1–2 of 3");
+      expect(summary[1]?.querySelector(".session-summary-title")?.textContent).toBe(
+        logs === null ? "Tool calls · Full session" : "Tool calls",
+      );
+      expect(summary[3]?.textContent).toContain("1s");
+      expect(
+        [...container.querySelectorAll(".timeseries-breakdown .legend-item")].map((item) =>
+          item.textContent?.replaceAll(/\s+/g, " ").trim(),
+        ),
+      ).toEqual(["Output 20", "Input 10", "Cache write 5", "Cache read 12"]);
+      expect(
+        container.querySelector(".timeseries-breakdown .cost-breakdown-total")?.textContent,
+      ).toContain("47");
+    },
+  );
 
   it.each(["tool", "toolResult"] as const)(
     "counts repeated assistant calls without counting %s results in the selected range",
@@ -276,17 +329,21 @@ describe("renderSessionDetailPanel filtered usage", () => {
       const data = { session: entry, sessionLogsData: logs };
       const selected = mount(points, start, end, "total", {}, data);
       expect(selected.querySelectorAll(".session-summary-value")[1]?.textContent).toBe("2");
-      expect(selected.querySelectorAll(".session-summary-meta")[1]?.textContent?.trim()).toBe(
-        "1 tools used",
-      );
+      expect(
+        selected
+          .querySelectorAll(".session-summary-meta")[1]
+          ?.textContent?.replaceAll(/\s+/g, " ")
+          .trim(),
+      ).toBe("1 tools used · 0 tool results · Full session");
+      expect(selected.querySelectorAll(".session-summary-meta")[2]?.textContent?.trim()).toBe("");
       expect(
         [...selected.querySelectorAll(".usage-list-item")].map((item) => [
-          item.firstElementChild?.textContent,
-          item.querySelector(".usage-list-value > span")?.textContent,
+          item.querySelector(".usage-insight-label")?.textContent,
+          item.querySelector(".usage-list-value")?.textContent?.trim(),
         ]),
       ).toEqual([
-        ["read", "2"],
-        ["exec", "0"],
+        ["read", "2 calls"],
+        ["exec", "0 calls"],
       ]);
       expect(selected.querySelector(".session-log-tools-pill")?.textContent?.trim()).toBe(
         "read × 2",

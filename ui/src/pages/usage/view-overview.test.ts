@@ -5,14 +5,14 @@ import { render } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CostDailyEntry, UsageAggregates, UsageSessionEntry, UsageTotals } from "./types.ts";
 import { renderUsageHeatmap } from "./view-heatmap.ts";
+import { renderUsageHero } from "./view-hero.ts";
 import {
-  renderDailyChartCompact,
   renderCostBreakdownCompact,
   renderCostWindowComparison,
   renderFilterChips,
   renderSessionsCard,
-  renderUsageInsights,
 } from "./view-overview.ts";
+import { renderUsageOperations } from "./view-summary.ts";
 
 const totals: UsageTotals = {
   input: 100,
@@ -62,20 +62,34 @@ function dailyEntry(date: string, totalTokens: number, totalCost = 0): CostDaily
   };
 }
 
+function heroTemplate(overrides: Partial<Parameters<typeof renderUsageHero>[0]> = {}) {
+  return renderUsageHero({
+    totals,
+    aggregates,
+    daily: [],
+    selectedDays: [],
+    chartMode: "tokens",
+    dailyChartMode: "total",
+    sessions: [],
+    timeZone: "utc",
+    onDailyChartModeChange: () => {},
+    onChartModeChange: () => {},
+    onSelectDay: () => {},
+    ...overrides,
+  });
+}
+
 function renderDailyChart(
   daily: CostDailyEntry[],
   onSelectDay = vi.fn<(day: string, shiftKey: boolean) => void>(),
 ) {
   const container = document.createElement("div");
   document.body.append(container);
-  render(
-    renderDailyChartCompact(daily, [], "tokens", "total", () => {}, onSelectDay),
-    container,
-  );
+  render(heroTemplate({ daily, onSelectDay }), container);
   return {
     container,
     onSelectDay,
-    bars: Array.from(container.querySelectorAll<HTMLElement>(".daily-bar-wrapper")),
+    days: Array.from(container.querySelectorAll<HTMLButtonElement>(".usage-hero-day")),
   };
 }
 
@@ -85,108 +99,70 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function directText(element: Element | null | undefined): string | undefined {
-  return Array.from(element?.childNodes ?? [])
-    .filter((node) => node.nodeType === Node.TEXT_NODE)
-    .map((node) => node.textContent ?? "")
-    .join("")
-    .trim();
-}
-
-function getSummaryCards(container: HTMLElement): Array<{
-  title: string | undefined;
-  value: string | undefined;
-  sub: string | undefined;
-}> {
-  return Array.from(container.querySelectorAll(".usage-summary-card")).map((card) => ({
-    title: directText(card.querySelector(".usage-summary-title")),
-    value: card.querySelector(".usage-summary-value")?.textContent?.trim(),
-    sub: card.querySelector(".usage-summary-sub")?.textContent?.trim(),
+function getOperationalRows(container: HTMLElement) {
+  return Array.from(container.querySelectorAll(".usage-operation-row")).map((row) => ({
+    title: row.querySelector("dt")?.textContent?.trim(),
+    value: row.querySelector("dd")?.textContent?.trim(),
+    sub: row.querySelector("small")?.textContent?.trim(),
   }));
 }
 
-describe("renderUsageInsights", () => {
-  it("renders overview hints as focusable tooltip anchors", () => {
+describe("usage overview", () => {
+  it("makes metric definitions available on focusable metric rows", () => {
     const container = document.createElement("div");
-    document.body.append(container);
-
     render(
-      renderUsageInsights(
+      renderUsageOperations(
         totals,
         aggregates,
         {
-          durationSumMs: 0,
           durationCount: 0,
           avgDurationMs: 0,
           errorRate: 0,
         },
         false,
-        true,
-        [],
-        1,
         1,
       ),
       container,
     );
-
-    const buttons = [...container.querySelectorAll<HTMLButtonElement>("button.usage-summary-hint")];
-    const tooltips = [...container.querySelectorAll("openclaw-tooltip")];
-    expect(buttons).toHaveLength(9);
-    expect(tooltips).toHaveLength(9);
-    expect(
-      buttons.every(
-        (button) =>
-          button.type === "button" &&
-          !button.hasAttribute("title") &&
-          Boolean(button.getAttribute("aria-label")),
+    const messages = expectDefined(
+      [...container.querySelectorAll<HTMLElement>(".usage-operation-row")].find(
+        (row) => row.querySelector("dt")?.textContent === "Messages",
       ),
-    ).toBe(true);
+      "messages metric",
+    );
+    expect(messages.tabIndex).toBe(0);
     expect(
-      tooltips.every((tooltip) => {
-        const button = tooltip.querySelector<HTMLButtonElement>("button.usage-summary-hint");
-        const content = tooltip.querySelector('[slot="content"]');
-        return Boolean(
-          button &&
-          buttons.includes(button) &&
-          content &&
-          button.getAttribute("aria-label") !== content.textContent,
-        );
-      }),
-    ).toBe(true);
-
-    buttons[0]?.click();
-    expect(document.activeElement).toBe(buttons[0]);
+      (messages.closest("openclaw-tooltip") as HTMLElement & { content: string }).content,
+    ).toContain("Total user and assistant messages in range.");
   });
 
   it("includes cache writes in cache-hit-rate denominator", () => {
     const container = document.createElement("div");
 
     render(
-      renderUsageInsights(
+      renderUsageOperations(
         totals,
         aggregates,
         {
-          durationSumMs: 0,
           durationCount: 0,
           avgDurationMs: 0,
           errorRate: 0,
         },
         false,
-        true,
-        [],
-        1,
         1,
       ),
       container,
     );
 
-    expect(getSummaryCards(container).filter((card) => card.title === "Cache Hit Rate")).toEqual([
-      {
-        title: "Cache Hit Rate",
-        value: "30.0%",
-        sub: "300 cached · 1.0K prompt",
-      },
-    ]);
+    expect(getOperationalRows(container).filter((card) => card.title === "Cache hit rate")).toEqual(
+      [
+        {
+          title: "Cache hit rate",
+          value: "30.0%",
+          sub: "300 cached · 1.0K prompt",
+        },
+      ],
+    );
   });
 
   it("shows provider cost share when cost data is available", () => {
@@ -204,28 +180,14 @@ describe("renderUsageInsights", () => {
     } as UsageAggregates;
 
     render(
-      renderUsageInsights(
-        costTotals,
-        costAggregates,
-        {
-          durationSumMs: 0,
-          durationCount: 0,
-          avgDurationMs: 0,
-          errorRate: 0,
-        },
-        false,
-        true,
-        [],
-        1,
-        1,
-      ),
+      heroTemplate({ totals: costTotals, aggregates: costAggregates, chartMode: "cost" }),
       container,
     );
 
-    const providerCard = Array.from(container.querySelectorAll(".usage-insight-card")).find(
-      (card) => card.querySelector(".usage-insight-title")?.textContent === "Top Providers",
+    const providerCard = container.querySelector(".usage-hero-provider");
+    expect(providerCard?.querySelector(".usage-hero-provider-line")?.textContent).toContain(
+      "70.0%",
     );
-    expect(providerCard?.textContent).toContain("70.0% of cost");
   });
 
   it("omits cost shares when category totals are not day-scoped", () => {
@@ -243,25 +205,17 @@ describe("renderUsageInsights", () => {
     } as UsageAggregates;
 
     render(
-      renderUsageInsights(
-        costTotals,
-        costAggregates,
-        {
-          durationSumMs: 0,
-          durationCount: 0,
-          avgDurationMs: 0,
-          errorRate: 0,
-        },
-        false,
-        false,
-        [],
-        1,
-        1,
-      ),
+      heroTemplate({
+        totals: costTotals,
+        aggregates: costAggregates,
+        daily: [dailyEntry("2026-05-04", 700, 1)],
+        selectedDays: ["2026-05-04"],
+      }),
       container,
     );
 
-    expect(container.textContent).not.toContain("1000.0% of cost");
+    expect(container.querySelector(".usage-hero-providers")?.textContent).not.toContain("OpenAI");
+    expect(container.querySelector(".usage-hero-providers")?.textContent).toContain("Unattributed");
   });
 });
 
@@ -277,8 +231,8 @@ describe("renderUsageHeatmap", () => {
       container,
     );
 
-    expect(container.querySelector(".settings-section__heading")?.textContent?.trim()).toBe(
-      "Token Activity",
+    expect(container.querySelector(".usage-pattern-header h3")?.textContent?.trim()).toBe(
+      "Token activity",
     );
     expect(container.querySelectorAll(".usage-heatmap__cell")).toHaveLength(52 * 7);
     expect(
@@ -299,7 +253,7 @@ describe("renderUsageHeatmap", () => {
       container
         .querySelector<SVGElement>(".usage-heatmap__svg")
         ?.style.getPropertyValue("--usage-heatmap-width"),
-    ).toBe("44px");
+    ).toBe("74px");
   });
 });
 
@@ -307,34 +261,41 @@ describe("usage overview presentation owners", () => {
   it.each(["tokens", "cost"] as const)("preserves ordered %s breakdown categories", (mode) => {
     const container = document.createElement("div");
     render(
-      renderCostBreakdownCompact(
-        {
+      renderCostBreakdownCompact({
+        values: {
           ...totals,
-          totalCost: 1,
           outputCost: 0.2,
           inputCost: 0.1,
           cacheWriteCost: 0.3,
           cacheReadCost: 0.4,
         },
         mode,
-      ),
+        total: mode === "tokens" ? totals.totalTokens : 1,
+        variant: "overview",
+      }),
       container,
     );
 
-    const categories = ["output", "input", "cache-write", "cache-read"];
+    const categories = [
+      "usage-token-output",
+      "usage-token-input",
+      "usage-token-cache-write",
+      "usage-token-cache-read",
+    ];
     expect(
       [...container.querySelectorAll(".cost-breakdown-bar .cost-segment")].map((segment) =>
         categories.find((category) => segment.classList.contains(category)),
       ),
     ).toEqual(categories);
     expect(
-      [...container.querySelectorAll(".cost-breakdown-legend .legend-item")].map((entry) =>
-        entry.textContent?.replaceAll(/\s+/g, " ").trim(),
+      [...container.querySelectorAll(".cost-breakdown-legend .usage-composition-metric")].map(
+        (entry) =>
+          `${entry.querySelector(".usage-composition-label")?.textContent?.trim()} ${entry.querySelector(".usage-composition-value")?.textContent?.trim()}`,
       ),
     ).toEqual(
       mode === "tokens"
-        ? ["Output 40", "Input 100", "Cache Write 600", "Cache Read 300"]
-        : ["Output $0.20", "Input $0.10", "Cache Write $0.30", "Cache Read $0.40"],
+        ? ["Output 40", "Input 100", "Cache write 600", "Cache read 300"]
+        : ["Output $0.20", "Input $0.10", "Cache write $0.30", "Cache read $0.40"],
     );
   });
 
@@ -344,16 +305,26 @@ describe("usage overview presentation owners", () => {
     const onClearHours = vi.fn();
     const onClearSessions = vi.fn();
     render(
-      renderFilterChips(
-        ["2026-08-01"],
-        [8],
-        ["agent:main:usage"],
-        [{ key: "agent:main:usage", label: "Usage thread" } as UsageSessionEntry],
-        onClearDays,
-        onClearHours,
-        onClearSessions,
-        vi.fn(),
-      ),
+      renderFilterChips({
+        data: {
+          sessions: [{ key: "agent:main:usage", label: "Usage thread" } as UsageSessionEntry],
+        },
+        filters: {
+          selectedDays: ["2026-08-01"],
+          selectedHours: [8],
+          selectedSessions: ["agent:main:usage"],
+          agentId: null,
+        },
+        callbacks: {
+          filters: {
+            onClearDays,
+            onClearHours,
+            onClearSessions,
+            onClearFilters: vi.fn(),
+            onAgentChange: vi.fn(),
+          },
+        },
+      }),
       container,
     );
 
@@ -371,10 +342,10 @@ describe("usage overview presentation owners", () => {
   });
 });
 
-describe("renderDailyChartCompact", () => {
+describe("renderUsageHero daily chart", () => {
   it("keeps day selection operable with mouse and keyboard", () => {
-    const { bars, onSelectDay } = renderDailyChart([dailyEntry("2026-05-04", 500, 0.2)]);
-    const bar = expectDefined(bars[0], "daily usage bar");
+    const { days, onSelectDay } = renderDailyChart([dailyEntry("2026-05-04", 500, 0.2)]);
+    const bar = expectDefined(days[0], "daily usage point");
 
     bar.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
     expect(onSelectDay).toHaveBeenCalledWith("2026-05-04", true);
@@ -396,69 +367,60 @@ describe("renderDailyChartCompact", () => {
   it("labels the chart scale with the selected metric", () => {
     const container = document.createElement("div");
     render(
-      renderDailyChartCompact(
-        [dailyEntry("2026-05-03", 500, 1), dailyEntry("2026-05-04", 1_000, 2)],
-        [],
-        "cost",
-        "total",
-        () => {},
-        () => {},
-      ),
+      heroTemplate({
+        daily: [dailyEntry("2026-05-03", 500, 1), dailyEntry("2026-05-04", 1_000, 2)],
+        chartMode: "cost",
+        dailyChartMode: "total",
+      }),
       container,
     );
 
     expect(
-      Array.from(container.querySelectorAll(".daily-chart-scale span")).map(
+      Array.from(container.querySelectorAll(".usage-hero-y-axis span")).map(
         (entry) => entry.textContent,
       ),
-    ).toEqual(["$2.00", "$1.00", "$0.00"]);
-    expect(container.querySelector(".daily-chart-scale-badge")).toBeNull();
+    ).toEqual(["$2", "$1", "$0"]);
+    expect(container.textContent).not.toContain("Square-root scale keeps low-usage days visible.");
   });
 
   it("labels the true midpoint of a compressed chart scale", () => {
     const container = document.createElement("div");
     render(
-      renderDailyChartCompact(
-        [dailyEntry("2026-05-03", 500, 1), dailyEntry("2026-05-04", 1_000, 100)],
-        [],
-        "cost",
-        "total",
-        () => {},
-        () => {},
-      ),
+      heroTemplate({
+        daily: [dailyEntry("2026-05-03", 500, 1), dailyEntry("2026-05-04", 1_000, 100)],
+        chartMode: "cost",
+        dailyChartMode: "total",
+      }),
       container,
     );
 
     expect(
-      Array.from(container.querySelectorAll(".daily-chart-scale span")).map((entry) =>
+      Array.from(container.querySelectorAll(".usage-hero-y-axis span")).map((entry) =>
         entry.textContent?.trim(),
       ),
-    ).toEqual(["$100.00", "$25.00", "$0.00"]);
-    expect(container.querySelector(".daily-chart-scale-badge")?.textContent?.trim()).toBe("√");
+    ).toEqual(["$100", "$25", "$0"]);
+    expect(container.textContent).toContain("Square-root scale keeps low-usage days visible.");
   });
 
   it("preserves sub-cent values in chart scale labels", () => {
     const container = document.createElement("div");
     render(
-      renderDailyChartCompact(
-        [dailyEntry("2026-05-03", 500, 0.004), dailyEntry("2026-05-04", 1_000, 0.008)],
-        [],
-        "cost",
-        "total",
-        () => {},
-        () => {},
-      ),
+      heroTemplate({
+        daily: [dailyEntry("2026-05-03", 500, 0.004), dailyEntry("2026-05-04", 1_000, 0.008)],
+        chartMode: "cost",
+        dailyChartMode: "total",
+      }),
       container,
     );
 
     expect(
-      Array.from(container.querySelectorAll(".daily-chart-scale span")).map((entry) =>
+      Array.from(container.querySelectorAll(".usage-hero-y-axis span")).map((entry) =>
         entry.textContent?.trim(),
       ),
-    ).toEqual(["$0.0080", "$0.0040", "$0.00"]);
+    ).toEqual(["$0.01", "$0.005", "$0"]);
   });
 
-  it("normalizes a nonzero micro-cost bar to the labeled maximum", () => {
+  it("normalizes a nonzero micro-cost area to the labeled maximum", () => {
     const container = document.createElement("div");
     const microCostDay = {
       ...dailyEntry("2026-05-04", 1_000, 0.00001),
@@ -466,49 +428,28 @@ describe("renderDailyChartCompact", () => {
       outputCost: 0.000006,
     };
     render(
-      renderDailyChartCompact(
-        [microCostDay],
-        [],
-        "cost",
-        "by-type",
-        () => {},
-        () => {},
-      ),
+      heroTemplate({
+        daily: [microCostDay],
+        chartMode: "cost",
+        dailyChartMode: "by-type",
+      }),
       container,
     );
 
     expect(
-      Array.from(container.querySelectorAll(".daily-chart-scale span")).map((entry) =>
+      Array.from(container.querySelectorAll(".usage-hero-y-axis span")).map((entry) =>
         entry.textContent?.trim(),
       ),
-    ).toEqual(["$0.000010", "$0.000005", "$0.00"]);
-    expect(container.querySelector<HTMLElement>(".daily-bar")?.style.height).toBe("200px");
-    expect(container.querySelector(".daily-bar-total")?.textContent?.trim()).toBe("$0.000010");
-    const tooltip = container.querySelector<HTMLElement & { content: string }>("openclaw-tooltip");
-    expect(tooltip?.content).toContain("$0.000010");
-    expect(tooltip?.content).toContain("Output $0.000006");
-    expect(tooltip?.content).toContain("Input $0.000004");
-    expect(container.querySelector(".daily-chart-scale-badge")).toBeNull();
-  });
-
-  it("reserves the totals row when dense ranges hide bar totals", () => {
-    const container = document.createElement("div");
-    const daily = Array.from({ length: 15 }, (_, index) =>
-      dailyEntry(`2026-05-${String(index + 1).padStart(2, "0")}`, 1_000, index + 1),
-    );
-    render(
-      renderDailyChartCompact(
-        daily,
-        [],
-        "cost",
-        "total",
-        () => {},
-        () => {},
-      ),
-      container,
-    );
-
-    expect(container.querySelectorAll(".daily-bar-total--placeholder")).toHaveLength(15);
+    ).toEqual(["$0.00001", "$0.000005", "$0"]);
+    const plot = expectDefined(container.querySelector(".usage-hero-canvas svg"), "daily plot");
+    expect(
+      [...plot.querySelectorAll('path[fill="none"]')].map((path) => path.getAttribute("d")),
+    ).toContain("M0,0H800");
+    const day = expectDefined(container.querySelector(".usage-hero-day"), "daily point");
+    expect(day.getAttribute("aria-label")).toContain("$0.000010");
+    expect(day.getAttribute("aria-label")).toContain("Output: 0 Tokens · $0.000006");
+    expect(day.getAttribute("aria-label")).toContain("Input: 1.0K Tokens · $0.000004");
+    expect(container.textContent).not.toContain("Square-root scale keeps low-usage days visible.");
   });
 });
 
@@ -528,12 +469,18 @@ describe("renderCostWindowComparison", () => {
       container,
     );
 
-    const cards = Array.from(container.querySelectorAll(".cost-window-card")).map((card) => ({
-      label: card.querySelector(".cost-window-card__label")?.textContent?.trim(),
-      value: card.querySelector(".cost-window-card__value")?.textContent?.trim(),
-    }));
+    const cards = Array.from(container.querySelectorAll(".usage-cost-windows > div")).map(
+      (card) => ({
+        label: card.querySelector("dt")?.textContent?.trim(),
+        value: Array.from(card.querySelector("dd")?.childNodes ?? [])
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => node.textContent)
+          .join("")
+          .trim(),
+      }),
+    );
     expect(cards).toEqual([
-      { label: "Selected Range", value: "$10.00" },
+      { label: "Selected range", value: "$10.00" },
       { label: "Jul 1", value: "$5.00" },
       { label: "Last 7 days", value: "$9.00" },
       { label: "Last 30 days", value: "$9.00" },
@@ -551,9 +498,17 @@ describe("renderCostWindowComparison", () => {
       container,
     );
 
-    const range = container.querySelector(".cost-window-card--range");
-    expect(range?.querySelector(".cost-window-card__value")?.textContent?.trim()).toBe("$0.0030");
-    expect(range?.querySelector(".cost-window-card__meta")?.textContent).toContain("$0.0001 / day");
+    const range = container.querySelector(".usage-cost-windows > div");
+    expect(
+      Array.from(range?.querySelector("dd")?.childNodes ?? [])
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent)
+        .join("")
+        .trim(),
+    ).toBe("$0.0030");
+    expect(range?.querySelector(".usage-cost-window-context")?.textContent).toContain(
+      "$0.0001 / day",
+    );
   });
 });
 
@@ -604,7 +559,6 @@ describe("renderSessionsCard", () => {
     shown: number;
     header: string;
     empty?: string;
-    more?: string;
     primaryLabels?: string[];
     selectedLabel?: string;
   }> = [
@@ -626,7 +580,6 @@ describe("renderSessionsCard", () => {
       sessionCount: 51,
       shown: 50,
       header: "50 shown · 51 total",
-      more: "+1 more",
     },
     {
       name: "empty Recently viewed list",
@@ -691,24 +644,18 @@ describe("renderSessionsCard", () => {
       }),
     );
     const container = renderCard(sessions, scenario.options);
-    const primaryList = container.querySelector(".sessions-card > .session-bars");
-    expect(primaryList?.querySelectorAll(".session-bar-row").length ?? 0).toBe(scenario.shown);
+    const primaryList = container.querySelector(".usage-session-table");
+    expect(primaryList?.querySelectorAll(".usage-session-row").length ?? 0).toBe(scenario.shown);
     expect(
-      container
-        .querySelector(".sessions-card-header .sessions-card-count")
-        ?.textContent?.replace(/\s+/g, " ")
-        .trim(),
-    ).toBe(scenario.header);
+      container.querySelector(".usage-sessions-summary")?.textContent?.replace(/\s+/g, " ").trim(),
+    ).toContain(scenario.header);
     expect(container.querySelector(".usage-empty-block")?.textContent?.trim()).toBe(scenario.empty);
-    expect(container.querySelector(".usage-more-sessions")?.textContent?.trim()).toBe(
-      scenario.more,
+    expect(container.querySelector(".usage-session-selection > span")?.textContent?.trim()).toBe(
+      scenario.selectedLabel,
     );
-    expect(
-      container.querySelector(".sessions-selected-group .sessions-card-count")?.textContent?.trim(),
-    ).toBe(scenario.selectedLabel);
     if (scenario.primaryLabels) {
       expect(
-        [...(primaryList?.querySelectorAll(".session-bar-title") ?? [])].map((label) =>
+        [...(primaryList?.querySelectorAll(".usage-session-open") ?? [])].map((label) =>
           label.textContent?.trim(),
         ),
       ).toEqual(scenario.primaryLabels);
@@ -764,15 +711,15 @@ describe("renderSessionsCard", () => {
       container,
     );
 
-    const rows = [...container.querySelectorAll<HTMLElement>(".session-bar-row")];
-    const selected = rows[0]?.querySelector<HTMLButtonElement>(".session-bar-selection");
-    const next = rows[1]?.querySelector<HTMLButtonElement>(".session-bar-selection");
+    const rows = [...container.querySelectorAll<HTMLElement>(".usage-session-row")];
+    const selected = rows[0]?.querySelector<HTMLButtonElement>(".usage-session-open");
+    const next = rows[1]?.querySelector<HTMLButtonElement>(".usage-session-open");
     expect(selected).toBeInstanceOf(HTMLButtonElement);
     expect(selected?.type).toBe("button");
-    expect(selected?.getAttribute("aria-label")).toBe("Selected thread");
-    expect(selected?.getAttribute("aria-pressed")).toBe("true");
-    expect(next?.getAttribute("aria-label")).toBe("Next thread");
-    expect(next?.getAttribute("aria-pressed")).toBe("false");
+    expect(selected?.textContent?.trim()).toBe("Selected thread");
+    expect(rows[0]?.getAttribute("aria-selected")).toBe("true");
+    expect(next?.textContent?.trim()).toBe("Next thread");
+    expect(rows[1]?.getAttribute("aria-selected")).toBe("false");
     next?.focus();
     expect(document.activeElement).toBe(next);
     next?.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
@@ -783,7 +730,7 @@ describe("renderSessionsCard", () => {
       sessions.map((s) => s.key),
     );
 
-    const copyButton = rows[0]?.querySelector<HTMLButtonElement>(".session-bar-actions button");
+    const copyButton = rows[0]?.querySelector<HTMLButtonElement>(".usage-session-copy button");
     copyButton?.click();
     await vi.waitFor(() => {
       expect(copyButton?.textContent?.trim()).toBe(feedback);
@@ -791,7 +738,7 @@ describe("renderSessionsCard", () => {
     });
     expect(writeText).toHaveBeenCalledWith("Selected thread");
     expect(onSelectSession).toHaveBeenCalledOnce();
-    rows[0]?.querySelector<HTMLElement>(".session-bar-value")?.click();
+    rows[0]?.querySelector<HTMLElement>("td:last-child .usage-session-number")?.click();
     expect(onSelectSession).toHaveBeenCalledWith(
       "agent:main:selected",
       false,
@@ -859,48 +806,50 @@ describe("renderSessionsCard", () => {
 
     const container = renderCard(sessions, { ...scenario, days: ["2026-02-05"] });
     expect(
-      [...container.querySelectorAll(".session-bar-title")].map((el) => el.textContent?.trim()),
+      [...container.querySelectorAll(".usage-session-open")].map((el) => el.textContent?.trim()),
     ).toEqual(scenario.names);
     expect(
-      [...container.querySelectorAll(".session-bar-value")].map((el) => el.textContent?.trim()),
+      [...container.querySelectorAll("td:last-child .usage-session-number")].map((el) =>
+        el.textContent?.trim(),
+      ),
     ).toEqual(scenario.values);
     expect(
-      container
-        .querySelector(".sessions-card-stats span")
-        ?.textContent?.replace(/\s+/g, " ")
-        .trim(),
-    ).toBe(`${scenario.avg} avg`);
+      container.querySelector(".usage-sessions-summary")?.textContent?.replace(/\s+/g, " ").trim(),
+    ).toContain(`${scenario.avg} avg`);
   });
 
   it("reads each daily bucket once across sorting, totals, recent and selected rows", () => {
     const reads = { dates: 0, tokens: 0, cost: 0 };
-    const sessions = Array.from({ length: 3 }, (_, index): UsageSessionEntry => ({
-      key: `session-${index}`,
-      label: `Session ${index}`,
-      usage: {
-        ...totals,
-        totalTokens: (index + 1) * 100,
-        dailyBreakdown: ["2026-02-04", "2026-02-05"].map((date) =>
-          Object.assign(
-            {
-              get date() {
-                reads.dates += 1;
-                return date;
+    const sessions = Array.from(
+      { length: 3 },
+      (_, index): UsageSessionEntry => ({
+        key: `session-${index}`,
+        label: `Session ${index}`,
+        usage: {
+          ...totals,
+          totalTokens: (index + 1) * 100,
+          dailyBreakdown: ["2026-02-04", "2026-02-05"].map((date) =>
+            Object.assign(
+              {
+                get date() {
+                  reads.dates += 1;
+                  return date;
+                },
+                get tokens() {
+                  reads.tokens += 1;
+                  return (index + 1) * 10;
+                },
+                get cost() {
+                  reads.cost += 1;
+                  return 3 - index;
+                },
               },
-              get tokens() {
-                reads.tokens += 1;
-                return (index + 1) * 10;
-              },
-              get cost() {
-                reads.cost += 1;
-                return 3 - index;
-              },
-            },
-            totals,
+              totals,
+            ),
           ),
-        ),
-      },
-    }));
+        },
+      }),
+    );
     const container = renderCard(sessions, {
       days: ["2026-02-05"],
       sort: "cost",
@@ -909,17 +858,16 @@ describe("renderSessionsCard", () => {
       tab: "recent",
     });
     expect(
-      [...container.querySelectorAll(".session-bar-title")].map((el) => el.textContent?.trim()),
-    ).toEqual(["Session 2", "Session 0", "Session 0", "Session 2"]);
+      [...container.querySelectorAll(".usage-session-open")].map((el) => el.textContent?.trim()),
+    ).toEqual(["Session 2", "Session 0"]);
     expect(
-      [...container.querySelectorAll(".session-bar-value")].map((el) => el.textContent?.trim()),
-    ).toEqual(["30", "10", "10", "30"]);
+      [...container.querySelectorAll("td:last-child .usage-session-number")].map((el) =>
+        el.textContent?.trim(),
+      ),
+    ).toEqual(["30", "10"]);
     expect(
-      container
-        .querySelector(".sessions-card-stats span")
-        ?.textContent?.replace(/\s+/g, " ")
-        .trim(),
-    ).toBe("20 avg");
+      container.querySelector(".usage-sessions-summary")?.textContent?.replace(/\s+/g, " ").trim(),
+    ).toContain("20 avg");
     expect(reads.dates).toBeLessThanOrEqual(6);
     expect(reads.tokens).toBeLessThanOrEqual(3);
     expect(reads.cost).toBeLessThanOrEqual(3);
@@ -968,16 +916,16 @@ describe("renderSessionsCard", () => {
       ];
       const values = (container: HTMLElement) =>
         Object.fromEntries(
-          [...container.querySelectorAll(".session-bar-row")].map((row) => [
+          [...container.querySelectorAll(".usage-session-row")].map((row) => [
             row.getAttribute("title"),
-            row.querySelector(".session-bar-value")?.textContent?.trim(),
+            row.querySelector("td:last-child .usage-session-number")?.textContent?.trim(),
           ]),
         );
       const formatted = (amounts: number[]) =>
         Object.fromEntries(
           sessions.map((session, index) => [
             session.key,
-            tokens ? String(amounts[index]) : `$${amounts[index]!.toFixed(2)}`,
+            index === 0 ? "—" : tokens ? String(amounts[index]) : `$${amounts[index]!.toFixed(2)}`,
           ]),
         );
       expect(values(renderCard(sessions, { tokens, days: ["2026-02-05", "2026-02-05"] }))).toEqual(
@@ -999,7 +947,7 @@ describe("renderSessionsCard", () => {
         { key: "other", label: "Other", updatedAt: 0, usage: { ...totals, totalTokens: 10 } },
       ];
       const titles = (container: Element) =>
-        [...container.querySelectorAll(".session-bar-title")].map((entry) =>
+        [...container.querySelectorAll(".usage-session-open")].map((entry) =>
           entry.textContent?.trim(),
         );
       expect(titles(renderCard(sessions, { direction }))).toEqual(
@@ -1021,24 +969,26 @@ describe("renderSessionsCard", () => {
         selected: ["shared", "newest"],
         onSelect,
       });
-      const recent = container.querySelector(".session-bars--recent")!;
-      const selected = container.querySelector(".session-bars--selected")!;
+      const recent = container.querySelector(".usage-session-table")!;
+      const selected = container.querySelector(".usage-session-comparison-grid")!;
       expect(titles(recent)).toEqual(
         direction === "desc" ? ["Beta", "Newest", "Beta"] : ["Alpha", "Newest", "Alpha"],
       );
-      expect(titles(selected)).toEqual(
-        direction === "desc" ? ["Newest", "Alpha", "Beta"] : ["Beta", "Alpha", "Newest"],
-      );
+      expect(
+        [...selected.querySelectorAll(".usage-session-comparison-item > h4")].map((el) =>
+          el.textContent?.trim(),
+        ),
+      ).toEqual(direction === "desc" ? ["Newest", "Alpha", "Beta"] : ["Beta", "Alpha", "Newest"]);
       recent
-        .querySelector(".session-bar-selection")!
+        .querySelector(".usage-session-open")!
         .dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
       expect(onSelect).toHaveBeenLastCalledWith("shared", true, ["shared", "newest", "shared"]);
       selected
-        .querySelector(".session-bar-selection")!
+        .querySelector("button")!
         .dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
       expect(onSelect).toHaveBeenLastCalledWith(
         direction === "desc" ? "newest" : "shared",
-        true,
+        false,
         direction === "desc" ? ["newest", "shared", "shared"] : ["shared", "shared", "newest"],
       );
     },

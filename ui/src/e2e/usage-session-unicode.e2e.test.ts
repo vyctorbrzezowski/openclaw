@@ -156,13 +156,13 @@ suite.define(() => {
           .poll(() => gateway.getRequests("sessions.usage"), { timeout: 10_000 })
           .not.toHaveLength(0);
 
-        const row = page.locator(".session-bar-row").filter({ hasText: scenario.key });
+        const row = page.locator(".usage-session-row").filter({ hasText: scenario.key });
         await expect.poll(() => row.count(), { timeout: 10_000 }).toBe(1);
         const select = row.getByRole("button", { name: scenario.key, exact: true });
-        expect(await select.getAttribute("aria-pressed")).toBe("false");
+        expect(await row.getAttribute("aria-selected")).toBe("false");
         await select.focus();
         await page.keyboard.press("Shift+Enter");
-        await expect.poll(() => select.getAttribute("aria-pressed")).toBe("true");
+        await expect.poll(() => row.getAttribute("aria-selected")).toBe("true");
 
         const chip = page
           .locator(".filter-chip")

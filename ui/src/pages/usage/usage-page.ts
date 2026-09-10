@@ -39,9 +39,10 @@ import {
   DEFAULT_VISIBLE_COLUMNS,
   type SessionLogRole,
   type UsageProps,
+  type UsageDetailTab,
+  type UsageSessionSort,
   type UsageRouteData,
 } from "./types.ts";
-import { renderUsage } from "./view.ts";
 
 export type { UsageRouteData } from "./types.ts";
 
@@ -66,17 +67,18 @@ class UsagePage extends OpenClawLightDomElement {
   @state() private usageSelectedSessions: string[] = [];
   @state() private usageSelectedDays: string[] = [];
   @state() private usageSelectedHours: number[] = [];
-  @state() private usageChartMode: "tokens" | "cost" = "tokens";
-  @state() private usageDailyChartMode: "total" | "by-type" = "by-type";
-  @state() private usageTimeSeriesMode: "cumulative" | "per-turn" = "per-turn";
-  @state() private usageTimeSeriesBreakdownMode: "total" | "by-type" = "by-type";
+  @state() private usageChartMode: "tokens" | "cost" = "cost";
+  @state() private usageDailyChartMode: "total" | "by-type" | "by-provider" = "total";
+  @state() private usageTimeSeriesMode: "cumulative" | "per-turn" = "cumulative";
+  @state() private usageDetailTab: UsageDetailTab = "tools-models";
+  @state() private usageDetailOpen = false;
+  @state() private usageTimeSeriesBreakdownMode: "total" | "by-type" = "total";
   @state() private usageTimeSeriesCursorStart: number | null = null;
   @state() private usageTimeSeriesCursorEnd: number | null = null;
   @state() private usageSessionLogsExpanded = false;
   @state() private usageQuery = "";
   @state() private usageQueryDraft = "";
-  @state() private usageSessionSort: "tokens" | "cost" | "recent" | "messages" | "errors" =
-    "recent";
+  @state() private usageSessionSort: UsageSessionSort = "cost";
   @state() private usageSessionSortDir: "desc" | "asc" = "desc";
   @state() private usageRecentSessions: string[] = [];
   @state() private usageTimeZone: "local" | "utc" = "local";
@@ -100,7 +102,7 @@ class UsagePage extends OpenClawLightDomElement {
     reload: (reason) => {
       this.clearDateDebounce();
       const sessionKey =
-        reason === "manual" && this.usageSelectedSessions.length === 1
+        reason === "manual" && this.usageDetailOpen && this.usageSelectedSessions.length === 1
           ? this.usageSelectedSessions[0]
           : undefined;
       return this.loadUsage(sessionKey);
@@ -162,7 +164,9 @@ class UsagePage extends OpenClawLightDomElement {
         this.usageCostSummary = snapshot.value.costSummary;
         this.usageError = null;
         const sessionKey =
-          this.usageSelectedSessions.length === 1 ? this.usageSelectedSessions[0] : undefined;
+          this.usageDetailOpen && this.usageSelectedSessions.length === 1
+            ? this.usageSelectedSessions[0]
+            : undefined;
         if (sessionKey) {
           // Manual intent belongs to this request's selection, never a later poll or selection.
           if (value.refreshSessionKey === sessionKey) {
@@ -375,6 +379,8 @@ class UsagePage extends OpenClawLightDomElement {
 
   private clearDetails() {
     this.details.clear();
+    this.usageDetailOpen = false;
+    this.usageDetailTab = "tools-models";
     this.usageTimeSeriesCursorStart = null;
     this.usageTimeSeriesCursorEnd = null;
   }
@@ -415,7 +421,9 @@ class UsagePage extends OpenClawLightDomElement {
       }
     }
     const sessionKey =
-      this.usageSelectedSessions.length === 1 ? this.usageSelectedSessions[0] : undefined;
+      this.usageDetailOpen && this.usageSelectedSessions.length === 1
+        ? this.usageSelectedSessions[0]
+        : undefined;
     if (change.becameAvailable && sessionKey) {
       for (const detail of [
         this.details.timeSeries,
@@ -434,24 +442,38 @@ class UsagePage extends OpenClawLightDomElement {
     }
   }
 
-  private selectSession(key: string, shiftKey: boolean, orderedKeys: string[]) {
+  private selectSession(key: string, shiftKey: boolean, orderedKeys: string[], toggle = false) {
     this.clearDetails();
     this.usageRecentSessions = [
       key,
       ...this.usageRecentSessions.filter((entry) => entry !== key),
     ].slice(0, 8);
 
-    this.usageSelectedSessions = selectUsageSessionKeys(
-      this.usageSelectedSessions,
-      key,
-      orderedKeys,
-      shiftKey,
-    );
+    this.usageSelectedSessions = toggle
+      ? this.usageSelectedSessions.includes(key)
+        ? this.usageSelectedSessions.filter((selected) => selected !== key)
+        : [...this.usageSelectedSessions, key]
+      : shiftKey
+        ? selectUsageSessionKeys(this.usageSelectedSessions, key, orderedKeys, true)
+        : [key];
 
-    if (this.usageSelectedSessions.length === 1) {
+    this.usageDetailOpen = !toggle && this.usageSelectedSessions.length === 1;
+    if (this.usageDetailOpen) {
       const sessionKey = this.usageSelectedSessions[0];
       if (sessionKey) {
         this.details.load(sessionKey);
+        void this.updateComplete.then(() => {
+          if (
+            !this.isConnected ||
+            !this.usageDetailOpen ||
+            this.usageSelectedSessions[0] !== sessionKey
+          ) {
+            return;
+          }
+          const inspection = this.querySelector<HTMLElement>(".usage-session-inspection");
+          inspection?.focus({ preventScroll: true });
+          inspection?.scrollIntoView({ block: "start", behavior: "instant" });
+        });
       }
     }
   }
@@ -503,6 +525,8 @@ class UsagePage extends OpenClawLightDomElement {
         headerPinned: this.usageHeaderPinned,
       },
       detail: {
+        open: this.usageDetailOpen,
+        tab: this.usageDetailTab,
         context: {
           weight: this.details.contextWeight.data,
           loading: this.details.contextWeight.loading,
@@ -600,7 +624,12 @@ class UsagePage extends OpenClawLightDomElement {
           onExportJson: (data) => {
             void this.usageExportRequest.run(data);
           },
-          onChartModeChange: (mode) => (this.usageChartMode = mode),
+          onChartModeChange: (mode) => {
+            this.usageChartMode = mode;
+            if (this.usageSessionSort === "tokens" || this.usageSessionSort === "cost") {
+              this.usageSessionSort = mode;
+            }
+          },
           onDailyChartModeChange: (mode) => (this.usageDailyChartMode = mode),
           onSessionSortChange: (sort) => (this.usageSessionSort = sort),
           onSessionSortDirChange: (direction) => (this.usageSessionSortDir = direction),
@@ -612,6 +641,7 @@ class UsagePage extends OpenClawLightDomElement {
           },
         },
         details: {
+          onTabChange: (tab) => (this.usageDetailTab = tab),
           onToggleContextExpanded: () => (this.usageContextExpanded = !this.usageContextExpanded),
           onToggleSessionLogsExpanded: () =>
             (this.usageSessionLogsExpanded = !this.usageSessionLogsExpanded),
@@ -633,6 +663,7 @@ class UsagePage extends OpenClawLightDomElement {
             this.usageLogFilterHasTools = false;
             this.usageLogFilterQuery = "";
           },
+          onToggleSession: (key) => this.selectSession(key, false, [], true),
           onSelectSession: (key, shiftKey, orderedKeys) =>
             this.selectSession(key, shiftKey, orderedKeys),
           onTimeSeriesModeChange: (mode) => {
@@ -649,7 +680,7 @@ class UsagePage extends OpenClawLightDomElement {
       },
     };
 
-    return renderUsagePageShell(this.context, this.usageResult, renderUsage(props));
+    return renderUsagePageShell(this.context, this.usageResult, props);
   }
 }
 

@@ -134,7 +134,7 @@ async function captureBrowserSettingProof(
 
 suite.define(() => {
   it.each(["light", "dark"] as const)(
-    "keeps selected Usage accents at rest and on hover in %s mode",
+    "keeps selected Usage presets neutral at rest and on hover in %s mode",
     async (colorScheme) => {
       await suite.withPage(
         { colorScheme, locale: "en-US", viewport: { width: 1280, height: 900 } },
@@ -185,18 +185,22 @@ suite.define(() => {
           await expect
             .poll(() => page.locator("html").getAttribute("data-theme-mode"))
             .toBe(colorScheme);
-          const expected = await resolvedBackground(page, "var(--accent-subtle)");
-          const filters = page.locator(".usage-controls");
-          for (const label of ["Cost", "Tokens"]) {
-            const selected = filters.getByRole("button", { name: label, exact: true });
+          const expected = await resolvedBackground(page, "var(--bg-elevated)");
+          await page.locator("#usage-dates-trigger").click();
+          const presets = page.locator(".usage-presets");
+          for (const label of ["7d", "30d"]) {
+            const selected = presets.getByRole("button", { name: label, exact: true });
             await selected.click();
+            await expect
+              .poll(() => selected.getAttribute("class"))
+              .toContain("settings-segmented__btn--active");
             await page.mouse.move(0, 0);
             for (const state of ["rest", "hover"]) {
               if (state === "hover") {
                 await selected.hover();
               }
               if (captureUiProofEnabled) {
-                await filters.screenshot({
+                await presets.screenshot({
                   animations: "disabled",
                   path: path.join(uiProofArtifactDir, `usage-${colorScheme}-${label}-${state}.png`),
                 });

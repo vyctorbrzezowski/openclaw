@@ -158,7 +158,7 @@ async function captureProof(page: Page, name: string): Promise<void> {
   await writeFile(
     path.join(proofDir, name),
     await takeControlUiViewportScreenshot(page, page.locator(".usage-page"), [
-      page.locator(".usage-controls"),
+      page.locator(".usage-header"),
     ]),
   );
 }
@@ -171,10 +171,15 @@ async function captureResultProof(page: Page, name: string, resultLabel: string)
   await page.screenshot({ path: path.join(proofDir, name) });
 }
 
-async function usageBadges(page: Page): Promise<string[]> {
-  return (await page.locator(".usage-metric-badge").allTextContents()).map((value) =>
-    value.replace(/\s+/gu, " ").trim(),
-  );
+async function visibleUsageTotals(page: Page) {
+  const sessions = page.locator(".usage-operation-row").filter({
+    has: page.locator("dt", { hasText: /^Sessions$/ }),
+  });
+  return {
+    tokens: (await page.locator(".usage-hero-secondary strong").allTextContents())[0]?.trim(),
+    cost: (await page.locator(".usage-hero-number").allTextContents())[0]?.trim(),
+    sessions: (await sessions.locator("dd").allTextContents())[0]?.trim(),
+  };
 }
 
 suite.define(() => {
@@ -232,8 +237,8 @@ suite.define(() => {
             await refresh.click();
           }
           await expect
-            .poll(() => usageBadges(page))
-            .toEqual(["100 Tokens", "$0.01 Cost", "1 session"]);
+            .poll(() => visibleUsageTotals(page))
+            .toEqual({ tokens: "100", cost: "$0.01", sessions: "1" });
           await expect.poll(() => refresh.isEnabled()).toBe(true);
           expect(await page.locator(".usage-callout.danger").count()).toBe(0);
 
@@ -250,8 +255,8 @@ suite.define(() => {
             .poll(() => requestCount(gateway, "usage.cost"), { timeout: 10_000 })
             .toBeGreaterThan(costBefore);
           await expect
-            .poll(() => usageBadges(page))
-            .toEqual(["320 Tokens", "$0.01 Cost", "1 session"]);
+            .poll(() => visibleUsageTotals(page))
+            .toEqual({ tokens: "320", cost: "$0.01", sessions: "1" });
           await expect.poll(() => refresh.isEnabled()).toBe(true);
           expect(await page.locator(".usage-callout.danger").count()).toBe(0);
           await captureProof(page, `usage-${incompleteSource}-cache-${entry}-fresh.png`);
@@ -287,8 +292,10 @@ suite.define(() => {
       await expect.poll(() => new URL(page.url()).pathname).toBe("/usage");
       await waitForRequestCount(gateway, "sessions.usage", 1);
       await waitForRequestCount(gateway, "usage.cost", 1);
-      await page.locator(".daily-chart-compact").waitFor({ timeout: 10_000 });
-      await expect.poll(() => usageBadges(page)).toEqual(["120 Tokens", "$0.01 Cost", "1 session"]);
+      await page.locator(".usage-hero-chart").waitFor({ timeout: 10_000 });
+      await expect
+        .poll(() => visibleUsageTotals(page))
+        .toEqual({ tokens: "120", cost: "$0.01", sessions: "1" });
 
       for (const socketCount of [2, 3, 4]) {
         await proxyReconnect(page, gateway, socketCount);
@@ -340,8 +347,10 @@ suite.define(() => {
       await proxyReconnect(page, gateway, 6);
       await waitForRequestCount(gateway, "sessions.usage", 4);
       await waitForRequestCount(gateway, "usage.cost", 4);
-      await page.locator(".daily-chart-compact").waitFor({ timeout: 10_000 });
-      await expect.poll(() => usageBadges(page)).toEqual(["120 Tokens", "$0.01 Cost", "1 session"]);
+      await page.locator(".usage-hero-chart").waitFor({ timeout: 10_000 });
+      await expect
+        .poll(() => visibleUsageTotals(page))
+        .toEqual({ tokens: "120", cost: "$0.01", sessions: "1" });
       await captureProof(page, "usage-after-interrupted-retry.png");
     } finally {
       await context.close();
@@ -377,7 +386,9 @@ suite.define(() => {
       await waitForRequestCount(gateway, "usage.cost", 2);
 
       await gateway.setMethodResponse("sessions.usage", currentInstanceResult);
+      await page.locator("#usage-scope-trigger").click();
       await page.getByRole("button", { name: "Current instance", exact: true }).click();
+      await page.locator("#usage-scope-trigger").click();
       await gateway.resolveDeferred("sessions.usage", staleFamilyResult);
       await gateway.resolveDeferred("usage.cost", costSummary());
       await expect

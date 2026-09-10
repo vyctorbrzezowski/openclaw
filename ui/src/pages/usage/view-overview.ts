@@ -1,89 +1,61 @@
-import { expectDefined } from "@openclaw/normalization-core";
 import { normalizeLowercaseStringOrEmpty } from "@openclaw/normalization-core/string-coerce";
 import { truncateUtf16Safe } from "@openclaw/normalization-core/utf16-slice";
-// Control UI view renders usage render overview screen content.
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { handleCopyButton } from "../../components/copy-button.ts";
-import { renderSettingsSection, renderSettingsSegmented } from "../../components/settings-ui.ts";
+import { repeat } from "lit/directives/repeat.js";
+import { renderCopyButton } from "../../components/copy-button.ts";
+import { renderProviderBrandIcon } from "../../components/provider-icon.ts";
+import { renderSettingsSegmented } from "../../components/settings-ui.ts";
 import { t } from "../../i18n/index.ts";
 import "../../components/tooltip.ts";
 import { formatDurationCompact } from "../../lib/format.ts";
 import {
   buildUsageCostWindows,
   buildUsageCostWindowSummary,
-  formatUsageCost,
+  formatAnalysisCost,
+  USAGE_TOKEN_CATEGORIES,
   formatDayLabel,
-  formatFullDate,
   formatIsoDate,
   formatUsageTokens,
 } from "./metrics.ts";
 import type { UsageInsightStats } from "./metrics.ts";
 import type {
   UsageAggregates,
+  UsageProps,
   UsageColumnId,
   UsageSessionEntry,
   UsageTotals,
   CostDailyEntry,
 } from "./types.ts";
 
-function tokenCategory<Key extends "output" | "input" | "cacheWrite" | "cacheRead">(
-  key: Key,
-  hintKey: string,
-  short: string,
-) {
-  return {
-    key,
-    className: key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
-    labelKey: `usage.breakdown.${key}`,
-    hintKey,
-    short,
-  };
-}
-
-const USAGE_TOKEN_CATEGORIES = [
-  tokenCategory("output", "usage.details.assistantOutputTokens", "Out"),
-  tokenCategory("input", "usage.details.userToolInputTokens", "In"),
-  tokenCategory("cacheWrite", "usage.details.tokensWrittenToCache", "CW"),
-  tokenCategory("cacheRead", "usage.details.tokensReadFromCache", "CR"),
-] as const;
-
 function pct(part: number, total: number): number {
   return total === 0 ? 0 : (part / total) * 100;
 }
 
-function formatAnalysisCost(value: number): string {
-  const magnitude = Math.abs(value);
-  const decimals = magnitude === 0 || magnitude >= 0.01 ? 2 : magnitude >= 0.0001 ? 4 : 6;
-  return formatUsageCost(value, decimals);
-}
-
-function handleDailyBarKeydown(
-  event: KeyboardEvent,
-  day: string,
-  onSelectDay: (day: string, shiftKey: boolean) => void,
-) {
-  if (event.key !== "Enter" && event.key !== " ") {
-    return;
-  }
-
-  event.preventDefault();
-  onSelectDay(day, event.shiftKey);
-}
-
-function renderFilterChips(
-  selectedDays: string[],
-  selectedHours: number[],
-  selectedSessions: string[],
-  sessions: UsageSessionEntry[],
-  onClearDays: () => void,
-  onClearHours: () => void,
-  onClearSessions: () => void,
-  onClearFilters: () => void,
-) {
-  const hasFilters =
+function renderFilterChips({
+  data,
+  filters,
+  callbacks,
+}: {
+  data: Pick<UsageProps["data"], "sessions">;
+  filters: Pick<
+    UsageProps["filters"],
+    "selectedDays" | "selectedHours" | "selectedSessions" | "agentId"
+  >;
+  callbacks: {
+    filters: Pick<
+      UsageProps["callbacks"]["filters"],
+      "onClearDays" | "onClearHours" | "onClearSessions" | "onClearFilters" | "onAgentChange"
+    >;
+  };
+}) {
+  const { selectedDays, selectedHours, selectedSessions, agentId } = filters;
+  const { sessions } = data;
+  const { onClearDays, onClearHours, onClearSessions, onClearFilters, onAgentChange } =
+    callbacks.filters;
+  const hasSelections =
     selectedDays.length > 0 || selectedHours.length > 0 || selectedSessions.length > 0;
-  if (!hasFilters) {
+  if (!hasSelections && !agentId) {
     return nothing;
   }
 
@@ -133,6 +105,14 @@ function renderFilterChips(
       onClear: onClearSessions,
       title: sessionsFullName,
     },
+    {
+      active: Boolean(agentId),
+      labelKey: "usage.filters.agent",
+      value: agentId,
+      removeKey: "usage.filters.remove",
+      onClear: () => onAgentChange(null),
+      title: agentId ?? undefined,
+    },
   ];
 
   return html`
@@ -151,15 +131,22 @@ function renderFilterChips(
             </div>
           `,
         )}
-      ${
-        (selectedDays.length > 0 || selectedHours.length > 0) && selectedSessions.length > 0
-          ? html`
-              <button class="btn btn--sm" @click=${onClearFilters}>
-                ${t("usage.filters.clearAll")}
-              </button>
-            `
-          : nothing
-      }
+      ${((selectedDays.length > 0 || selectedHours.length > 0) && selectedSessions.length > 0) ||
+      (agentId && hasSelections)
+        ? html`
+            <button
+              class="btn btn--sm"
+              @click=${() => {
+                onClearFilters();
+                if (agentId) {
+                  onAgentChange(null);
+                }
+              }}
+            >
+              ${t("usage.filters.clearAll")}
+            </button>
+          `
+        : nothing}
     </div>
   `;
 }
@@ -182,272 +169,120 @@ function renderCostWindowComparison(
     }
     return t("usage.costWindows.lastDays", { count: String(days) });
   };
-  const cards = [
-    { label: t("usage.costWindows.selectedRange"), summary: range, range: true },
+  const comparisons = [
+    { label: t("usage.costWindows.selectedRange"), summary: range },
     ...windows.map((summary) => ({
       label: labelForWindow(summary.days, summary.endDate),
       summary,
-      range: false,
     })),
   ];
 
   return html`
-    <section class="cost-window-analysis">
-      <div class="cost-window-header">
-        <div>
-          <div class="card-title usage-section-title">${t("usage.costWindows.title")}</div>
-          <div class="card-sub">
-            ${t("usage.costWindows.subtitle", { date: formatFullDate(rangeEndDate) })}
+    <dl class="usage-cost-windows" aria-label=${t("usage.costWindows.title")}>
+      ${comparisons.map(
+        ({ label, summary }) => html`
+          <div
+            tabindex="0"
+            title=${`${formatDayLabel(summary.startDate)} – ${formatDayLabel(summary.endDate)} · ${formatUsageTokens(summary.totals.totalTokens)} ${t("usage.metrics.tokens")} · ${formatAnalysisCost(summary.totals.totalCost / summary.days, summary.totals.missingCostEntries)} ${t("usage.costWindows.perDay")}`}
+          >
+            <dt>${label}</dt>
+            <dd>
+              ${formatAnalysisCost(summary.totals.totalCost, summary.totals.missingCostEntries)}
+              <span class="usage-cost-window-context"
+                >${formatUsageTokens(summary.totals.totalTokens)} ${t("usage.metrics.tokens")} ·
+                ${formatAnalysisCost(
+                  summary.totals.totalCost / summary.days,
+                  summary.totals.missingCostEntries,
+                )}
+                ${t("usage.costWindows.perDay")}</span
+              >
+            </dd>
           </div>
-        </div>
-        <div class="cost-window-range-label">
-          ${formatDayLabel(rangeStartDate)} – ${formatDayLabel(rangeEndDate)}
-        </div>
-      </div>
-      <div class="cost-window-grid">
-        ${cards.map(({ label, summary, range: isRange }) => {
-          const averageDailyCost = summary.totals.totalCost / summary.days;
-          return html`
-            <div class="cost-window-card ${isRange ? "cost-window-card--range" : ""}">
-              <div class="cost-window-card__label">${label}</div>
-              <div class="cost-window-card__value">
-                ${formatAnalysisCost(summary.totals.totalCost)}
-              </div>
-              <div class="cost-window-card__meta">
-                ${formatUsageTokens(summary.totals.totalTokens)} ${t("usage.metrics.tokens")} ·
-                ${formatAnalysisCost(averageDailyCost)} ${t("usage.costWindows.perDay")}
-              </div>
-            </div>
-          `;
-        })}
-      </div>
-    </section>
+        `,
+      )}
+    </dl>
   `;
 }
 
-function renderDailyChartCompact(
-  daily: CostDailyEntry[],
-  selectedDays: string[],
-  chartMode: "tokens" | "cost",
-  dailyChartMode: "total" | "by-type",
-  onDailyChartModeChange: (mode: "total" | "by-type") => void,
-  onSelectDay: (day: string, shiftKey: boolean) => void,
+function renderCostBreakdownCompact(
+  options: (
+    | { mode: "tokens"; values: Pick<UsageTotals, "input" | "output" | "cacheRead" | "cacheWrite"> }
+    | {
+        mode: "cost";
+        values: Pick<
+          UsageTotals,
+          "inputCost" | "outputCost" | "cacheReadCost" | "cacheWriteCost" | "missingCostEntries"
+        >;
+      }
+  ) & {
+    total: number;
+    variant: "overview" | "timeline";
+    tokenValues?: Pick<UsageTotals, "input" | "output" | "cacheRead" | "cacheWrite">;
+  },
 ) {
-  if (!daily.length) {
-    return html`
-      <div class="daily-chart-compact">
-        <div class="card-title usage-section-title">${t("usage.daily.title")}</div>
-        <div class="usage-empty-block">${t("usage.empty.noData")}</div>
-      </div>
-    `;
-  }
-
-  const isTokenMode = chartMode === "tokens";
-  const values = daily.map((d) => (isTokenMode ? d.totalTokens : d.totalCost));
-  const scaleMaximum = Math.max(...values, 0);
-  const maxValue = scaleMaximum > 0 ? scaleMaximum : isTokenMode ? 1 : 0.0001;
-
-  // Adaptive scaling: when the spread between largest and smallest non-zero
-  // values is extreme (>50×), use square-root compression so small bars stay
-  // visible instead of collapsing to a single pixel.
-  const nonZero = values.filter((v) => v > 0);
-  const minNonZero = nonZero.length > 0 ? Math.min(...nonZero) : maxValue;
-  const spread = maxValue / minNonZero;
-  const usesCompressedScale = spread > 50;
-  const chartAreaPx = 200;
-  const minBarPx = 6;
-  const barHeights = values.map((v): number => {
-    if (v <= 0) {
-      return 0;
-    }
-    const ratio = usesCompressedScale ? Math.sqrt(v / maxValue) : v / maxValue;
-    return Math.max(minBarPx, ratio * chartAreaPx);
-  });
-
-  // Calculate bar width based on number of days
-  const barMaxWidth = daily.length > 30 ? 12 : daily.length > 20 ? 18 : daily.length > 14 ? 24 : 32;
-  const showTotals = daily.length <= 14;
-  const selectedDaySet = new Set(selectedDays);
-
-  return html`
-    <div class="daily-chart-compact">
-      <div class="daily-chart-header">
-        ${renderSettingsSegmented({
-          mode: "buttons",
-          variant: "accent",
-          ariaPressed: false,
-          className: "small sessions-toggle",
-          value: dailyChartMode,
-          onChange: onDailyChartModeChange,
-          onReselect: onDailyChartModeChange,
-          options: [
-            { value: "total", label: t("usage.daily.total") },
-            { value: "by-type", label: t("usage.daily.byType") },
-          ],
-        })}
-        <div class="card-title">
-          ${isTokenMode ? t("usage.daily.tokensTitle") : t("usage.daily.costTitle")}
-          ${
-            usesCompressedScale
-              ? html`<span
-                  class="daily-chart-scale-badge"
-                  title=${t("usage.daily.compressedScaleHint")}
-                  aria-label=${t("usage.daily.compressedScaleHint")}
-                  >√</span
-                >`
-              : nothing
-          }
-        </div>
-      </div>
-      <div class="daily-chart">
-        <div class="daily-chart-plot">
-          <div class="daily-chart-scale" aria-hidden="true">
-            ${(scaleMaximum > 0
-              ? [scaleMaximum, scaleMaximum / (usesCompressedScale ? 4 : 2), 0]
-              : [0]
-            ).map(
-              (value) =>
-                html`<span
-                  >${
-                    isTokenMode
-                      ? formatUsageTokens(value)
-                      : value === 0
-                        ? formatUsageCost(0)
-                        : formatAnalysisCost(value)
-                  }</span
-                >`,
-            )}
-          </div>
-          <div class="daily-chart-bars" style="--bar-max-width: ${barMaxWidth}px">
-            ${daily.map((d, idx) => {
-              const heightPx = expectDefined(barHeights[idx], "daily usage bar height");
-              const isSelected = selectedDaySet.has(d.date);
-              const label = formatDayLabel(d.date);
-              // Shorter label for many days (just day number)
-              const shortLabel =
-                daily.length > 20 ? String(Number.parseInt(d.date.slice(8), 10)) : label;
-              const labelClass =
-                daily.length > 20 ? "daily-bar-label daily-bar-label--compact" : "daily-bar-label";
-              const segments =
-                dailyChartMode === "by-type"
-                  ? USAGE_TOKEN_CATEGORIES.map(({ key, className, labelKey }) => ({
-                      value: isTokenMode ? d[key] : (d[`${key}Cost`] ?? 0),
-                      className,
-                      labelKey,
-                    }))
-                  : [];
-              const breakdownLines = segments.map(
-                ({ value, labelKey }) =>
-                  `${t(labelKey)} ${isTokenMode ? formatUsageTokens(value) : formatAnalysisCost(value)}`,
-              );
-              const totalLabel = isTokenMode
-                ? formatUsageTokens(d.totalTokens)
-                : formatAnalysisCost(d.totalCost);
-              const dateLabel = formatFullDate(d.date);
-              const tokensLabel =
-                `${formatUsageTokens(d.totalTokens)} ${normalizeLowercaseStringOrEmpty(
-                  t("usage.metrics.tokens"),
-                )}`.trim();
-              const costLabel = formatAnalysisCost(d.totalCost);
-              const segmentTotal = segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
-              return html`
-                <openclaw-tooltip
-                  .content=${[dateLabel, tokensLabel, costLabel, ...breakdownLines].join("\n")}
-                >
-                  <div
-                    class="daily-bar-wrapper ${isSelected ? "selected" : ""}"
-                    role="button"
-                    tabindex="0"
-                    aria-pressed=${isSelected ? "true" : "false"}
-                    aria-label=${`${dateLabel}: ${tokensLabel}, ${costLabel}`}
-                    @keydown=${(e: KeyboardEvent) => handleDailyBarKeydown(e, d.date, onSelectDay)}
-                    @click=${(e: MouseEvent) => onSelectDay(d.date, e.shiftKey)}
-                  >
-                    ${
-                      dailyChartMode === "by-type"
-                        ? html`
-                            <div
-                              class="daily-bar daily-bar--stacked"
-                              style="height: ${heightPx.toFixed(0)}px;"
-                            >
-                              ${segments.map(
-                                ({ className, value }) => html`
-                                  <div
-                                    class="cost-segment ${className}"
-                                    style="height: ${(value / segmentTotal) * 100}%"
-                                  ></div>
-                                `,
-                              )}
-                            </div>
-                          `
-                        : html`
-                            <div class="daily-bar" style="height: ${heightPx.toFixed(0)}px"></div>
-                          `
-                    }
-                    ${
-                      showTotals
-                        ? html`<div class="daily-bar-total">${totalLabel}</div>`
-                        : html`<div
-                            class="daily-bar-total daily-bar-total--placeholder"
-                            aria-hidden="true"
-                          ></div>`
-                    }
-                    <div class="${labelClass}">${shortLabel}</div>
-                  </div>
-                </openclaw-tooltip>
-              `;
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderCostBreakdownCompact(totals: UsageTotals, mode: "tokens" | "cost") {
-  const isTokenMode = mode === "tokens";
-  const total = isTokenMode ? totals.totalTokens || 1 : totals.totalCost || 0;
-  const categories = USAGE_TOKEN_CATEGORIES.map(({ key, className, labelKey }) => {
-    const value = isTokenMode ? totals[key] : totals[`${key}Cost`] || 0;
+  const timeline = options.variant === "timeline";
+  const format = (value: number) =>
+    options.mode === "tokens"
+      ? formatUsageTokens(value)
+      : formatAnalysisCost(value, options.values.missingCostEntries);
+  const categories = USAGE_TOKEN_CATEGORIES.map((category) => {
+    const value =
+      options.mode === "tokens"
+        ? options.values[category.key]
+        : options.values[category.costKey] || 0;
     return {
-      className,
-      labelKey,
-      percentage: pct(value, total),
-      formatted: isTokenMode ? formatUsageTokens(value) : formatAnalysisCost(value),
+      ...category,
+      percentage: pct(value, options.total || (options.mode === "tokens" && !timeline ? 1 : 0)),
+      formatted: format(value),
     };
   });
-
   return html`
-    <div class="cost-breakdown cost-breakdown-compact">
-      <div class="cost-breakdown-header">
-        ${isTokenMode ? t("usage.breakdown.tokensByType") : t("usage.breakdown.costByType")}
-      </div>
-      <div class="cost-breakdown-bar">
+    <div class=${timeline ? "timeseries-breakdown" : "cost-breakdown cost-breakdown-compact"}>
+      ${timeline
+        ? html`<div class="card-title usage-section-title">
+            ${t(
+              options.mode === "tokens"
+                ? "usage.breakdown.tokensByType"
+                : "usage.breakdown.costByType",
+            )}
+          </div>`
+        : nothing}
+      <div class="cost-breakdown-bar${timeline ? " cost-breakdown-bar--compact" : ""}">
         ${categories.map(
           ({ className, labelKey, percentage, formatted }) => html`
             <div
               class="cost-segment ${className}"
               style="width: ${percentage.toFixed(1)}%"
-              title="${t(labelKey)}: ${formatted}"
+              title=${ifDefined(timeline ? undefined : `${t(labelKey)}: ${formatted}`)}
             ></div>
           `,
         )}
       </div>
       <div class="cost-breakdown-legend">
-        ${categories.map(
-          ({ className, labelKey, formatted }) => html`
-            <span class="legend-item"
-              ><span class="legend-dot ${className}"></span>${t(labelKey)} ${formatted}</span
-            >
-          `,
-        )}
+        ${categories.map(({ key, className, labelKey, hintKey, formatted, percentage }) => {
+          const label = html`<span class="legend-dot ${className}"></span>${t(labelKey)}
+            ${formatted}`;
+          return timeline
+            ? html`<div class="legend-item" title=${t(hintKey)}>${label}</div>`
+            : html`<div class="usage-composition-metric" title=${t(hintKey)}>
+                <span class="usage-composition-label"
+                  ><span class="legend-dot ${className}"></span>${t(labelKey)}</span
+                >
+                <strong class="usage-composition-value">${formatted}</strong>
+                <span class="usage-composition-context"
+                  >${options.mode === "cost" && options.tokenValues
+                    ? html`${formatUsageTokens(options.tokenValues[key])}
+                      ${t("usage.metrics.tokens")} · `
+                    : nothing}${percentage.toFixed(1)}%</span
+                >
+              </div>`;
+        })}
       </div>
-      <div class="cost-breakdown-total">
-        ${t("usage.breakdown.total")}:
-        ${
-          isTokenMode ? formatUsageTokens(totals.totalTokens) : formatAnalysisCost(totals.totalCost)
-        }
-      </div>
+      ${timeline
+        ? html`<div class="cost-breakdown-total">
+            ${t("usage.breakdown.total")}: ${format(options.total)}
+          </div>`
+        : nothing}
     </div>
   `;
 }
@@ -457,149 +292,213 @@ function renderInsightList(
   items: Array<{ label: string; value: string; sub?: string }>,
   emptyLabel: string,
   options?: {
-    className?: string;
+    cardClassName?: string;
     listClassName?: string;
     error?: boolean;
   },
 ) {
-  const cardClass = ["usage-insight-card", options?.className].filter(Boolean).join(" ");
   const listClass = [options?.error ? "usage-error-list" : "usage-list", options?.listClassName]
     .filter(Boolean)
     .join(" ");
   return html`
-    <div class=${cardClass}>
-      <div class="usage-insight-title">${title}</div>
-      ${
-        items.length === 0
-          ? html`<div class="muted">${emptyLabel}</div>`
-          : html`
-              <div class=${listClass}>
-                ${items.map((item) =>
-                  options?.error
-                    ? html`
-                        <div class="usage-error-row">
-                          <div class="usage-error-date">${item.label}</div>
-                          <div class="usage-error-rate">${item.value}</div>
-                          ${item.sub ? html`<div class="usage-error-sub">${item.sub}</div>` : nothing}
-                        </div>
-                      `
-                    : html`
-                        <div class="usage-list-item">
-                          <span>${item.label}</span>
-                          <span class="usage-list-value">
-                            <span>${item.value}</span>
-                            ${
-                              item.sub
-                                ? html`<span class="usage-list-sub">${item.sub}</span>`
-                                : nothing
-                            }
-                          </span>
-                        </div>
-                      `,
+    <div class="usage-insight-card ${options?.cardClassName ?? ""}">
+      <div class=${options?.error ? "usage-errors-heading" : "usage-insight-title"}>${title}</div>
+      ${items.length === 0
+        ? html`<div class="muted">${emptyLabel}</div>`
+        : html`
+            <table class="usage-insight-table ${listClass}" aria-label=${title}>
+              <tbody>
+                ${items.map(
+                  (item) => html`
+                    <tr class=${options?.error ? "usage-error-row" : "usage-list-item"}>
+                      <th scope="row">
+                        <span class="usage-insight-label" title=${item.label}>${item.label}</span>
+                        ${item.sub
+                          ? html`<small
+                              title=${item.sub}
+                              class=${options?.error ? "usage-error-sub" : "usage-list-sub"}
+                              >${item.sub}</small
+                            >`
+                          : nothing}
+                      </th>
+                      <td class=${options?.error ? "usage-error-rate" : "usage-list-value"}>
+                        ${item.value}
+                      </td>
+                    </tr>
+                  `,
                 )}
-              </div>
-            `
-      }
+              </tbody>
+            </table>
+          `}
     </div>
   `;
 }
 
-function focusSummaryHint(event: MouseEvent) {
-  const target = event.currentTarget;
-  if (target instanceof HTMLElement) {
-    target.focus();
-  }
-}
-
-function renderSummaryStat(params: {
-  hintId: string;
-  title: string;
-  hint: string;
-  value: string | number;
-  sub: string;
-  tone?: "good" | "warn" | "bad";
-  className?: string;
-  compactValue?: boolean;
-}) {
-  const hintId = `usage-summary-hint-${params.hintId}`;
-  const classes = [
-    "stat",
-    "usage-summary-card",
-    params.className,
-    params.tone ? `usage-summary-card--${params.tone}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const valueClasses = [
-    "stat-value",
-    "usage-summary-value",
-    params.tone ?? "",
-    params.compactValue ? "usage-summary-value--compact" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  return html`
-    <div class=${classes}>
-      <div class="usage-summary-title">
-        ${params.title}
-        <openclaw-tooltip open-on-click>
-          <button
-            id=${hintId}
-            type="button"
-            class="usage-summary-hint"
-            aria-label=${params.title}
-            @click=${focusSummaryHint}
-          >
-            ?
-          </button>
-          <!-- Shared tooltips dismiss pointer activation so action buttons never
-               strand one open. This hint exists only to be read, so it opts in to
-               click-to-open; the click handler still normalizes browsers that do
-               not focus buttons on pointer activation. -->
-          <span slot="content">${params.hint}</span>
-        </openclaw-tooltip>
-      </div>
-      <div class=${valueClasses}>${params.value}</div>
-      <div class="usage-summary-sub">${params.sub}</div>
-    </div>
-  `;
-}
-
-function renderUsageInsights(
+function renderUsageSummary(
   totals: UsageTotals | null,
   aggregates: UsageAggregates,
   stats: UsageInsightStats,
   showCostHint: boolean,
-  showCostShares: boolean,
-  errorHours: Array<{ label: string; value: string; sub?: string }>,
   sessionCount: number,
   totalSessions: number,
 ) {
   if (!totals) {
     return nothing;
   }
+  const empty = t("usage.common.emptyValue");
+  const messages = aggregates.messages;
+  const promptTokens = totals.input + totals.cacheRead + totals.cacheWrite;
+  const duration =
+    stats.durationCount > 0 ? (formatDurationCompact(stats.avgDurationMs) ?? empty) : empty;
+  const figures = [
+    {
+      title: t("usage.metrics.tokens"),
+      value: formatUsageTokens(totals.totalTokens),
+      context: `${formatUsageTokens(totals.input)} ${t("usage.breakdown.input")} · ${formatUsageTokens(totals.output)} ${t("usage.breakdown.output")}`,
+      hint: t("usage.overview.tokensHint"),
+    },
+    {
+      title: t("usage.metrics.cost"),
+      value: formatAnalysisCost(totals.totalCost, totals.missingCostEntries),
+      context: showCostHint ? t("usage.overview.missingCost") : "",
+      hint: t("usage.overview.costHint"),
+    },
+    {
+      title: t("usage.overview.sessions"),
+      value: sessionCount,
+      context: `${t("usage.sessions.avg")} ${duration}`,
+      hint: `${t("usage.overview.sessionsHint")} ${t("usage.overview.sessionsInRange", { count: totalSessions.toLocaleString("en-US") })}`,
+    },
 
-  const avgTokens = aggregates.messages.total
-    ? Math.round(totals.totalTokens / aggregates.messages.total)
-    : 0;
-  const avgCost = aggregates.messages.total ? totals.totalCost / aggregates.messages.total : 0;
-  const cacheBase = totals.input + totals.cacheRead + totals.cacheWrite;
-  const cacheHitRate = cacheBase > 0 ? totals.cacheRead / cacheBase : 0;
-  const cacheHitLabel =
-    cacheBase > 0 ? `${(cacheHitRate * 100).toFixed(1)}%` : t("usage.common.emptyValue");
-  const errorRatePct = stats.errorRate * 100;
-  const throughputLabel =
-    stats.throughputTokensPerMin !== undefined
-      ? `${formatUsageTokens(Math.round(stats.throughputTokensPerMin))} ${t("usage.overview.tokensPerMinute")}`
-      : t("usage.common.emptyValue");
-  const throughputCostLabel =
-    stats.throughputCostPerMin !== undefined
-      ? `${formatAnalysisCost(stats.throughputCostPerMin)} ${t("usage.overview.perMinute")}`
-      : t("usage.common.emptyValue");
-  const avgDurationLabel =
-    stats.durationCount > 0
-      ? (formatDurationCompact(stats.avgDurationMs) ?? t("usage.common.emptyValue"))
-      : t("usage.common.emptyValue");
+    {
+      title: t("usage.overview.messages"),
+      value: messages.total,
+      context: `${messages.user.toLocaleString("en-US")} ${normalizeLowercaseStringOrEmpty(t("usage.overview.user"))} · ${messages.assistant.toLocaleString("en-US")} ${normalizeLowercaseStringOrEmpty(t("usage.overview.assistant"))}`,
+      hint: t("usage.overview.messagesHint"),
+    },
+    {
+      title: t("usage.overview.toolCalls"),
+      value: aggregates.tools.totalCalls,
+      context: `${aggregates.tools.uniqueTools.toLocaleString("en-US")} ${t("usage.overview.toolsUsed")} · ${messages.toolResults.toLocaleString("en-US")} ${t("usage.overview.toolResults")}`,
+      hint: t("usage.overview.toolCallsHint"),
+    },
+    {
+      title: t("usage.overview.errors"),
+      value: messages.errors,
+      context: `${t("usage.overview.errorRate")}: ${(stats.errorRate * 100).toFixed(2)}%`,
+      hint: `${t("usage.overview.errorsHint")} ${t("usage.overview.errorHint")}`,
+    },
+  ];
+  const rates = [
+    {
+      title: t("usage.overview.cacheHitRate"),
+      value: promptTokens > 0 ? `${((totals.cacheRead / promptTokens) * 100).toFixed(1)}%` : empty,
+      context: `${formatUsageTokens(totals.cacheRead)} ${t("usage.overview.cached")} · ${formatUsageTokens(promptTokens)} ${t("usage.overview.prompt")}`,
+      hint: t("usage.overview.cacheHint"),
+    },
+    {
+      title: t("usage.overview.errorRate"),
+      value: `${(stats.errorRate * 100).toFixed(2)}%`,
+      context: t("usage.overview.errorsHint"),
+      hint: t("usage.overview.errorHint"),
+    },
+    {
+      title: t("usage.overview.avgTokens"),
+      value: messages.total
+        ? formatUsageTokens(Math.round(totals.totalTokens / messages.total))
+        : empty,
+      context: t("usage.overview.acrossMessages", {
+        count: messages.total.toLocaleString("en-US"),
+      }),
+      hint: t("usage.overview.avgTokensHint"),
+    },
+    {
+      title: t("usage.overview.avgCost"),
+      value: messages.total
+        ? formatAnalysisCost(totals.totalCost / messages.total, totals.missingCostEntries)
+        : empty,
+      context: t("usage.overview.acrossMessages", {
+        count: messages.total.toLocaleString("en-US"),
+      }),
+      hint: t(showCostHint ? "usage.overview.avgCostHintMissing" : "usage.overview.avgCostHint"),
+    },
+    {
+      title: t("usage.overview.throughput"),
+      value:
+        stats.throughputTokensPerMin !== undefined
+          ? `${stats.throughputTokensPerMin > 0 && stats.throughputTokensPerMin < 1 ? "<1" : formatUsageTokens(Math.round(stats.throughputTokensPerMin))} ${t("usage.overview.tokensPerMinute")}`
+          : empty,
+      context:
+        stats.throughputCostPerMin !== undefined
+          ? `${formatAnalysisCost(stats.throughputCostPerMin, totals.missingCostEntries)} ${t("usage.overview.perMinute")}`
+          : empty,
+      hint: t("usage.overview.throughputHint"),
+    },
+    {
+      title: t("usage.operations.latency"),
+      value: aggregates.latency
+        ? (formatDurationCompact(aggregates.latency.avgMs) ?? empty)
+        : empty,
+      context: aggregates.latency
+        ? t("usage.operations.latencyRange", {
+            p95: formatDurationCompact(aggregates.latency.p95Ms) ?? empty,
+            min: formatDurationCompact(aggregates.latency.minMs) ?? empty,
+            max: formatDurationCompact(aggregates.latency.maxMs) ?? empty,
+            count: aggregates.latency.count.toLocaleString("en-US"),
+          })
+        : empty,
+      hint: t("usage.operations.latencyHint"),
+    },
+  ];
+  return html`
+    <section class="usage-figures" aria-label=${t("usage.overview.title")}>
+      <div class="usage-figures-main">
+        ${figures.map(
+          (figure) => html`
+            <openclaw-tooltip .content=${`${figure.hint} ${figure.context}`}>
+              <div class="usage-figure" tabindex="0">
+                <strong class="usage-figure-value"
+                  >${typeof figure.value === "number"
+                    ? figure.value.toLocaleString("en-US")
+                    : figure.value}</strong
+                >
+                <span class="usage-figure-label">${figure.title}</span>
+                <small class="usage-figure-context">${figure.context}</small>
+              </div>
+            </openclaw-tooltip>
+          `,
+        )}
+      </div>
+      <div class="usage-rates">
+        ${rates.map(
+          (rate) => html`
+            <openclaw-tooltip .content=${`${rate.hint} ${rate.context}`}>
+              <span class="usage-rate" tabindex="0"
+                >${rate.title} <strong>${rate.value}</strong></span
+              >
+            </openclaw-tooltip>
+          `,
+        )}
+      </div>
+      ${showCostHint
+        ? html`<p class="usage-figures-warning" role="note">
+            ${t("usage.overview.avgCostHintMissing")}
+          </p>`
+        : nothing}
+    </section>
+  `;
+}
+
+function renderUsageInsights(
+  totals: UsageTotals | null,
+  aggregates: UsageAggregates,
+  showCostShares: boolean,
+  errorHours: Array<{ label: string; value: string; sub?: string }>,
+) {
+  if (!totals) {
+    return nothing;
+  }
+
   const errorDays = aggregates.daily
     .filter((day) => day.messages > 0 && day.errors > 0)
     .map((day) => {
@@ -607,7 +506,7 @@ function renderUsageInsights(
       return {
         label: formatDayLabel(day.date),
         value: `${(rate * 100).toFixed(2)}%`,
-        sub: `${day.errors} ${normalizeLowercaseStringOrEmpty(t("usage.overview.errors"))} · ${day.messages} ${t("usage.overview.messagesAbbrev")} · ${formatUsageTokens(day.tokens)}`,
+        sub: `${t(day.errors === 1 ? "usage.overview.errorCountOne" : "usage.overview.errorCountOther", { count: day.errors.toLocaleString("en-US") })} · ${formatUsageTokens(day.messages)} ${t("usage.overview.messagesAbbrev")} · ${formatUsageTokens(day.tokens)}`,
         rate,
       };
     })
@@ -619,159 +518,71 @@ function renderUsageInsights(
     showCostShares && totals.totalCost > 0
       ? t("usage.overview.costShare", { percent: ((cost / totals.totalCost) * 100).toFixed(1) })
       : null;
-  const costAttributionSub = (cost: number, tokens: number, messageCount?: number) =>
-    [
-      costShare(cost),
-      formatUsageTokens(tokens),
-      messageCount === undefined ? null : `${messageCount} ${t("usage.overview.messagesAbbrev")}`,
-    ]
+  const costAttributionSub = (cost: number, tokens: number) =>
+    [costShare(cost), formatUsageTokens(tokens)]
       .filter((part): part is string => part !== null)
       .join(" · ");
 
   const topModels = aggregates.byModel.slice(0, 5).map((entry) => ({
     label: entry.model ?? t("usage.common.unknown"),
-    value: formatAnalysisCost(entry.totals.totalCost),
-    sub: costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens, entry.count),
+    value: formatAnalysisCost(entry.totals.totalCost, entry.totals.missingCostEntries),
+    sub: [entry.provider, costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens)]
+      .filter(Boolean)
+      .join(" · "),
   }));
   const topProviders = aggregates.byProvider.slice(0, 5).map((entry) => ({
     label: entry.provider ?? t("usage.common.unknown"),
-    value: formatAnalysisCost(entry.totals.totalCost),
-    sub: costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens, entry.count),
+    value: formatAnalysisCost(entry.totals.totalCost, entry.totals.missingCostEntries),
+    sub: costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens),
   }));
   const topTools = aggregates.tools.tools.slice(0, 6).map((tool) => ({
     label: tool.name,
-    value: `${tool.count}`,
-    sub: t("usage.overview.calls"),
+    value: `${tool.count.toLocaleString("en-US")} ${t("usage.overview.calls")}`,
   }));
   const topAgents = aggregates.byAgent.slice(0, 5).map((entry) => ({
     label: entry.agentId,
-    value: formatAnalysisCost(entry.totals.totalCost),
+    value: formatAnalysisCost(entry.totals.totalCost, entry.totals.missingCostEntries),
     sub: costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens),
   }));
   const topChannels = aggregates.byChannel.slice(0, 5).map((entry) => ({
     label: entry.channel,
-    value: formatAnalysisCost(entry.totals.totalCost),
+    value: formatAnalysisCost(entry.totals.totalCost, entry.totals.missingCostEntries),
     sub: costAttributionSub(entry.totals.totalCost, entry.totals.totalTokens),
   }));
   const insightLists = [
     ["usage.overview.topModels", topModels, "usage.overview.noModelData"],
     ["usage.overview.topProviders", topProviders, "usage.overview.noProviderData"],
-    ["usage.overview.topTools", topTools, "usage.overview.noToolCalls"],
     ["usage.overview.topAgents", topAgents, "usage.overview.noAgentData"],
     ["usage.overview.topChannels", topChannels, "usage.overview.noChannelData"],
+    ["usage.overview.topTools", topTools, "usage.overview.noToolCalls"],
   ] as const;
 
-  return renderSettingsSection(
-    { title: t("usage.overview.title") },
-    html`
-      <section class="usage-panel usage-overview-card">
-        <div class="usage-overview-layout">
-          <div class="usage-summary-grid">
-            ${renderSummaryStat({
-              hintId: "messages",
-              title: t("usage.overview.messages"),
-              hint: t("usage.overview.messagesHint"),
-              value: aggregates.messages.total,
-              sub: `${aggregates.messages.user} ${normalizeLowercaseStringOrEmpty(t("usage.overview.user"))} · ${aggregates.messages.assistant} ${normalizeLowercaseStringOrEmpty(t("usage.overview.assistant"))}`,
-              className: "usage-summary-card--hero",
-            })}
-            ${renderSummaryStat({
-              hintId: "throughput",
-              title: t("usage.overview.throughput"),
-              hint: t("usage.overview.throughputHint"),
-              value: throughputLabel,
-              sub: throughputCostLabel,
-              className: "usage-summary-card--hero usage-summary-card--throughput",
-              compactValue: true,
-            })}
-            ${renderSummaryStat({
-              hintId: "tool-calls",
-              title: t("usage.overview.toolCalls"),
-              hint: t("usage.overview.toolCallsHint"),
-              value: aggregates.tools.totalCalls,
-              sub: `${aggregates.tools.uniqueTools} ${t("usage.overview.toolsUsed")}`,
-              className: "usage-summary-card--half",
-            })}
-            ${renderSummaryStat({
-              hintId: "average-tokens",
-              title: t("usage.overview.avgTokens"),
-              hint: t("usage.overview.avgTokensHint"),
-              value: formatUsageTokens(avgTokens),
-              sub: t("usage.overview.acrossMessages", {
-                count: String(aggregates.messages.total || 0),
-              }),
-              className: "usage-summary-card--half",
-            })}
-            ${renderSummaryStat({
-              hintId: "cache-hit-rate",
-              title: t("usage.overview.cacheHitRate"),
-              hint: t("usage.overview.cacheHint"),
-              value: cacheHitLabel,
-              sub: `${formatUsageTokens(totals.cacheRead)} ${t("usage.overview.cached")} · ${formatUsageTokens(cacheBase)} ${t("usage.overview.prompt")}`,
-              tone: cacheHitRate > 0.6 ? "good" : cacheHitRate > 0.3 ? "warn" : "bad",
-              className: "usage-summary-card--medium",
-            })}
-            ${renderSummaryStat({
-              hintId: "error-rate",
-              title: t("usage.overview.errorRate"),
-              hint: t("usage.overview.errorHint"),
-              value: `${errorRatePct.toFixed(2)}%`,
-              sub: `${aggregates.messages.errors} ${normalizeLowercaseStringOrEmpty(t("usage.overview.errors"))} · ${avgDurationLabel} ${t("usage.overview.avgSession")}`,
-              tone: errorRatePct > 5 ? "bad" : errorRatePct > 1 ? "warn" : "good",
-              className: "usage-summary-card--medium",
-            })}
-            ${renderSummaryStat({
-              hintId: "average-cost",
-              title: t("usage.overview.avgCost"),
-              hint: t(
-                showCostHint ? "usage.overview.avgCostHintMissing" : "usage.overview.avgCostHint",
-              ),
-              value: formatAnalysisCost(avgCost),
-              sub: `${formatAnalysisCost(totals.totalCost)} ${normalizeLowercaseStringOrEmpty(t("usage.breakdown.total"))}`,
-              className: "usage-summary-card--compact",
-            })}
-            ${renderSummaryStat({
-              hintId: "sessions",
-              title: t("usage.overview.sessions"),
-              hint: t("usage.overview.sessionsHint"),
-              value: sessionCount,
-              sub: t("usage.overview.sessionsInRange", { count: String(totalSessions) }),
-              className: "usage-summary-card--compact",
-            })}
-            ${renderSummaryStat({
-              hintId: "errors",
-              title: t("usage.overview.errors"),
-              hint: t("usage.overview.errorsHint"),
-              value: aggregates.messages.errors,
-              sub: `${aggregates.messages.toolResults} ${t("usage.overview.toolResults")}`,
-              className: "usage-summary-card--compact",
-            })}
-          </div>
-          <div class="usage-insights-grid">
-            ${insightLists.map(([titleKey, items, emptyKey]) =>
-              renderInsightList(t(titleKey), items, t(emptyKey)),
-            )}
-            ${renderInsightList(
-              t("usage.overview.peakErrorDays"),
-              errorDays,
-              t("usage.overview.noErrorData"),
-              { error: true },
-            )}
-            ${renderInsightList(
-              t("usage.overview.peakErrorHours"),
-              errorHours,
-              t("usage.overview.noErrorData"),
-              {
-                error: true,
-                className: "usage-insight-card--wide",
-                listClassName: "usage-error-list--hours",
-              },
-            )}
-          </div>
+  return html`
+    <div class="usage-insights-grid">
+      ${insightLists.map(([titleKey, items, emptyKey]) =>
+        renderInsightList(t(titleKey), items, t(emptyKey), {
+          cardClassName: titleKey === "usage.overview.topTools" ? "usage-insight-card--tools" : "",
+        }),
+      )}
+      <div class="usage-insight-card usage-insight-card--errors">
+        <div class="usage-insight-title">${t("usage.overview.errors")}</div>
+        <div class="usage-errors-grid">
+          ${renderInsightList(
+            t("usage.overview.peakErrorDays"),
+            errorDays,
+            t("usage.overview.noErrorData"),
+            { error: true },
+          )}
+          ${renderInsightList(
+            t("usage.overview.peakErrorHours"),
+            errorHours,
+            t("usage.overview.noErrorData"),
+            { error: true },
+          )}
         </div>
-      </section>
-    `,
-  );
+      </div>
+    </div>
+  `;
 }
 
 function renderSessionsCard(
@@ -779,17 +590,21 @@ function renderSessionsCard(
   selectedSessions: string[],
   selectedDays: string[],
   isTokenMode: boolean,
-  sessionSort: "tokens" | "cost" | "recent" | "messages" | "errors",
+  sessionSort: UsageProps["display"]["sessionSort"],
   sessionSortDir: "asc" | "desc",
   recentSessions: string[],
   sessionsTab: "all" | "recent",
   onSelectSession: (key: string, shiftKey: boolean, orderedKeys: string[]) => void,
-  onSessionSortChange: (sort: "tokens" | "cost" | "recent" | "messages" | "errors") => void,
+  onSessionSortChange: UsageProps["callbacks"]["display"]["onSessionSortChange"],
   onSessionSortDirChange: (dir: "asc" | "desc") => void,
   onSessionsTabChange: (tab: "all" | "recent") => void,
   visibleColumns: UsageColumnId[],
   totalSessions: number,
   onClearSessions: () => void,
+  onToggleSession?: (key: string) => void,
+  toolbar?: TemplateResult,
+  counters?: TemplateResult,
+  onToggleColumn?: (column: UsageColumnId) => void,
 ) {
   const showColumn = (id: UsageColumnId) => visibleColumns.includes(id);
   const formatSessionListLabel = (s: UsageSessionEntry): string => {
@@ -800,28 +615,6 @@ function renderSessionsCard(
     }
     return raw;
   };
-  const buildSessionMeta = (session: UsageSessionEntry): string[] =>
-    [
-      showColumn("channel") && session.channel && `channel:${session.channel}`,
-      showColumn("agent") && session.agentId && `agent:${session.agentId}`,
-      showColumn("provider") &&
-        (session.modelProvider || session.providerOverride) &&
-        `provider:${session.modelProvider ?? session.providerOverride}`,
-      showColumn("model") && session.model && `model:${session.model}`,
-      showColumn("messages") &&
-        session.usage?.messageCounts &&
-        `msgs:${session.usage.messageCounts.total}`,
-      showColumn("tools") &&
-        session.usage?.toolUsage &&
-        `tools:${session.usage.toolUsage.totalCalls}`,
-      showColumn("errors") &&
-        session.usage?.messageCounts &&
-        `errors:${session.usage.messageCounts.errors}`,
-      showColumn("duration") &&
-        session.usage?.durationMs &&
-        `dur:${formatDurationCompact(session.usage.durationMs) ?? "—"}`,
-    ].filter((part): part is string => typeof part === "string" && part.length > 0);
-
   const selectedDaySet = new Set(selectedDays);
 
   const sortedSessions = sessions
@@ -840,8 +633,23 @@ function renderSessionsCard(
           }
         }
       }
-      let sortValue: number;
+      let sortValue: number | string = 0;
       switch (sessionSort) {
+        case "label":
+          sortValue = formatSessionListLabel(session);
+          break;
+        case "channel":
+          sortValue = `${session.channel ?? ""} ${session.agentId ?? ""}`;
+          break;
+        case "model":
+          sortValue = `${session.modelProvider ?? session.providerOverride ?? ""} ${session.model ?? session.modelOverride ?? ""}`;
+          break;
+        case "tools":
+          sortValue = usage?.toolUsage?.totalCalls ?? 0;
+          break;
+        case "duration":
+          sortValue = usage?.durationMs ?? 0;
+          break;
         case "recent":
           sortValue = session.updatedAt ?? 0;
           break;
@@ -861,12 +669,17 @@ function renderSessionsCard(
       return {
         session,
         displayLabel: formatSessionListLabel(session),
-        value: isTokenMode ? tokens : cost,
+        value: usage ? (isTokenMode ? tokens : cost) : null,
+        tokens: usage ? tokens : null,
+        cost: usage ? cost : null,
         sortValue,
       };
     })
     .toSorted((a, b) => {
-      const valueDiff = b.sortValue - a.sortValue;
+      const valueDiff =
+        typeof a.sortValue === "string" && typeof b.sortValue === "string"
+          ? b.sortValue.localeCompare(a.sortValue)
+          : Number(b.sortValue) - Number(a.sortValue);
       if (valueDiff !== 0) {
         return valueDiff;
       }
@@ -878,224 +691,466 @@ function renderSessionsCard(
     });
   const sortedWithDir = sessionSortDir === "asc" ? sortedSessions.toReversed() : sortedSessions;
 
-  const totalValue = sortedWithDir.reduce((sum, entry) => sum + entry.value, 0);
-  const avgValue = sortedWithDir.length ? totalValue / sortedWithDir.length : 0;
+  const knownEntries = sortedWithDir.filter((entry) => entry.value !== null);
+  const avgValue = knownEntries.length
+    ? knownEntries.reduce((sum, entry) => sum + (entry.value ?? 0), 0) / knownEntries.length
+    : null;
   const totalErrors = sortedWithDir.reduce(
     (sum, entry) => sum + (entry.session.usage?.messageCounts?.errors ?? 0),
     0,
   );
 
-  const renderSessionBarRow = (
-    entry: (typeof sortedSessions)[number],
-    isSelected: boolean,
-    orderedKeys: string[],
-  ) => {
-    const { session: s, value, displayLabel } = entry;
-    const meta = buildSessionMeta(s);
-    return html`
-      <div
-        class="session-bar-row ${isSelected ? "selected" : ""}"
-        @click=${(event: MouseEvent) => {
-          if ((event.target as Element | null)?.closest("button")) {
-            return;
-          }
-          onSelectSession(s.key, event.shiftKey, orderedKeys);
-        }}
-        title="${s.key}"
-      >
-        <button
-          type="button"
-          class="session-bar-selection"
-          aria-label=${displayLabel}
-          aria-pressed=${isSelected ? "true" : "false"}
-          @click=${(event: MouseEvent) => onSelectSession(s.key, event.shiftKey, orderedKeys)}
-        >
-          <span class="session-bar-label">
-            <span class="session-bar-title">${displayLabel}</span>
-            ${
-              meta.length > 0
-                ? html`<span class="session-bar-meta">${meta.join(" · ")}</span>`
-                : nothing
-            }
-          </span>
-        </button>
-        <div class="session-bar-actions">
-          <button
-            type="button"
-            class="btn btn--sm btn--ghost"
-            @click=${(e: MouseEvent) => {
-              e.stopPropagation();
-              void handleCopyButton(e, displayLabel, t("usage.sessions.copy"));
-            }}
-          >
-            <span data-copy-label>${t("usage.sessions.copy")}</span>
-          </button>
-          <div class="session-bar-value">
-            ${isTokenMode ? formatUsageTokens(value) : formatAnalysisCost(value)}
-          </div>
-        </div>
-      </div>
-    `;
-  };
-
   const selectedSet = new Set(selectedSessions);
   const selectedEntries = sortedWithDir.filter((entry) => selectedSet.has(entry.session.key));
-  const selectedCount = selectedEntries.length;
   const sessionMap = new Map(sortedWithDir.map((entry) => [entry.session.key, entry]));
   const recentEntries = recentSessions
     .map((key) => sessionMap.get(key))
     .filter((entry) => entry !== undefined);
-  const displayedEntries = sessionsTab === "recent" ? recentEntries : sortedWithDir.slice(0, 50);
-  const renderSessionBarRows = (entries: typeof sortedSessions) => {
-    // Selection follows this rendered group, before a click reorders recently viewed sessions.
-    const orderedKeys = entries.map((entry) => entry.session.key);
-    return entries.map((entry) =>
-      renderSessionBarRow(entry, selectedSet.has(entry.session.key), orderedKeys),
+  const displayedEntries = sessionsTab === "recent" ? recentEntries : sortedWithDir;
+  const empty = t("usage.common.emptyValue");
+  const columns = [
+    { key: "label", label: t("usage.filters.session"), sort: "label", visible: true },
+    { key: "agent", label: t("usage.filters.agent"), sort: null, visible: showColumn("agent") },
+    { key: "model", label: t("usage.filters.model"), sort: "model", visible: showColumn("model") },
+    {
+      key: "channel",
+      label: t("usage.filters.channel"),
+      sort: "channel",
+      visible: showColumn("channel"),
+    },
+    {
+      key: "provider",
+      label: t("usage.filters.provider"),
+      sort: null,
+      visible: showColumn("provider"),
+    },
+    {
+      key: "messages",
+      label: t("usage.sessions.msgsTitle"),
+      sort: "messages",
+      visible: showColumn("messages"),
+    },
+    { key: "tools", label: t("usage.details.tools"), sort: "tools", visible: showColumn("tools") },
+    {
+      key: "errors",
+      label: t("usage.overview.errors"),
+      sort: "errors",
+      visible: showColumn("errors"),
+    },
+    {
+      key: "duration",
+      label: t("usage.details.duration"),
+      sort: "duration",
+      visible: showColumn("duration"),
+    },
+    {
+      key: "value",
+      label: t(isTokenMode ? "usage.metrics.tokens" : "usage.metrics.cost"),
+      sort: isTokenMode ? "tokens" : "cost",
+      visible: true,
+    },
+  ] as const;
+  const sortOptions = [
+    ...columns
+      .filter((column) => column.key !== "value" && column.sort !== null)
+      .map(({ sort, label }) => ({ sort, label })),
+    { sort: "tokens", label: t("usage.metrics.tokens") },
+    { sort: "cost", label: t("usage.metrics.cost") },
+    { sort: "recent", label: t("usage.sessions.recentShort") },
+  ] as const;
+  const sortBy = (sort: typeof sessionSort) => {
+    if (sessionSort === sort) onSessionSortDirChange(sessionSortDir === "asc" ? "desc" : "asc");
+    else {
+      onSessionSortChange(sort);
+      onSessionSortDirChange("desc");
+    }
+  };
+  const number = (value: number | undefined) =>
+    value === undefined ? empty : value.toLocaleString("en-US");
+  const renderRows = (entries: typeof sortedSessions) => {
+    const orderedKeys = entries.map(({ session }) => session.key);
+    return repeat(
+      entries,
+      ({ session }) => session.key,
+      ({ session, displayLabel, value }) => {
+        const usage = session.usage;
+        const selected = selectedSet.has(session.key);
+        const numericValues = [
+          number(usage?.messageCounts?.total),
+          number(usage?.toolUsage?.totalCalls),
+          number(usage?.messageCounts?.errors),
+          formatDurationCompact(usage?.durationMs) ?? empty,
+          value === null
+            ? empty
+            : isTokenMode
+              ? formatUsageTokens(value)
+              : formatAnalysisCost(value, usage?.missingCostEntries),
+        ];
+        return html`
+          <tr
+            class="usage-session-row ${selected ? "selected" : ""}"
+            aria-selected=${selected}
+            title=${session.key}
+            @click=${(event: MouseEvent) => {
+              if (!(event.target as Element).closest("button, input"))
+                onSelectSession(session.key, event.shiftKey, orderedKeys);
+            }}
+          >
+            <td class="usage-session-name" data-column="label">
+              <div class="usage-session-name-line">
+                <input
+                  class="usage-session-checkbox"
+                  type="checkbox"
+                  .checked=${selected}
+                  aria-label=${t("usage.sessions.selectSession", { name: displayLabel })}
+                  @click=${(event: MouseEvent) => {
+                    if (event.shiftKey || !onToggleSession) {
+                      onSelectSession(session.key, event.shiftKey, orderedKeys);
+                    } else {
+                      onToggleSession(session.key);
+                    }
+                  }}
+                />
+                <button
+                  class="usage-session-open"
+                  title=${session.key}
+                  @click=${(event: MouseEvent) =>
+                    onSelectSession(session.key, event.shiftKey, orderedKeys)}
+                >
+                  ${displayLabel}
+                </button>
+                <span class="usage-session-copy"
+                  >${renderCopyButton(displayLabel, t("usage.sessions.copy"))}</span
+                >
+              </div>
+            </td>
+            ${columns.slice(1, 5).map((column) => {
+              const value =
+                column.key === "agent"
+                  ? session.agentId
+                  : column.key === "model"
+                    ? (session.model ?? session.modelOverride)
+                    : column.key === "channel"
+                      ? session.channel
+                      : (session.modelProvider ?? session.providerOverride);
+              return html`<td
+                data-column=${column.key}
+                data-label=${column.label}
+                ?hidden=${!column.visible}
+              >
+                <span class="usage-session-${column.key}" title=${value ?? empty}>
+                  ${column.key === "provider" ? renderProviderBrandIcon(value ?? "?") : nothing}
+                  <span>${value ?? empty}</span>
+                </span>
+              </td>`;
+            })}
+            ${columns
+              .slice(5)
+              .map(
+                (column, index) => html`
+                  <td
+                    class="usage-session-number"
+                    data-column=${column.key}
+                    data-label=${column.label}
+                    ?hidden=${!column.visible}
+                  >
+                    ${numericValues[index]}
+                  </td>
+                `,
+              )}
+          </tr>
+        `;
+      },
     );
   };
-
-  return renderSettingsSection(
-    { title: t("usage.sessions.title") },
-    html`
-      <div class="usage-panel sessions-card">
-        <div class="sessions-card-header">
-          <div class="sessions-card-count">
-            ${t("usage.sessions.shown", { count: String(displayedEntries.length) })}
-            ${
-              totalSessions !== displayedEntries.length
-                ? ` · ${t("usage.sessions.total", { count: String(totalSessions) })}`
-                : ""
-            }
-          </div>
+  const renderTable = (entries: typeof sortedSessions) => html`
+    <div class="usage-session-table-wrap">
+      <table
+        class="usage-session-table ${columns.filter((column) => column.visible).length <= 4
+          ? "usage-session-table--wide-name"
+          : ""} ${selectedEntries.length ? "has-selection" : ""}"
+      >
+        <thead>
+          <tr>
+            ${columns.map(
+              (column) => html`
+                <th
+                  scope="col"
+                  data-column=${column.key}
+                  ?hidden=${!column.visible}
+                  aria-sort=${column.sort === null
+                    ? nothing
+                    : sessionSort === column.sort
+                      ? sessionSortDir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"}
+                >
+                  ${column.sort === null
+                    ? column.label
+                    : html`<button @click=${() => sortBy(column.sort)}>
+                        ${column.label}${sessionSort === column.sort
+                          ? sessionSortDir === "asc"
+                            ? " ↑"
+                            : " ↓"
+                          : ""}
+                      </button>`}
+                  ${column.key === "label"
+                    ? html`<button
+                        class="usage-session-recent-sort"
+                        aria-label=${t("usage.sessions.recentShort")}
+                        @click=${() => sortBy("recent")}
+                      >
+                        ${t("usage.sessions.recentShort")}${sessionSort === "recent"
+                          ? sessionSortDir === "asc"
+                            ? " ↑"
+                            : " ↓"
+                          : ""}
+                      </button>`
+                    : nothing}
+                </th>
+              `,
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          ${entries.length
+            ? renderRows(entries)
+            : html`<tr>
+                <td
+                  colspan=${columns.filter(({ visible }) => visible).length}
+                  class="usage-empty-block"
+                >
+                  ${t(
+                    sessionsTab === "recent"
+                      ? "usage.sessions.noRecent"
+                      : "usage.sessions.noneInRange",
+                  )}
+                </td>
+              </tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+  return html`
+    <section
+      id="usage-sessions"
+      class="usage-sessions ${sessionsTab === "recent" ? "usage-sessions--recent" : ""}"
+    >
+      <header class="usage-sessions-heading">
+        <div class="usage-sessions-title">
+          <h3>
+            ${t("usage.sessions.title")}
+            <span class="usage-sessions-count"
+              >${displayedEntries.length.toLocaleString("en-US")}</span
+            >
+          </h3>
+          ${counters ? html`<div class="usage-sessions-counters">${counters}</div>` : nothing}
         </div>
-        <div class="sessions-card-meta">
-          <div class="sessions-card-stats">
-            <span>
-              ${isTokenMode ? formatUsageTokens(avgValue) : formatAnalysisCost(avgValue)}
-              ${t("usage.sessions.avg")}
-            </span>
-            <span
-              >${totalErrors} ${normalizeLowercaseStringOrEmpty(t("usage.overview.errors"))}</span
-            >
-          </div>
-          ${renderSettingsSegmented({
-            mode: "buttons",
-            variant: "accent",
-            ariaPressed: false,
-            className: "small",
-            value: sessionsTab,
-            onChange: onSessionsTabChange,
-            onReselect: onSessionsTabChange,
-            options: [
-              { value: "all", label: t("usage.sessions.all") },
-              { value: "recent", label: t("usage.sessions.recent") },
-            ],
-          })}
-          <label class="sessions-sort">
-            <span>${t("usage.sessions.sort")}</span>
-            <select
-              class="settings-select"
-              @change=${(e: Event) =>
-                onSessionSortChange((e.target as HTMLSelectElement).value as typeof sessionSort)}
-            >
-              ${Object.entries({
-                cost: "usage.metrics.cost",
-                errors: "usage.overview.errors",
-                messages: "usage.overview.messages",
-                recent: "usage.sessions.recentShort",
-                tokens: "usage.metrics.tokens",
-              }).map(
-                ([value, labelKey]) =>
-                  html`<option value=${value} ?selected=${sessionSort === value}>
-                    ${t(labelKey)}
-                  </option>`,
-              )}
-            </select>
-          </label>
-          <openclaw-tooltip
-            .content=${
-              sessionSortDir === "desc"
-                ? t("usage.sessions.descending")
-                : t("usage.sessions.ascending")
-            }
+        ${renderSettingsSegmented({
+          mode: "buttons",
+          ariaPressed: false,
+          className: "small",
+          value: sessionsTab,
+          onChange: onSessionsTabChange,
+          onReselect: onSessionsTabChange,
+          options: [
+            { value: "all", label: t("usage.sessions.all") },
+            { value: "recent", label: t("usage.sessions.recent") },
+          ],
+        })}
+        <div class="usage-session-sort">
+          <select
+            class="settings-select"
+            aria-label=${t("usage.sessions.sort")}
+            @change=${(event: Event) => {
+              const selected = sortOptions.find(
+                ({ sort }) => sort === (event.target as HTMLSelectElement).value,
+              );
+              if (selected) onSessionSortChange(selected.sort);
+            }}
           >
-            <button
-              class="btn btn--sm"
-              aria-label=${
-                sessionSortDir === "desc"
-                  ? t("usage.sessions.descending")
-                  : t("usage.sessions.ascending")
-              }
-              @click=${() => onSessionSortDirChange(sessionSortDir === "desc" ? "asc" : "desc")}
-            >
-              ${sessionSortDir === "desc" ? "↓" : "↑"}
-            </button>
-          </openclaw-tooltip>
-          ${
-            selectedCount > 0
-              ? html`
-                  <button class="btn btn--sm" @click=${onClearSessions}>
-                    ${t("usage.sessions.clearSelection")}
-                  </button>
-                `
-              : nothing
-          }
+            ${sortOptions.map(
+              ({ sort, label }) => html`
+                <option value=${sort} ?selected=${sessionSort === sort}>${label}</option>
+              `,
+            )}
+          </select>
+          <button
+            class="btn btn--sm"
+            aria-label=${t(
+              sessionSortDir === "asc" ? "usage.sessions.ascending" : "usage.sessions.descending",
+            )}
+            @click=${() => onSessionSortDirChange(sessionSortDir === "asc" ? "desc" : "asc")}
+          >
+            ${sessionSortDir === "asc" ? "↑" : "↓"}
+          </button>
         </div>
-        ${
-          sessionsTab === "recent"
-            ? displayedEntries.length === 0
-              ? html` <div class="usage-empty-block">${t("usage.sessions.noRecent")}</div> `
-              : html`
-                  <div class="session-bars session-bars--recent">
-                    ${renderSessionBarRows(displayedEntries)}
-                  </div>
-                `
-            : displayedEntries.length === 0
-              ? html` <div class="usage-empty-block">${t("usage.sessions.noneInRange")}</div> `
-              : html`
-                  <div class="session-bars">
-                    ${renderSessionBarRows(displayedEntries)}
-                    ${
-                      sessions.length > displayedEntries.length
-                        ? html`
-                            <div class="usage-more-sessions">
-                              ${t("usage.sessions.more", {
-                                count: String(sessions.length - displayedEntries.length),
-                              })}
-                            </div>
-                          `
-                        : nothing
-                    }
-                  </div>
-                `
-        }
-        ${
-          selectedCount > 1
-            ? html`
-                <div class="sessions-selected-group">
-                  <div class="sessions-card-count">
-                    ${t("usage.sessions.selected", { count: String(selectedCount) })}
-                  </div>
-                  <div class="session-bars session-bars--selected">
-                    ${renderSessionBarRows(selectedEntries)}
-                  </div>
-                </div>
-              `
-            : nothing
-        }
+        ${onToggleColumn
+          ? html`<details class="usage-session-columns">
+              <summary>${t("usage.sessions.columns")}</summary>
+              <div class="usage-session-columns-menu">
+                ${(
+                  [
+                    "agent",
+                    "model",
+                    "channel",
+                    "provider",
+                    "messages",
+                    "tools",
+                    "errors",
+                    "duration",
+                  ] as const
+                ).map(
+                  (key) => html` <label
+                    ><input
+                      type="checkbox"
+                      .checked=${showColumn(key)}
+                      @change=${() => onToggleColumn(key)}
+                    />
+                    ${columns.find((column) => column.key === key)?.label}
+                  </label>`,
+                )}
+              </div>
+            </details>`
+          : nothing}
+      </header>
+      ${toolbar ? html`<div class="usage-sessions-toolbar">${toolbar}</div>` : nothing}
+      <div class="usage-sessions-summary">
+        <span
+          >${t("usage.sessions.shown", { count: displayedEntries.length.toLocaleString("en-US") })}
+          ${totalSessions !== displayedEntries.length
+            ? ` · ${t("usage.sessions.total", { count: totalSessions.toLocaleString("en-US") })}`
+            : ""}
+          ·
+          ${avgValue === null
+            ? empty
+            : isTokenMode
+              ? formatUsageTokens(avgValue)
+              : formatAnalysisCost(
+                  avgValue,
+                  sortedWithDir.reduce(
+                    (sum, { session }) => sum + (session.usage?.missingCostEntries ?? 0),
+                    0,
+                  ),
+                )}
+          ${t("usage.sessions.avg")} · ${t("usage.overview.errors")}:
+          ${knownEntries.length ? number(totalErrors) : empty}</span
+        >
       </div>
-    `,
-  );
+      ${selectedEntries.length
+        ? html`<div class="usage-session-selection">
+            <span
+              >${t("usage.sessions.selected", {
+                count: selectedEntries.length.toLocaleString("en-US"),
+              })}</span
+            >
+            <button class="btn btn--sm" @click=${onClearSessions}>
+              ${t("usage.sessions.clearSelection")}
+            </button>
+          </div>`
+        : nothing}
+      ${renderTable(displayedEntries)}
+      <p class="usage-session-help">${t("usage.sessions.openHint")}</p>
+      ${recentEntries.length
+        ? html`<nav class="usage-session-recents" aria-label=${t("usage.sessions.recent")}>
+            <span>${t("usage.sessions.recent")}</span>
+            ${recentEntries.map(
+              ({ session, displayLabel }) => html`<button
+                class="btn btn--sm btn--ghost"
+                @click=${() =>
+                  onSelectSession(
+                    session.key,
+                    false,
+                    displayedEntries.map(({ session }) => session.key),
+                  )}
+              >
+                ${displayLabel}
+              </button>`,
+            )}
+          </nav>`
+        : nothing}
+      ${selectedEntries.length > 1
+        ? html`<section
+            class="usage-session-comparison"
+            aria-label=${t("usage.sessions.compare", { count: String(selectedEntries.length) })}
+          >
+            <div class="usage-inspection-heading">
+              <h3>${t("usage.details.inspection")}</h3>
+              <a href="#usage-sessions">${t("usage.details.backToSessions")} ↑</a>
+            </div>
+            <header class="usage-session-comparison-heading">
+              <div>
+                <h4>${t("usage.sessions.compare", { count: String(selectedEntries.length) })}</h4>
+                <p class="muted">${t("usage.sessions.compareHint")}</p>
+              </div>
+              <button class="btn btn--sm" @click=${onClearSessions}>
+                ${t("usage.sessions.clearSelection")}
+              </button>
+            </header>
+            <div class="usage-session-comparison-grid">
+              ${selectedEntries.map(({ session, displayLabel, tokens, cost }) => {
+                const usage = session.usage;
+                const entries = [
+                  [
+                    t("usage.metrics.cost"),
+                    cost === null ? empty : formatAnalysisCost(cost, usage?.missingCostEntries),
+                  ],
+                  [t("usage.metrics.tokens"), tokens === null ? empty : formatUsageTokens(tokens)],
+                  [t("usage.overview.messages"), number(usage?.messageCounts?.total)],
+                  [t("usage.overview.toolCalls"), number(usage?.toolUsage?.totalCalls)],
+                  [t("usage.overview.errors"), number(usage?.messageCounts?.errors)],
+                  [t("usage.details.duration"), formatDurationCompact(usage?.durationMs) ?? empty],
+                ];
+                return html`<article class="usage-session-comparison-item">
+                  <h4>${displayLabel}</h4>
+                  <p class="muted">
+                    ${session.agentId ?? empty} · ${session.model ?? session.modelOverride ?? empty}
+                  </p>
+                  <div class="usage-session-comparison-value">${entries[0][1]}</div>
+                  ${selectedDays.length
+                    ? html`<p class="muted">
+                        ${t("usage.details.fullSession")}: ${t("usage.overview.messages")},
+                        ${t("usage.overview.toolCalls")}, ${t("usage.overview.errors")},
+                        ${t("usage.details.duration")}
+                      </p>`
+                    : nothing}
+                  <dl>
+                    ${entries.map(
+                      ([label, value]) =>
+                        html`<div>
+                          <dt>${label}</dt>
+                          <dd>${value}</dd>
+                        </div>`,
+                    )}
+                  </dl>
+                  <button
+                    class="btn"
+                    @click=${() =>
+                      onSelectSession(
+                        session.key,
+                        false,
+                        selectedEntries.map(({ session }) => session.key),
+                      )}
+                  >
+                    ${t("usage.sessions.inspectSession")}
+                  </button>
+                </article>`;
+              })}
+            </div>
+          </section>`
+        : nothing}
+    </section>
+  `;
 }
 
 export {
   renderCostBreakdownCompact,
   renderCostWindowComparison,
-  renderDailyChartCompact,
   renderFilterChips,
   renderInsightList,
   renderSessionsCard,
   renderUsageInsights,
-  USAGE_TOKEN_CATEGORIES,
+  renderUsageSummary,
 };
 /* oxlint-disable max-lines -- TODO: split this grandfathered oversized file. */
