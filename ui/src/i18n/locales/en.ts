@@ -4370,6 +4370,7 @@ export const en: TranslationMap & {
       more: "More",
     },
     providerUsage: {
+      noReset: "No reset time reported",
       title: "Provider plans & billing",
       subtitle: "Live plan, quota, balance, and budget data reported by configured providers.",
       stalled: "Provider usage did not finish loading. Refresh to retry.",
