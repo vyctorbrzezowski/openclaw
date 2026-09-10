@@ -47,11 +47,9 @@ export function renderUsageQuery(
   },
   {
     sessions,
-    matchedCount,
     warnings,
   }: {
     sessions: UsageSessionEntry[];
-    matchedCount: number;
     warnings: string[];
   },
 ) {
@@ -109,9 +107,14 @@ export function renderUsageQuery(
       >
         <button slot="trigger" type="button" class="btn btn--sm usage-filter-trigger">
           <span>${label}</span>
-          ${selectedCount > 0
-            ? html`<span class="settings-count">${selectedCount}</span>`
-            : html` <span class="settings-count">${t("usage.filters.all")}</span> `}
+          <span class="usage-filter-value" title=${selected.join(", ")}
+            >${selectedCount === 0
+              ? t("usage.filters.all")
+              : selectedCount === 1
+                ? selected[0]
+                : selectedCount}</span
+          >
+          ${icons.chevronDown}
         </button>
         <wa-dropdown-item value="command:select-all" ?disabled=${allSelected}>
           ${t("usage.filters.selectAll")}
@@ -278,14 +281,6 @@ export function renderUsageQuery(
             )}
           </div></wa-popover
         >
-        <span class="usage-query-hint">
-          ${hasQuery
-            ? t("usage.query.matching", {
-                shown: matchedCount.toLocaleString("en-US"),
-                total: sessions.length.toLocaleString("en-US"),
-              })
-            : t("usage.query.inRange", { total: sessions.length.toLocaleString("en-US") })}
-        </span>
       </div>
       ${appliedFilterTerms.length > 0
         ? html`

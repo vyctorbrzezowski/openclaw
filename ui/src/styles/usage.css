@@ -330,13 +330,55 @@
   gap: var(--space-2);
 }
 
+.usage-query-filters-popover {
+  --max-width: min(280px, calc(100vw - var(--space-7)));
+}
+
 .usage-query-filters-popover::part(body) {
-  padding: var(--space-4);
+  width: min(280px, calc(100vw - var(--space-7)));
+  box-sizing: border-box;
+  padding: var(--space-2);
 }
 
 .usage-query-filters-popover .usage-filter-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+.usage-filter-select .usage-filter-trigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--space-4);
+  width: 100%;
+  min-height: calc(var(--space-7) + var(--space-1));
+  padding: var(--space-2) var(--space-3);
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.usage-filter-select .usage-filter-trigger:hover {
+  background: var(--bg-hover);
+}
+
+.usage-filter-select .usage-filter-trigger:focus-visible {
+  outline: 2px solid var(--usage-data-accent);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.usage-filter-value {
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-filter-trigger svg {
+  width: var(--space-4);
+  height: var(--space-4);
+  color: var(--muted);
 }
 
 .usage-composition,
@@ -530,7 +572,12 @@
 }
 
 .usage-more-filters {
-  --max-width: min(400px, calc(100vw - var(--space-7)));
+  --usage-popover-width: 360px;
+  --max-width: min(var(--usage-popover-width), calc(100vw - var(--space-7)));
+}
+
+.usage-scope-popover {
+  --usage-popover-width: 320px;
 }
 
 .usage-more-filters::part(body) {
@@ -539,9 +586,31 @@
 
 .usage-more-filters-panel {
   display: grid;
-  width: min(400px, calc(100vw - var(--space-7)));
-  padding: var(--space-6);
+  width: min(var(--usage-popover-width), calc(100vw - var(--space-7)));
+  padding: var(--space-4);
   gap: var(--space-4);
+}
+
+.usage-more-filters-panel .settings-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.usage-more-filters-panel .settings-segmented__btn {
+  justify-content: center;
+  padding-inline: var(--space-2);
+}
+
+.usage-period-popover .usage-presets {
+  display: block;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.usage-more-filters-panel :is(.settings-input, .settings-select) {
+  --settings-control-height: 36px;
 }
 
 .usage-hero {
@@ -791,6 +860,13 @@
   width: var(--space-4);
   height: var(--space-4);
   flex: none;
+}
+
+.usage-hero-series-swatch {
+  width: var(--space-4);
+  height: 2px;
+  flex: none;
+  border-radius: var(--radius-full);
 }
 
 .usage-hero-plot {
@@ -1635,13 +1711,18 @@ openclaw-usage-dimensions {
 .usage-date-range {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
 .usage-date-field {
   display: grid;
   min-width: 0;
-  gap: var(--space-1);
+  gap: var(--space-2);
   font-size: var(--control-ui-text-sm);
+}
+
+.usage-date-field > span {
+  color: var(--muted);
 }
 
 .usage-date-field .usage-date-input {
@@ -1655,7 +1736,6 @@ openclaw-usage-dimensions {
 }
 
 .usage-separator,
-.usage-query-hint,
 .usage-mosaic-sub,
 .context-weight-desc,
 .timeseries-summary,
@@ -1671,15 +1751,6 @@ openclaw-usage-dimensions {
 .usage-lineage-note {
   color: var(--muted);
   font-size: 12px;
-}
-
-.usage-query-hint {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  letter-spacing: 0.01em;
 }
 
 .usage-pin-btn.active {
@@ -1719,8 +1790,7 @@ openclaw-usage-dimensions {
 }
 
 .usage-filter-select[open] .usage-filter-trigger {
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 8%, transparent);
+  background: var(--bg-hover);
 }
 
 .usage-filter-select::part(menu),

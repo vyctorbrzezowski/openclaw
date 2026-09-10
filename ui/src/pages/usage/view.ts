@@ -227,7 +227,18 @@ export function renderUsage(
     { key: "endDate", onChange: filterActions.onEndDateChange },
   ] as const;
 
-  const dateControls = html`<div class="usage-date-range">
+  const dateControls = html`<div class="usage-presets">
+      ${renderSettingsSegmented({
+        mode: "buttons",
+        value: filters.startDate === "1970-01-01" ? "all" : String(rangeDays),
+        onChange: (value) => (value === "all" ? applyAllRange() : applyPreset(Number(value))),
+        options: [
+          ...datePresets.map((preset) => ({ value: String(preset.days), label: preset.label })),
+          { value: "all", label: t("usage.presets.all") },
+        ],
+      })}
+    </div>
+    <div class="usage-date-range">
       ${dateInputs.map(
         ({ key, onChange }) => html`<label class="usage-date-field">
           <span>${t(`usage.filters.${key}`)}</span>
@@ -241,17 +252,6 @@ export function renderUsage(
           />
         </label>`,
       )}
-    </div>
-    <div class="usage-presets">
-      ${renderSettingsSegmented({
-        mode: "buttons",
-        value: filters.startDate === "1970-01-01" ? "all" : String(rangeDays),
-        onChange: (value) => (value === "all" ? applyAllRange() : applyPreset(Number(value))),
-        options: [
-          ...datePresets.map((preset) => ({ value: String(preset.days), label: preset.label })),
-          { value: "all", label: t("usage.presets.all") },
-        ],
-      })}
     </div>`;
   const scopeControls = html`<label class="usage-date-field">
       <span>${t("usage.filters.timeZone")}</span>
@@ -268,21 +268,24 @@ export function renderUsage(
         <option value="utc">${t("usage.filters.timeZoneUtc")}</option>
       </select></label
     >
-    ${renderSettingsSegmented({
-      mode: "buttons",
-      ariaPressed: false,
-      value: filters.scope,
-      onChange: filterActions.onScopeChange,
-      onReselect: filterActions.onScopeChange,
-      options: [
-        {
-          value: "instance",
-          label: t("usage.scope.instance"),
-          title: t("usage.scope.instanceHint"),
-        },
-        { value: "family", label: t("usage.scope.family"), title: t("usage.scope.familyHint") },
-      ],
-    })}`;
+    <div class="usage-date-field">
+      <span>${t("usage.scope.title")}</span>
+      ${renderSettingsSegmented({
+        mode: "buttons",
+        ariaLabel: t("usage.scope.title"),
+        value: filters.scope,
+        onChange: filterActions.onScopeChange,
+        onReselect: filterActions.onScopeChange,
+        options: [
+          {
+            value: "instance",
+            label: t("usage.scope.instance"),
+            title: t("usage.scope.instanceHint"),
+          },
+          { value: "family", label: t("usage.scope.family"), title: t("usage.scope.familyHint") },
+        ],
+      })}
+    </div>`;
   const headerActions = html`<button
       type="button"
       class="btn btn--sm usage-icon-button usage-pin-btn"
@@ -363,7 +366,6 @@ export function renderUsage(
     </wa-dropdown>`;
   const queryControl = renderUsageQuery(props, {
     sessions: agentScopedSessions,
-    matchedCount: filteredSessions.length,
     warnings: queryResult.warnings,
   });
   const rangeCrossesYears = filters.startDate.slice(0, 4) !== filters.endDate.slice(0, 4);
@@ -391,7 +393,7 @@ export function renderUsage(
                 >${icons.chevronDown}
               </button>
               <wa-popover
-                class="usage-more-filters"
+                class="usage-more-filters usage-period-popover"
                 for="usage-dates-trigger"
                 placement="bottom-start"
                 without-arrow
@@ -408,7 +410,7 @@ export function renderUsage(
                 ${t("usage.scope.title")}${icons.chevronDown}
               </button>
               <wa-popover
-                class="usage-more-filters"
+                class="usage-more-filters usage-scope-popover"
                 for="usage-scope-trigger"
                 placement="bottom-start"
                 without-arrow

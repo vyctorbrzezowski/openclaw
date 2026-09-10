@@ -373,12 +373,15 @@ export function renderUsageHero(props: HeroProps) {
                     class="usage-hero-legend-item"
                     style=${`--series-color:${color}`}
                     title=${label}
-                    ><span class="usage-hero-tooltip-dot" style=${`background:${color}`}></span
                     >${provider ? renderProviderBrandIcon(provider) : nothing}<span
                       class="usage-hero-legend-name"
                       >${label}</span
+                    ><span
+                      class="usage-hero-series-swatch"
+                      style=${`background:${color}`}
+                      aria-hidden="true"
                     ></span
-                  >`,
+                  ></span>`,
               )}
             </div>`
           : nothing}
@@ -473,13 +476,14 @@ export function renderUsageHero(props: HeroProps) {
                         ${providerSeries.map(
                           ({ provider, color }) => html`<div>
                             <dt>
-                              <span
-                                class="usage-hero-tooltip-dot"
-                                style=${`background:${color}`}
-                              ></span
-                              >${provider
+                              ${provider
                                 ? renderProviderBrandIcon(provider)
                                 : nothing}${providerLabel(provider)}
+                              <span
+                                class="usage-hero-series-swatch"
+                                style=${`background:${color}`}
+                                aria-hidden="true"
+                              ></span>
                             </dt>
                             <dd>${format(providers.get(provider)?.[metric] ?? 0)}</dd>
                           </div>`,
