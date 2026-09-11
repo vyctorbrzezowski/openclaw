@@ -83,7 +83,7 @@ class UsagePage extends OpenClawLightDomElement {
   @state() private usageRecentSessions: string[] = [];
   @state() private usageTimeZone: "local" | "utc" = "local";
   @state() private usageContextExpanded = false;
-  @state() private usageHeaderPinned = false;
+  @state() private usageQueryExpanded = false;
   @state() private usageSessionsTab: "all" | "recent" = "all";
   @state() private usageVisibleColumns = [...DEFAULT_VISIBLE_COLUMNS];
   @state() private usageLogFilterRoles: SessionLogRole[] = [];
@@ -522,7 +522,7 @@ class UsagePage extends OpenClawLightDomElement {
         sessionsTab: this.usageSessionsTab,
         visibleColumns: this.usageVisibleColumns,
         contextExpanded: this.usageContextExpanded,
-        headerPinned: this.usageHeaderPinned,
+        queryExpanded: this.usageQueryExpanded,
       },
       detail: {
         open: this.usageDetailOpen,
@@ -576,7 +576,16 @@ class UsagePage extends OpenClawLightDomElement {
             this.clearSelectionsAndDetails();
             this.refreshPolicy.request("manual");
           },
-          onToggleHeaderPinned: () => (this.usageHeaderPinned = !this.usageHeaderPinned),
+          onQueryExpandedChange: (expanded) => {
+            this.usageQueryExpanded = expanded;
+            if (expanded) {
+              void this.updateComplete.then(() => {
+                if (this.usageQueryExpanded) {
+                  this.querySelector<HTMLInputElement>(".usage-query-input")?.focus();
+                }
+              });
+            }
+          },
           onSelectHour: (hour, shiftKey) => {
             this.usageSelectedHours = toggleUsageRangeSelection(
               this.usageSelectedHours,

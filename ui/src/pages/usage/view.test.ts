@@ -89,7 +89,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
       sessionsTab: "all",
       visibleColumns: [],
       contextExpanded: false,
-      headerPinned: false,
+      queryExpanded: false,
     },
     detail: {
       open: true,
@@ -125,7 +125,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
         onAgentChange: noop,
         onRefresh: noop,
         onTimeZoneChange: noop,
-        onToggleHeaderPinned: noop,
+        onQueryExpandedChange: noop,
         onSelectDay: noop,
         onSelectHour: noop,
         onClearDays: noop,

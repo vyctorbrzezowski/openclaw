@@ -234,7 +234,7 @@ describe("renderUsageHeatmap", () => {
     expect(container.querySelector(".usage-pattern-header h3")?.textContent?.trim()).toBe(
       "Token activity",
     );
-    expect(container.querySelectorAll(".usage-heatmap__cell")).toHaveLength(52 * 7);
+    expect(container.querySelectorAll(".usage-heatmap__cell[data-tooltip]")).toHaveLength(52 * 7);
     expect(
       container
         .querySelector(".usage-heatmap__svg .usage-heatmap__cell--l4")
@@ -242,18 +242,19 @@ describe("renderUsageHeatmap", () => {
     ).toContain("20 tokens");
   });
 
-  it("keeps short ranges at their natural cell width", () => {
+  it("renders short selections within an annual grid of empty slots", () => {
     const container = document.createElement("div");
     render(
       renderUsageHeatmap([dailyEntry("2026-08-01", 20)], "2026-08-01", "2026-08-01"),
       container,
     );
 
+    expect(container.querySelectorAll(".usage-heatmap__cell")).toHaveLength(52 * 7);
+    expect(container.querySelectorAll(".usage-heatmap__cell[data-tooltip]")).toHaveLength(1);
     expect(
-      container
-        .querySelector<SVGElement>(".usage-heatmap__svg")
-        ?.style.getPropertyValue("--usage-heatmap-width"),
-    ).toBe("74px");
+      container.querySelectorAll('.usage-heatmap__cell--empty[aria-hidden="true"]'),
+    ).toHaveLength(52 * 7 - 1);
+    expect(container.querySelector(".usage-heatmap__cell--empty[data-tooltip]")).toBeNull();
   });
 });
 

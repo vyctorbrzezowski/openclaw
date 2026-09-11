@@ -18,7 +18,7 @@ const WEEKDAY_LABEL_ROWS = [
 ];
 
 function renderHeatmapSvg(heatmap: UsageHeatmap) {
-  // Keep the final month label inside the SVG even for a one-week range.
+  // Leave room for month labels at the calendar's edges.
   const width = HEATMAP_LEFT * 2 + heatmap.weeks.length * HEATMAP_PITCH;
   const height = HEATMAP_TOP + 7 * HEATMAP_PITCH;
   const numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
@@ -45,15 +45,14 @@ function renderHeatmapSvg(heatmap: UsageHeatmap) {
       )}
       ${heatmap.weeks.map((week, weekIndex) =>
         week.days.map((day, dayIndex) => {
-          if (!day) {
-            return nothing;
-          }
-          const tooltip = `${formatFullDate(day.date)} · ${t("usage.heatmap.cellTokens", {
-            tokens: numberFormat.format(day.tokens),
-          })}`;
+          const tooltip = day
+            ? `${formatFullDate(day.date)} · ${t("usage.heatmap.cellTokens", {
+                tokens: numberFormat.format(day.tokens),
+              })}`
+            : nothing;
           return svg`
             <rect
-              class="usage-heatmap__cell usage-heatmap__cell--l${day.level}"
+              class="usage-heatmap__cell ${day ? `usage-heatmap__cell--l${day.level}` : "usage-heatmap__cell--empty"}"
               x=${HEATMAP_LEFT + weekIndex * HEATMAP_PITCH}
               y=${HEATMAP_TOP + dayIndex * HEATMAP_PITCH}
               width=${HEATMAP_CELL}
@@ -61,7 +60,8 @@ function renderHeatmapSvg(heatmap: UsageHeatmap) {
               rx="2.5"
               data-tooltip=${tooltip}
               aria-label=${tooltip}
-            ><title>${tooltip}</title></rect>
+              aria-hidden=${day ? nothing : "true"}
+            >${day ? svg`<title>${tooltip}</title>` : nothing}</rect>
           `;
         }),
       )}

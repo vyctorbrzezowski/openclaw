@@ -6,7 +6,7 @@ type UsageHeatmapDay = {
 };
 
 type UsageHeatmapWeek = {
-  /** Sunday-first column; null pads days outside the covered range. */
+  /** Sunday-first column; null marks slots outside the selected range. */
   days: Array<UsageHeatmapDay | null>;
 };
 
@@ -56,7 +56,8 @@ function levelFor(tokens: number, thresholds: [number, number, number]): UsageHe
 }
 
 /**
- * GitHub-style grid for the selected range, capped at its trailing 52 weeks.
+ * Trailing 52-week calendar ending at the selected end date. Days outside the
+ * selected range remain empty slots rather than zero-token observations.
  * Columns are Sunday-first; intensity buckets come from nonzero-day quartiles
  * so sparse and heavy ranges both spread across the palette.
  */
@@ -67,7 +68,8 @@ export function buildUsageHeatmap(
   locale?: string,
 ): UsageHeatmap {
   const endMs = dateToUtcNoon(rangeEndDate);
-  const startMs = Math.max(dateToUtcNoon(rangeStartDate), endMs - (MAX_HEATMAP_DAYS - 1) * DAY_MS);
+  const calendarStartMs = endMs - (MAX_HEATMAP_DAYS - 1) * DAY_MS;
+  const startMs = Math.max(dateToUtcNoon(rangeStartDate), calendarStartMs);
   const tokensByDate = new Map(daily.map((entry) => [entry.date, entry.totalTokens]));
   const nonZero = daily
     .filter((entry) => {
@@ -78,8 +80,8 @@ export function buildUsageHeatmap(
   const thresholds =
     nonZero.length > 0 ? levelThresholds(nonZero) : ([0, 0, 0] as [number, number, number]);
 
-  const startWeekday = new Date(startMs).getUTCDay();
-  const gridStartMs = startMs - startWeekday * DAY_MS;
+  const startWeekday = new Date(calendarStartMs).getUTCDay();
+  const gridStartMs = calendarStartMs - startWeekday * DAY_MS;
   const monthFormat = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" });
   const weeks: UsageHeatmapWeek[] = [];
   const monthLabels: string[] = [];
@@ -97,10 +99,9 @@ export function buildUsageHeatmap(
       days.push({ date, tokens, level: levelFor(tokens, thresholds) });
     }
     weeks.push({ days });
-    const firstVisibleDay = days.find((day): day is UsageHeatmapDay => day !== null);
-    const firstVisibleMs = dateToUtcNoon(firstVisibleDay?.date ?? rangeEndDate);
-    const month = new Date(firstVisibleMs).getUTCMonth();
-    monthLabels.push(month === previousMonth ? "" : monthFormat.format(new Date(firstVisibleMs)));
+    const lastVisibleMs = Math.min(weekMs + 6 * DAY_MS, endMs);
+    const month = new Date(lastVisibleMs).getUTCMonth();
+    monthLabels.push(month === previousMonth ? "" : monthFormat.format(new Date(lastVisibleMs)));
     previousMonth = month;
   }
   return { weeks, monthLabels };

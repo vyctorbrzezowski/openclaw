@@ -303,12 +303,13 @@
 }
 
 .usage-header-toolbar {
-  justify-content: space-between;
-  align-items: flex-start;
+  gap: var(--space-3);
 }
 
 .usage-header-toolbar > .usage-session-filters {
-  flex: 0 1 560px;
+  flex: 1 1 0;
+  margin-inline-start: auto;
+  max-width: 100%;
 }
 
 .usage-header-scope svg,
@@ -325,19 +326,37 @@
 }
 
 .usage-query-filters-popover {
-  --max-width: min(280px, calc(100vw - var(--space-7)));
+  --max-width: min(360px, calc(100vw - var(--space-7)));
 }
 
 .usage-query-filters-popover::part(body) {
-  width: min(280px, calc(100vw - var(--space-7)));
+  width: min(360px, calc(100vw - var(--space-7)));
   box-sizing: border-box;
-  padding: var(--space-2);
+  padding: var(--space-4);
+}
+
+.usage-query-filters-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.usage-query-filters-header h2 {
+  margin: 0 auto 0 0;
+  font-size: var(--control-ui-text-lg);
+  color: var(--text-strong);
+}
+
+.usage-filter-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .usage-query-filters-popover .usage-filter-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .usage-filter-select .usage-filter-trigger {
@@ -346,8 +365,8 @@
   width: 100%;
   min-height: calc(var(--space-7) + var(--space-1));
   padding: var(--space-2) var(--space-3);
-  border-color: transparent;
-  background: transparent;
+  border-color: var(--border);
+  background: var(--bg);
   text-align: left;
 }
 
@@ -618,11 +637,10 @@
 
 .usage-hero-summary {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: baseline;
   min-width: 0;
   gap: var(--space-2) var(--space-8);
-  padding-block: var(--space-4);
 }
 
 .usage-hero-primary {
@@ -658,55 +676,9 @@
 }
 
 .usage-hero-controls {
-  grid-column: 3;
-  grid-row: 2;
-  align-self: center;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-left: auto;
-}
-
-.usage-hero-controls select {
-  appearance: none;
-  width: 100%;
-  height: calc(var(--space-7) + 2px);
-  max-width: 100%;
-  padding: var(--space-2) var(--space-7) var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: var(--control-ui-text-sm);
-}
-
-.usage-hero-display-selector {
-  position: relative;
-  display: block;
-  width: 100px;
-  flex: none;
-}
-
-.usage-hero-display-selector > svg {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  width: var(--space-4);
-  height: var(--space-4);
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--muted);
-}
-
-.usage-hero-controls select:focus-visible {
-  outline: 2px solid var(--usage-data-accent);
-  outline-offset: 2px;
-}
-
-.usage-hero-controls select:hover {
-  background: var(--bg-hover);
+  margin-bottom: calc(-1 * var(--space-3));
 }
 
 .usage-hero-kicker {
@@ -750,6 +722,8 @@
 
 .usage-hero-provider {
   display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
   min-width: 0;
   gap: var(--space-2);
 }
@@ -811,6 +785,10 @@
   display: grid;
   min-width: 0;
   gap: var(--space-3);
+}
+
+.usage-chart-mode {
+  justify-self: start;
 }
 
 .usage-hero-chart-header {
@@ -1053,14 +1031,6 @@
   .usage-hero-summary {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-2) var(--space-4);
-  }
-
-  .usage-hero-controls {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    width: 100%;
-    margin-left: 0;
-    margin-top: var(--space-3);
   }
 
   .usage-hero-legend {
@@ -1564,6 +1534,7 @@ openclaw-usage-dimensions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -1747,12 +1718,6 @@ openclaw-usage-dimensions {
 .usage-lineage-note {
   color: var(--muted);
   font-size: 12px;
-}
-
-.usage-pin-btn.active {
-  border-color: var(--border-strong);
-  background: var(--bg-hover);
-  color: var(--text-strong);
 }
 
 .usage-query-bar {
@@ -2071,6 +2036,8 @@ openclaw-usage-dimensions {
 .usage-heatmap {
   overflow-x: auto;
   padding-bottom: var(--space-1);
+  /* Start an overflowing calendar at its most recent dates. */
+  direction: rtl;
 }
 
 .usage-heatmap__legend {
@@ -2089,10 +2056,12 @@ openclaw-usage-dimensions {
   display: inline-block;
 }
 
-/* Preserve legible cells at every range; only long calendars scroll. */
+/* Fill the section on desktop while keeping the calendar legible on mobile. */
 .usage-heatmap__svg {
   display: block;
-  width: var(--usage-heatmap-width);
+  direction: ltr;
+  width: 100%;
+  min-width: var(--usage-heatmap-width);
   max-width: none;
   height: auto;
 }
@@ -2105,6 +2074,12 @@ openclaw-usage-dimensions {
 
 .usage-heatmap__weekday {
   text-anchor: end;
+}
+
+.usage-heatmap__cell--empty {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 0.7;
 }
 
 .usage-heatmap__cell--l0 {
@@ -2900,15 +2875,21 @@ openclaw-usage-dimensions {
 .usage-query-search {
   position: relative;
   display: grid;
-  grid-template-columns: var(--space-7) minmax(0, 1fr) auto;
   align-items: center;
-  flex: 1 1 280px;
   min-width: 0;
+}
+
+.usage-query-search--expanded {
+  grid-template-columns: var(--space-7) minmax(0, 1fr) auto;
+  flex: 1 1 120px;
+  min-width: 120px;
+  max-width: 280px;
+  width: 280px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
 
-.usage-query-search:focus-within {
+.usage-query-search--expanded:focus-within {
   border-color: var(--border-strong);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 18%, transparent);
 }
@@ -2919,6 +2900,12 @@ openclaw-usage-dimensions {
   box-shadow: none;
   min-height: var(--space-7);
   padding-left: 0;
+}
+
+.usage-query-search--expanded > .usage-query-search-trigger {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .usage-query-search-trigger,
@@ -3653,7 +3640,22 @@ openclaw-usage-dimensions {
 
 @container usage (max-width: 640px) {
   .usage-header-toolbar > .usage-session-filters {
+    flex: 1 1 0;
+  }
+
+  .usage-header-toolbar > .usage-header-scope {
     flex-basis: 100%;
+  }
+
+  .usage-query-search--expanded {
+    flex-basis: 100%;
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .usage-query-row {
+    justify-content: flex-start;
   }
 
   .usage-header-scope {
@@ -3690,11 +3692,6 @@ openclaw-usage-dimensions {
     align-self: center;
     flex-wrap: nowrap;
     justify-content: flex-end;
-  }
-
-  .usage-header-actions .usage-presets {
-    min-width: 0;
-    flex: 1;
   }
 
   .usage-presets .settings-segmented {

@@ -59,8 +59,15 @@ describe("buildUsageHeatmap", () => {
     expect(allDays.at(-1)?.date).toBe("2026-07-09");
   });
 
-  it("labels a padded week from its first visible day", () => {
-    const heatmap = buildUsageHeatmap([day("2026-08-01", 10)], "2026-08-01", "2026-08-01", "en-US");
-    expect(heatmap.monthLabels).toEqual(["Aug"]);
+  it("preserves the annual calendar while leaving dates outside a short selection empty", () => {
+    const daily = [day("2026-07-31", 1000), day("2026-08-01", 10)];
+    const heatmap = buildUsageHeatmap(daily, "2026-08-01", "2026-08-01", "en-US");
+    const annual = buildUsageHeatmap(daily, "2025-08-03", "2026-08-01", "en-US");
+    expect(heatmap.monthLabels).toEqual(annual.monthLabels);
+    expect(heatmap.monthLabels.filter(Boolean)).toHaveLength(13);
+    expect(heatmap.monthLabels.at(-1)).toBe("Aug");
+    expect(heatmap.weeks.flatMap((week) => week.days).filter(Boolean)).toEqual([
+      { date: "2026-08-01", tokens: 10, level: 4 },
+    ]);
   });
 });

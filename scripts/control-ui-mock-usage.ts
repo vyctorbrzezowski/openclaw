@@ -19,6 +19,17 @@ export function createUsageMock(baseTime: number) {
     { provider: "anthropic", model: "claude-sonnet-4-20250514", weight: 1.25, price: 1.7 },
     { provider: "anthropic", model: "claude-opus-4-20250514", weight: 0.45, price: 3.8 },
     { provider: "anthropic", model: "claude-3-5-haiku-20241022", weight: 0.85, price: 0.65 },
+    { provider: "google", model: "gemini-2.5-pro", weight: 1.05, price: 1.15 },
+    { provider: "xai", model: "grok-3", weight: 0.75, price: 1.35 },
+    { provider: "groq", model: "llama-3.3-70b-versatile", weight: 1.35, price: 0.3 },
+    { provider: "deepseek", model: "deepseek-chat", weight: 0.95, price: 0.4 },
+    { provider: "amazon-bedrock", model: "amazon.nova-pro-v1:0", weight: 0.6, price: 0.8 },
+    {
+      provider: "vercel-ai-gateway",
+      model: "anthropic/claude-opus-4.6",
+      weight: 0.4,
+      price: 2.4,
+    },
   ];
   const workloads = ["Workspace review", "Research synthesis", "Release planning", "Documentation"];
   const channels = ["terminal", "webchat", "discord"];
@@ -74,7 +85,9 @@ export function createUsageMock(baseTime: number) {
   };
   const sessions = Array.from({ length: 24 }, (_, index) => {
     const model = models[index % models.length]!;
-    const agentId = index % 3 === 0 ? "alpha" : "openclaw-mock";
+    // Rotate ownership between model cycles so the default agent sees every provider.
+    const agentId =
+      (index + Math.floor(index / models.length)) % 3 === 0 ? "alpha" : "openclaw-mock";
     const key = `agent:${agentId}:usage-workload-${index}`;
     const sessionId = `synthetic-usage-instance-${index}`;
     const days = Array.from({ length: 365 }, (_, dayIndex) => {

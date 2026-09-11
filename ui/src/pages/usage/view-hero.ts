@@ -292,6 +292,18 @@ export function renderUsageHero(props: HeroProps) {
     </div>`;
   };
   return html`<section class="usage-hero">
+    <div class="usage-hero-controls">
+      ${renderSettingsSegmented({
+        mode: "buttons",
+        ariaLabel: t("usage.analytics.chartMetric"),
+        value: props.chartMode,
+        onChange: props.onChartModeChange,
+        options: [
+          { value: "cost", label: t("usage.metrics.cost") },
+          { value: "tokens", label: t("usage.metrics.tokens") },
+        ],
+      })}
+    </div>
     <div class="usage-hero-summary">
       <div class="usage-hero-primary">
         <div class="usage-hero-kicker">
@@ -334,37 +346,29 @@ export function renderUsageHero(props: HeroProps) {
           >
         </openclaw-tooltip>
       </div>
-      <div class="usage-hero-controls">
-        ${renderSettingsSegmented({
-          mode: "buttons",
-          ariaLabel: t("usage.analytics.chartMetric"),
-          value: props.chartMode,
-          onChange: props.onChartModeChange,
-          options: [
-            { value: "cost", label: t("usage.metrics.cost") },
-            { value: "tokens", label: t("usage.metrics.tokens") },
-          ],
-        })}
-        <div class="usage-hero-display-selector">
-          <select
-            aria-label=${t("usage.daily.display")}
-            .value=${props.dailyChartMode}
-            @change=${(event: Event) => {
-              const value = (event.currentTarget as HTMLSelectElement).value;
-              if (value === "total" || value === "by-type" || value === "by-provider")
-                props.onDailyChartModeChange(value);
-            }}
-          >
-            <option value="total">${t("usage.daily.total")}</option>
-            <option value="by-type">${t("usage.daily.byType")}</option>
-            <option value="by-provider">${t("usage.dimensions.providers")}</option></select
-          >${icons.chevronDown}
-        </div>
-      </div>
     </div>
-    <div class="usage-hero-chart">
+    ${renderSettingsSegmented({
+      mode: "buttons",
+      className: "usage-chart-mode",
+      value: props.dailyChartMode,
+      ariaLabel: t("usage.daily.display"),
+      onChange: props.onDailyChartModeChange,
+      options: [
+        { value: "total", label: t("usage.daily.total") },
+        { value: "by-type", label: t("usage.daily.byType") },
+        { value: "by-provider", label: t("usage.dimensions.providers") },
+      ],
+    })}
+    <div
+      id="usage-chart-panel"
+      class="usage-hero-chart"
+      role="region"
+      aria-labelledby="usage-chart-heading"
+    >
       <div class="usage-hero-chart-header">
-        <h2>${t(isTokens ? "usage.hero.dailyTokens" : "usage.hero.dailyCost")}</h2>
+        <h2 id="usage-chart-heading">
+          ${t(isTokens ? "usage.hero.dailyTokens" : "usage.hero.dailyCost")}
+        </h2>
         ${props.dailyChartMode !== "total"
           ? html`<div class="usage-hero-legend">
               ${series.map(

@@ -113,7 +113,7 @@ type UsageDisplayState = {
   sessionsTab: "all" | "recent";
   visibleColumns: UsageColumnId[];
   contextExpanded: boolean;
-  headerPinned: boolean;
+  queryExpanded: boolean;
 };
 
 export type UsageDetailTab = "tools-models" | "conversation" | "context";
@@ -149,7 +149,7 @@ type UsageCallbacks = {
     onAgentChange: (agentId: string | null) => void;
     onRefresh: () => void;
     onTimeZoneChange: (zone: "local" | "utc") => void;
-    onToggleHeaderPinned: () => void;
+    onQueryExpandedChange: (expanded: boolean) => void;
     onSelectDay: (day: string, shiftKey: boolean) => void; // Support shift-click
     onSelectHour: (hour: number, shiftKey: boolean) => void;
     onClearDays: () => void;

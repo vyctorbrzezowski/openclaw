@@ -1,3 +1,4 @@
+import type WaPopover from "@awesome.me/webawesome/dist/components/popover/popover.js";
 import { html, nothing } from "lit";
 import "../../components/tooltip.ts";
 import "../../components/web-awesome.ts";
@@ -34,14 +35,16 @@ export function renderUsageQuery(
   {
     data,
     filters,
+    display,
     callbacks,
   }: {
     data: Pick<UsageProps["data"], "loading" | "aggregates">;
     filters: Pick<UsageProps["filters"], "query" | "queryDraft">;
+    display: Pick<UsageProps["display"], "queryExpanded">;
     callbacks: {
       filters: Pick<
         UsageProps["callbacks"]["filters"],
-        "onQueryDraftChange" | "onApplyQuery" | "onClearQuery"
+        "onQueryDraftChange" | "onApplyQuery" | "onClearQuery" | "onQueryExpandedChange"
       >;
     };
   },
@@ -56,6 +59,7 @@ export function renderUsageQuery(
   const filterActions = callbacks.filters;
   const hasQuery = filters.query.trim().length > 0;
   const hasDraftQuery = filters.queryDraft.trim().length > 0;
+  const searchExpanded = display.queryExpanded || hasDraftQuery || hasQuery;
   const filterOptions = buildUsageFilterOptions(sessions, data.aggregates);
   const querySuggestions = buildQuerySuggestions(filters.queryDraft, filterOptions);
   const queryTerms = extractQueryTerms(filters.queryDraft);
@@ -146,11 +150,12 @@ export function renderUsageQuery(
     <div class="usage-session-filters">
       <div class="usage-query-row">
         <div
-          class="usage-query-search"
+          class="usage-query-search ${searchExpanded ? "usage-query-search--expanded" : ""}"
           @focusout=${(event: FocusEvent) => {
             const search = event.currentTarget as HTMLElement;
             if (!(event.relatedTarget instanceof Node) || !search.contains(event.relatedTarget)) {
               setQueryEditing(search, false);
+              filterActions.onQueryExpandedChange(false);
             }
           }}
           @keydown=${(event: KeyboardEvent) => {
@@ -158,7 +163,13 @@ export function renderUsageQuery(
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
-              focusQueryInput(search);
+              const suggestions = search.querySelector<HTMLElement>(".usage-query-suggestions");
+              if (suggestions?.hidden && !hasDraftQuery && !hasQuery) {
+                filterActions.onQueryExpandedChange(false);
+                search.querySelector<HTMLButtonElement>(".usage-query-search-trigger")?.focus();
+              } else {
+                focusQueryInput(search);
+              }
               setQueryEditing(search, false);
               return;
             }
@@ -180,9 +191,21 @@ export function renderUsageQuery(
             else choices[next]?.focus();
           }}
         >
-          <span class="usage-query-search-trigger" aria-hidden="true">${icons.search}</span>
+          <button
+            type="button"
+            class="btn btn--sm usage-icon-button usage-query-search-trigger"
+            aria-label=${t("usage.query.placeholder")}
+            title=${t("usage.query.placeholder")}
+            aria-expanded=${searchExpanded}
+            aria-controls="usage-query-input"
+            @click=${() => filterActions.onQueryExpandedChange(true)}
+          >
+            ${icons.search}
+          </button>
           <input
+            id="usage-query-input"
             class="settings-input usage-query-input"
+            ?hidden=${!searchExpanded}
             type="text"
             .value=${filters.queryDraft}
             placeholder=${t("usage.query.placeholder")}
@@ -193,7 +216,10 @@ export function renderUsageQuery(
             aria-controls="usage-query-suggestions"
             aria-expanded="false"
             autocomplete="off"
-            @focus=${(event: FocusEvent) => setQueryEditing(event.currentTarget, true)}
+            @focus=${(event: FocusEvent) => {
+              filterActions.onQueryExpandedChange(true);
+              setQueryEditing(event.currentTarget, true);
+            }}
             @click=${(event: MouseEvent) => setQueryEditing(event.currentTarget, true)}
             @input=${(event: Event) => {
               setQueryEditing(event.currentTarget, true);
@@ -267,7 +293,10 @@ export function renderUsageQuery(
           class="btn btn--sm usage-query-filters-trigger"
           aria-haspopup="dialog"
         >
-          ${t("usage.filters.title")}${icons.chevronDown}
+          ${icons.listFilter}${t("usage.filters.title")}
+          ${appliedFilterTerms.length > 0
+            ? html`<span class="usage-filter-count">${appliedFilterTerms.length}</span>`
+            : nothing}
         </button>
         <wa-popover
           class="usage-query-filters-popover"
@@ -275,6 +304,29 @@ export function renderUsageQuery(
           placement="bottom-end"
           without-arrow
         >
+          <div class="usage-query-filters-header">
+            <h2>${t("usage.filters.title")}</h2>
+            <button
+              type="button"
+              class="btn btn--sm btn--ghost"
+              ?disabled=${!hasDraftQuery && !hasQuery}
+              @click=${filterActions.onClearQuery}
+            >
+              ${t("usage.filters.clearFilters")}
+            </button>
+            <button
+              type="button"
+              class="btn btn--sm btn--ghost usage-icon-button"
+              aria-label=${t("common.close")}
+              @click=${(event: MouseEvent) => {
+                const button = event.currentTarget as HTMLButtonElement;
+                const popover = button.closest<WaPopover>("wa-popover");
+                if (popover) popover.open = false;
+              }}
+            >
+              ${icons.x}
+            </button>
+          </div>
           <div class="usage-filter-row">
             ${(["channel", "provider", "model", "tool"] as const).map((key) =>
               renderFilterSelect(key, t(`usage.filters.${key}`), filterOptions[key]),
