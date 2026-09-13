@@ -530,23 +530,14 @@
 
 .usage-toolbar {
   position: sticky;
-  top: 0;
+  /* Offset the content scroller's 16px inset so only toolbar padding remains. */
+  top: calc(-1 * var(--space-4));
   z-index: 4;
   display: grid;
   gap: var(--space-3);
-  padding-block: var(--space-3);
+  padding-block: var(--space-2);
   background: var(--bg-content, var(--bg));
   border-bottom: 1px solid var(--border);
-}
-
-/* The content scroller keeps its 16px top inset above sticky descendants. */
-.usage-toolbar::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: calc(-1 * var(--space-4));
-  height: var(--space-4);
-  background: var(--bg-content, var(--bg));
 }
 
 .usage-header-copy h1 {
