@@ -193,7 +193,7 @@ export function renderUsageQuery(
         >
           <button
             type="button"
-            class="btn btn--sm btn--ghost usage-icon-button usage-query-search-trigger"
+            class="btn btn--sm btn--ghost usage-action usage-icon-button usage-query-search-trigger"
             aria-label=${t("usage.query.placeholder")}
             title=${t("usage.query.placeholder")}
             aria-expanded=${searchExpanded}
@@ -290,7 +290,7 @@ export function renderUsageQuery(
         <button
           id="usage-query-filters-trigger"
           type="button"
-          class="btn btn--sm usage-query-filters-trigger"
+          class="btn btn--sm usage-action usage-query-filters-trigger"
           aria-haspopup="dialog"
         >
           ${icons.listFilter}${t("usage.filters.title")}

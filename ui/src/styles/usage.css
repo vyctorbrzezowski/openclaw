@@ -586,6 +586,20 @@
   height: var(--space-4);
 }
 
+.usage-page .btn.usage-action {
+  height: var(--space-7);
+  color: var(--muted);
+}
+
+.usage-page .btn.usage-action:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.usage-action svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
 .usage-more-filters {
   --usage-popover-width: 360px;
   --max-width: min(var(--usage-popover-width), calc(100vw - var(--space-7)));

@@ -288,7 +288,7 @@ export function renderUsage(
     </div>`;
   const headerActions = html`<button
       type="button"
-      class="btn btn--sm btn--ghost usage-icon-button"
+      class="btn btn--sm btn--ghost usage-action usage-icon-button"
       aria-label=${t("common.refresh")}
       title=${t("common.refresh")}
       @click=${filterActions.onRefresh}
@@ -331,7 +331,7 @@ export function renderUsage(
       <button
         slot="trigger"
         type="button"
-        class="btn btn--sm usage-export-trigger"
+        class="btn btn--sm usage-action usage-export-trigger"
         aria-label=${t("usage.export.label")}
         title=${t("usage.export.label")}
         aria-busy=${data.exporting}
@@ -380,7 +380,7 @@ export function renderUsage(
                 class="btn btn--sm usage-range-trigger"
                 aria-haspopup="dialog"
               >
-                ${icons.calendarClock}<span
+                ${icons.calendar}<span
                   >${formatDayLabel(filters.startDate, rangeCrossesYears)} –
                   ${formatDayLabel(filters.endDate, rangeCrossesYears)}</span
                 >${icons.chevronDown}

@@ -361,6 +361,8 @@ export const icons = {
     <path d="m4.9 19.1 2.9-2.9" />
     <path d="M2 12h4" />
     <path d="m4.9 4.9 2.9 2.9" />`),
+  calendar: strokeIcon(svg` <path d="M8 2v4M16 2v4M3 10h18" />
+    <rect x="3" y="4" width="18" height="18" rx="2" />`),
   calendarClock: strokeIcon(svg` <path
       d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"
     />
