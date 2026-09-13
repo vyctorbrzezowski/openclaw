@@ -65,6 +65,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
       costDaily: [],
       cacheRefresh: "complete",
       providerUsage: [],
+      providerUsageLoading: false,
       providerUsageStalled: false,
       providerUsageUnavailable: false,
     },
@@ -81,6 +82,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
       timeZone: "local",
     },
     display: {
+      activeTab: "overview",
       chartMode: "tokens",
       dailyChartMode: "total",
       sessionSort: "tokens",
@@ -137,6 +139,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
         onClearQuery: noop,
       },
       display: {
+        onViewTabChange: noop,
         onExportJson: noop,
         onChartModeChange: noop,
         onDailyChartModeChange: noop,

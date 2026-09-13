@@ -74,6 +74,7 @@ type UsageDataState = {
   costDaily: CostDailyEntry[];
   cacheRefresh: UsageRetryState;
   providerUsage: ProviderUsageSummary["providers"];
+  providerUsageLoading: boolean;
   /** The gateway never converged the refresh; the empty list is not an answer. */
   providerUsageStalled: boolean;
   providerUsageUnavailable: boolean;
@@ -104,7 +105,10 @@ export type UsageSessionSort =
   | "messages"
   | "errors";
 
+export type UsageViewTab = "overview" | "sessions" | "analysis" | "limits";
+
 type UsageDisplayState = {
+  activeTab: UsageViewTab;
   chartMode: "tokens" | "cost";
   dailyChartMode: "total" | "by-type" | "by-provider";
   sessionSort: UsageSessionSort;
@@ -161,6 +165,7 @@ type UsageCallbacks = {
     onClearQuery: () => void;
   };
   display: {
+    onViewTabChange: (tab: UsageViewTab) => void;
     onExportJson: (data: UsageJsonExport) => void;
     onChartModeChange: (mode: "tokens" | "cost") => void;
     onDailyChartModeChange: (mode: "total" | "by-type" | "by-provider") => void;

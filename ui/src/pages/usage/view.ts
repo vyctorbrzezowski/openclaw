@@ -6,6 +6,7 @@ import {
 import { titleForRoute } from "../../app-navigation.ts";
 import "../../components/web-awesome-popover.ts";
 import { icons } from "../../components/icons.ts";
+import { renderHubTabs } from "../../components/hub-tabs.ts";
 import { renderSettingsPage, renderSettingsSegmented } from "../../components/settings-ui.ts";
 import "../../components/tooltip.ts";
 import "../../components/web-awesome.ts";
@@ -286,17 +287,7 @@ export function renderUsage(
         ],
       })}
     </div>`;
-  const headerActions = html`<button
-      type="button"
-      class="btn btn--sm btn--ghost usage-action usage-icon-button"
-      aria-label=${t("common.refresh")}
-      title=${t("common.refresh")}
-      @click=${filterActions.onRefresh}
-      ?disabled=${data.loading}
-    >
-      ${data.loading ? renderUsageLoadingStatus(nothing) : icons.refresh}
-    </button>
-    <wa-dropdown
+  const exportMenu = html`<wa-dropdown
       class="usage-export-menu"
       placement="bottom-end"
       @wa-select=${(event: CustomEvent<{ item: { value?: string } }>) => {
@@ -355,6 +346,17 @@ export function renderUsage(
         ${t("usage.export.json")}
       </wa-dropdown-item>
     </wa-dropdown>`;
+  const headerActions = html`<button
+      type="button"
+      class="btn btn--sm btn--ghost usage-action usage-icon-button"
+      aria-label=${t("common.refresh")}
+      title=${t("common.refresh")}
+      @click=${filterActions.onRefresh}
+      ?disabled=${data.loading}
+    >
+      ${data.loading ? renderUsageLoadingStatus(nothing) : icons.refresh}
+    </button>
+    ${display.activeTab === "limits" ? nothing : exportMenu}`;
   const queryControl = renderUsageQuery(props, {
     sessions: agentScopedSessions,
     warnings: queryResult.warnings,
@@ -372,6 +374,21 @@ export function renderUsage(
           </div>
         </header>
         <div class="usage-toolbar">
+          ${renderHubTabs({
+            id: "usage",
+            active: display.activeTab,
+            ariaLabel: titleForRoute("usage"),
+            panelId: "usage-panel",
+            className: "usage-tabs",
+            tabs: [
+              { value: "overview", label: t("usage.tabs.overview") },
+              { value: "sessions", label: t("usage.tabs.sessions") },
+              { value: "analysis", label: t("usage.tabs.analysis") },
+              { value: "limits", label: t("usage.tabs.limits") },
+            ],
+            onSelect: displayActions.onViewTabChange,
+          })}
+          <div class="usage-toolbar-controls" ?hidden=${display.activeTab === "limits"}>
           <div class="usage-header-toolbar">
             <div class="usage-header-scope">
               <button
@@ -414,22 +431,10 @@ export function renderUsage(
             ${queryControl}
           </div>
           ${renderFilterChips(props)}
+          </div>
         </div>
-        ${data.totals && !isEmpty
-          ? html`${renderUsageHero({
-              sessions: scopedSessions,
-              aggregates: scopedAggregates,
-              totals: displayTotals,
-              timeZone: filters.timeZone,
-              daily: filteredDaily,
-              selectedDays: filters.selectedDays,
-              chartMode: display.chartMode,
-              dailyChartMode: display.dailyChartMode,
-              onDailyChartModeChange: displayActions.onDailyChartModeChange,
-              onChartModeChange: displayActions.onChartModeChange,
-              onSelectDay: filterActions.onSelectDay,
-            })}`
-          : nothing}
+        <div id="usage-panel" role="tabpanel" aria-labelledby=${`usage-tab-${display.activeTab}`}>
+          <div class="usage-history-status" ?hidden=${display.activeTab === "limits"}>
         ${data.error
           ? html`<div class="callout danger usage-callout">${data.error}</div>`
           : nothing}
@@ -458,16 +463,24 @@ export function renderUsage(
           : isEmpty
             ? renderUsageEmptyState(filterActions.onRefresh)
             : nothing}
-        ${((data.loading || data.error) && !data.totals) || isEmpty
-          ? renderUsageLimits(
-              data.providerUsage,
-              data.providerUsageUnavailable,
-              data.providerUsageStalled,
-            )
+          </div>
+          <div class="usage-tab-content" data-usage-view="overview" ?hidden=${display.activeTab !== "overview"}>
+        ${data.totals && !isEmpty
+          ? html`${renderUsageHero({
+              sessions: scopedSessions,
+              aggregates: scopedAggregates,
+              totals: displayTotals,
+              timeZone: filters.timeZone,
+              daily: filteredDaily,
+              selectedDays: filters.selectedDays,
+              chartMode: display.chartMode,
+              dailyChartMode: display.dailyChartMode,
+              onDailyChartModeChange: displayActions.onDailyChartModeChange,
+              onChartModeChange: displayActions.onChartModeChange,
+              onSelectDay: filterActions.onSelectDay,
+            })}`
           : nothing}
-        ${((data.loading || data.error) && !data.totals) || isEmpty
-          ? nothing
-          : html`
+            ${((data.loading || data.error) && !data.totals) || isEmpty ? nothing : html`
               ${displayTotals
                 ? html`<section class="usage-composition">
                     <header class="usage-section-heading">
@@ -502,11 +515,39 @@ export function renderUsage(
                 aggregateSessions.length,
                 selectedDaySet.size > 0,
               )}
-              ${renderUsageLimits(
-                data.providerUsage,
-                data.providerUsageUnavailable,
-                data.providerUsageStalled,
-              )}
+            `}
+          </div>
+          <div class="usage-tab-content" data-usage-view="sessions" ?hidden=${display.activeTab !== "sessions"}>
+            ${((data.loading || data.error) && !data.totals) || isEmpty ? nothing : html`
+              <div class="usage-sessions-section">
+                ${renderSessionsCard(
+                  filteredSessions,
+                  filters.selectedSessions,
+                  filters.selectedDays,
+                  isTokenMode,
+                  display.sessionSort,
+                  display.sessionSortDir,
+                  display.recentSessions,
+                  display.sessionsTab,
+                  detailActions.onSelectSession,
+                  displayActions.onSessionSortChange,
+                  displayActions.onSessionSortDirChange,
+                  displayActions.onSessionsTabChange,
+                  display.visibleColumns,
+                  totalSessions,
+                  filterActions.onClearSessions,
+                  detailActions.onToggleSession,
+                  nothing,
+                  nothing,
+                  displayActions.onToggleColumn,
+                )}
+              </div>
+              ${primarySelectedEntry
+                ? renderSessionDetailPanel(primarySelectedEntry, props)
+                : nothing}            `}
+          </div>
+          <div class="usage-tab-content" data-usage-view="analysis" ?hidden=${display.activeTab !== "analysis"}>
+            ${((data.loading || data.error) && !data.totals) || isEmpty ? nothing : html`
               <section class="usage-analysis-row" aria-label=${t("usage.patterns.title")}>
                 <h2>${t("usage.patterns.title")}</h2>
                 ${renderUsageDimensions({
@@ -541,33 +582,20 @@ export function renderUsage(
                   })}
                 </div>
               </section>
-              <div class="usage-sessions-section">
-                ${renderSessionsCard(
-                  filteredSessions,
-                  filters.selectedSessions,
-                  filters.selectedDays,
-                  isTokenMode,
-                  display.sessionSort,
-                  display.sessionSortDir,
-                  display.recentSessions,
-                  display.sessionsTab,
-                  detailActions.onSelectSession,
-                  displayActions.onSessionSortChange,
-                  displayActions.onSessionSortDirChange,
-                  displayActions.onSessionsTabChange,
-                  display.visibleColumns,
-                  totalSessions,
-                  filterActions.onClearSessions,
-                  detailActions.onToggleSession,
-                  nothing,
-                  nothing,
-                  displayActions.onToggleColumn,
-                )}
-              </div>
-              ${primarySelectedEntry
-                ? renderSessionDetailPanel(primarySelectedEntry, props)
-                : nothing}
             `}
+          </div>
+          <div class="usage-tab-content" data-usage-view="limits" ?hidden=${display.activeTab !== "limits"}>
+            <p class="usage-account-context">${t("usage.providerUsage.accountContext")}</p>
+            ${data.providerUsageLoading && data.providerUsage.length === 0
+              ? nothing
+              : renderUsageLimits(data.providerUsage, data.providerUsageUnavailable, data.providerUsageStalled)}
+            ${data.providerUsageLoading && data.providerUsage.length === 0
+              ? html`<div class="usage-account-loading" role="status">${renderUsageLoadingStatus(t("usage.loading.badge"))}</div>`
+              : data.providerUsage.length === 0 && !data.providerUsageUnavailable && !data.providerUsageStalled
+                ? html`<p class="usage-empty-block">${t("usage.providerUsage.noAccountData")}</p>`
+                : nothing}
+          </div>
+        </div>
       </div>
     `,
     { wide: true },

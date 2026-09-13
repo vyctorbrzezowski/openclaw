@@ -42,6 +42,7 @@ import {
   type UsageDetailTab,
   type UsageSessionSort,
   type UsageRouteData,
+  type UsageViewTab,
 } from "./types.ts";
 
 export type { UsageRouteData } from "./types.ts";
@@ -67,6 +68,7 @@ class UsagePage extends OpenClawLightDomElement {
   @state() private usageSelectedSessions: string[] = [];
   @state() private usageSelectedDays: string[] = [];
   @state() private usageSelectedHours: number[] = [];
+  @state() private usageActiveTab: UsageViewTab = "overview";
   @state() private usageChartMode: "tokens" | "cost" = "cost";
   @state() private usageDailyChartMode: "total" | "by-type" | "by-provider" = "by-provider";
   @state() private usageTimeSeriesMode: "cumulative" | "per-turn" = "cumulative";
@@ -321,6 +323,9 @@ class UsagePage extends OpenClawLightDomElement {
       if (result.ok && !this.providerUsageIncomplete) {
         this.providerUsageSummary = result.value;
       }
+    } else if (!this.providerUsageSummary) {
+      // A failed snapshot can settle before usage.status; no account result was published.
+      this.providerUsageUnavailable = true;
     }
     // Retained incomplete snapshots still need convergence after a failed load
     // or reconnect; an unknown failure alone must not create retry work.
@@ -465,6 +470,7 @@ class UsagePage extends OpenClawLightDomElement {
         void this.updateComplete.then(() => {
           if (
             !this.isConnected ||
+            this.usageActiveTab !== "sessions" ||
             !this.usageDetailOpen ||
             this.usageSelectedSessions[0] !== sessionKey
           ) {
@@ -498,6 +504,11 @@ class UsagePage extends OpenClawLightDomElement {
             : "retrying"
           : "complete",
         providerUsage: this.providerUsageSummary?.providers ?? [],
+        providerUsageLoading:
+          this.usageLoading ||
+          (this.providerUsageIncomplete &&
+            !this.providerUsageUnavailable &&
+            !this.providerUsageStalled),
         providerUsageStalled: this.providerUsageStalled,
         providerUsageUnavailable: this.providerUsageUnavailable,
       },
@@ -514,6 +525,7 @@ class UsagePage extends OpenClawLightDomElement {
         timeZone: this.usageTimeZone,
       },
       display: {
+        activeTab: this.usageActiveTab,
         chartMode: this.usageChartMode,
         dailyChartMode: this.usageDailyChartMode,
         sessionSort: this.usageSessionSort,
@@ -630,6 +642,7 @@ class UsagePage extends OpenClawLightDomElement {
           onClearFilters: () => this.clearSelectionsAndDetails(),
         },
         display: {
+          onViewTabChange: (tab) => (this.usageActiveTab = tab),
           onExportJson: (data) => {
             void this.usageExportRequest.run(data);
           },

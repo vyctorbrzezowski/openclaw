@@ -19,6 +19,35 @@
   min-width: 0;
 }
 
+.usage-tab-content,
+.usage-history-status,
+.usage-toolbar-controls {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-8);
+}
+
+.usage-tab-content[hidden],
+.usage-history-status[hidden],
+.usage-toolbar-controls[hidden] {
+  display: none;
+}
+
+.usage-toolbar-controls {
+  gap: var(--space-3);
+}
+
+.usage-tabs {
+  min-width: 0;
+  --indicator-color: var(--text-strong);
+}
+
+.usage-account-context {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--control-ui-text-sm);
+}
+
 :where(.usage-page) .provider-brand-icon {
   width: var(--space-4);
   height: var(--space-4);

@@ -4348,6 +4348,12 @@ export const en: TranslationMap & {
   },
   modelProviders: {},
   usage: {
+    tabs: {
+      overview: "Overview",
+      sessions: "Sessions",
+      analysis: "Analysis",
+      limits: "Limits & billing",
+    },
     dimensions: {
       title: "Usage by",
       models: "Models",
@@ -4459,6 +4465,8 @@ export const en: TranslationMap & {
     },
     providerUsage: {
       limits: "Account limits",
+      accountContext: "Account limits and billing use the periods reported by each provider.",
+      noAccountData: "No account limits or billing data reported by configured providers.",
       details: "Plan details",
       noReset: "No reset time reported",
       plans: "Plans",

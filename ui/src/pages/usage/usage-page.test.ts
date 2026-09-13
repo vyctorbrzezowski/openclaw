@@ -1,10 +1,11 @@
 /* @vitest-environment jsdom */
 
 import { nothing } from "lit";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GatewayBrowserClient } from "../../api/gateway.ts";
 import type { CostUsageSummary } from "../../api/types.ts";
 import type { ApplicationGatewaySnapshot } from "../../app/context.ts";
+import type { UsageSessionEntry, UsageViewTab } from "./types.ts";
 import {
   cacheSnapshot,
   cleanupUsagePageTest,
@@ -18,6 +19,170 @@ import {
 } from "./usage-page.test-support.ts";
 
 afterEach(cleanupUsagePageTest);
+
+describe("UsagePage view tabs", () => {
+  const scrollIntoView = vi.fn();
+  let originalScrollIntoView: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 7, 12));
+    scrollIntoView.mockClear();
+    originalScrollIntoView = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "scrollIntoView",
+    );
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+  });
+
+  afterEach(() => {
+    if (originalScrollIntoView) {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalScrollIntoView);
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+    }
+  });
+
+  function viewTab(page: TestUsagePage, tab: UsageViewTab): HTMLElement {
+    const button = page.querySelector<HTMLElement>(`wa-tab[panel="${tab}"]`);
+    expect(button).not.toBeNull();
+    return button!;
+  }
+
+  function selectView(page: TestUsagePage, tab: UsageViewTab): void {
+    viewTab(page, tab).dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+  }
+
+  async function createTabPage() {
+    const snapshot = cacheSnapshot("sessions", "fresh");
+    const daily = [{ ...snapshot.result.totals, date: "2026-08-07", tokens: 100, cost: 1 }];
+    const sessions: UsageSessionEntry[] = ["Zulu selected", "Alpha selected", "Unrelated"].map(
+      (label, index) => ({
+        key: `agent:main:tab-${index}`,
+        label,
+        updatedAt: Date.now(),
+        usage: {
+          ...snapshot.result.totals,
+          firstActivity: Date.now(),
+          lastActivity: Date.now() + 60_000,
+          durationMs: 60_000,
+          activityDates: ["2026-08-07"],
+          dailyBreakdown: daily,
+        },
+      }),
+    );
+    const request = vi.fn(async (method: string) => {
+      switch (method) {
+        case "sessions.usage":
+          return { ...snapshot.result, sessions };
+        case "usage.cost":
+          return { ...snapshot.costSummary, daily };
+        case "usage.status":
+          return { updatedAt: Date.now(), providers: [] };
+        case "sessions.usage.logs":
+          return {
+            logs: [{ timestamp: Date.now(), role: "user", content: "Retained conversation" }],
+          };
+        case "sessions.usage.timeseries":
+          return { points: [] };
+        default:
+          throw new Error(`Unexpected request: ${method}`);
+      }
+    });
+    const page = await createPage({ request } as unknown as GatewayBrowserClient, true);
+    await preloadUsage(page);
+    return { page, request };
+  }
+
+  it("opens Overview and preserves the filtered session investigation across tabs without reloading", async () => {
+    const { page, request } = await createTabPage();
+    expect(viewTab(page, "overview").getAttribute("aria-selected")).toBe("true");
+    expect(page.querySelector(".usage-hero")!.closest("[hidden]")).toBeNull();
+    expect(page.querySelector(".usage-sessions")!.closest("[hidden]")).not.toBeNull();
+
+    page.querySelector<HTMLButtonElement>('[data-usage-day="2026-08-07"]')!.click();
+    await page.updateComplete;
+    selectView(page, "analysis");
+    await page.updateComplete;
+    page.querySelectorAll<HTMLButtonElement>(".usage-hour-cell")[12]!.click();
+    page.querySelector<HTMLButtonElement>(".usage-query-search-trigger")!.click();
+    await page.updateComplete;
+    const query = page.querySelector<HTMLInputElement>(".usage-query-input")!;
+    query.value = "selected";
+    query.dispatchEvent(new Event("input", { bubbles: true }));
+    query.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    selectView(page, "sessions");
+    await page.updateComplete;
+
+    const sort = page.querySelector<HTMLSelectElement>(".usage-session-sort select")!;
+    sort.value = "label";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    page.querySelector<HTMLButtonElement>(".usage-session-sort button")!.click();
+    await page.updateComplete;
+    page.querySelector<HTMLButtonElement>(".usage-session-open")!.click();
+    await vi.advanceTimersByTimeAsync(0);
+    await page.updateComplete;
+    const inspection = page.querySelector<HTMLElement>(".usage-session-inspection")!;
+    expect(inspection.textContent).toContain("Retained conversation");
+    request.mockClear();
+
+    for (const tab of ["overview", "analysis", "limits", "sessions"] as const) {
+      selectView(page, tab);
+      await page.updateComplete;
+      expect(viewTab(page, tab).getAttribute("aria-selected")).toBe("true");
+      expect(page.querySelector(".usage-session-inspection")).toBe(inspection);
+    }
+
+    expect(inspection.closest("[hidden]")).toBeNull();
+    expect(page.querySelector<HTMLInputElement>(".usage-query-input")!.value).toBe("selected");
+    expect(page.querySelector('[data-usage-day="2026-08-07"]')!.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(page.querySelectorAll(".usage-hour-cell")[12]!.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(page.querySelector<HTMLSelectElement>(".usage-session-sort select")!.value).toBe(
+      "label",
+    );
+    expect(
+      [...page.querySelectorAll(".usage-session-open")].map((button) => button.textContent?.trim()),
+    ).toEqual(["Alpha selected", "Zulu selected"]);
+    expect(page.querySelector('.usage-session-row[aria-selected="true"]')?.textContent).toContain(
+      "Alpha selected",
+    );
+    expect(inspection.textContent).toContain("Retained conversation");
+    await vi.advanceTimersByTimeAsync(400);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it.each(["sessions", "analysis"] as const)(
+    "moves deferred inspection focus only while Sessions is active (%s)",
+    async (activeTab) => {
+      const { page } = await createTabPage();
+      selectView(page, "sessions");
+      await page.updateComplete;
+      page.querySelector<HTMLButtonElement>(".usage-session-open")!.click();
+      const destinationTab = viewTab(page, activeTab);
+      destinationTab.focus();
+      selectView(page, activeTab);
+      await page.updateComplete;
+      await vi.advanceTimersByTimeAsync(0);
+      const inspection = page.querySelector<HTMLElement>(".usage-session-inspection")!;
+
+      if (activeTab === "sessions") {
+        expect(document.activeElement).toBe(inspection);
+        expect(scrollIntoView).toHaveBeenCalledOnce();
+      } else {
+        expect(inspection.closest("[hidden]")).not.toBeNull();
+        expect(document.activeElement).toBe(destinationTab);
+        expect(scrollIntoView).not.toHaveBeenCalled();
+      }
+    },
+  );
+});
 
 describe("UsagePage cache convergence", () => {
   it("gives a debounced date change its own retries when an old poll becomes due", async () => {
