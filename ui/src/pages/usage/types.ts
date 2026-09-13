@@ -75,6 +75,7 @@ type UsageDataState = {
   cacheRefresh: UsageRetryState;
   providerUsage: ProviderUsageSummary["providers"];
   providerUsageLoading: boolean;
+  providerUsageLoaded: boolean;
   /** The gateway never converged the refresh; the empty list is not an answer. */
   providerUsageStalled: boolean;
   providerUsageUnavailable: boolean;

@@ -4466,6 +4466,7 @@ export const en: TranslationMap & {
     providerUsage: {
       limits: "Account limits",
       accountContext: "Account limits and billing use the periods reported by each provider.",
+      notLoaded: "Account data has not loaded. Refresh to try again.",
       noAccountData: "No account limits or billing data reported by configured providers.",
       details: "Plan details",
       noReset: "No reset time reported",

@@ -66,6 +66,7 @@ function createUsageProps(overrides: Partial<UsageProps> = {}): UsageProps {
       cacheRefresh: "complete",
       providerUsage: [],
       providerUsageLoading: false,
+      providerUsageLoaded: true,
       providerUsageStalled: false,
       providerUsageUnavailable: false,
     },
@@ -295,11 +296,63 @@ describe("renderUsage", () => {
     );
   });
 
-  it("keeps the provider panel hidden when usage is empty without a failure", () => {
+  it("keeps Limits loading while account data is pending after a history failure", () => {
     const container = document.createElement("div");
-    render(renderUsage(createUsageProps()), container);
+    const base = createUsageProps();
+    render(
+      renderUsage(
+        createUsageProps({
+          data: {
+            ...base.data,
+            error: "Session history unavailable",
+            providerUsageLoading: true,
+            providerUsageLoaded: false,
+          },
+          display: { ...base.display, activeTab: "limits" },
+        }),
+      ),
+      container,
+    );
 
-    expect(container.textContent).not.toContain("Provider usage is unavailable");
+    const limits = container.querySelector('[data-usage-view="limits"]')!;
+    const status = limits.querySelector('[role="status"][aria-busy="true"]');
+    expect(status?.textContent).toContain("Loading");
+    expect(status?.querySelector(".skeleton")).not.toBeNull();
+    expect(limits.querySelector(".usage-empty-block")).toBeNull();
+    expect(limits.querySelector(".usage-callout")).toBeNull();
+    expect(container.querySelector(".callout.danger")!.closest("[hidden]")).not.toBeNull();
+  });
+
+  it.each([
+    {
+      loaded: true,
+      expected: "No account limits or billing data reported by configured providers.",
+      excluded: "Account data has not loaded.",
+    },
+    {
+      loaded: false,
+      expected: "Account data has not loaded. Refresh to try again.",
+      excluded: "No account limits or billing data reported",
+    },
+  ])("distinguishes empty from unknown account data (loaded: $loaded)", (outcome) => {
+    const { loaded, expected, excluded } = outcome;
+    const container = document.createElement("div");
+    const base = createUsageProps();
+    render(
+      renderUsage(
+        createUsageProps({
+          data: { ...base.data, providerUsageLoaded: loaded },
+          display: { ...base.display, activeTab: "limits" },
+        }),
+      ),
+      container,
+    );
+
+    const limits = container.querySelector('[data-usage-view="limits"]')!;
+    expect(limits.textContent).toContain(expected);
+    expect(limits.textContent).not.toContain(excluded);
+    expect(limits.textContent).not.toContain("the last request failed");
+    expect(limits.querySelector('[aria-busy="true"]')).toBeNull();
   });
 
   it("keeps pending sessions on their selected local or UTC activity day", () => {
@@ -684,14 +737,31 @@ describe("renderUsage", () => {
     expect(card?.textContent).toContain("Weekly");
   });
 
-  it("renders provider plans, quotas, and billing independently of session usage", () => {
+  it.each(["empty", "failed"] as const)("keeps Limits usable with %s history", (history) => {
     const container = document.createElement("div");
+    const base = createUsageProps();
+    const zeroTotals: UsageTotals = {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      inputCost: 0,
+      outputCost: 0,
+      cacheReadCost: 0,
+      cacheWriteCost: 0,
+      missingCostEntries: 0,
+    };
+    const onRefresh = vi.fn();
 
     render(
       renderUsage(
         createUsageProps({
           data: {
-            ...createUsageProps().data,
+            ...base.data,
+            totals: zeroTotals,
+            error: history === "failed" ? "Session history unavailable" : null,
             providerUsage: [
               {
                 provider: "openrouter",
@@ -718,12 +788,18 @@ describe("renderUsage", () => {
               },
             ],
           },
+          display: { ...base.display, activeTab: "limits" },
+          callbacks: {
+            ...base.callbacks,
+            filters: { ...base.callbacks.filters, onRefresh },
+          },
         }),
       ),
       container,
     );
 
     const card = container.querySelector(".usage-limit-provider");
+    expect(card!.closest("[hidden]")).toBeNull();
     expect(card?.textContent).toContain("OpenRouter");
     expect(card?.textContent).toContain("Production");
     expect(card?.textContent).toContain("75% left");
@@ -735,6 +811,21 @@ describe("renderUsage", () => {
         (value) => value.textContent,
       ),
     ).toEqual(["$64.50", "$5.00 / $20.00", "¥13 / ¥20", "1.5  Credits  / 3  Credits "]);
+    for (const selector of [
+      "#usage-dates-trigger",
+      "#usage-scope-trigger",
+      ".usage-query-input",
+      '[aria-label="Chart metric"]',
+    ]) {
+      expect(container.querySelector(selector)!.closest("[hidden]")).not.toBeNull();
+    }
+    expect(container.querySelector(".usage-export-menu")).toBeNull();
+    const historyOutcome = container.querySelector(
+      history === "failed" ? ".callout.danger" : ".usage-empty-state",
+    );
+    expect(historyOutcome!.closest("[hidden]")).not.toBeNull();
+    container.querySelector<HTMLButtonElement>('button[aria-label="Refresh"]')!.click();
+    expect(onRefresh).toHaveBeenCalledOnce();
   });
 
   it("filters visible sessions when an agent scope is selected", () => {

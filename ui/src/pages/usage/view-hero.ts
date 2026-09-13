@@ -23,7 +23,6 @@ type HeroProps = {
   chartMode: "cost" | "tokens";
   dailyChartMode: "total" | "by-type" | "by-provider";
   onDailyChartModeChange: (mode: "total" | "by-type" | "by-provider") => void;
-  onChartModeChange: (mode: "cost" | "tokens") => void;
   onSelectDay: (day: string, shiftKey: boolean) => void;
   timeZone: "local" | "utc";
 };
@@ -292,18 +291,6 @@ export function renderUsageHero(props: HeroProps) {
     </div>`;
   };
   return html`<section class="usage-hero">
-    <div class="usage-hero-controls">
-      ${renderSettingsSegmented({
-        mode: "buttons",
-        ariaLabel: t("usage.analytics.chartMetric"),
-        value: props.chartMode,
-        onChange: props.onChartModeChange,
-        options: [
-          { value: "cost", label: t("usage.metrics.cost") },
-          { value: "tokens", label: t("usage.metrics.tokens") },
-        ],
-      })}
-    </div>
     <div class="usage-hero-summary">
       <div class="usage-hero-primary">
         <div class="usage-hero-kicker">

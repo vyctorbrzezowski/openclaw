@@ -323,9 +323,6 @@ class UsagePage extends OpenClawLightDomElement {
       if (result.ok && !this.providerUsageIncomplete) {
         this.providerUsageSummary = result.value;
       }
-    } else if (!this.providerUsageSummary) {
-      // A failed snapshot can settle before usage.status; no account result was published.
-      this.providerUsageUnavailable = true;
     }
     // Retained incomplete snapshots still need convergence after a failed load
     // or reconnect; an unknown failure alone must not create retry work.
@@ -504,6 +501,7 @@ class UsagePage extends OpenClawLightDomElement {
             : "retrying"
           : "complete",
         providerUsage: this.providerUsageSummary?.providers ?? [],
+        providerUsageLoaded: this.providerUsageSummary !== null,
         providerUsageLoading:
           this.usageLoading ||
           (this.providerUsageIncomplete &&
@@ -642,7 +640,16 @@ class UsagePage extends OpenClawLightDomElement {
           onClearFilters: () => this.clearSelectionsAndDetails(),
         },
         display: {
-          onViewTabChange: (tab) => (this.usageActiveTab = tab),
+          onViewTabChange: (tab) => {
+            if (this.usageActiveTab === tab) {
+              return;
+            }
+            this.usageActiveTab = tab;
+            const scroller = this.closest(".content");
+            if (scroller instanceof HTMLElement && typeof scroller.scrollTo === "function") {
+              scroller.scrollTo({ top: 0, behavior: "instant" });
+            }
+          },
           onExportJson: (data) => {
             void this.usageExportRequest.run(data);
           },

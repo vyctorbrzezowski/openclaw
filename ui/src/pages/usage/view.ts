@@ -427,6 +427,16 @@ export function renderUsage(
               >
                 <div class="usage-more-filters-panel">${scopeControls}</div>
               </wa-popover>
+              ${renderSettingsSegmented({
+                mode: "buttons",
+                ariaLabel: t("usage.analytics.chartMetric"),
+                value: display.chartMode,
+                onChange: displayActions.onChartModeChange,
+                options: [
+                  { value: "cost", label: t("usage.metrics.cost") },
+                  { value: "tokens", label: t("usage.metrics.tokens") },
+                ],
+              })}
             </div>
             ${queryControl}
           </div>
@@ -459,7 +469,7 @@ export function renderUsage(
             `
           : nothing}
         ${data.loading && !data.totals
-          ? renderUsageLoadingState()
+          ? renderUsageLoadingState(display.activeTab)
           : isEmpty
             ? renderUsageEmptyState(filterActions.onRefresh)
             : nothing}
@@ -476,7 +486,6 @@ export function renderUsage(
               chartMode: display.chartMode,
               dailyChartMode: display.dailyChartMode,
               onDailyChartModeChange: displayActions.onDailyChartModeChange,
-              onChartModeChange: displayActions.onChartModeChange,
               onSelectDay: filterActions.onSelectDay,
             })}`
           : nothing}
@@ -590,9 +599,9 @@ export function renderUsage(
               ? nothing
               : renderUsageLimits(data.providerUsage, data.providerUsageUnavailable, data.providerUsageStalled)}
             ${data.providerUsageLoading && data.providerUsage.length === 0
-              ? html`<div class="usage-account-loading" role="status">${renderUsageLoadingStatus(t("usage.loading.badge"))}</div>`
+              ? renderUsageLoadingState("limits")
               : data.providerUsage.length === 0 && !data.providerUsageUnavailable && !data.providerUsageStalled
-                ? html`<p class="usage-empty-block">${t("usage.providerUsage.noAccountData")}</p>`
+                ? html`<p class="usage-empty-block">${t(data.providerUsageLoaded ? "usage.providerUsage.noAccountData" : "usage.providerUsage.notLoaded")}</p>`
                 : nothing}
           </div>
         </div>
