@@ -490,6 +490,8 @@ export function renderUsage(
             })}`
           : nothing}
             ${((data.loading || data.error) && !data.totals) || isEmpty ? nothing : html`
+              ${displayTotals || costWindowComparison !== nothing
+                ? html`<div class="usage-cost-summary">
               ${displayTotals
                 ? html`<section class="usage-composition">
                     <header class="usage-section-heading">
@@ -515,6 +517,8 @@ export function renderUsage(
                     <h2>${t("usage.costWindows.title")}</h2>
                     ${costWindowComparison}
                   </section>`
+                : nothing}
+                  </div>`
                 : nothing}
               ${renderUsageOperations(
                 operationsTotals,

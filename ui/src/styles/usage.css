@@ -435,16 +435,24 @@ wa-tab-group.usage-tabs {
   min-width: 0;
 }
 
-.usage-composition {
-  padding-block: var(--space-6) 0;
-  border-block-start: 1px solid var(--border);
-}
-
-.usage-cost-windows-section {
+.usage-cost-summary {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
   padding: var(--space-6);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-muted) 50%, var(--bg));
+}
+
+.usage-composition + .usage-cost-windows-section {
+  padding-block-start: var(--space-6);
+  border-block-start: 1px solid var(--border);
+}
+
+.usage-analysis-row + .usage-activity {
+  padding-block-start: var(--space-7);
+  border-block-start: 1px solid var(--border);
 }
 
 .usage-section-heading {
@@ -711,12 +719,6 @@ wa-tab-group.usage-tabs {
 .usage-hero-secondary small {
   color: var(--muted);
   font-size: var(--control-ui-text-xs);
-}
-
-.usage-hero-controls {
-  display: flex;
-  align-items: center;
-  margin-bottom: calc(-1 * var(--space-3));
 }
 
 .usage-hero-kicker {
@@ -1690,6 +1692,10 @@ openclaw-usage-dimensions {
 }
 
 @container usage (max-width: 768px) {
+  .usage-cost-summary {
+    padding: var(--space-4);
+  }
+
   .usage-loading-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-5);
