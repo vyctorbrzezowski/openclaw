@@ -288,7 +288,7 @@ export function renderUsage(
     </div>`;
   const headerActions = html`<button
       type="button"
-      class="btn btn--sm usage-icon-button"
+      class="btn btn--sm btn--ghost usage-icon-button"
       aria-label=${t("common.refresh")}
       title=${t("common.refresh")}
       @click=${filterActions.onRefresh}

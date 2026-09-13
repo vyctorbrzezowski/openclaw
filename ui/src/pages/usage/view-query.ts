@@ -193,7 +193,7 @@ export function renderUsageQuery(
         >
           <button
             type="button"
-            class="btn btn--sm usage-icon-button usage-query-search-trigger"
+            class="btn btn--sm btn--ghost usage-icon-button usage-query-search-trigger"
             aria-label=${t("usage.query.placeholder")}
             title=${t("usage.query.placeholder")}
             aria-expanded=${searchExpanded}
