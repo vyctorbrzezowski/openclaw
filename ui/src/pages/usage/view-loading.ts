@@ -20,51 +20,54 @@ function renderUsageTabSkeleton(tab: UsageViewTab) {
   }
   if (tab === "limits") {
     return html`<div class="usage-limits-content">
-      ${Array.from({ length: 4 }, () => html`<div class="usage-limit-provider usage-loading-fact">
-        ${line()}${line("short")}${rows(3)}
-      </div>`)}
+      ${Array.from(
+        { length: 4 },
+        () => html`<div class="usage-limit-provider usage-loading-fact">
+          ${line()}${line("short")}${rows(3)}
+        </div>`,
+      )}
     </div>`;
   }
   if (tab === "analysis") {
     return html`<div class="usage-loading-section">
-      ${line("short")}
-      <div class="usage-loading-tables">
-        ${Array.from({ length: 5 }, () => html`<div class="usage-loading-fact">${line()}${rows(4)}</div>`)}
+        ${line("short")}
+        <div class="usage-loading-tables">
+          ${Array.from({ length: 5 }, () => html`<div class="usage-loading-fact">${line()}${rows(4)}</div>`)}
+        </div>
+      </div>
+      <div class="usage-loading-section">
+        ${line("short")}
+        <div class="skeleton usage-skeleton-activity"></div>
+      </div>`;
+  }
+  return html`<div class="usage-hero">
+      <div class="usage-hero-summary">
+        <div class="usage-hero-primary">
+          <div class="usage-hero-kicker">${line("short")}</div>
+          <div class="usage-hero-number">${line("number")}</div>
+          <div class="usage-hero-note">${line()}</div>
+        </div>
+        <div class="usage-hero-secondary">
+          <div class="usage-hero-kicker">${line("short")}</div>
+          <strong>${line("value")}</strong>
+          <div class="usage-loading-secondary-note">${line()}</div>
+        </div>
+      </div>
+      <div class="usage-hero-chart">
+        ${line("short")}
+        <div class="usage-hero-plot usage-skeleton-chart skeleton"></div>
+        <div class="usage-hero-x-axis">${line("short")}${line("short")}${line("short")}</div>
+      </div>
+      <div class="usage-hero-providers">
+        ${Array.from({ length: 4 }, () => html`<div class="usage-loading-fact">${line()}${line("value")}${line("long")}</div>`)}
       </div>
     </div>
     <div class="usage-loading-section">
       ${line("short")}
-      <div class="skeleton usage-skeleton-activity"></div>
+      <div class="usage-loading-facts">
+        ${Array.from({ length: 4 }, () => html`<div class="usage-loading-fact">${line()}${line("value")}${line("long")}</div>`)}
+      </div>
     </div>`;
-  }
-  return html`<div class="usage-hero">
-    <div class="usage-hero-summary">
-      <div class="usage-hero-primary">
-        <div class="usage-hero-kicker">${line("short")}</div>
-        <div class="usage-hero-number">${line("number")}</div>
-        <div class="usage-hero-note">${line()}</div>
-      </div>
-      <div class="usage-hero-secondary">
-        <div class="usage-hero-kicker">${line("short")}</div>
-        <strong>${line("value")}</strong>
-        <div class="usage-loading-secondary-note">${line()}</div>
-      </div>
-    </div>
-    <div class="usage-hero-chart">
-      ${line("short")}
-      <div class="usage-hero-plot usage-skeleton-chart skeleton"></div>
-      <div class="usage-hero-x-axis">${line("short")}${line("short")}${line("short")}</div>
-    </div>
-    <div class="usage-hero-providers">
-      ${Array.from({ length: 4 }, () => html`<div class="usage-loading-fact">${line()}${line("value")}${line("long")}</div>`)}
-    </div>
-  </div>
-  <div class="usage-loading-section">
-    ${line("short")}
-    <div class="usage-loading-facts">
-      ${Array.from({ length: 4 }, () => html`<div class="usage-loading-fact">${line()}${line("value")}${line("long")}</div>`)}
-    </div>
-  </div>`;
 }
 
 export function renderUsageLoadingState(tab: UsageViewTab) {
@@ -90,18 +93,20 @@ export function renderUsageDetailSkeleton(
     aria-label=${label}
   >
     <div class="usage-loading-fact" aria-hidden="true">
-      ${variant === "timeline"
-        ? html`<div class="skeleton usage-skeleton-chart"></div>
-            <div class="usage-skeleton-row">${line()}${line()}</div>`
-        : variant === "conversation"
-          ? Array.from(
-              { length: 3 },
-              () =>
-                html`<div class="usage-loading-message">
-                  ${line("short")}${line("long")}${line()}
-                </div>`,
-            )
-          : html`${line("long")}${rows(4)}`}
+      ${
+        variant === "timeline"
+          ? html`<div class="skeleton usage-skeleton-chart"></div>
+              <div class="usage-skeleton-row">${line()}${line()}</div>`
+          : variant === "conversation"
+            ? Array.from(
+                { length: 3 },
+                () =>
+                  html`<div class="usage-loading-message">
+                    ${line("short")}${line("long")}${line()}
+                  </div>`,
+              )
+            : html`${line("long")}${rows(4)}`
+      }
     </div>
     <span class="sr-only">${t("usage.loading.badge")}</span>
   </div>`;

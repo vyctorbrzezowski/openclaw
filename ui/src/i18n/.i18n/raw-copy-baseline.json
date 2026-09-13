@@ -474,64 +474,29 @@
       "count": 1,
       "kind": "object-property",
       "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "agent:"
+      "path": "ui/src/pages/usage/view-details.ts",
+      "text": "agent"
     },
     {
       "count": 1,
       "kind": "object-property",
       "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "channel:"
+      "path": "ui/src/pages/usage/view-details.ts",
+      "text": "channel"
     },
     {
       "count": 1,
       "kind": "object-property",
       "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "has:errors"
+      "path": "ui/src/pages/usage/view-details.ts",
+      "text": "model"
     },
     {
       "count": 1,
       "kind": "object-property",
       "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "has:tools"
-    },
-    {
-      "count": 1,
-      "kind": "object-property",
-      "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "maxCost:"
-    },
-    {
-      "count": 1,
-      "kind": "object-property",
-      "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "minTokens:"
-    },
-    {
-      "count": 1,
-      "kind": "object-property",
-      "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "model:"
-    },
-    {
-      "count": 1,
-      "kind": "object-property",
-      "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "provider:"
-    },
-    {
-      "count": 1,
-      "kind": "object-property",
-      "name": "label",
-      "path": "ui/src/pages/usage/query.ts",
-      "text": "tool:"
+      "path": "ui/src/pages/usage/view-details.ts",
+      "text": "provider"
     }
   ]
 }
