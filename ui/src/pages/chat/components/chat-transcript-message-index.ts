@@ -13,10 +13,10 @@ import {
   setExpansionState,
 } from "../chat-thread.ts";
 import { readLiveTerminalRevision } from "../terminal-message-identity.ts";
-import { resolveMessageGroupSenderLabel } from "./chat-message-group.ts";
+import { resolveMessageGroupSenderLabel } from "./chat-message-sender.ts";
 import type { StreamGroupPart } from "./chat-message.ts";
 import { projectChatPositions, type ChatPositionIndex } from "./chat-position-projection.ts";
-import type { LoadedReplySource } from "./chat-reply-preview.ts";
+import type { LoadedReplySource } from "./chat-reply-preview.types.ts";
 import type { ChatThreadProps } from "./chat-thread-interactions.ts";
 import type { TranscriptRow } from "./chat-transcript-layout.ts";
 
