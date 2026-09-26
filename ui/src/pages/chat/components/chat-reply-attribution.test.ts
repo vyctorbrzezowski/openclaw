@@ -238,6 +238,7 @@ it.each([
       runId: "run",
       replyToSender: { id: "bob", name: "Bob" },
       replyToMessage: { key: "current-prompt-render", message: currentPrompt },
+      replyCurrentSource: { key: "current-prompt-render", message: currentPrompt },
       messages: [
         {
           key: "commentary-message",

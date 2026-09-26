@@ -333,6 +333,39 @@ describe("chat transcript replies", () => {
     },
   );
 
+  it.each([
+    { linkage: "the prompt that owns its run", strips: ["Alice"] },
+    { linkage: "a legacy reply without a run", replyRun: null, strips: [] },
+    { linkage: "a prompt without a run key", promptRun: null, strips: [] },
+    { linkage: "another run's prompt", promptRun: "run-b", strips: [] },
+    { linkage: "duplicate run owners", duplicate: true, strips: [] },
+    {
+      linkage: "a channel-mirrored reply keyed only by its send",
+      reply: { mirrorOrigin: "discord", idempotencyKey: "run-a" },
+      strips: [],
+    },
+  ])(
+    "attributes a shared reply_to_current only through $linkage",
+    async ({ promptRun = "run-a", replyRun = "run-a", duplicate, reply, strips }) => {
+      const props = threadProps("pane-reply-current", "agent:main:main", [
+        ...(duplicate
+          ? [turn("p1", "user", "Earlier", { ...alice, idempotencyKey: "run-a:user" })]
+          : []),
+        turn("p2", "user", "hey hey", {
+          ...alice,
+          ...(promptRun ? { idempotencyKey: `${promptRun}:user` } : {}),
+        }),
+        // The latest prompt never stands in for an unresolved origin.
+        turn("p3", "user", "Unrelated", bob),
+        {
+          ...turn("a4", "assistant", "Tô aqui", reply ?? (replyRun ? { runId: replyRun } : {})),
+          openclawDelivery: { replyToCurrent: true },
+        },
+      ]);
+      expect(await renderedStrips(props)).toEqual(strips);
+    },
+  );
+
   it("clears search before navigating to a filtered reply target", async () => {
     const transcript = createTestTranscript();
     const searchContainer = document.body.appendChild(document.createElement("div"));

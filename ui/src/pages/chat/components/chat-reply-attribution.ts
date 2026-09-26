@@ -216,13 +216,15 @@ export function resolveReplyAttribution(
       ? attribution
       : hiddenAttribution(current?.replyTarget);
   }
-  const sender = group.replyToSender;
-  if (sender) {
-    // Automatic attribution: several people share this thread.
-    return resolveSourceAttribution(group.replyToMessage?.message, sender, resolveReplyPreview);
+  // An unresolved reply_to_current never guesses its origin, not even the latest prompt.
+  if (current) {
+    return hiddenAttribution(current.replyTarget);
   }
-  // An unresolved reply_to_current never guesses its origin.
-  return current ? hiddenAttribution(current.replyTarget) : undefined;
+  const sender = group.replyToSender;
+  // Automatic attribution: several people share this thread.
+  return sender
+    ? resolveSourceAttribution(group.replyToMessage?.message, sender, resolveReplyPreview)
+    : undefined;
 }
 
 type ReplyAttributionOptions = {
