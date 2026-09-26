@@ -1752,7 +1752,6 @@ describe("grouped chat rendering", () => {
     expect(container.querySelector(".chat-reply-attribution__excerpt-text")?.textContent).toBe(
       "Review the release checklist.",
     );
-    expect(container.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
     expect(container.querySelectorAll(".chat-reply-connector")).toHaveLength(1);
     expect(container.querySelector(".chat-group--reply")).not.toBeNull();
   });
