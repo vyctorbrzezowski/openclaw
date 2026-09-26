@@ -1749,9 +1749,6 @@ describe("grouped chat rendering", () => {
     expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(
       "Alice Chen",
     );
-    expect(container.querySelector(".chat-reply-attribution__excerpt-text")?.textContent).toBe(
-      "Review the release checklist.",
-    );
     expect(container.querySelectorAll(".chat-reply-connector")).toHaveLength(1);
     expect(container.querySelector(".chat-group--reply")).not.toBeNull();
   });
@@ -3540,7 +3537,7 @@ describe("grouped chat rendering", () => {
     );
   });
 
-  it("renders a clickable quoted preview for structured user replies", () => {
+  it("renders a clickable sender name for structured user replies", () => {
     const container = document.body.appendChild(document.createElement("div"));
     const onOpenReply = vi.fn();
     renderGroupedMessage(
@@ -3562,7 +3559,7 @@ describe("grouped chat rendering", () => {
 
     const preview = container.querySelector<HTMLButtonElement>(".chat-reply-attribution__target");
     expect(preview?.getAttribute("aria-label")).toBe("Replying to Marie");
-    expect(preview?.textContent).toContain("The original answer");
+    expect(preview?.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Marie");
     preview?.click();
     expect(onOpenReply).toHaveBeenCalledWith("transcript-123");
     expect(container.querySelector(".chat-text")?.textContent?.trim()).toBe("Follow up");
@@ -3585,7 +3582,7 @@ describe("grouped chat rendering", () => {
 
     const preview = container.querySelector<HTMLButtonElement>(".chat-reply-attribution__target");
     expect(preview?.getAttribute("aria-label")).toBe("Replying to Marie");
-    expect(preview?.textContent).toContain("The original answer");
+    expect(preview?.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Marie");
     expect(preview).toBeInstanceOf(HTMLButtonElement);
     preview?.click();
     expect(onOpenReply).toHaveBeenCalledWith("unloaded-message");
