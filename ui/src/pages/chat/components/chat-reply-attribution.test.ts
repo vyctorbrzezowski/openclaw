@@ -120,6 +120,7 @@ it("renders one recipient per group, suppresses duplicate name and navigates fro
 it.each([
   { snapshot: undefined, missing: [] },
   { snapshot: { senderLabel: "Jordan", text: "" }, missing: [] },
+  { snapshot: { text: "Earlier question" }, missing: [] },
   { snapshot: undefined, missing: ["deleted"] },
   { snapshot: { senderLabel: "", text: "Earlier question" }, missing: ["deleted"] },
 ])(
@@ -431,7 +432,7 @@ it.each([
     ),
     container,
   );
-  // Only snapshot text resolves the reference before its source loads.
+  // Only a named snapshot with text resolves the reference before its source loads.
   expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(
     preview?.text ? "Jordan" : undefined,
   );

@@ -29,7 +29,7 @@ export type ReplyAttribution = {
  * a confirmed-missing target keeps only a known sender name.
  */
 function resolveReplyAttributionPresentation(reply: {
-  /** The origin is known: loaded, fetched, or carried by snapshot text. */
+  /** The origin and its author are known: loaded, fetched, or a named snapshot with text. */
   resolved: boolean;
   /** A concrete id whose lookup confirmed the origin is inaccessible. */
   missing: boolean;
@@ -78,11 +78,13 @@ function resolveTargetAttribution(
   context: ReplyContext = {},
 ): ReplyAttribution {
   const resolved = lookup.preview;
-  const preview = resolved ?? snapshot;
+  // Snapshot text alone names no author; only its sender label or the source does.
   const name =
-    preview?.senderLabel || formatSenderLabel(resolved?.sender) || t("chat.messages.message");
+    (resolved
+      ? resolved.senderLabel || formatSenderLabel(resolved.sender)
+      : snapshot?.text && snapshot.senderLabel) || "";
   const presentation = resolveReplyAttributionPresentation({
-    resolved: Boolean(resolved || snapshot?.text),
+    resolved: Boolean(name),
     missing: lookup.missing,
     known: Boolean(snapshot?.senderLabel),
     turnSource: Boolean(
@@ -93,7 +95,7 @@ function resolveTargetAttribution(
   if (presentation === "hidden") {
     return {
       ...hiddenAttribution(target),
-      resolveMessageId: !preview?.text && !lookup.missing ? target.id : undefined,
+      resolveMessageId: !resolved && !name && !lookup.missing ? target.id : undefined,
     };
   }
   if (presentation === "unavailable") {
@@ -108,7 +110,6 @@ function resolveTargetAttribution(
     agentAvatar: resolved?.agentAvatar,
     target,
     loadedMessageId: resolved?.isLoaded ? target.id : undefined,
-    resolveMessageId: !preview?.text ? target.id : undefined,
   };
 }
 
