@@ -55,7 +55,11 @@ export function isReplyAttributionVisible(
   return Boolean(attribution && attribution.presentation !== "hidden");
 }
 
-type ReplyContext = { shared?: boolean; turnSource?: MessageGroup["replyTurnSource"] };
+type ReplyContext = {
+  shared?: boolean;
+  turnSource?: MessageGroup["replyTurnSource"];
+  runId?: MessageGroup["runId"];
+};
 
 const hiddenAttribution = (target?: NormalizedMessage["replyTarget"]): ReplyAttribution => ({
   presentation: "hidden",
@@ -87,8 +91,10 @@ function resolveTargetAttribution(
     resolved: Boolean(name),
     missing: lookup.missing,
     known: Boolean(snapshot?.senderLabel),
+    // A prompt paged out of the loaded history is still this turn's by run ownership.
     turnSource: Boolean(
-      context.turnSource && persistedMessageEntryId(context.turnSource.message) === target.id,
+      (context.turnSource && persistedMessageEntryId(context.turnSource.message) === target.id) ||
+      (context.runId && resolved?.turnRunId === context.runId),
     ),
     shared: Boolean(context.shared),
   });
@@ -174,7 +180,11 @@ export function resolveReplyAttribution(
     replyMessages === group.messages
       ? messages
       : replyMessages.map(({ message }) => normalizeMessage(message));
-  const context: ReplyContext = { shared: group.replyShared, turnSource: group.replyTurnSource };
+  const context: ReplyContext = {
+    shared: group.replyShared,
+    turnSource: group.replyTurnSource,
+    runId: group.runId,
+  };
   const explicit =
     messages.find((message) => message.replyTarget?.kind === "id") ??
     (messages.some((message) => message.replyTarget?.kind === "current")

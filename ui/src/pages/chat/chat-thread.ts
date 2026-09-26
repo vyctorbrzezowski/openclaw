@@ -305,6 +305,7 @@ function sameChatItemsStructuralInput(
     previous.runActive === next.runActive &&
     previous.questionPrompts === next.questionPrompts &&
     previous.loading === next.loading &&
+    previous.replyShared === next.replyShared &&
     previous.searchOpen === next.searchOpen &&
     previous.searchQuery === next.searchQuery &&
     previous.messageRecovery?.messages === next.messageRecovery?.messages &&

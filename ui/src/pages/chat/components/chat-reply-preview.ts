@@ -2,6 +2,7 @@
 // already-loaded transcript rows first, then the reply-message access loader.
 import { normalizeRoleForGrouping } from "../../../lib/chat/message-normalizer.ts";
 import { DEFAULT_AGENT_ID } from "../../../lib/sessions/session-key.ts";
+import { userTurnRunId } from "../chat-thread-items.ts";
 import { persistedMessageEntryId } from "../chat-thread.ts";
 import { prepareChatMessageRender, resolveMessageReplyText } from "./chat-message-markdown.ts";
 import { resolveMessageGroupSenderLabel } from "./chat-message-sender.ts";
@@ -74,6 +75,7 @@ function projectResolvedReplyPreview(
         }
       : {}),
     isLoaded: Boolean(loaded),
+    ...(isAssistant ? {} : { turnRunId: userTurnRunId(message) ?? undefined }),
     text,
   };
 }

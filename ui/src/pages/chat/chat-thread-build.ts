@@ -99,6 +99,8 @@ export type BuildChatItemsProps = ChatInputPlacementProps & {
   questionPrompts?: readonly QuestionPrompt[];
   /** True while chat history is loading (initial load or background reload). */
   loading?: boolean;
+  /** Session participants include more than one person, loaded or not. */
+  replyShared?: boolean;
 };
 
 function canvasAssistantItemKey(
@@ -305,6 +307,9 @@ export function buildChatItems(
     inputOrder,
     currentRunId,
   );
+  // Search hides rows, not transcript facts: reply attribution still reads every row.
+  const replyContextItems =
+    hiddenHistoryKeys.size > 0 ? items.filter((item) => !hiddenKeys.has(item.key)) : undefined;
   items = items.filter((item) => !hiddenHistoryKeys.has(item.key) && !hiddenKeys.has(item.key));
   const executionItems = () => items.filter((item) => !historicalKeys.has(item.key));
   const canvasRunBounds = createRunTurnLookup(executionItems());
@@ -628,5 +633,8 @@ export function buildChatItems(
       ...optionalBoundaryIdentity(activeBoundaryRunId ?? workingRunId),
     });
   }
-  return groupMessages(coalesceToolActivityMessages(items));
+  return groupMessages(coalesceToolActivityMessages(items), {
+    items: replyContextItems && coalesceToolActivityMessages(replyContextItems),
+    shared: props.replyShared,
+  });
 }

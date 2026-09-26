@@ -3,8 +3,13 @@
 import { expectDefined } from "@openclaw/normalization-core";
 import { render } from "lit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { GatewaySessionRow } from "../../../api/types.ts";
 import { createTestTranscript } from "../chat-view.test-helpers.ts";
-import { renderTranscriptSearch, toggleTranscriptSearch } from "./chat-thread-interactions.ts";
+import {
+  getTranscriptState,
+  renderTranscriptSearch,
+  toggleTranscriptSearch,
+} from "./chat-thread-interactions.ts";
 import { renderChatThread } from "./chat-thread.ts";
 import {
   flushDeferredRowPrune,
@@ -216,6 +221,115 @@ describe("chat transcript replies", () => {
       } finally {
         transcript.hostDisconnected();
       }
+    },
+  );
+
+  const alice = {
+    senderId: "alice",
+    senderName: "Alice",
+    senderIdentity: { type: "profile", id: "alice" },
+  };
+  const bob = {
+    senderId: "bob",
+    senderName: "Bob",
+    senderIdentity: { type: "profile", id: "bob" },
+  };
+  const turn = (id: string, role: string, content: string, openclaw: object = {}) => ({
+    role,
+    content,
+    timestamp: Number(id.replace(/\D/g, "")),
+    __openclaw: { id, ...openclaw },
+  });
+  async function renderedStrips(props: ReturnType<typeof threadProps>, searchQuery?: string) {
+    const transcript = createTestTranscript();
+    const container = document.body.appendChild(document.createElement("div"));
+    if (searchQuery) {
+      Object.assign(getTranscriptState(props.paneId), { searchOpen: true, searchQuery });
+    }
+    render(renderChatThread(props, transcript), container);
+    transcript.hostConnected();
+    transcript.hostUpdated();
+    await flushDeferredRowPrune();
+    transcript.hostDisconnected();
+    return [...container.querySelectorAll(".chat-reply-attribution--reply")].map((strip) =>
+      strip.querySelector(".chat-reply-attribution__name")?.textContent?.trim(),
+    );
+  }
+
+  it.each([
+    {
+      case: "search hides the other speaker",
+      messages: [
+        turn("p1", "user", "Deploy?", alice),
+        turn("a2", "assistant", "Deploying"),
+        turn("p3", "user", "Status?", bob),
+        turn("a4", "assistant", "Rollout done"),
+      ],
+      query: "Rollout",
+      strips: ["Bob"],
+    },
+    {
+      case: "search hides the prompt this turn answers",
+      messages: [
+        turn("p1", "user", "Rollout plan?", alice),
+        turn("a2", "assistant", "Drafted"),
+        turn("p3", "user", "Anything else?", alice),
+        turn("a4", "assistant", "Rollout finished", {
+          replyToId: "p3",
+          replyToPreview: { text: "Anything else?", senderLabel: "Alice" },
+        }),
+      ],
+      query: "Rollout",
+      strips: [],
+    },
+    {
+      case: "the session has a participant outside the loaded page",
+      messages: [turn("p1", "user", "Deploy?", alice), turn("a2", "assistant", "Deploying")],
+      session: {
+        owner: {
+          actor: { type: "human", id: "alice", identity: { type: "profile", id: "alice" } },
+        },
+        participants: [{ identity: { type: "profile", id: "bob" }, label: "Bob" }],
+      },
+      strips: ["Alice"],
+    },
+  ])(
+    "keeps reply attribution from the full conversation when $case",
+    async ({ messages, query, session, strips }) => {
+      const props = threadProps("pane-reply-context", "agent:main:main", [...messages]);
+      if (session) {
+        props.selectedSession = {
+          key: props.sessionKey,
+          kind: "direct",
+          updatedAt: 1,
+          ...session,
+        } as GatewaySessionRow;
+      }
+      expect(await renderedStrips(props, query)).toEqual(strips);
+    },
+  );
+
+  it.each([
+    { promptRun: "run-a", strips: [] },
+    { promptRun: "run-b", strips: ["Alice"] },
+  ])(
+    "recognizes a paged-out prompt from run $promptRun as this turn's own",
+    async ({ promptRun, strips }) => {
+      const prompt = turn("p1", "user", "Deploy?", {
+        ...alice,
+        idempotencyKey: `${promptRun}:user`,
+      });
+      const props = threadProps("pane-paged-turn-prompt", "agent:main:main", [
+        turn("a2", "assistant", "Deploying", { replyToId: "p1", runId: "run-a" }),
+      ]);
+      props.replyMessageAccess = {
+        revision: 0,
+        navigationId: null,
+        read: (id) => (id === "p1" ? prompt : undefined),
+        request: vi.fn(),
+        open: vi.fn(),
+      };
+      expect(await renderedStrips(props)).toEqual(strips);
     },
   );
 

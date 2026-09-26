@@ -12,6 +12,8 @@ export type ReplyPreview = MessageReplyTarget & {
   sourceMessageId: string;
   sender?: ReturnType<typeof normalizeMessage>["sender"];
   isLoaded?: boolean;
+  /** The run a source prompt started, from its persisted user-turn identity. */
+  turnRunId?: string;
   agentAvatar?: Parameters<typeof renderChatAuthorAvatar>[2];
 };
 

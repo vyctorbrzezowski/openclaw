@@ -23,79 +23,128 @@ function assistantMessageKind(message: unknown, visibleContent: MessageGroup["vi
   return resolveAssistantReplyPhase(message) ?? (visibleContent === "none" ? "activity" : "reply");
 }
 
+type ReplyState = {
+  sender?: MessageGroup["sender"];
+  message?: MessageGroup["replyToMessage"];
+  turnSource?: MessageGroup["replyTurnSource"];
+};
+
+/**
+ * Reply context comes from the full transcript, not the rendered rows: search
+ * renders a subset that can drop the other speaker or the prompt a reply answers.
+ */
 function stampReplyAttribution(
   items: Array<ChatItem | MessageGroup>,
+  context: Array<ChatItem | MessageGroup>,
+  sessionShared: boolean,
 ): Array<ChatItem | MessageGroup> {
   const userSenderKeys = new Set<string>();
   // reply_to_current names the prompt that started the run. Only the persisted
   // user-turn run identity resolves it; an ambiguous owner stays unresolved.
   const runPrompts = new Map<string, MessageGroup["messages"][number] | null>();
-  for (const item of items) {
-    if (item.kind !== "group" || item.role !== "user") {
-      continue;
-    }
-    for (const source of item.messages) {
-      const runId = userTurnRunId(source.message);
-      if (runId) {
-        runPrompts.set(runId, runPrompts.has(runId) ? null : source);
-      }
-    }
-    const senderKey = item.sender ? senderIdentityKey(item.sender) : null;
-    if (senderKey) {
-      userSenderKeys.add(senderKey);
-    }
-  }
-  // Automatic attribution is only useful when several people share the thread.
-  const shared = userSenderKeys.size >= 2;
-
-  let latestUserSender: MessageGroup["sender"];
-  let latestUserMessage: MessageGroup["replyToMessage"];
-  let turnSource: MessageGroup["replyTurnSource"];
-  for (const item of items) {
+  const stateBefore = new Map<string, ReplyState>();
+  let state: ReplyState = {};
+  for (const item of context) {
     if (item.kind === "stream") {
-      if (shared) {
-        item.replyToSender = latestUserSender;
-        item.replyToMessage = latestUserMessage;
-      }
-      continue;
+      stateBefore.set(item.key, state);
     }
     if (item.kind !== "group") {
       continue;
     }
+    for (const source of item.messages) {
+      stateBefore.set(source.key, state);
+    }
     if (item.role === "user") {
-      turnSource = item.messages.at(-1);
+      for (const source of item.messages) {
+        const runId = userTurnRunId(source.message);
+        if (runId) {
+          runPrompts.set(runId, runPrompts.has(runId) ? null : source);
+        }
+      }
+      const senderKey = item.sender ? senderIdentityKey(item.sender) : null;
+      if (senderKey) {
+        userSenderKeys.add(senderKey);
+      }
       // A sender-less user group clears attribution: no chip is safer than
       // mislabeling the reply as addressed to the previous participant.
-      latestUserSender = item.sender;
-      latestUserMessage = item.sender ? item.messages.at(-1) : undefined;
+      const last = item.messages.at(-1);
+      state = { sender: item.sender, message: item.sender ? last : undefined, turnSource: last };
     } else if (item.role === "assistant" && hasForwardedSource(item)) {
       // Forwarded input starts a turn without a local human reply recipient.
-      turnSource = undefined;
-      latestUserSender = undefined;
-      latestUserMessage = undefined;
-    } else if (item.role === "assistant") {
-      const currentSource =
-        item.runId && item.messages.some((source) => source.replyTarget?.kind === "current")
-          ? runPrompts.get(item.runId)
+      state = {};
+    }
+  }
+  // Automatic attribution is only useful when several people share the thread.
+  const shared = sessionShared || userSenderKeys.size >= 2;
+
+  // Rows outside the context (live output) take the state of the next row that
+  // has one, or the transcript end.
+  const states: ReplyState[] = [];
+  let next = state;
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index]!;
+    const known =
+      item.kind === "group"
+        ? item.messages.map((source) => stateBefore.get(source.key)).find(Boolean)
+        : item.kind === "stream"
+          ? stateBefore.get(item.key)
           : undefined;
+    states[index] = known ?? next;
+    if (known) {
+      next = known;
+    }
+  }
+  for (const [index, item] of items.entries()) {
+    const { sender, message, turnSource } = states[index]!;
+    if (item.kind === "stream") {
       if (shared) {
-        item.replyShared = true;
+        item.replyToSender = sender;
+        item.replyToMessage = message;
       }
-      if (turnSource) {
-        item.replyTurnSource = turnSource;
-      }
-      if (currentSource) {
-        item.replyCurrentSource = currentSource;
-      }
-      if (shared && latestUserSender) {
-        item.replyToSender = latestUserSender;
-        item.replyToMessage = latestUserMessage;
-      }
+      continue;
+    }
+    if (item.kind !== "group" || item.role !== "assistant" || hasForwardedSource(item)) {
+      continue;
+    }
+    const currentSource =
+      item.runId && item.messages.some((source) => source.replyTarget?.kind === "current")
+        ? runPrompts.get(item.runId)
+        : undefined;
+    if (shared) {
+      item.replyShared = true;
+    }
+    if (turnSource) {
+      item.replyTurnSource = turnSource;
+    }
+    if (currentSource) {
+      item.replyCurrentSource = currentSource;
+    }
+    if (shared && sender) {
+      item.replyToSender = sender;
+      item.replyToMessage = message;
     }
   }
   return items;
 }
-export function groupMessages(items: ChatItem[]): Array<ChatItem | MessageGroup> {
+
+/** Transcript facts that outlive the rendered subset of rows. */
+export type ReplyAttributionContext = {
+  /** Every transcript row, including those a search hides from `items`. */
+  items?: ChatItem[];
+  /** Session participants already include more than one person. */
+  shared?: boolean;
+};
+
+export function groupMessages(
+  items: ChatItem[],
+  replyContext: ReplyAttributionContext = {},
+): Array<ChatItem | MessageGroup> {
+  const result = groupChatItems(items);
+  const context = replyContext.items ? groupChatItems(replyContext.items) : result;
+  return stampReplyAttribution(result, context, replyContext.shared === true);
+}
+
+function groupChatItems(items: ChatItem[]): Array<ChatItem | MessageGroup> {
   const result: Array<ChatItem | MessageGroup> = [];
   let currentGroup: MessageGroup | null = null;
   let currentUserTurnIdentity: string | null = null;
@@ -194,7 +243,7 @@ export function groupMessages(items: ChatItem[]): Array<ChatItem | MessageGroup>
   if (currentGroup) {
     result.push(currentGroup);
   }
-  return stampReplyAttribution(result);
+  return result;
 }
 
 type RenderChatItem = ChatItem | MessageGroup;

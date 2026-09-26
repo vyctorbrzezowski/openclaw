@@ -108,6 +108,17 @@ export function projectChatTranscript(
         );
       },
     );
+  // The session row counts every person who spoke, including rows not loaded yet.
+  const sessionPeople = new Set(
+    [
+      activeSession?.owner?.actor.identity,
+      ...(activeSession?.expandedParticipants ?? activeSession?.participants ?? []).map(
+        ({ identity }) => identity,
+      ),
+    ].flatMap((identity) =>
+      identity && identity.type !== "agent" ? [JSON.stringify(identity)] : [],
+    ),
+  );
   const mediaPolicyKey = assistantMediaPolicyKey(activeSession, props.mediaPolicyEpoch);
   // Global-alias routing ignores the capped session list, which may omit the
   // canonical row. The scope gate keeps per-sender main threads direct.
@@ -173,6 +184,7 @@ export function projectChatTranscript(
     runActive: Boolean(props.runActive),
     questionPrompts: props.questionPrompts,
     loading: props.loading,
+    replyShared: sessionPeople.size >= 2,
     searchOpen: state.searchOpen,
     searchQuery: state.searchQuery,
     messageRecovery:
