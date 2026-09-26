@@ -58,6 +58,11 @@ export function renderAgentRunFrame(frame: AgentRunFrameRenderItem, opts: AgentR
     replyToMessage:
       firstAssistant?.replyToMessage ??
       frame.parts.find((part) => part.kind === "stream-run")?.replyToMessage,
+    ...(firstAssistant?.replyShared ? { replyShared: true } : {}),
+    ...(firstAssistant?.replyTurnSource ? { replyTurnSource: firstAssistant.replyTurnSource } : {}),
+    ...(firstAssistant?.replyCurrentSource
+      ? { replyCurrentSource: firstAssistant.replyCurrentSource }
+      : {}),
     messages: representative?.messages ?? [],
     visibleContent: representative?.visibleContent ?? "none",
     timestamp:
