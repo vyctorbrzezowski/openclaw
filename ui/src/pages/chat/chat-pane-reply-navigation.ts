@@ -23,7 +23,6 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       message?: unknown;
       missing?: true;
       oversized?: true;
-      failed?: true;
     }
   >();
 
@@ -52,7 +51,8 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
 
   /**
    * Not answered on the current connection yet. Unknown counts as pending from the
-   * first paint, including a warm boot rendered before the Gateway connects.
+   * first paint, including a warm boot rendered before the Gateway connects, and a
+   * transport failure stays pending until a new connection's retry answers.
    */
   protected readonly isReplyMessagePending = (messageId: string): boolean => {
     const state = this.state;
@@ -60,7 +60,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       return false;
     }
     const cached = this.currentReplyMessage(messageId);
-    return !cached || !(cached.message || cached.missing || cached.oversized || cached.failed);
+    return !cached || !(cached.message || cached.missing || cached.oversized);
   };
 
   protected readonly requestReplyMessage = (messageId: string): void => {
@@ -105,22 +105,25 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
     } catch {
       result = undefined;
     }
-    if (!this.isConnectionScopeCurrent(scope) || this.replyMessages.get(cacheKey) !== attempt) {
+    // A transport failure stays unconfirmed and pending: the retained attempt
+    // stops render retry loops, and a new logical connection owns a fresh
+    // attempt, even with the same client.
+    if (
+      !result ||
+      !this.isConnectionScopeCurrent(scope) ||
+      this.replyMessages.get(cacheKey) !== attempt
+    ) {
       return;
     }
     // A Gateway answer without a message confirms the original is inaccessible,
-    // except an oversized one, which exists. A transport failure stays
-    // unconfirmed; retaining it stops render retry loops.
-    // A new logical connection owns a fresh attempt, even with the same client.
+    // except an oversized one, which exists.
     this.replyMessages.set(
       cacheKey,
-      !result
-        ? { ...attempt, failed: true }
-        : result.ok && result.message
-          ? { ...attempt, message: result.message }
-          : result.unavailableReason === "oversized"
-            ? { ...attempt, oversized: true }
-            : { ...attempt, missing: true },
+      result.ok && result.message
+        ? { ...attempt, message: result.message }
+        : result.unavailableReason === "oversized"
+          ? { ...attempt, oversized: true }
+          : { ...attempt, missing: true },
     );
     this.replyMessageRevision += 1;
     if (areUiSessionKeysEquivalent(scope.state.sessionKey, sessionKey)) {

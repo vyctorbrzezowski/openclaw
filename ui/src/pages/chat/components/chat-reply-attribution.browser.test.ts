@@ -328,3 +328,152 @@ it.each([1440, 390])("fills a pending explicit reply strip in place at %d px", a
   expect(host.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Mira");
   expect(resolved).toEqual(pending);
 });
+
+it.each([1440, 390])(
+  "keeps a reserved reply strip row at a fixed height through every lookup outcome at %d px",
+  async (width) => {
+    await page.viewport(width, 800);
+    host.style.width = `${width - 32}px`;
+    type Lookup = ReturnType<
+      NonNullable<Parameters<typeof renderMessageGroup>[1]["resolveReplyPreview"]>
+    >;
+    const pending: Lookup = { pending: true };
+    const missing: Lookup = { missing: true };
+    const found: Lookup = {
+      messageId: "older",
+      sourceMessageId: "older",
+      senderLabel: "Mira",
+      sender: { id: "mira", name: "Mira" },
+      text: "Checklist",
+    };
+    // The pane reports a transport failure as still pending until a new
+    // connection's retry answers (chat-pane-history-reply.test.ts).
+    const outcomes = [
+      { name: "found with sender", snapshot: undefined, steps: [pending, found], text: "Mira" },
+      {
+        name: "missing with name",
+        snapshot: { senderLabel: "Mira", text: "" },
+        steps: [pending, missing],
+        text: "MiraOriginal message unavailable",
+      },
+      {
+        name: "missing without name",
+        snapshot: undefined,
+        steps: [pending, missing],
+        text: "Original message unavailable",
+      },
+      {
+        name: "failed then retried",
+        snapshot: undefined,
+        steps: [pending, pending, found],
+        text: "Mira",
+      },
+    ];
+    const layoutShift = PerformanceObserver.supportedEntryTypes.includes("layout-shift");
+    const shifts: Array<PerformanceEntry & { value?: number; sources?: Array<{ node?: Node }> }> =
+      [];
+    const observer = new PerformanceObserver((list) => shifts.push(...list.getEntries()));
+    if (layoutShift) {
+      observer.observe({ type: "layout-shift", buffered: true });
+    }
+    const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    try {
+      for (const outcome of outcomes) {
+        const group: MessageGroup = {
+          kind: "group",
+          key: "answer",
+          role: "assistant",
+          timestamp: 0,
+          isStreaming: false,
+          visibleContent: "text",
+          replyShared: true,
+          messages: [
+            {
+              key: "answer-message",
+              hasVisibleContent: true,
+              message: {
+                role: "assistant",
+                content: "Step 3 moved to Friday.",
+                __openclaw: {
+                  id: "answer",
+                  replyToId: "older",
+                  ...(outcome.snapshot ? { replyToPreview: outcome.snapshot } : {}),
+                },
+              },
+            },
+          ],
+        };
+        const draw = (lookup: Lookup) =>
+          render(
+            html`${renderMessageGroup(group, {
+                showReasoning: false,
+                showToolCalls: false,
+                avatarPlacement: "gutter",
+                onOpenReply: vi.fn(),
+                onResolveReply: vi.fn(),
+                resolveReplyPreview: () => lookup,
+              })}
+              <div class="after">Next</div>`,
+            host,
+          );
+        const measure = () => {
+          const row = host.querySelector(".chat-reply-attribution--reply")!.getBoundingClientRect();
+          return {
+            rowTop: row.top,
+            rowHeight: row.height,
+            text: host.querySelector(".chat-bubble .chat-text")!.getBoundingClientRect().top,
+            after: host.querySelector(".after")!.getBoundingClientRect().top,
+          };
+        };
+        render(null, host);
+        draw(outcome.steps[0]);
+        await document.fonts.ready;
+        await frame();
+        await frame();
+        const reserved = measure();
+        expect(reserved.rowHeight).toBeGreaterThan(0);
+        const since = performance.now();
+        for (const step of outcome.steps.slice(1)) {
+          draw(step);
+          // Same geometry in the committing frame and the frames after it.
+          expect(measure(), outcome.name).toEqual(reserved);
+          await frame();
+          expect(measure(), outcome.name).toEqual(reserved);
+          await frame();
+          expect(measure(), outcome.name).toEqual(reserved);
+        }
+        const row = host.querySelector<HTMLElement>(".chat-reply-attribution--reply")!;
+        expect(getComputedStyle(row).visibility, outcome.name).toBe("visible");
+        expect(
+          row.querySelector(".chat-reply-attribution__label")?.textContent?.trim(),
+          outcome.name,
+        ).toBe("Replying to");
+        expect(
+          [
+            ...row.querySelectorAll(
+              ".chat-reply-attribution__name, .chat-reply-attribution__unavailable",
+            ),
+          ]
+            .map((element) => element.textContent)
+            .join(""),
+          outcome.name,
+        ).toBe(outcome.text);
+        if (outcome.steps.at(-1) === missing) {
+          expect(row.querySelector(".chat-author-avatar, button, a"), outcome.name).toBeNull();
+        }
+        if (layoutShift) {
+          shifts.push(...observer.takeRecords());
+          const stripShifts = shifts
+            .filter((entry) => entry.startTime >= since)
+            .filter((entry) =>
+              (entry.sources ?? []).some((source) => source.node && host.contains(source.node)),
+            )
+            .map((entry) => ({ value: entry.value, startTime: entry.startTime }));
+          expect(stripShifts, outcome.name).toEqual([]);
+        }
+      }
+    } finally {
+      observer.disconnect();
+    }
+  },
+);

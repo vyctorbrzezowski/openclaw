@@ -13,7 +13,8 @@ import type { ReplyPreview, ReplyPreviewLookup } from "./chat-reply-preview.type
 /**
  * Whether a reply reference adds context: unresolved references and a 1:1 turn
  * answering its own prompt stay hidden; a confirmed-missing target keeps only a
- * known sender name ("unavailable").
+ * known sender name ("unavailable"), or none when its reserved row holds a
+ * placeholder.
  */
 export type ReplyAttribution = {
   presentation: "hidden" | "full" | "unavailable";
@@ -112,11 +113,15 @@ function resolveTargetAttribution(
 ): ReplyAttribution {
   const result = resolveReplyPreview?.(target.id);
   const resolved = lookupReply(resolveReplyPreview, target.id);
+  // Reserve the row only when the answer can fill it: a 1:1 turn whose prompt
+  // is not loaded may be answering that prompt, which stays hidden.
+  const reservesRow = !group || Boolean(group.replyShared || group.replyTurnSource);
   if (resolved === null) {
     // Known snapshot facts only: no inferred avatar and nothing to navigate to.
-    const known = snapshot?.senderLabel;
-    return known
-      ? { presentation: "unavailable", sender: { name: known }, name: known, target }
+    // A reserved row keeps its height as an anonymous placeholder.
+    const known = snapshot?.senderLabel || "";
+    return known || reservesRow
+      ? { presentation: "unavailable", sender: known ? { name: known } : {}, name: known, target }
       : hiddenAttribution(target);
   }
   // Snapshot text alone names no author; only its sender label or the source does.
@@ -140,11 +145,7 @@ function resolveTargetAttribution(
   if (resolved || name) {
     return hiddenAttribution(target);
   }
-  // Reserve the row only when the answer can fill it: a 1:1 turn whose prompt
-  // is not loaded may be answering that prompt, which stays hidden.
-  const pending =
-    Boolean(result && "pending" in result) &&
-    (!group || Boolean(group.replyShared || group.replyTurnSource));
+  const pending = Boolean(result && "pending" in result) && reservesRow;
   return hiddenAttribution(target, target.id, pending);
 }
 
@@ -294,7 +295,9 @@ export function renderReplyAttribution(
           >
             ${person}
           </button>`
-        : html`<span class="chat-reply-attribution__person">${person}</span>`
+        : name
+          ? html`<span class="chat-reply-attribution__person">${person}</span>`
+          : nothing
     }
     ${
       unavailable

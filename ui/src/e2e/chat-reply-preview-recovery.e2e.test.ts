@@ -18,6 +18,7 @@ suite.define(() => {
     {
       name: "temporary lookup failure",
       artifact: "temporary-failure",
+      text: "",
       response: {
         __mockError: {
           code: "UNAVAILABLE",
@@ -28,11 +29,12 @@ suite.define(() => {
     {
       name: "permanently unavailable source",
       artifact: "unavailable-source",
+      text: "Original message unavailable",
       response: { ok: false, unavailableReason: "not_found" },
     },
   ])(
     "settles a $name without repeatedly loading the reply preview",
-    async ({ artifact, response }) => {
+    async ({ artifact, text, response }) => {
       const artifactRoot = process.env.OPENCLAW_UI_E2E_ARTIFACT_DIR?.trim();
       const artifactDir = artifactRoot
         ? createControlUiE2eArtifactDir("chat-reply-preview-recovery", artifactRoot)
@@ -65,9 +67,6 @@ suite.define(() => {
         const pane = page.locator(".chat-pane-cache__pane--active");
         await pane.locator('[data-entry-id="reply-message"]').waitFor({ state: "visible" });
         await gateway.waitForRequest("chat.message.get");
-        // Neither an unconfirmed nor an anonymous missing source adds a quote strip.
-        expect(await pane.locator(".chat-reply-attribution").count()).toBe(0);
-        expect(await pane.textContent()).not.toContain("Original message unavailable");
         const composer = page.locator(
           ".chat-pane-cache__pane--active .agent-chat__composer-combobox textarea",
         );
@@ -75,6 +74,19 @@ suite.define(() => {
         expect(await composer.inputValue()).toBe("This draft remains usable.");
         firstCount = (await gateway.getRequests("chat.message.get")).length;
         await expectRequestCountStable(gateway, "chat.message.get", 1);
+        // The reserved strip row stays: an unconfirmed source keeps it pending and an
+        // anonymous missing source fills it with a placeholder.
+        const strip = pane.locator(".chat-reply-attribution--inline");
+        await expect
+          .poll(() => strip.locator(".chat-reply-attribution__unavailable").count())
+          .toBe(text ? 1 : 0);
+        expect(await strip.count()).toBe(1);
+        expect(
+          (await strip.getAttribute("class"))?.includes("chat-reply-attribution--pending"),
+        ).toBe(!text);
+        expect((await strip.textContent())?.replace(/\s+/g, " ").trim()).toBe(
+          `Replying to ${text}`.trim(),
+        );
       } finally {
         if (artifactDir) {
           await page.screenshot({
@@ -184,8 +196,11 @@ suite.define(() => {
           .waitFor();
         await gateway.waitForRequest("chat.message.get");
         await expectRequestCountStable(gateway, "chat.message.get", 1);
-        // An unconfirmed or anonymous missing source adds no reply strip.
-        expect(await preview.count()).toBe(initial === "previous success" ? 1 : 0);
+        // An unconfirmed source stays reserved and a missing one keeps a placeholder.
+        expect(await preview.count()).toBe(1);
+        expect(await preview.getByRole("button").count()).toBe(
+          initial === "previous success" ? 1 : 0,
+        );
         await gateway.setMethodResponse("chat.message.get", { ok: true, message: source });
         const connectCount = (await gateway.getRequests("connect")).length;
         await gateway.closeLatest(1006, "reply preview recovery");

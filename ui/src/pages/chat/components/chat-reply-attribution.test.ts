@@ -28,10 +28,11 @@ function draw(
   context: Partial<MessageGroup> & {
     missing?: string[];
     oversized?: string[];
+    pending?: string[];
     sources?: Record<string, { message: unknown; senderLabel: string }>;
   } = {},
 ) {
-  const { missing = [], oversized = [], sources = {}, ...groupContext } = context;
+  const { missing = [], oversized = [], pending = [], sources = {}, ...groupContext } = context;
   container = document.body.appendChild(document.createElement("div"));
   const group: MessageGroup = {
     kind: "group",
@@ -67,6 +68,7 @@ function draw(
         read: () => undefined,
         missing: (id) => missing.includes(id),
         oversized: (id) => oversized.includes(id),
+        pending: (id) => pending.includes(id),
       },
     },
   );
@@ -134,7 +136,7 @@ it.each([
   { snapshot: undefined, missing: ["deleted"] },
   { snapshot: { senderLabel: "", text: "Earlier question" }, missing: ["deleted"] },
 ])(
-  "renders no strip for an unresolved or anonymous missing reference %o",
+  "renders no strip in a 1:1 turn without its prompt for an unresolved or anonymous missing reference %o",
   ({ snapshot, missing }) => {
     const { onResolveReply } = draw(
       prompt,
@@ -152,6 +154,51 @@ it.each([
     expect(container.querySelector(".chat-reply-attribution")).toBeNull();
     expect(container.textContent).not.toContain("Original message unavailable");
     expect(onResolveReply).toHaveBeenCalledTimes(missing.length ? 0 : 1);
+  },
+);
+
+it.each([
+  { lookup: "pending", snapshot: undefined, name: undefined, unavailable: undefined },
+  { lookup: "missing", snapshot: undefined, name: undefined, unavailable: true },
+  {
+    lookup: "missing",
+    snapshot: { senderLabel: "", text: "Earlier question" },
+    name: undefined,
+    unavailable: true,
+  },
+  {
+    lookup: "missing",
+    snapshot: { senderLabel: "Jordan", text: "" },
+    name: "Jordan",
+    unavailable: true,
+  },
+] as const)(
+  "keeps a reserved strip row through a $lookup lookup (name $name)",
+  ({ lookup, snapshot, name, unavailable }) => {
+    const { row } = draw(
+      prompt,
+      [
+        {
+          role: "assistant",
+          content: "Answer",
+          __openclaw: { replyToId: "deleted", ...(snapshot ? { replyToPreview: snapshot } : {}) },
+        },
+      ],
+      false,
+      "group",
+      {
+        replyShared: true,
+        ...(lookup === "pending" ? { pending: ["deleted"] } : { missing: ["deleted"] }),
+      },
+    );
+    // A transport failure reads as pending until a new connection answers.
+    expect(row.classList.contains("chat-reply-attribution--pending")).toBe(!unavailable);
+    expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+    expect(Boolean(row.querySelector(".chat-reply-attribution__person"))).toBe(Boolean(name));
+    expect(row.querySelector(".chat-reply-attribution__unavailable")?.textContent).toBe(
+      unavailable ? "Original message unavailable" : undefined,
+    );
+    expect(row.querySelector(".chat-author-avatar, button, a")).toBeNull();
   },
 );
 
