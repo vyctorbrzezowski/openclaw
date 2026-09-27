@@ -295,7 +295,7 @@ describe("Control UI performance budgets", () => {
     {
       name: "retains the ordinary chunk cap beside the renderer",
       gzipBytes: 200_000,
-      ordinaryGzipBytes: 215 * 1024 + 1,
+      ordinaryGzipBytes: 218 * 1024 + 1,
       violations: ["largest JS gzip"],
     },
     {
@@ -389,7 +389,7 @@ describe("Control UI performance budgets", () => {
       name: "retains the ordinary chunk cap beside locale pairs",
       baseGzipBytes: 100_000,
       configHintsGzipBytes: 100_000,
-      ordinaryGzipBytes: 215 * 1024 + 1,
+      ordinaryGzipBytes: 218 * 1024 + 1,
       violations: ["largest JS gzip"],
     },
     {
