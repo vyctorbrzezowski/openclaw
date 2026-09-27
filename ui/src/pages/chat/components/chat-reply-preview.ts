@@ -45,14 +45,16 @@ function projectResolvedReplyPreview(
 ): ResolvedReplyPreview {
   const { normalizedMessage: normalized, displayMarkdown } = prepareChatMessageRender(message);
   const text = resolveMessageReplyText(message, normalized, displayMarkdown);
-  if (!text) {
+  const persistedId = persistedMessageEntryId(message);
+  // A persisted original names its author even when it has no text (image-only, etc.).
+  if (!text && !persistedId) {
     return undefined;
   }
   const group = {
     ...normalized,
     messages: [{ message }],
   };
-  const sourceMessageId = persistedMessageEntryId(message) ?? replyToId;
+  const sourceMessageId = persistedId ?? replyToId;
   const senderLabel = loaded?.senderLabel ?? resolveMessageGroupSenderLabel(group, props);
   const isAssistant = normalizeRoleForGrouping(normalized.role) === "assistant";
   const agentId = normalized.senderSession?.agentId ?? props.currentAgentId ?? DEFAULT_AGENT_ID;

@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import { resolveTypefaces, syncTypefaceStylesheets } from "../../../app/typography.ts";
 import type { MessageGroup } from "../../../lib/chat/chat-types.ts";
 import { renderMessageGroup } from "./chat-message-group.ts";
+import { createReplyPreviewResolver } from "./chat-reply-preview.ts";
 import "../../../styles/base.css";
 import "../../../styles/chat/startup-layout.css";
 import "../../../styles/chat/message-layout.css";
@@ -346,10 +347,27 @@ it.each([1440, 390])(
       sender: { id: "mira", name: "Mira" },
       text: "Checklist",
     };
+    // A found original without renderable text (image-only, etc.) still names its author.
+    const foundWithoutText = createReplyPreviewResolver(new Map(), {
+      assistantName: "OpenClaw",
+      replyMessageAccess: {
+        read: () => ({
+          role: "user",
+          content: [],
+          __openclaw: { id: "older", senderId: "mira", senderName: "Mira" },
+        }),
+      },
+    })("older");
     // The pane reports a transport failure as still pending until a new
     // connection's retry answers (chat-pane-history-reply.test.ts).
     const outcomes = [
       { name: "found with sender", snapshot: undefined, steps: [pending, found], text: "Mira" },
+      {
+        name: "found without text",
+        snapshot: undefined,
+        steps: [pending, foundWithoutText],
+        text: "Mira",
+      },
       {
         name: "sender-only snapshot, then missing",
         snapshot: { senderLabel: "Mira", text: "" },
@@ -467,6 +485,9 @@ it.each([1440, 390])(
         ).toBe(outcome.text);
         if (outcome.steps.at(-1) === missing) {
           expect(row.querySelector(".chat-author-avatar, button, a"), outcome.name).toBeNull();
+        }
+        if (outcome.steps.at(-1) === foundWithoutText) {
+          expect(row.querySelector("button .chat-author-avatar"), outcome.name).not.toBeNull();
         }
         if (layoutShift) {
           shifts.push(...observer.takeRecords());

@@ -361,6 +361,42 @@ it.each(["group", "frame"] as const)(
   },
 );
 
+it.each(["loaded", "fetched"] as const)(
+  "names the author of a %s original that has no text and navigates to it",
+  (location) => {
+    const photo = {
+      role: "user",
+      content: [],
+      __openclaw: {
+        id: "photo",
+        senderId: "mira",
+        senderName: "Mira",
+        senderIdentity: { type: "profile", id: "mira" },
+      },
+    };
+    const { row, onOpenReply, onResolveReply } = draw(
+      prompt,
+      [{ role: "assistant", content: "Nice photo", __openclaw: { replyToId: "photo" } }],
+      true,
+      "group",
+      {
+        replyShared: true,
+        ...(location === "loaded"
+          ? { sources: { photo: { message: photo, senderLabel: "Mira" } } }
+          : { fetched: { photo } }),
+      },
+    );
+    expect(row.classList.contains("chat-reply-attribution--pending")).toBe(false);
+    expect(row.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
+    const target = row.querySelector<HTMLButtonElement>("button.chat-reply-attribution__target")!;
+    expect(target.getAttribute("aria-label")).toBe("Replying to Mira");
+    expect(target.querySelector(".chat-author-avatar")).not.toBeNull();
+    expect(onResolveReply).not.toHaveBeenCalled();
+    target.click();
+    expect(onOpenReply).toHaveBeenCalledWith("photo");
+  },
+);
+
 it.each([
   { finalTarget: "prompt", recipient: "Alice" },
   { finalTarget: "current-prompt", recipient: "Bob" },

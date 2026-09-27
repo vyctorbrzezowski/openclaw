@@ -49,6 +49,47 @@ describe("attachment reply previews", () => {
   );
 });
 
+describe("text-less reply previews", () => {
+  const identity = { type: "profile", id: "mira" } as const;
+  const source = {
+    role: "user",
+    content: [],
+    __openclaw: { id: "photo", senderId: "mira", senderName: "Mira", senderIdentity: identity },
+  };
+
+  it.each(["loaded", "fetched"] as const)(
+    "keeps the sender of a persisted original without text from %s history",
+    (location) => {
+      const resolve = createReplyPreviewResolver(
+        new Map<string, LoadedReplySource>(
+          location === "loaded"
+            ? [["photo", { message: source, messageId: "photo-row", senderLabel: "Mira" }]]
+            : [],
+        ),
+        {
+          assistantName: "OpenClaw",
+          replyMessageAccess: { read: () => (location === "fetched" ? source : undefined) },
+        },
+      );
+      expect(resolve("photo")).toMatchObject({
+        sourceMessageId: "photo",
+        senderLabel: "Mira",
+        sender: { id: "mira", name: "Mira", identity },
+        isLoaded: location === "loaded",
+        text: "",
+      });
+    },
+  );
+
+  it("does not describe an unpersisted original without text", () => {
+    const resolve = createReplyPreviewResolver(new Map(), {
+      assistantName: "OpenClaw",
+      replyMessageAccess: { read: () => ({ role: "user", content: [] }) },
+    });
+    expect(resolve("photo")).toBeUndefined();
+  });
+});
+
 describe("quoted agent identity", () => {
   it("preserves a typed profile source without session provenance", () => {
     const identity = { type: "profile", id: "reviewer" } as const;
