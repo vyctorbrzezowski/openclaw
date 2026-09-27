@@ -39,6 +39,21 @@ type ReplyGroup = Pick<
   | "replyToMessage"
 >;
 
+// Transcript rows are immutable; re-renders reuse their normalized form.
+const normalizedMessages = new WeakMap<object, NormalizedMessage>();
+
+function normalizeReplyMessage(message: unknown): NormalizedMessage {
+  if (!message || typeof message !== "object") {
+    return normalizeMessage(message);
+  }
+  let normalized = normalizedMessages.get(message);
+  if (!normalized) {
+    normalized = normalizeMessage(message);
+    normalizedMessages.set(message, normalized);
+  }
+  return normalized;
+}
+
 export function isReplyAttributionVisible(
   attribution: ReplyAttribution | undefined,
 ): attribution is ReplyAttribution {
@@ -159,8 +174,8 @@ export function resolveReplyAttribution(
   if (group.role !== "assistant") {
     return undefined;
   }
-  const messages = group.messages.map(({ message }) => normalizeMessage(message));
-  const snapshots = replyMessages.map(({ message }) => normalizeMessage(message));
+  const messages = group.messages.map(({ message }) => normalizeReplyMessage(message));
+  const snapshots = replyMessages.map(({ message }) => normalizeReplyMessage(message));
   const find = (list: NormalizedMessage[], kind: "id" | "current") =>
     list.find((message) => message.replyTarget?.kind === kind);
   const ownCurrent = find(messages, "current");
@@ -188,7 +203,7 @@ export function resolveReplyAttribution(
       source &&
       resolveSourceAttribution(
         source.message,
-        normalizeMessage(source.message).sender,
+        normalizeReplyMessage(source.message).sender,
         resolveReplyPreview,
       );
     return attribution && (group.replyShared || source?.key !== group.replyTurnSource?.key)
