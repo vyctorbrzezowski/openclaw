@@ -12,6 +12,8 @@ const prompt = {
   content: "Original question",
   __openclaw: { id: "prompt", senderId: "alice", senderName: "Alice" },
 };
+// A 1:1 turn whose own prompt is loaded: a reference to anything else is older.
+const turnSource = { replyTurnSource: { key: "prompt-render-key", message: prompt } };
 let container: HTMLDivElement;
 afterEach(() => {
   if (container) {
@@ -178,8 +180,11 @@ it.each([
   { snapshot: { text: "Earlier question" }, missing: [] },
   { snapshot: undefined, missing: ["deleted"] },
   { snapshot: { senderLabel: "", text: "Earlier question" }, missing: ["deleted"] },
+  // Only the original's run ownership tells an older prompt from this turn's own.
+  { snapshot: { senderLabel: "Jordan", text: "Earlier question" }, missing: [] },
+  { snapshot: { senderLabel: "Jordan", text: "" }, missing: ["deleted"] },
 ])(
-  "renders no strip in a 1:1 turn without its prompt for an unresolved or anonymous missing reference %o",
+  "renders no strip in a 1:1 turn without its prompt for an unresolved or missing reference %o",
   ({ snapshot, missing }) => {
     const { onResolveReply } = draw(
       prompt,
@@ -270,7 +275,8 @@ it.each([
       },
     ];
     // The lookup has not answered yet: the name alone fills the strip.
-    const first = draw(prompt, replies, false, presentation, { replyShared, pending: ["older"] });
+    const context = { replyShared, ...turnSource };
+    const first = draw(prompt, replies, false, presentation, { ...context, pending: ["older"] });
     const firstContainer = container;
     expect(first.row.classList.contains("chat-reply-attribution--pending")).toBe(false);
     expect(first.row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
@@ -282,7 +288,7 @@ it.each([
     firstContainer.remove();
 
     // A lookup that confirms the original is gone keeps the name in the same row.
-    const settled = draw(prompt, replies, false, presentation, { replyShared, missing: ["older"] });
+    const settled = draw(prompt, replies, false, presentation, { ...context, missing: ["older"] });
     expect(settled.row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
     expect(settled.row.querySelector(".chat-reply-attribution__unavailable")?.textContent).toBe(
       "Original message unavailable",
@@ -309,7 +315,7 @@ it.each(["group", "frame"] as const)(
       ],
       false,
       presentation,
-      { missing: ["deleted"] },
+      { ...turnSource, missing: ["deleted"] },
     );
     expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
     expect(row.querySelector(".chat-reply-attribution__unavailable")?.textContent).toBe(
@@ -335,7 +341,7 @@ it.each([
     ],
     false,
     "group",
-    { oversized: ["large"] },
+    { ...turnSource, oversized: ["large"] },
   );
   expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
   expect(container.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
@@ -362,6 +368,7 @@ it.each([
       })),
       false,
       presentation,
+      turnSource,
     );
     expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
     expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
@@ -429,6 +436,46 @@ it.each(["loaded", "fetched"] as const)(
     expect(onResolveReply).not.toHaveBeenCalled();
     target.click();
     expect(onOpenReply).toHaveBeenCalledWith("photo");
+  },
+);
+
+it.each([
+  { promptRun: undefined, name: undefined },
+  { promptRun: "run-a", name: undefined },
+  { promptRun: "run-b", name: "Alice" },
+])(
+  "settles a 1:1 reply to a paged-out prompt by run ownership, not its snapshot (run $promptRun)",
+  ({ promptRun, name }) => {
+    const paged = {
+      role: "user",
+      content: "Deploy?",
+      __openclaw: { id: "p1", senderName: "Alice", idempotencyKey: `${promptRun}:user` },
+    };
+    const { row, onResolveReply } = draw(
+      prompt,
+      [
+        {
+          role: "assistant",
+          content: "Deploying",
+          __openclaw: {
+            replyToId: "p1",
+            replyToPreview: { senderLabel: "Alice", text: "Deploy?" },
+          },
+        },
+      ],
+      false,
+      "group",
+      {
+        runId: "run-a",
+        replyToSender: undefined,
+        replyToMessage: undefined,
+        ...(promptRun ? { fetched: { p1: paged } } : { pending: ["p1"] }),
+      },
+    );
+    // Its own turn's prompt is hidden, so the row is not reserved while the lookup runs.
+    expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+    expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+    expect(onResolveReply).toHaveBeenCalledTimes(promptRun ? 0 : 1);
   },
 );
 

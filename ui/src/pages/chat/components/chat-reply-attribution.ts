@@ -114,13 +114,14 @@ function resolveTargetAttribution(
   const result = resolveReplyPreview?.(target.id);
   const resolved = lookupReply(resolveReplyPreview, target.id);
   // Reserve the row only when the answer can fill it: a 1:1 turn whose prompt
-  // is not loaded may be answering that prompt, which stays hidden.
+  // is not loaded may be answering that prompt, which stays hidden. Only the
+  // fetched original's run ownership can settle that, never a snapshot.
   const reservesRow = !group || Boolean(group.replyShared || group.replyTurnSource);
+  const known = (reservesRow && snapshot?.senderLabel) || "";
   if (resolved === null) {
     // Known snapshot facts only: no inferred avatar and nothing to navigate to.
     // A reserved row keeps its height as an anonymous placeholder.
-    const known = snapshot?.senderLabel || "";
-    return known || reservesRow
+    return reservesRow
       ? { presentation: "unavailable", sender: known ? { name: known } : {}, name: known, target }
       : hiddenAttribution(target);
   }
@@ -132,7 +133,7 @@ function resolveTargetAttribution(
   const name =
     (resolved && (resolved.sender || !group?.replyShared)
       ? resolved.senderLabel || formatSenderLabel(resolved.sender)
-      : snapshot?.senderLabel) || "";
+      : known) || "";
   // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
   // loaded history is still this turn's by run ownership.
   const turnSource =
