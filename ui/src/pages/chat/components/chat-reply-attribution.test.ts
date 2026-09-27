@@ -121,13 +121,12 @@ function draw(
   };
 }
 
-it("renders one recipient per group, suppresses duplicate name and navigates from the name by persisted ID", () => {
+it("renders one recipient per group and navigates from the name by persisted ID", () => {
   const { row, onOpenReply } = draw(prompt, [
     { role: "assistant", content: "First answer" },
     { role: "assistant", content: "Second answer", __openclaw: { replyToId: "prompt" } },
   ]);
   expect(container.querySelectorAll(".chat-reply-attribution--reply")).toHaveLength(1);
-  expect(container.querySelector(".chat-sender-name")).toBeNull();
   expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
   expect(row.textContent).not.toContain("Original question");
   const target = row.querySelector<HTMLButtonElement>("button")!;
@@ -136,6 +135,42 @@ it("renders one recipient per group, suppresses duplicate name and navigates fro
   expect(target.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Alice");
   target.click();
   expect(onOpenReply).toHaveBeenCalledWith("prompt");
+});
+
+it.each([
+  {
+    recipient: "the same agent",
+    source: { role: "assistant", content: "Earlier answer", __openclaw: { id: "earlier" } },
+    senderLabel: null,
+  },
+  {
+    recipient: "a different participant with the same name",
+    source: {
+      role: "user",
+      content: "Earlier question",
+      __openclaw: {
+        id: "earlier",
+        senderId: "namesake",
+        senderName: "OpenClaw",
+        senderIdentity: { type: "profile", id: "namesake" },
+      },
+    },
+    senderLabel: "OpenClaw",
+  },
+])("keeps the sender label only when the strip names $recipient", ({ source, senderLabel }) => {
+  const { row } = draw(
+    prompt,
+    [{ role: "assistant", content: "Answer", __openclaw: { replyToId: "earlier" } }],
+    true,
+    "group",
+    {
+      replyShared: true,
+      senderLabel: "OpenClaw",
+      sources: { earlier: { message: source, senderLabel: "OpenClaw" } },
+    },
+  );
+  expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("OpenClaw");
+  expect(container.querySelector(".chat-sender-name")?.textContent ?? null).toBe(senderLabel);
 });
 
 it.each([

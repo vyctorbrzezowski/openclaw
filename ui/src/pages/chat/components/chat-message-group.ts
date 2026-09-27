@@ -22,6 +22,7 @@ import { extractToolCardsCached } from "../../../lib/chat/tool-cards.ts";
 import { fnv1aUtf16 } from "../../../lib/fnv1a.ts";
 import { gatewayClientKind } from "../../../lib/gateway-client-kind.ts";
 import { resolveIdentityHue } from "../../../lib/identity-avatar.ts";
+import { DEFAULT_AGENT_ID } from "../../../lib/sessions/session-key.ts";
 import { resolveAssistantReplyPhase } from "../chat-assistant-reply.ts";
 import { renderChatAvatar, renderForwardedAvatar } from "../chat-avatar.ts";
 import type { AssistantMessageExpansionState } from "../chat-message-recovery.ts";
@@ -433,8 +434,15 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     ? replyAttribution
     : undefined;
   const who = resolveMessageGroupSenderLabel(group, opts);
+  // Only a strip naming this same participant replaces the sender label; a
+  // shared display name does not. An assistant group is its agent's identity.
+  const ownIdentity = group.sender?.identity ?? {
+    type: "agent",
+    id: group.senderSession?.agentId ?? opts.agentId ?? DEFAULT_AGENT_ID,
+  };
+  const replyIdentity = visibleReplyAttribution?.sender.identity;
   const showSenderName =
-    who !== visibleReplyAttribution?.name &&
+    !(replyIdentity?.type === ownIdentity.type && replyIdentity.id === ownIdentity.id) &&
     !isForwarded &&
     !sourceOnly &&
     (normalizedRole !== "user" || isPeerGroup || opts.showOwnSenderName !== false);
