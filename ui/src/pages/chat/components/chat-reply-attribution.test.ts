@@ -326,27 +326,34 @@ it.each(["group", "frame"] as const)(
 );
 
 it.each([
-  { snapshot: { senderLabel: "Jordan", text: "" }, name: "Jordan" },
-  { snapshot: undefined, name: undefined },
-])("names an oversized original only from its snapshot ($name)", ({ snapshot, name }) => {
-  // An oversized original exists: never "unavailable", never a row reserved forever.
-  const { row } = draw(
-    prompt,
-    [
-      {
-        role: "assistant",
-        content: "Answer",
-        __openclaw: { replyToId: "large", ...(snapshot ? { replyToPreview: snapshot } : {}) },
-      },
-    ],
-    false,
-    "group",
-    { ...turnSource, oversized: ["large"] },
-  );
-  expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
-  expect(container.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
-  expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
-});
+  { snapshot: { senderLabel: "Jordan", text: "" }, name: "Jordan", unavailable: false },
+  { snapshot: undefined, name: undefined, unavailable: true },
+])(
+  "names an oversized original only from its snapshot ($name)",
+  ({ snapshot, name, unavailable }) => {
+    // A named snapshot keeps the full line; without one the reserved row is never
+    // left blank: it holds the anonymous unavailable placeholder.
+    const { row } = draw(
+      prompt,
+      [
+        {
+          role: "assistant",
+          content: "Answer",
+          __openclaw: { replyToId: "large", ...(snapshot ? { replyToPreview: snapshot } : {}) },
+        },
+      ],
+      false,
+      "group",
+      { ...turnSource, oversized: ["large"] },
+    );
+    expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+    expect(row?.querySelector(".chat-reply-attribution__unavailable")?.textContent).toBe(
+      unavailable ? "Original message unavailable" : undefined,
+    );
+    expect(Boolean(row?.querySelector(".chat-author-avatar, button, a"))).toBe(!unavailable);
+    expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+  },
+);
 
 it.each([
   { presentation: "group" as const, snapshotIndex: 1 },

@@ -118,7 +118,9 @@ function resolveTargetAttribution(
   // fetched original's run ownership can settle that, never a snapshot.
   const reservesRow = !group || Boolean(group.replyShared || group.replyTurnSource);
   const known = (reservesRow && snapshot?.senderLabel) || "";
-  if (resolved === null) {
+  // An oversized original exists but names no one; its reserved row is never
+  // left blank, so it takes the same placeholder as a missing one.
+  if (resolved === null || (reservesRow && !known && result && "oversized" in result)) {
     // Known snapshot facts only: no inferred avatar and nothing to navigate to.
     // A reserved row keeps its height as an anonymous placeholder.
     return reservesRow
