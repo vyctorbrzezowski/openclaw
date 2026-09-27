@@ -756,7 +756,7 @@ bytes, base deltas, and remaining headroom, with an early warning when the large
 CSS file has less than 1 KiB of headroom.
 
 JavaScript accounting separates ordinary chunks, deferred special-purpose
-chunks, startup assets, and the full bundle total. The 215 KiB ordinary-chunk
+chunks, startup assets, and the full bundle total. The 218 KiB ordinary-chunk
 ceiling excludes the isolated Mermaid renderer and configured locale catalogs.
 A locale catalog must match `assets/<locale>-<nonempty-suffix>.js`; each
 configured locale may produce one deferred chunk, with at most 20 locale chunks

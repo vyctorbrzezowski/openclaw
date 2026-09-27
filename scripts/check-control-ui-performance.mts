@@ -56,7 +56,9 @@ const controlUiPerformanceBudgets = {
   // Keep 45 KiB advisory: tiny integrated changes must not exhaust the budget.
   // The fixed 50 KiB ceiling bounds accumulation of small changes.
   startupCssGzipBytes: 50 * KIB,
-  largestJsGzipBytes: 215 * KIB,
+  // Main sat at 214.3 KiB (99.7%) when the reply attribution strip (PR #150549)
+  // added ~2.5 KB of necessary boot code; raised to 218 KiB with operator approval.
+  largestJsGzipBytes: 218 * KIB,
   // Composer multiline surface (stack #124301) legitimately grew boot CSS;
   // operator decision 2026-08-25 rejected boot splitting due to precedence risk.
   // 53.0 KiB was exhausted by organic growth (main sat at 99.94% by 2026-08-29);
