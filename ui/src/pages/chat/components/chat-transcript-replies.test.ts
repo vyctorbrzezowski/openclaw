@@ -496,10 +496,10 @@ describe("chat transcript replies", () => {
         rerender();
         transcript.hostConnected();
         await flushDeferredRowPrune();
-        expect(attribution().querySelector(".chat-reply-attribution__name")?.textContent).toBe(
-          "Old label",
-        );
-        expect(attribution().querySelector("button")).toBeNull();
+        // The snapshot names an original outside the loaded history; it still navigates.
+        expect(
+          attribution().querySelector("button .chat-reply-attribution__name")?.textContent,
+        ).toBe("Old label");
         const unrelatedKey = expectDefined(
           container
             .querySelector('[data-entry-id="unrelated-answer"]')

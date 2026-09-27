@@ -26,13 +26,22 @@ function draw(
   loaded = true,
   presentation: "group" | "frame" = "group",
   context: Partial<MessageGroup> & {
+    /** Originals a `chat.message.get` lookup returned outside the loaded history. */
+    fetched?: Record<string, unknown>;
     missing?: string[];
     oversized?: string[];
     pending?: string[];
     sources?: Record<string, { message: unknown; senderLabel: string }>;
   } = {},
 ) {
-  const { missing = [], oversized = [], pending = [], sources = {}, ...groupContext } = context;
+  const {
+    fetched = {},
+    missing = [],
+    oversized = [],
+    pending = [],
+    sources = {},
+    ...groupContext
+  } = context;
   container = document.body.appendChild(document.createElement("div"));
   const group: MessageGroup = {
     kind: "group",
@@ -65,7 +74,7 @@ function draw(
     {
       assistantName: "Assistant",
       replyMessageAccess: {
-        read: () => undefined,
+        read: (id) => fetched[id],
         missing: (id) => missing.includes(id),
         oversized: (id) => oversized.includes(id),
         pending: (id) => pending.includes(id),
@@ -259,7 +268,7 @@ it.each([
 ])(
   "keeps an available snapshot within a reply $presentation",
   ({ presentation, snapshotIndex }) => {
-    const { row, onResolveReply } = draw(
+    const { row, onOpenReply, onResolveReply } = draw(
       prompt,
       [0, 1].map((index) => ({
         role: "assistant",
@@ -275,10 +284,35 @@ it.each([
       presentation,
     );
     expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
-    expect(row.querySelector("button, a")).toBeNull();
     expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
     // A named snapshot with text resolves the reference before its source loads.
     expect(onResolveReply).not.toHaveBeenCalled();
+    // The original is known but outside the loaded history: the name still navigates.
+    row.querySelector<HTMLButtonElement>("button.chat-reply-attribution__target")!.click();
+    expect(onOpenReply).toHaveBeenCalledWith("deleted");
+  },
+);
+
+it.each(["group", "frame"] as const)(
+  "navigates from a %s strip whose original was found outside the loaded history",
+  (presentation) => {
+    const older = {
+      role: "user",
+      content: "Earlier question",
+      __openclaw: { id: "older", senderId: "jordan", senderName: "Jordan" },
+    };
+    const { row, onOpenReply } = draw(
+      prompt,
+      [{ role: "assistant", content: "Answer", __openclaw: { replyToId: "older" } }],
+      false,
+      presentation,
+      { replyShared: true, fetched: { older } },
+    );
+    const target = row.querySelector<HTMLButtonElement>("button.chat-reply-attribution__target")!;
+    expect(target.getAttribute("aria-label")).toBe("Replying to Jordan");
+    expect(target.querySelector(".chat-author-avatar")).not.toBeNull();
+    target.click();
+    expect(onOpenReply).toHaveBeenCalledWith("older");
   },
 );
 

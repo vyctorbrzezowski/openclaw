@@ -248,7 +248,8 @@ type ReplyAttributionActions = {
 
 /**
  * `inline` renders inside a message bubble; `peer` is the strip above a human
- * quote. Both navigate to originals outside the loaded history.
+ * quote. Every variant navigates to a known original, loaded or not; a
+ * confirmed-missing one stays plain text.
  */
 export function renderReplyAttribution(
   attribution: ReplyAttribution | undefined,
@@ -275,7 +276,7 @@ export function renderReplyAttribution(
   const { name, target } = attribution;
   const unavailable = attribution.presentation === "unavailable";
   const targetId = target?.kind === "id" ? target.id : undefined;
-  const sourceId = unavailable ? undefined : (variant && targetId) || attribution.loadedMessageId;
+  const sourceId = unavailable ? undefined : targetId || attribution.loadedMessageId;
   const loading = Boolean(targetId) && replyNavigationId === targetId;
   const person = html`
     ${unavailable ? nothing : renderChatAuthorAvatar(attribution.sender, undefined, attribution.agentAvatar)}
