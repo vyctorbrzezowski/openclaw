@@ -564,7 +564,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
 
   const hasReplyConnector = Boolean(visibleReplyAttribution && avatar !== nothing);
   // A pending lookup keeps the resolved strip's layout; its connector waits for the name.
-  const holdsReplyRow = Boolean(holdsReplyAttributionRow(replyAttribution) && avatar !== nothing);
+  const holdsReplyRow = holdsReplyAttributionRow(replyAttribution) && avatar !== nothing;
   return html`
     <div
       class="chat-group ${roleClass} chat-group--with-footer${

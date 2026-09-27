@@ -164,9 +164,7 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
     },
     opts.resolveReplyPreview,
   );
-  const hasReplyConnector = Boolean(
-    isReplyAttributionVisible(replyAttribution) && avatar !== nothing,
-  );
+  const hasReplyConnector = isReplyAttributionVisible(replyAttribution) && avatar !== nothing;
   const groupClass = `chat-group assistant${hasReplyConnector ? " chat-group--reply" : ""}${workingOnly ? " chat-group--working" : ""}${footerStartedAt !== null ? " chat-group--with-footer" : ""}`;
 
   return html`

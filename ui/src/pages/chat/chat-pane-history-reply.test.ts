@@ -125,7 +125,9 @@ describe("chat pane reply-source history navigation", () => {
     expect(pane.isReplyMessagePending("source-message")).toBe(true);
     pane.requestReplyMessage("source-message");
     await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     // A failed lookup confirms nothing and keeps the strip row reserved; the
     // same connection does not retry it.
     expect(pane.isReplyMessagePending("source-message")).toBe(true);

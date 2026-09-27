@@ -64,6 +64,40 @@ export async function readActionTapArea(control: Locator) {
   });
 }
 
+/** Samples a group's geometry for 12 frames after revealing its metadata. */
+export function sampleMetadataReveal(group: Locator, gesture: "touch" | "focus") {
+  return group.evaluate(async (element, interaction) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    element.classList.remove("chat-group--meta-revealed");
+    const thread = element.closest<HTMLElement>(".chat-thread")!;
+    const lastMessage = element.querySelectorAll<HTMLElement>(".chat-bubble");
+    const last = lastMessage[lastMessage.length - 1];
+    if (!last) {
+      throw new Error("Expected a message in the metadata disclosure fixture");
+    }
+    const sample = () => ({
+      top: last.getBoundingClientRect().top,
+      scrollTop: thread.scrollTop,
+      height: element.getBoundingClientRect().height,
+    });
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const samples = [sample()];
+    if (interaction === "touch") {
+      last.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "touch" }));
+    } else {
+      element.querySelector<HTMLButtonElement>(".chat-reply-btn")!.focus({ preventScroll: true });
+    }
+    for (let frame = 0; frame < 12; frame++) {
+      await new Promise(requestAnimationFrame);
+      samples.push(sample());
+    }
+    return samples;
+  }, gesture);
+}
+
 export function expectStableNamePosition(
   actual: { left: number; top: number },
   expected: { left: number; top: number },

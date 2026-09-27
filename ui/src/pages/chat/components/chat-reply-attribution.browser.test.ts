@@ -296,7 +296,7 @@ it.each([1440, 390])("fills a pending explicit reply strip in place at %d px", a
       },
     ],
   };
-  const draw = (preview: Parameters<typeof renderMessageGroup>[1]["resolveReplyPreview"]) => {
+  const drawGroup = (preview: Parameters<typeof renderMessageGroup>[1]["resolveReplyPreview"]) => {
     render(
       html`${renderMessageGroup(group, {
           showReasoning: false,
@@ -314,11 +314,11 @@ it.each([1440, 390])("fills a pending explicit reply strip in place at %d px", a
       after: host.querySelector(".after")!.getBoundingClientRect().top,
     };
   };
-  const pending = draw(() => ({ pending: true }));
+  const pending = drawGroup(() => ({ pending: true }));
   const row = host.querySelector<HTMLElement>(".chat-reply-attribution--reply")!;
   expect(getComputedStyle(row).visibility).toBe("hidden");
   expect(host.querySelector(".chat-reply-connector")).toBeNull();
-  const resolved = draw(() => ({
+  const resolved = drawGroup(() => ({
     messageId: "older",
     sourceMessageId: "older",
     senderLabel: "Mira",
@@ -376,7 +376,10 @@ it.each([1440, 390])(
     if (layoutShift) {
       observer.observe({ type: "layout-shift", buffered: true });
     }
-    const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    const frame = () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => resolve(null));
+      });
     try {
       for (const outcome of outcomes) {
         const group: MessageGroup = {
@@ -403,7 +406,7 @@ it.each([1440, 390])(
             },
           ],
         };
-        const draw = (lookup: Lookup) =>
+        const drawLookup = (lookup: Lookup) =>
           render(
             html`${renderMessageGroup(group, {
                 showReasoning: false,
@@ -426,7 +429,7 @@ it.each([1440, 390])(
           };
         };
         render(null, host);
-        draw(outcome.steps[0]);
+        drawLookup(outcome.steps[0]);
         await document.fonts.ready;
         await frame();
         await frame();
@@ -434,7 +437,7 @@ it.each([1440, 390])(
         expect(reserved.rowHeight).toBeGreaterThan(0);
         const since = performance.now();
         for (const step of outcome.steps.slice(1)) {
-          draw(step);
+          drawLookup(step);
           // Same geometry in the committing frame and the frames after it.
           expect(measure(), outcome.name).toEqual(reserved);
           await frame();
