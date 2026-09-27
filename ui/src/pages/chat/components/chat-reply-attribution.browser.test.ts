@@ -351,7 +351,7 @@ it.each([1440, 390])(
     const outcomes = [
       { name: "found with sender", snapshot: undefined, steps: [pending, found], text: "Mira" },
       {
-        name: "missing with name",
+        name: "sender-only snapshot, then missing",
         snapshot: { senderLabel: "Mira", text: "" },
         steps: [pending, missing],
         text: "MiraOriginal message unavailable",
@@ -435,6 +435,10 @@ it.each([1440, 390])(
         await frame();
         const reserved = measure();
         expect(reserved.rowHeight).toBeGreaterThan(0);
+        // A sender-only snapshot paints the name before the lookup answers.
+        expect(host.querySelector(".chat-reply-attribution__name")?.textContent, outcome.name).toBe(
+          outcome.snapshot?.senderLabel,
+        );
         const since = performance.now();
         for (const step of outcome.steps.slice(1)) {
           drawLookup(step);

@@ -140,7 +140,6 @@ it("renders one recipient per group, suppresses duplicate name and navigates fro
 
 it.each([
   { snapshot: undefined, missing: [] },
-  { snapshot: { senderLabel: "Jordan", text: "" }, missing: [] },
   { snapshot: { text: "Earlier question" }, missing: [] },
   { snapshot: undefined, missing: ["deleted"] },
   { snapshot: { senderLabel: "", text: "Earlier question" }, missing: ["deleted"] },
@@ -168,6 +167,12 @@ it.each([
 
 it.each([
   { lookup: "pending", snapshot: undefined, name: undefined, unavailable: undefined },
+  {
+    lookup: "pending",
+    snapshot: { senderLabel: "", text: "Earlier question" },
+    name: undefined,
+    unavailable: undefined,
+  },
   { lookup: "missing", snapshot: undefined, name: undefined, unavailable: true },
   {
     lookup: "missing",
@@ -208,6 +213,46 @@ it.each([
       unavailable ? "Original message unavailable" : undefined,
     );
     expect(row.querySelector(".chat-author-avatar, button, a")).toBeNull();
+  },
+);
+
+it.each([
+  { presentation: "group", shared: true },
+  { presentation: "group", shared: false },
+  { presentation: "frame", shared: false },
+] as const)(
+  "paints a sender-only snapshot on the first frame and settles it in place ($presentation, shared $shared)",
+  ({ presentation, shared }) => {
+    const replyShared = shared || undefined;
+    const replies = [
+      {
+        role: "assistant",
+        content: "Answer",
+        __openclaw: {
+          replyToId: "older",
+          replyToPreview: { senderLabel: "Jordan", text: "" },
+        },
+      },
+    ];
+    // The lookup has not answered yet: the name alone fills the strip.
+    const first = draw(prompt, replies, false, presentation, { replyShared, pending: ["older"] });
+    const firstContainer = container;
+    expect(first.row.classList.contains("chat-reply-attribution--pending")).toBe(false);
+    expect(first.row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
+    expect(first.row.querySelector(".chat-author-avatar")).not.toBeNull();
+    expect(first.row.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
+    // The lookup still runs so a missing original can be confirmed.
+    expect(first.onResolveReply).toHaveBeenCalledWith("older");
+    render(null, firstContainer);
+    firstContainer.remove();
+
+    // A lookup that confirms the original is gone keeps the name in the same row.
+    const settled = draw(prompt, replies, false, presentation, { replyShared, missing: ["older"] });
+    expect(settled.row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
+    expect(settled.row.querySelector(".chat-reply-attribution__unavailable")?.textContent).toBe(
+      "Original message unavailable",
+    );
+    expect(settled.row.querySelector(".chat-author-avatar, button, a")).toBeNull();
   },
 );
 

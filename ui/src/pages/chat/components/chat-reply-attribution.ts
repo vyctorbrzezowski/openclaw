@@ -23,7 +23,7 @@ export type ReplyAttribution = {
   agentAvatar?: ReplyPreview["agentAvatar"];
   target?: NormalizedMessage["replyTarget"];
   loadedMessageId?: string | null;
-  /** Hidden only: an unresolved id that still asks for its origin. */
+  /** An id that still asks for its origin: unresolved, or named only by a snapshot. */
   resolveMessageId?: string;
   /** Hidden only: the lookup is in flight, so the strip row stays reserved. */
   pending?: boolean;
@@ -124,13 +124,13 @@ function resolveTargetAttribution(
       ? { presentation: "unavailable", sender: known ? { name: known } : {}, name: known, target }
       : hiddenAttribution(target);
   }
-  // Snapshot text alone names no author; only its sender label or the source does.
-  // An oversized original exists, so a name-only snapshot still names it.
-  const exists = Boolean(snapshot?.text || (result && "oversized" in result));
+  // Snapshot text alone names no author; its sender label or the source does.
+  // A sender label paints the strip on the first frame; a later lookup still
+  // settles it (a confirmed-missing original turns it unavailable in place).
   const name =
     (resolved
       ? resolved.senderLabel || formatSenderLabel(resolved.sender)
-      : exists && snapshot?.senderLabel) || "";
+      : snapshot?.senderLabel) || "";
   // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
   // loaded history is still this turn's by run ownership.
   const turnSource =
@@ -140,7 +140,12 @@ function resolveTargetAttribution(
       persistedMessageEntryId(group.replyTurnSource.message) === target.id) ||
       (group.runId && resolved?.turnRunId === group.runId));
   if (name && !turnSource) {
-    return fullAttribution(name, resolved?.sender, resolved, target, target.id);
+    const attribution = fullAttribution(name, resolved?.sender, resolved, target, target.id);
+    // A sender-only snapshot paints now; its lookup can still confirm a missing original.
+    if (!resolved && !snapshot?.text && !(result && "oversized" in result)) {
+      attribution.resolveMessageId = target.id;
+    }
+    return attribution;
   }
   if (resolved || name) {
     return hiddenAttribution(target);
@@ -210,9 +215,12 @@ export function resolveReplyAttribution(
     const matching = snapshots.filter(
       (message) => message.replyTarget?.kind === "id" && message.replyTarget.id === target.id,
     );
+    const previews = matching.map((message) => message.replyPreview);
+    // Prefer a snapshot that names its sender: the name alone paints the strip.
     const snapshot =
-      matching.find((message) => message.replyPreview?.text)?.replyPreview ??
-      matching.find((message) => message.replyPreview)?.replyPreview;
+      previews.find((preview) => preview?.text && preview.senderLabel) ??
+      previews.find((preview) => preview?.senderLabel) ??
+      previews.find(Boolean);
     return resolveTargetAttribution(target, snapshot, resolveReplyPreview, group);
   }
   const current = ownCurrent ?? find(snapshots, "current");
@@ -261,11 +269,11 @@ export function renderReplyAttribution(
   const label = () => html`<span class="chat-reply-attribution__label"
     >${inline ? nothing : html`<span class="chat-reply-attribution__mobile-icon" aria-hidden="true">${icons.cornerUpLeft}</span>`}${t("chat.messages.replyingToLabel")}</span
   >`;
+  // An unresolved or snapshot-only id still asks for its origin.
+  if (attribution?.resolveMessageId) {
+    onResolveReply?.(attribution.resolveMessageId);
+  }
   if (!attribution || attribution.presentation === "hidden") {
-    // Nothing to show yet, but an unresolved id still asks for its origin.
-    if (attribution?.resolveMessageId) {
-      onResolveReply?.(attribution.resolveMessageId);
-    }
     // An in-flight lookup keeps the row so the answer fills it in place.
     return attribution?.pending
       ? html`<div class="${rowClass} chat-reply-attribution--pending" aria-hidden="true">
