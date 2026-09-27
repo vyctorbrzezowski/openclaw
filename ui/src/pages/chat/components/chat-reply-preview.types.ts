@@ -23,6 +23,9 @@ export type MissingReplyPreview = { missing: true };
 /** The lookup has not answered yet. */
 export type PendingReplyPreview = { pending: true };
 
+/** The original exists but is too large to return; only a snapshot can name it. */
+export type OversizedReplyPreview = { oversized: true };
+
 export type ReplyPreviewLookup = (
   replyToId: string,
-) => ReplyPreview | MissingReplyPreview | PendingReplyPreview | undefined;
+) => ReplyPreview | MissingReplyPreview | PendingReplyPreview | OversizedReplyPreview | undefined;

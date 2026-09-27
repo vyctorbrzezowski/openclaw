@@ -102,6 +102,18 @@ describe("chat pane reply-source history navigation", () => {
     expect(pane.isReplyMessagePending("source-message")).toBe(true);
   });
 
+  it("keeps an oversized reply source as existing rather than missing", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: false, unavailableReason: "oversized" });
+    const client = { request } as unknown as GatewayBrowserClient;
+    const { pane } = createTestChatPane({ client, sessions: {} as SessionCapability });
+
+    pane.requestReplyMessage("source-message");
+
+    await vi.waitFor(() => expect(pane.isReplyMessageOversized("source-message")).toBe(true));
+    expect(pane.isReplyMessageMissing("source-message")).toBe(false);
+    expect(pane.isReplyMessagePending("source-message")).toBe(false);
+  });
+
   it("confirms a missing reply source only from a Gateway answer", async () => {
     const request = vi
       .fn()

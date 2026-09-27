@@ -17,7 +17,14 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected replyMessageRevision = 0;
   private readonly replyMessages = new Map<
     string,
-    { client: object; generation: number; message?: unknown; missing?: true; failed?: true }
+    {
+      client: object;
+      generation: number;
+      message?: unknown;
+      missing?: true;
+      oversized?: true;
+      failed?: true;
+    }
   >();
 
   protected abstract loadOlderMessages(): Promise<boolean>;
@@ -39,6 +46,10 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected readonly isReplyMessageMissing = (messageId: string): boolean =>
     this.currentReplyMessage(messageId)?.missing === true;
 
+  /** The original exists but is too large to return. */
+  protected readonly isReplyMessageOversized = (messageId: string): boolean =>
+    this.currentReplyMessage(messageId)?.oversized === true;
+
   /**
    * Not answered on the current connection yet. Unknown counts as pending from the
    * first paint, including a warm boot rendered before the Gateway connects.
@@ -49,7 +60,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       return false;
     }
     const cached = this.currentReplyMessage(messageId);
-    return !cached || !(cached.message || cached.missing || cached.failed);
+    return !cached || !(cached.message || cached.missing || cached.oversized || cached.failed);
   };
 
   protected readonly requestReplyMessage = (messageId: string): void => {
@@ -97,8 +108,9 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
     if (!this.isConnectionScopeCurrent(scope) || this.replyMessages.get(cacheKey) !== attempt) {
       return;
     }
-    // A Gateway answer without a message confirms the original is inaccessible.
-    // A transport failure stays unconfirmed; retaining it stops render retry loops.
+    // A Gateway answer without a message confirms the original is inaccessible,
+    // except an oversized one, which exists. A transport failure stays
+    // unconfirmed; retaining it stops render retry loops.
     // A new logical connection owns a fresh attempt, even with the same client.
     this.replyMessages.set(
       cacheKey,
@@ -106,7 +118,9 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
         ? { ...attempt, failed: true }
         : result.ok && result.message
           ? { ...attempt, message: result.message }
-          : { ...attempt, missing: true },
+          : result.unavailableReason === "oversized"
+            ? { ...attempt, oversized: true }
+            : { ...attempt, missing: true },
     );
     this.replyMessageRevision += 1;
     if (areUiSessionKeysEquivalent(scope.state.sessionKey, sessionKey)) {
@@ -141,6 +155,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       navigationId: this.currentReplyNavigationId(sessionKey),
       read: this.readReplyMessage,
       missing: this.isReplyMessageMissing,
+      oversized: this.isReplyMessageOversized,
       pending: this.isReplyMessagePending,
       request: this.requestReplyMessage,
       open: this.openReplyMessage,

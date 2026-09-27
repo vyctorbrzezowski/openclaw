@@ -97,7 +97,10 @@ const fullAttribution = (
 
 function lookupReply(resolveReplyPreview: ReplyPreviewLookup | undefined, id: string) {
   const result = resolveReplyPreview?.(id);
-  return result && "missing" in result ? null : result && "pending" in result ? undefined : result;
+  if (!result || "pending" in result || "oversized" in result) {
+    return undefined;
+  }
+  return "missing" in result ? null : result;
 }
 
 /** A `null` lookup confirmed the origin is inaccessible. */
@@ -107,6 +110,7 @@ function resolveTargetAttribution(
   resolveReplyPreview: ReplyPreviewLookup | undefined,
   group?: ReplyGroup,
 ): ReplyAttribution {
+  const result = resolveReplyPreview?.(target.id);
   const resolved = lookupReply(resolveReplyPreview, target.id);
   if (resolved === null) {
     // Known snapshot facts only: no inferred avatar and nothing to navigate to.
@@ -116,10 +120,12 @@ function resolveTargetAttribution(
       : hiddenAttribution(target);
   }
   // Snapshot text alone names no author; only its sender label or the source does.
+  // An oversized original exists, so a name-only snapshot still names it.
+  const exists = Boolean(snapshot?.text || (result && "oversized" in result));
   const name =
     (resolved
       ? resolved.senderLabel || formatSenderLabel(resolved.sender)
-      : snapshot?.text && snapshot.senderLabel) || "";
+      : exists && snapshot?.senderLabel) || "";
   // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
   // loaded history is still this turn's by run ownership.
   const turnSource =
@@ -136,7 +142,6 @@ function resolveTargetAttribution(
   }
   // Reserve the row only when the answer can fill it: a 1:1 turn whose prompt
   // is not loaded may be answering that prompt, which stays hidden.
-  const result = resolveReplyPreview?.(target.id);
   const pending =
     Boolean(result && "pending" in result) &&
     (!group || Boolean(group.replyShared || group.replyTurnSource));

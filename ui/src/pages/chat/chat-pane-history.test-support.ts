@@ -53,6 +53,7 @@ export type TestChatPane = HTMLElement & {
   readReplyMessage: (messageId: string) => unknown;
   isReplyMessageMissing: (messageId: string) => boolean;
   isReplyMessagePending: (messageId: string) => boolean;
+  isReplyMessageOversized: (messageId: string) => boolean;
   openReplyMessage: (messageId: string) => void;
   currentReplyNavigationId: (sessionKey: string) => string | null;
   hasOlderMessages: () => boolean;

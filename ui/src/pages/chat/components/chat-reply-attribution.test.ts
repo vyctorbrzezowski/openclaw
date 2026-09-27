@@ -27,10 +27,11 @@ function draw(
   presentation: "group" | "frame" = "group",
   context: Partial<MessageGroup> & {
     missing?: string[];
+    oversized?: string[];
     sources?: Record<string, { message: unknown; senderLabel: string }>;
   } = {},
 ) {
-  const { missing = [], sources = {}, ...groupContext } = context;
+  const { missing = [], oversized = [], sources = {}, ...groupContext } = context;
   container = document.body.appendChild(document.createElement("div"));
   const group: MessageGroup = {
     kind: "group",
@@ -62,7 +63,11 @@ function draw(
     ),
     {
       assistantName: "Assistant",
-      replyMessageAccess: { read: () => undefined, missing: (id) => missing.includes(id) },
+      replyMessageAccess: {
+        read: () => undefined,
+        missing: (id) => missing.includes(id),
+        oversized: (id) => oversized.includes(id),
+      },
     },
   );
   const options = {
@@ -177,6 +182,29 @@ it.each(["group", "frame"] as const)(
     expect(row.querySelector(".chat-author-avatar, button, a")).toBeNull();
   },
 );
+
+it.each([
+  { snapshot: { senderLabel: "Jordan", text: "" }, name: "Jordan" },
+  { snapshot: undefined, name: undefined },
+])("names an oversized original only from its snapshot ($name)", ({ snapshot, name }) => {
+  // An oversized original exists: never "unavailable", never a row reserved forever.
+  const { row } = draw(
+    prompt,
+    [
+      {
+        role: "assistant",
+        content: "Answer",
+        __openclaw: { replyToId: "large", ...(snapshot ? { replyToPreview: snapshot } : {}) },
+      },
+    ],
+    false,
+    "group",
+    { oversized: ["large"] },
+  );
+  expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+  expect(container.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
+  expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+});
 
 it.each([
   { presentation: "group" as const, snapshotIndex: 1 },
