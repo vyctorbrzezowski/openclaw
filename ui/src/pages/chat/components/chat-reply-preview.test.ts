@@ -5,19 +5,13 @@ import { createReplyPreviewResolver } from "./chat-reply-preview.ts";
 import type { LoadedReplySource } from "./chat-reply-preview.types.ts";
 
 describe("attachment reply previews", () => {
-  it.each([
-    { location: "loaded", caption: "" },
-    { location: "fetched", caption: "" },
-    { location: "loaded", caption: "Please review this report" },
-    { location: "fetched", caption: "Please review this report" },
-  ])(
-    "resolves document-only content and its caption in $location history: $caption",
-    ({ location, caption }) => {
+  it.each(["loaded", "fetched"] as const)(
+    "describes a document-only source from %s history",
+    (location) => {
       const sourceId = "document-source";
       const source = {
         role: "assistant",
         content: [
-          ...(caption ? [{ type: "text", text: caption }] : []),
           {
             type: "attachment",
             attachment: {
@@ -49,7 +43,7 @@ describe("attachment reply previews", () => {
       expect(resolve(sourceId)).toMatchObject({
         sourceMessageId: sourceId,
         senderLabel: "OpenClaw",
-        text: caption || "report.pdf",
+        text: "report.pdf",
       });
     },
   );

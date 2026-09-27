@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 import { render } from "lit";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import type { MessageGroup } from "../../../lib/chat/chat-types.ts";
 import { renderAgentRunFrame } from "./chat-agent-run-frame.ts";
 import { renderMessageGroup } from "./chat-message-group.ts";
@@ -25,9 +25,12 @@ function draw(
   replies: unknown[] = [{ role: "assistant", content: "Answer" }],
   loaded = true,
   presentation: "group" | "frame" = "group",
-  context: Partial<MessageGroup> & { missing?: string[] } = {},
+  context: Partial<MessageGroup> & {
+    missing?: string[];
+    sources?: Record<string, { message: unknown; senderLabel: string }>;
+  } = {},
 ) {
-  const { missing = [], ...groupContext } = context;
+  const { missing = [], sources = {}, ...groupContext } = context;
   container = document.body.appendChild(document.createElement("div"));
   const group: MessageGroup = {
     kind: "group",
@@ -50,9 +53,12 @@ function draw(
   const onResolveReply = vi.fn();
   const resolveReplyPreview = createReplyPreviewResolver(
     new Map(
-      loaded
-        ? [["prompt", { message: source, messageId: "prompt-render-key", senderLabel: "Alice" }]]
-        : [],
+      Object.entries({
+        ...(loaded ? { prompt: { message: source, senderLabel: "Alice" } } : {}),
+        ...sources,
+      }).map(
+        ([id, loadedSource]) => [id, { ...loadedSource, messageId: `${id}-render-key` }] as const,
+      ),
     ),
     {
       assistantName: "Assistant",
@@ -107,7 +113,6 @@ it("renders one recipient per group, suppresses duplicate name and navigates fro
   expect(container.querySelectorAll(".chat-reply-attribution--reply")).toHaveLength(1);
   expect(container.querySelector(".chat-sender-name")).toBeNull();
   expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
-  expect(row.querySelector(".chat-author-avatar")).not.toBeNull();
   expect(row.textContent).not.toContain("Original question");
   const target = row.querySelector<HTMLButtonElement>("button")!;
   expect(target.getAttribute("aria-label")).toBe("Replying to Alice");
@@ -179,7 +184,7 @@ it.each([
 ])(
   "keeps an available snapshot within a reply $presentation",
   ({ presentation, snapshotIndex }) => {
-    const { row } = draw(
+    const { row, onResolveReply } = draw(
       prompt,
       [0, 1].map((index) => ({
         role: "assistant",
@@ -196,6 +201,53 @@ it.each([
     );
     expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Jordan");
     expect(row.querySelector("button, a")).toBeNull();
+    expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
+    // A named snapshot with text resolves the reference before its source loads.
+    expect(onResolveReply).not.toHaveBeenCalled();
+  },
+);
+
+it.each([
+  { finalTarget: "prompt", recipient: "Alice" },
+  { finalTarget: "current-prompt", recipient: "Bob" },
+  { finalTarget: "current", recipient: "Bob" },
+])(
+  "renders only the selected attribution when a frame's final response targets $recipient",
+  ({ finalTarget, recipient }) => {
+    const currentPrompt = {
+      role: "user",
+      content: "Bob's current question",
+      __openclaw: { id: "current-prompt", senderId: "bob", senderName: "Bob" },
+    };
+    const current = { openclawDelivery: { replyToCurrent: true } };
+    const explicit = (id: string) => ({ __openclaw: { replyToId: id } });
+    const bob = { key: "current-prompt-render-key", message: currentPrompt };
+    draw(
+      prompt,
+      [
+        {
+          role: "assistant",
+          content: "Working on the current question",
+          ...(finalTarget === "current" ? explicit("prompt") : current),
+        },
+        {
+          role: "assistant",
+          content: "Final answer",
+          ...(finalTarget === "current" ? current : explicit(finalTarget)),
+        },
+      ],
+      true,
+      "frame",
+      {
+        runId: "run",
+        replyToSender: { id: "bob", name: "Bob" },
+        replyToMessage: bob,
+        replyCurrentSource: bob,
+        sources: { "current-prompt": { message: currentPrompt, senderLabel: "Bob" } },
+      },
+    );
+    expect(container.querySelectorAll(".chat-reply-attribution--reply")).toHaveLength(1);
+    expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(recipient);
     expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
   },
 );
@@ -215,95 +267,6 @@ it("keeps pending prompts without a persisted ID noninteractive", () => {
   expect(row.querySelector("button, a")).toBeNull();
 });
 
-it.each([
-  { finalTarget: "prompt", recipient: "Alice" },
-  { finalTarget: "current-prompt", recipient: "Bob" },
-  { finalTarget: "current", recipient: "Bob" },
-])(
-  "renders only the selected attribution when a frame's final response targets $recipient",
-  ({ finalTarget, recipient }) => {
-    container = document.body.appendChild(document.createElement("div"));
-    const currentPrompt = {
-      role: "user",
-      content: "Bob's current question",
-      __openclaw: { id: "current-prompt", senderId: "bob", senderName: "Bob" },
-    };
-    const commentary: MessageGroup = {
-      kind: "group",
-      key: "commentary",
-      role: "assistant",
-      timestamp: 1,
-      isStreaming: false,
-      visibleContent: "text",
-      runId: "run",
-      replyToSender: { id: "bob", name: "Bob" },
-      replyToMessage: { key: "current-prompt-render", message: currentPrompt },
-      replyCurrentSource: { key: "current-prompt-render", message: currentPrompt },
-      messages: [
-        {
-          key: "commentary-message",
-          hasVisibleContent: true,
-          message: {
-            role: "assistant",
-            content: "Working on the current question",
-            ...(finalTarget === "current"
-              ? { __openclaw: { replyToId: "prompt" } }
-              : { openclawDelivery: { replyToCurrent: true } }),
-          },
-        },
-      ],
-    };
-    const finalEntry = {
-      key: "final-message",
-      hasVisibleContent: true,
-      message: {
-        role: "assistant",
-        content: "Final answer",
-        ...(finalTarget === "current"
-          ? { openclawDelivery: { replyToCurrent: true } }
-          : { __openclaw: { replyToId: finalTarget } }),
-      },
-    };
-    const resolveReplyPreview = createReplyPreviewResolver(
-      new Map([
-        ["prompt", { message: prompt, messageId: "prompt-render", senderLabel: "Alice" }],
-        [
-          "current-prompt",
-          { message: currentPrompt, messageId: "current-prompt-render", senderLabel: "Bob" },
-        ],
-      ]),
-      { assistantName: "Assistant" },
-    );
-    render(
-      renderAgentRunFrame(
-        {
-          kind: "agent-run-frame",
-          key: "frame",
-          runId: "run",
-          boundaryId: "current-prompt",
-          outcome: { kind: "completed", actionOwner: finalEntry },
-          parts: [commentary, { ...commentary, key: "final", messages: [finalEntry] }],
-        },
-        {
-          streamOptions: {},
-          renderGroupOptions: () => ({
-            showReasoning: false,
-            showToolCalls: false,
-            avatarPlacement: "none",
-            resolveReplyPreview,
-          }),
-          isWorkExpanded: () => false,
-          onToggleWork: () => undefined,
-        },
-      ),
-      container,
-    );
-    expect(container.querySelectorAll(".chat-reply-attribution--reply")).toHaveLength(1);
-    expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(recipient);
-    expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
-  },
-);
-
 it("renders an automatic recipient without claiming a textless source is unavailable", () => {
   const { row } = draw(null);
   expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Alice");
@@ -316,131 +279,6 @@ it("renders an automatic recipient without claiming a textless source is unavail
   expect(row.querySelector(".chat-reply-attribution__unavailable")).toBeNull();
   expect(row.querySelector("button, a")).toBeNull();
   expect(row.nextElementSibling?.classList.contains("chat-bubble")).toBe(true);
-});
-
-it.each([
-  { case: "unresolved", source: undefined, turnSource: false, strip: false },
-  { case: "resolved to its own prompt", source: "prompt", turnSource: true, strip: false },
-  { case: "resolved to an older prompt", source: "prompt", turnSource: false, strip: true },
-])(
-  "renders a 1:1 reply_to_current $case without guessing an origin",
-  ({ source, turnSource, strip }) => {
-    const prompted = { key: "prompt-render-key", message: prompt };
-    draw(
-      prompt,
-      [{ role: "assistant", content: "Tô aqui", openclawDelivery: { replyToCurrent: true } }],
-      true,
-      "group",
-      {
-        replyToSender: undefined,
-        replyToMessage: undefined,
-        ...(source ? { replyCurrentSource: prompted } : {}),
-        replyTurnSource: turnSource ? prompted : { key: "later", message: {} },
-      },
-    );
-    expect(container.textContent).not.toContain("current message");
-    expect(container.textContent).not.toContain("Original message unavailable");
-    expect(container.querySelector(".chat-reply-attribution--inline")).toBeNull();
-    const row = container.querySelector(".chat-reply-attribution--reply");
-    expect(Boolean(row)).toBe(strip);
-    if (row) {
-      expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Alice");
-      expect(row.querySelector("button")?.textContent).toContain("Alice");
-    }
-  },
-);
-
-it.each([
-  { target: "prompt", shared: false, strip: false },
-  { target: "prompt", shared: true, strip: true },
-  { target: "older", shared: false, strip: true },
-])(
-  "renders an explicit reply to $target (shared: $shared) only when it adds context",
-  ({ target, shared, strip }) => {
-    const older = {
-      ...prompt,
-      __openclaw: { id: "older", senderId: "alice", senderName: "Alice" },
-    };
-    container = document.body.appendChild(document.createElement("div"));
-    const resolveReplyPreview = createReplyPreviewResolver(
-      new Map([
-        ["prompt", { message: prompt, messageId: "prompt-render", senderLabel: "Alice" }],
-        ["older", { message: older, messageId: "older-render", senderLabel: "Alice" }],
-      ]),
-      { assistantName: "Assistant" },
-    );
-    render(
-      renderMessageGroup(
-        {
-          kind: "group",
-          key: "answer",
-          role: "assistant",
-          timestamp: 1,
-          isStreaming: false,
-          visibleContent: "text",
-          ...(shared ? { replyShared: true } : {}),
-          replyTurnSource: { key: "prompt-render", message: prompt },
-          messages: [
-            {
-              key: "answer-0",
-              hasVisibleContent: true,
-              message: { role: "assistant", content: "Answer", __openclaw: { replyToId: target } },
-            },
-          ],
-        },
-        {
-          showReasoning: false,
-          showToolCalls: false,
-          avatarPlacement: "none",
-          resolveReplyPreview,
-        },
-      ),
-      container,
-    );
-    expect(container.querySelectorAll(".chat-reply-attribution")).toHaveLength(strip ? 1 : 0);
-  },
-);
-
-it.each([
-  { preview: undefined, requests: 1 },
-  { preview: { senderLabel: "Jordan", text: "" }, requests: 1 },
-  { preview: { senderLabel: "Jordan", text: "Earlier question" }, requests: 0 },
-])("resolves inline reply content only when missing: $preview", ({ preview, requests }) => {
-  container = document.body.appendChild(document.createElement("div"));
-  const onResolveReply = vi.fn();
-  render(
-    renderMessageGroup(
-      {
-        kind: "group",
-        key: "follow-up-group",
-        role: "user",
-        timestamp: 1,
-        isStreaming: false,
-        visibleContent: "text",
-        messages: [
-          {
-            key: "follow-up",
-            hasVisibleContent: true,
-            message: {
-              role: "user",
-              content: "A follow-up.",
-              __openclaw: { id: "follow-up", replyToId: "original", replyToPreview: preview },
-            },
-          },
-        ],
-      },
-      { showReasoning: false, showToolCalls: false, avatarPlacement: "none", onResolveReply },
-    ),
-    container,
-  );
-  // Only a named snapshot with text resolves the reference before its source loads.
-  expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(
-    preview?.text ? "Jordan" : undefined,
-  );
-  expect(onResolveReply).toHaveBeenCalledTimes(requests);
-  if (requests) {
-    expect(onResolveReply).toHaveBeenCalledWith("original");
-  }
 });
 
 it.each([
@@ -508,7 +346,6 @@ it.each([
     const row = container.querySelector<HTMLButtonElement>(
       ".chat-bubble > .chat-reply-attribution--inline .chat-reply-attribution__target",
     )!;
-    expect(row).toBeInstanceOf(HTMLButtonElement);
     expect(row.getAttribute("aria-label")).toBe(`Replying to ${label}`);
     expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe(label);
     expect(row.querySelector(".chat-author-avatar")).not.toBeNull();

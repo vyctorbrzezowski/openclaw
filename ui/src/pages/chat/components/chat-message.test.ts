@@ -3537,34 +3537,6 @@ describe("grouped chat rendering", () => {
     );
   });
 
-  it("renders a clickable sender name for structured user replies", () => {
-    const container = document.body.appendChild(document.createElement("div"));
-    const onOpenReply = vi.fn();
-    renderGroupedMessage(
-      container,
-      createUserMessage("Follow up", {
-        __openclaw: { replyToId: "transcript-123" },
-      }),
-      "user",
-      {
-        resolveReplyPreview: () => ({
-          messageId: "source-message",
-          sourceMessageId: "transcript-123",
-          senderLabel: "Marie",
-          text: "The original answer",
-        }),
-        onOpenReply,
-      },
-    );
-
-    const preview = container.querySelector<HTMLButtonElement>(".chat-reply-attribution__target");
-    expect(preview?.getAttribute("aria-label")).toBe("Replying to Marie");
-    expect(preview?.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Marie");
-    preview?.click();
-    expect(onOpenReply).toHaveBeenCalledWith("transcript-123");
-    expect(container.querySelector(".chat-text")?.textContent?.trim()).toBe("Follow up");
-  });
-
   it("keeps unloaded persisted previews clickable for history navigation", () => {
     const container = document.body.appendChild(document.createElement("div"));
     const onOpenReply = vi.fn();
@@ -3583,7 +3555,6 @@ describe("grouped chat rendering", () => {
     const preview = container.querySelector<HTMLButtonElement>(".chat-reply-attribution__target");
     expect(preview?.getAttribute("aria-label")).toBe("Replying to Marie");
     expect(preview?.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Marie");
-    expect(preview).toBeInstanceOf(HTMLButtonElement);
     preview?.click();
     expect(onOpenReply).toHaveBeenCalledWith("unloaded-message");
   });

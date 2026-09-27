@@ -251,9 +251,12 @@ describe("chat transcript replies", () => {
     transcript.hostUpdated();
     await flushDeferredRowPrune();
     transcript.hostDisconnected();
-    return [...container.querySelectorAll(".chat-reply-attribution--reply")].map((strip) =>
+    const strips = [...container.querySelectorAll(".chat-reply-attribution--reply")].map((strip) =>
       strip.querySelector(".chat-reply-attribution__name")?.textContent?.trim(),
     );
+    // No reply cue renders beyond the named strips.
+    expect(container.textContent?.split("Replying to").length).toBe(strips.length + 1);
+    return strips;
   }
 
   it.each([
@@ -283,8 +286,12 @@ describe("chat transcript replies", () => {
       strips: [],
     },
     {
+      // An explicit reply to its own prompt stays visible once the thread is shared.
       case: "the session has a participant outside the loaded page",
-      messages: [turn("p1", "user", "Deploy?", alice), turn("a2", "assistant", "Deploying")],
+      messages: [
+        turn("p1", "user", "Deploy?", alice),
+        turn("a2", "assistant", "Deploying", { replyToId: "p1" }),
+      ],
       session: {
         owner: {
           actor: { type: "human", id: "alice", identity: { type: "profile", id: "alice" } },
@@ -335,6 +342,8 @@ describe("chat transcript replies", () => {
 
   it.each([
     { linkage: "the prompt that owns its run", strips: ["Alice"] },
+    { linkage: "its own prompt in a 1:1 thread", latest: null, strips: [] },
+    { linkage: "an older prompt in a 1:1 thread", latest: alice, strips: ["Alice"] },
     { linkage: "a legacy reply without a run", replyRun: null, strips: [] },
     { linkage: "a prompt without a run key", promptRun: null, strips: [] },
     { linkage: "another run's prompt", promptRun: "run-b", strips: [] },
@@ -345,8 +354,8 @@ describe("chat transcript replies", () => {
       strips: [],
     },
   ])(
-    "attributes a shared reply_to_current only through $linkage",
-    async ({ promptRun = "run-a", replyRun = "run-a", duplicate, reply, strips }) => {
+    "attributes reply_to_current only through $linkage",
+    async ({ promptRun = "run-a", replyRun = "run-a", latest = bob, duplicate, reply, strips }) => {
       const props = threadProps("pane-reply-current", "agent:main:main", [
         ...(duplicate
           ? [turn("p1", "user", "Earlier", { ...alice, idempotencyKey: "run-a:user" })]
@@ -356,7 +365,7 @@ describe("chat transcript replies", () => {
           ...(promptRun ? { idempotencyKey: `${promptRun}:user` } : {}),
         }),
         // The latest prompt never stands in for an unresolved origin.
-        turn("p3", "user", "Unrelated", bob),
+        ...(latest ? [turn("p3", "user", "Unrelated", latest)] : []),
         {
           ...turn("a4", "assistant", "Tô aqui", reply ?? (replyRun ? { runId: replyRun } : {})),
           openclawDelivery: { replyToCurrent: true },
