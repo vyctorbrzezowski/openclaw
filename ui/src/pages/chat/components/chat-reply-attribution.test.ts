@@ -433,6 +433,61 @@ it.each(["loaded", "fetched"] as const)(
 );
 
 it.each([
+  { shared: false, location: "fetched", snapshot: undefined, name: "You" },
+  { shared: true, location: "fetched", snapshot: undefined, name: undefined },
+  { shared: true, location: "loaded", snapshot: undefined, name: undefined },
+  {
+    shared: true,
+    location: "fetched",
+    snapshot: { senderLabel: "Jordan", text: "" },
+    name: "Jordan",
+  },
+] as const)(
+  "names a $location original without sender provenance only when it cannot be a guess (shared $shared)",
+  ({ shared, location, snapshot, name }) => {
+    const unattributed = { role: "user", content: "Earlier question", __openclaw: { id: "older" } };
+    const { row } = draw(
+      prompt,
+      [
+        {
+          role: "assistant",
+          content: "Answer",
+          __openclaw: { replyToId: "older", ...(snapshot ? { replyToPreview: snapshot } : {}) },
+        },
+      ],
+      true,
+      "group",
+      {
+        replyShared: shared || undefined,
+        replyTurnSource: { key: "prompt-render-key", message: prompt },
+        ...(location === "loaded"
+          ? { sources: { older: { message: unattributed, senderLabel: "You" } } }
+          : { fetched: { older: unattributed } }),
+      },
+    );
+    // A 1:1 thread has one human, so "You" is not a guess; a shared thread never falls back to it.
+    expect(row?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+    expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+  },
+);
+
+it("does not resolve a shared reply_to_current to a prompt without sender provenance", () => {
+  const unattributed = { role: "user", content: "Question", __openclaw: { id: "current" } };
+  draw(
+    prompt,
+    [{ role: "assistant", content: "Answer", openclawDelivery: { replyToCurrent: true } }],
+    true,
+    "group",
+    {
+      replyShared: true,
+      replyCurrentSource: { key: "current-render-key", message: unattributed },
+      sources: { current: { message: unattributed, senderLabel: "You" } },
+    },
+  );
+  expect(container.querySelector(".chat-reply-attribution")).toBeNull();
+});
+
+it.each([
   { finalTarget: "prompt", recipient: "Alice" },
   { finalTarget: "current-prompt", recipient: "Bob" },
   { finalTarget: "current", recipient: "Bob" },

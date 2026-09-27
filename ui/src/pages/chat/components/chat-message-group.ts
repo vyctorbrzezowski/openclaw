@@ -627,6 +627,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                       prepared.source.normalizedMessage,
                       opts.resolveReplyPreview,
                       opts.userId,
+                      true,
                     )
                   : undefined;
                 const peerVisible = isReplyAttributionVisible(peerAttribution);

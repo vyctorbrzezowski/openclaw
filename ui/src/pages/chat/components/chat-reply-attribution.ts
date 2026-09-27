@@ -109,7 +109,7 @@ function resolveTargetAttribution(
   target: Extract<NonNullable<ReplyTarget>, { kind: "id" }>,
   snapshot: NormalizedMessage["replyPreview"],
   resolveReplyPreview: ReplyPreviewLookup | undefined,
-  group?: ReplyGroup,
+  group?: Pick<ReplyGroup, "replyShared" | "replyTurnSource" | "runId">,
 ): ReplyAttribution {
   const result = resolveReplyPreview?.(target.id);
   const resolved = lookupReply(resolveReplyPreview, target.id);
@@ -127,8 +127,10 @@ function resolveTargetAttribution(
   // Snapshot text alone names no author; its sender label or the source does.
   // A sender label paints the strip on the first frame; a later lookup still
   // settles it (a confirmed-missing original turns it unavailable in place).
+  // A source without sender provenance is the local user only in a 1:1 thread;
+  // shared, only its snapshot can name it.
   const name =
-    (resolved
+    (resolved && (resolved.sender || !group?.replyShared)
       ? resolved.senderLabel || formatSenderLabel(resolved.sender)
       : snapshot?.senderLabel) || "";
   // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
@@ -179,13 +181,19 @@ export function resolveMessageReplyAttribution(
   message: NormalizedMessage,
   resolveReplyPreview?: ReplyPreviewLookup,
   userId?: string | null,
+  replyShared?: boolean,
 ): ReplyAttribution | undefined {
   const target = message.replyTarget;
   if (target?.kind !== "id") {
     // A bare reply_to_current names no origin outside its turn context.
     return target ? hiddenAttribution(target) : undefined;
   }
-  const attribution = resolveTargetAttribution(target, message.replyPreview, resolveReplyPreview);
+  const attribution = resolveTargetAttribution(
+    target,
+    message.replyPreview,
+    resolveReplyPreview,
+    replyShared ? { replyShared } : undefined,
+  );
   if (
     attribution.presentation === "full" &&
     attribution.sender.identity?.type === "profile" &&
@@ -227,13 +235,11 @@ export function resolveReplyAttribution(
   if (current) {
     // An unresolved reply_to_current never guesses its origin, not even the latest prompt.
     const source = group.replyCurrentSource;
+    const sender = source && normalizeReplyMessage(source.message).sender;
     const attribution =
       source &&
-      resolveSourceAttribution(
-        source.message,
-        normalizeReplyMessage(source.message).sender,
-        resolveReplyPreview,
-      );
+      (sender || !group.replyShared) &&
+      resolveSourceAttribution(source.message, sender, resolveReplyPreview);
     return attribution && (group.replyShared || source?.key !== group.replyTurnSource?.key)
       ? attribution
       : hiddenAttribution(current.replyTarget);
