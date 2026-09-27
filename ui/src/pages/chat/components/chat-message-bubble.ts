@@ -578,15 +578,13 @@ export function renderGroupedMessage(
     }
   `;
 
-  const replyAttribution = opts.suppressReplyPreview
-    ? undefined
-    : resolveMessageReplyAttribution(normalizedMessage, opts.resolveReplyPreview, opts.userId);
-  const reply = renderReplyAttribution(replyAttribution, opts.onOpenReply, opts.onResolveReply, {
-    variant: "inline",
-    navigationLoading:
-      normalizedMessage.replyTarget?.kind === "id" &&
-      opts.replyNavigationId === normalizedMessage.replyTarget.id,
-  });
+  const reply = opts.suppressReplyPreview
+    ? nothing
+    : renderReplyAttribution(
+        resolveMessageReplyAttribution(normalizedMessage, opts.resolveReplyPreview, opts.userId),
+        opts,
+        "inline",
+      );
   return html`
     <div
       class="${bubbleClasses}"

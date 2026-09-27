@@ -47,22 +47,17 @@ export function renderAgentRunFrame(frame: AgentRunFrameRenderItem, opts: AgentR
   const streamStarts = frame.parts.flatMap((part) =>
     part.kind === "stream-run" ? part.parts.map((streamPart) => streamPart.startedAt) : [],
   );
+  const streamRun = frame.parts.find((part) => part.kind === "stream-run");
   const shell: MessageGroup = {
     key: frame.key,
     kind: "group",
     role: "assistant",
     senderLabel: firstAssistant?.senderLabel,
-    replyToSender:
-      firstAssistant?.replyToSender ??
-      frame.parts.find((part) => part.kind === "stream-run")?.replyToSender,
-    replyToMessage:
-      firstAssistant?.replyToMessage ??
-      frame.parts.find((part) => part.kind === "stream-run")?.replyToMessage,
-    ...(firstAssistant?.replyShared ? { replyShared: true } : {}),
-    ...(firstAssistant?.replyTurnSource ? { replyTurnSource: firstAssistant.replyTurnSource } : {}),
-    ...(firstAssistant?.replyCurrentSource
-      ? { replyCurrentSource: firstAssistant.replyCurrentSource }
-      : {}),
+    replyToSender: firstAssistant?.replyToSender ?? streamRun?.replyToSender,
+    replyToMessage: firstAssistant?.replyToMessage ?? streamRun?.replyToMessage,
+    replyShared: firstAssistant?.replyShared,
+    replyTurnSource: firstAssistant?.replyTurnSource,
+    replyCurrentSource: firstAssistant?.replyCurrentSource,
     messages: representative?.messages ?? [],
     visibleContent: representative?.visibleContent ?? "none",
     timestamp:

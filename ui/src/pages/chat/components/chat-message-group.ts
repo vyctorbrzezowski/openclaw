@@ -431,8 +431,9 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
   const visibleReplyAttribution = isReplyAttributionVisible(replyAttribution)
     ? replyAttribution
     : undefined;
+  const who = resolveMessageGroupSenderLabel(group, opts);
   const showSenderName =
-    resolveMessageGroupSenderLabel(group, opts) !== visibleReplyAttribution?.name &&
+    who !== visibleReplyAttribution?.name &&
     !isForwarded &&
     !sourceOnly &&
     (normalizedRole !== "user" || isPeerGroup || opts.showOwnSenderName !== false);
@@ -440,7 +441,6 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     (source) => gatewayClientKind(source) !== "web",
   );
   const sourceSessionKey = group.senderSession?.sessionKey;
-  const who = resolveMessageGroupSenderLabel(group, opts);
   const roleClass =
     normalizedRole === "user" || normalizedRole === "assistant" || normalizedRole === "tool"
       ? normalizedRole
@@ -577,7 +577,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
       ${inlineUserAvatar ? nothing : avatar}
       <div class="chat-group-messages">
         ${forwardedSource ? renderForwardedAttribution(group, opts) : nothing}
-        ${replyAttribution ? renderReplyAttribution(replyAttribution, opts.onOpenReply, opts.onResolveReply, { navigationLoading: replyAttribution.target?.kind === "id" && opts.replyNavigationId === replyAttribution.target.id }) : nothing}
+        ${renderReplyAttribution(replyAttribution, opts)}
         ${
           opts.frameContent ??
           chatResponsiveLayout((mobile) =>
@@ -591,29 +591,25 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                   (actionDetails.markdown || (actionDetails.replyTarget && opts.onReply)) &&
                   index < lastMessageIndex &&
                   !isTurnBlock
-                    ? html`
-                        ${
-                          mobile
-                            ? html`<div class="chat-group-footer chat-message-footer">
-                                <div class="chat-group-footer__meta">
-                                  ${renderSenderIdentity()}
-                                  ${renderMessageMeta(prepared.source.normalizedMessage.timestamp, null)}
-                                </div>
-                                <div
-                                  class="chat-group-footer-actions"
-                                  data-message-actions-for=${item.key}
-                                >
-                                  ${renderMessageActionButtons(actionDetails, opts)}
-                                </div>
-                              </div>`
-                            : html`<div
-                                class="chat-message-actions-row"
-                                data-message-actions-for=${item.key}
-                              >
-                                ${renderMessageActionButtons(actionDetails, opts)}
-                              </div>`
-                        }
-                      `
+                    ? mobile
+                      ? html`<div class="chat-group-footer chat-message-footer">
+                          <div class="chat-group-footer__meta">
+                            ${renderSenderIdentity()}
+                            ${renderMessageMeta(prepared.source.normalizedMessage.timestamp, null)}
+                          </div>
+                          <div
+                            class="chat-group-footer-actions"
+                            data-message-actions-for=${item.key}
+                          >
+                            ${renderMessageActionButtons(actionDetails, opts)}
+                          </div>
+                        </div>`
+                      : html`<div
+                          class="chat-message-actions-row"
+                          data-message-actions-for=${item.key}
+                        >
+                          ${renderMessageActionButtons(actionDetails, opts)}
+                        </div>`
                     : nothing;
                 const peerAttribution = isPeerGroup
                   ? resolveMessageReplyAttribution(
@@ -643,11 +639,11 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                   ${
                     peerVisible
                       ? html`<div class="chat-message--reply">
-                          ${renderReplyAttribution(peerAttribution, opts.onOpenReply, opts.onResolveReply, { navigateToUnloaded: true, navigationLoading: peerAttribution.target?.kind === "id" && opts.replyNavigationId === peerAttribution.target.id })}
+                          ${renderReplyAttribution(peerAttribution, opts, "peer")}
                           ${message}${avatar}
                           ${avatar !== nothing ? renderReplyConnector() : nothing}
                         </div>`
-                      : html`${renderReplyAttribution(peerAttribution, opts.onOpenReply, opts.onResolveReply)}${message}`
+                      : html`${renderReplyAttribution(peerAttribution, opts)}${message}`
                   }
                   ${actions}
                 `;

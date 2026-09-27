@@ -157,13 +157,8 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
   const sourcePart = parts.find((part) => part.kind === "stream");
   const replyAttribution = resolveReplyAttribution(
     {
-      kind: "group",
-      key: sourcePart?.key ?? "stream",
       role: "assistant",
       messages: [],
-      visibleContent: "text",
-      timestamp: sourcePart?.startedAt ?? 0,
-      isStreaming: active,
       replyToSender: sourcePart?.replyToSender,
       replyToMessage: sourcePart?.replyToMessage,
     },
@@ -178,7 +173,7 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
     <div class=${groupClass} data-chat-row-key=${parts[0]?.key ?? nothing}>
       ${avatar}
       <div class="chat-group-messages">
-        ${renderReplyAttribution(replyAttribution, opts.onOpenReply, opts.onResolveReply, { navigationLoading: replyAttribution?.target?.kind === "id" && opts.replyNavigationId === replyAttribution.target.id })}
+        ${renderReplyAttribution(replyAttribution, opts)}
         ${renderStreamGroupParts(parts, opts, "standalone")}
       </div>
       ${hasReplyConnector ? renderReplyConnector() : nothing}

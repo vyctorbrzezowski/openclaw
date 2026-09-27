@@ -1,6 +1,5 @@
 import { html, nothing } from "lit";
 import "./chat-attribution.css";
-import { ref } from "lit/directives/ref.js";
 import { resolveLocalUserName } from "../../../app/user-identity.ts";
 import { icons } from "../../../components/icons.ts";
 import { t } from "../../../i18n/index.ts";
@@ -11,43 +10,34 @@ import { persistedMessageEntryId } from "../chat-thread.ts";
 import { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
 import type { ReplyPreview, ReplyPreviewLookup } from "./chat-reply-preview.types.ts";
 
-export type ReplyAttributionPresentation = "hidden" | "full" | "unavailable";
-
+/**
+ * Whether a reply reference adds context: unresolved references and a 1:1 turn
+ * answering its own prompt stay hidden; a confirmed-missing target keeps only a
+ * known sender name ("unavailable").
+ */
 export type ReplyAttribution = {
-  presentation: ReplyAttributionPresentation;
+  presentation: "hidden" | "full" | "unavailable";
   sender: SenderIdentity;
   name: string;
   agentAvatar?: ReplyPreview["agentAvatar"];
   target?: NormalizedMessage["replyTarget"];
-  loadedMessageId?: string;
+  loadedMessageId?: string | null;
+  /** Hidden only: an unresolved id that still asks for its origin. */
   resolveMessageId?: string;
 };
 
-/**
- * The one place that decides whether a reply reference adds context:
- * unresolved references and a 1:1 turn answering its own prompt stay hidden;
- * a confirmed-missing target keeps only a known sender name.
- */
-function resolveReplyAttributionPresentation(reply: {
-  /** The origin and its author are known: loaded, fetched, or a named snapshot with text. */
-  resolved: boolean;
-  /** A concrete id whose lookup confirmed the origin is inaccessible. */
-  missing: boolean;
-  /** A snapshot sender name survives the missing origin. */
-  known: boolean;
-  /** The origin is the prompt that opened this turn. */
-  turnSource: boolean;
-  /** More than one person speaks in the conversation. */
-  shared: boolean;
-}): ReplyAttributionPresentation {
-  if (reply.missing) {
-    return reply.known ? "unavailable" : "hidden";
-  }
-  if (!reply.resolved || (reply.turnSource && !reply.shared)) {
-    return "hidden";
-  }
-  return "full";
-}
+type ReplyTarget = NormalizedMessage["replyTarget"];
+type ReplyGroup = Pick<
+  MessageGroup,
+  | "role"
+  | "messages"
+  | "runId"
+  | "replyShared"
+  | "replyTurnSource"
+  | "replyCurrentSource"
+  | "replyToSender"
+  | "replyToMessage"
+>;
 
 export function isReplyAttributionVisible(
   attribution: ReplyAttribution | undefined,
@@ -55,68 +45,64 @@ export function isReplyAttributionVisible(
   return Boolean(attribution && attribution.presentation !== "hidden");
 }
 
-type ReplyContext = {
-  shared?: boolean;
-  turnSource?: MessageGroup["replyTurnSource"];
-  runId?: MessageGroup["runId"];
-};
-
-const hiddenAttribution = (target?: NormalizedMessage["replyTarget"]): ReplyAttribution => ({
+const hiddenAttribution = (target: ReplyTarget, resolveMessageId?: string): ReplyAttribution => ({
   presentation: "hidden",
   sender: {},
   name: "",
   target,
+  resolveMessageId,
+});
+
+const fullAttribution = (
+  name: string,
+  sender: SenderIdentity | undefined,
+  preview: ReplyPreview | undefined,
+  target: ReplyTarget,
+  id?: string | null,
+): ReplyAttribution => ({
+  presentation: "full",
+  sender: { ...sender, name },
+  name,
+  agentAvatar: preview?.agentAvatar,
+  target,
+  loadedMessageId: preview?.isLoaded ? id : undefined,
 });
 
 function lookupReply(resolveReplyPreview: ReplyPreviewLookup | undefined, id: string) {
   const result = resolveReplyPreview?.(id);
-  return result && "missing" in result
-    ? { missing: true }
-    : { missing: false, preview: result as ReplyPreview | undefined };
+  return result && "missing" in result ? null : result;
 }
 
+/** `null` preview: the lookup confirmed the origin is inaccessible. */
 function resolveTargetAttribution(
-  target: Extract<NonNullable<NormalizedMessage["replyTarget"]>, { kind: "id" }>,
+  target: Extract<NonNullable<ReplyTarget>, { kind: "id" }>,
   snapshot: NormalizedMessage["replyPreview"],
-  lookup: ReturnType<typeof lookupReply>,
-  context: ReplyContext = {},
+  resolved: ReplyPreview | null | undefined,
+  group?: ReplyGroup,
 ): ReplyAttribution {
-  const resolved = lookup.preview;
+  if (resolved === null) {
+    // Known snapshot facts only: no inferred avatar and nothing to navigate to.
+    const known = snapshot?.senderLabel;
+    return known
+      ? { presentation: "unavailable", sender: { name: known }, name: known, target }
+      : hiddenAttribution(target);
+  }
   // Snapshot text alone names no author; only its sender label or the source does.
   const name =
     (resolved
       ? resolved.senderLabel || formatSenderLabel(resolved.sender)
       : snapshot?.text && snapshot.senderLabel) || "";
-  const presentation = resolveReplyAttributionPresentation({
-    resolved: Boolean(name),
-    missing: lookup.missing,
-    known: Boolean(snapshot?.senderLabel),
-    // A prompt paged out of the loaded history is still this turn's by run ownership.
-    turnSource: Boolean(
-      (context.turnSource && persistedMessageEntryId(context.turnSource.message) === target.id) ||
-      (context.runId && resolved?.turnRunId === context.runId),
-    ),
-    shared: Boolean(context.shared),
-  });
-  if (presentation === "hidden") {
-    return {
-      ...hiddenAttribution(target),
-      resolveMessageId: !resolved && !name && !lookup.missing ? target.id : undefined,
-    };
-  }
-  if (presentation === "unavailable") {
-    // Known snapshot facts only: no inferred avatar and nothing to navigate to.
-    const known = snapshot?.senderLabel ?? "";
-    return { presentation, sender: { name: known }, name: known, target };
-  }
-  return {
-    presentation,
-    sender: { ...resolved?.sender, name },
-    name,
-    agentAvatar: resolved?.agentAvatar,
-    target,
-    loadedMessageId: resolved?.isLoaded ? target.id : undefined,
-  };
+  // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
+  // loaded history is still this turn's by run ownership.
+  const turnSource =
+    group &&
+    !group.replyShared &&
+    ((group.replyTurnSource &&
+      persistedMessageEntryId(group.replyTurnSource.message) === target.id) ||
+      (group.runId && resolved?.turnRunId === group.runId));
+  return !name || turnSource
+    ? hiddenAttribution(target, resolved || name ? undefined : target.id)
+    : fullAttribution(name, resolved?.sender, resolved, target, target.id);
 }
 
 /** Attribution to a transcript row the group already knows (automatic or resolved current). */
@@ -126,20 +112,18 @@ function resolveSourceAttribution(
   resolveReplyPreview: ReplyPreviewLookup | undefined,
 ): ReplyAttribution | undefined {
   const sourceId = source ? persistedMessageEntryId(source) : null;
-  const resolved = sourceId ? lookupReply(resolveReplyPreview, sourceId).preview : undefined;
+  const resolved = sourceId ? lookupReply(resolveReplyPreview, sourceId) || undefined : undefined;
   const sourceSender = sender ?? resolved?.sender;
   const name = resolved?.senderLabel || formatSenderLabel(sourceSender);
-  if (!name) {
-    return undefined;
-  }
-  return {
-    presentation: "full",
-    sender: { ...sourceSender, name },
-    name,
-    agentAvatar: resolved?.agentAvatar,
-    target: sourceId ? { kind: "id", id: sourceId } : { kind: "current" },
-    loadedMessageId: sourceId && resolved?.isLoaded ? sourceId : undefined,
-  };
+  return name
+    ? fullAttribution(
+        name,
+        sourceSender,
+        resolved,
+        sourceId ? { kind: "id", id: sourceId } : { kind: "current" },
+        sourceId,
+      )
+    : undefined;
 }
 
 export function resolveMessageReplyAttribution(
@@ -148,15 +132,15 @@ export function resolveMessageReplyAttribution(
   userId?: string | null,
 ): ReplyAttribution | undefined {
   const target = message.replyTarget;
-  if (!target) {
-    return undefined;
+  if (target?.kind !== "id") {
+    // A bare reply_to_current names no origin outside its turn context.
+    return target ? hiddenAttribution(target) : undefined;
   }
-  // A bare reply_to_current names no origin outside its turn context.
-  if (target.kind === "current") {
-    return hiddenAttribution(target);
-  }
-  const lookup = lookupReply(resolveReplyPreview, target.id);
-  const attribution = resolveTargetAttribution(target, message.replyPreview, lookup);
+  const attribution = resolveTargetAttribution(
+    target,
+    message.replyPreview,
+    lookupReply(resolveReplyPreview, target.id),
+  );
   if (
     attribution.presentation === "full" &&
     attribution.sender.identity?.type === "profile" &&
@@ -168,7 +152,7 @@ export function resolveMessageReplyAttribution(
 }
 
 export function resolveReplyAttribution(
-  group: MessageGroup,
+  group: ReplyGroup,
   resolveReplyPreview?: ReplyPreviewLookup,
   replyMessages: MessageGroup["messages"] = group.messages,
 ): ReplyAttribution | undefined {
@@ -176,99 +160,85 @@ export function resolveReplyAttribution(
     return undefined;
   }
   const messages = group.messages.map(({ message }) => normalizeMessage(message));
-  const snapshots =
-    replyMessages === group.messages
-      ? messages
-      : replyMessages.map(({ message }) => normalizeMessage(message));
-  const context: ReplyContext = {
-    shared: group.replyShared,
-    turnSource: group.replyTurnSource,
-    runId: group.runId,
-  };
-  const explicit =
-    messages.find((message) => message.replyTarget?.kind === "id") ??
-    (messages.some((message) => message.replyTarget?.kind === "current")
-      ? undefined
-      : snapshots.find((message) => message.replyTarget?.kind === "id"));
+  const snapshots = replyMessages.map(({ message }) => normalizeMessage(message));
+  const find = (list: NormalizedMessage[], kind: "id" | "current") =>
+    list.find((message) => message.replyTarget?.kind === kind);
+  const ownCurrent = find(messages, "current");
+  const explicit = find(messages, "id") ?? (ownCurrent ? undefined : find(snapshots, "id"));
   if (explicit?.replyTarget?.kind === "id") {
     const target = explicit.replyTarget;
-    const lookup = lookupReply(resolveReplyPreview, target.id);
     const matching = snapshots.filter(
       (message) => message.replyTarget?.kind === "id" && message.replyTarget.id === target.id,
     );
     const snapshot =
       matching.find((message) => message.replyPreview?.text)?.replyPreview ??
       matching.find((message) => message.replyPreview)?.replyPreview;
-    return resolveTargetAttribution(target, snapshot, lookup, context);
-  }
-  const current =
-    messages.find((message) => message.replyTarget?.kind === "current") ??
-    snapshots.find((message) => message.replyTarget?.kind === "current");
-  const currentSource = current ? group.replyCurrentSource : undefined;
-  if (currentSource) {
-    const attribution = resolveSourceAttribution(
-      currentSource.message,
-      normalizeMessage(currentSource.message).sender,
-      resolveReplyPreview,
+    return resolveTargetAttribution(
+      target,
+      snapshot,
+      lookupReply(resolveReplyPreview, target.id),
+      group,
     );
-    const turnSource = currentSource.key === group.replyTurnSource?.key;
-    return attribution && !(turnSource && !group.replyShared)
-      ? attribution
-      : hiddenAttribution(current?.replyTarget);
   }
-  // An unresolved reply_to_current never guesses its origin, not even the latest prompt.
+  const current = ownCurrent ?? find(snapshots, "current");
   if (current) {
-    return hiddenAttribution(current.replyTarget);
+    // An unresolved reply_to_current never guesses its origin, not even the latest prompt.
+    const source = group.replyCurrentSource;
+    const attribution =
+      source &&
+      resolveSourceAttribution(
+        source.message,
+        normalizeMessage(source.message).sender,
+        resolveReplyPreview,
+      );
+    return attribution && (group.replyShared || source?.key !== group.replyTurnSource?.key)
+      ? attribution
+      : hiddenAttribution(current.replyTarget);
   }
-  const sender = group.replyToSender;
   // Automatic attribution: several people share this thread.
-  return sender
-    ? resolveSourceAttribution(group.replyToMessage?.message, sender, resolveReplyPreview)
+  return group.replyToSender
+    ? resolveSourceAttribution(
+        group.replyToMessage?.message,
+        group.replyToSender,
+        resolveReplyPreview,
+      )
     : undefined;
 }
 
-type ReplyAttributionOptions = {
-  variant?: "inline";
-  navigationLoading?: boolean;
-  navigateToUnloaded?: boolean;
+type ReplyAttributionActions = {
+  onOpenReply?: (id: string) => void;
+  onResolveReply?: (id: string) => void;
+  replyNavigationId?: string | null;
 };
 
+/**
+ * `inline` renders inside a message bubble; `peer` is the strip above a human
+ * quote. Both navigate to originals outside the loaded history.
+ */
 export function renderReplyAttribution(
   attribution: ReplyAttribution | undefined,
-  onOpenReply?: (id: string) => void,
-  onResolveReply?: (id: string) => void,
-  options: ReplyAttributionOptions = {},
+  { onOpenReply, onResolveReply, replyNavigationId }: ReplyAttributionActions,
+  variant?: "inline" | "peer",
 ) {
-  if (!attribution) {
-    return nothing;
-  }
-  if (attribution.presentation === "hidden") {
+  if (!attribution || attribution.presentation === "hidden") {
     // Nothing to show yet, but an unresolved id still asks for its origin.
-    if (attribution.resolveMessageId) {
+    if (attribution?.resolveMessageId) {
       onResolveReply?.(attribution.resolveMessageId);
     }
     return nothing;
   }
-  const inline = options.variant === "inline";
+  const { name, target } = attribution;
+  const inline = variant === "inline";
   const unavailable = attribution.presentation === "unavailable";
-  // Human quotes retain navigation to originals outside the loaded history.
-  const sourceId = unavailable
-    ? undefined
-    : (inline || options.navigateToUnloaded) && attribution.target?.kind === "id"
-      ? attribution.target.id
-      : attribution.loadedMessageId;
+  const targetId = target?.kind === "id" ? target.id : undefined;
+  const sourceId = unavailable ? undefined : (variant && targetId) || attribution.loadedMessageId;
+  const loading = Boolean(targetId) && replyNavigationId === targetId;
   const person = html`
-    ${unavailable ? nothing : renderChatAuthorAvatar(attribution.sender, "chat-author-avatar", attribution.agentAvatar)}
-    <span class="chat-reply-attribution__name" title=${attribution.name}>${attribution.name}</span>
+    ${unavailable ? nothing : renderChatAuthorAvatar(attribution.sender, undefined, attribution.agentAvatar)}
+    <span class="chat-reply-attribution__name" title=${name}>${name}</span>
   `;
-  const resolveMissing = (element?: Element) => {
-    if (element && attribution.resolveMessageId) {
-      onResolveReply?.(attribution.resolveMessageId);
-    }
-  };
   return html`<div
-    class="chat-reply-attribution ${inline ? "chat-reply-attribution--inline" : "chat-reply-attribution--reply"}"
-    ${ref(resolveMissing)}
+    class="chat-reply-attribution chat-reply-attribution--${inline ? "inline" : "reply"}"
   >
     <span class="chat-reply-attribution__label"
       >${inline ? nothing : html`<span class="chat-reply-attribution__mobile-icon" aria-hidden="true">${icons.cornerUpLeft}</span>`}${t("chat.messages.replyingToLabel")}</span
@@ -278,9 +248,9 @@ export function renderReplyAttribution(
         ? html`<button
             class="chat-reply-attribution__person chat-reply-attribution__target"
             type="button"
-            aria-label=${t("chat.messages.replyingTo", { name: attribution.name })}
-            ?disabled=${options.navigationLoading}
-            aria-busy=${options.navigationLoading ? "true" : "false"}
+            aria-label=${t("chat.messages.replyingTo", { name })}
+            ?disabled=${loading}
+            aria-busy=${loading ? "true" : "false"}
             @click=${() => onOpenReply(sourceId)}
           >
             ${person}
