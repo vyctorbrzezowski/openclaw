@@ -214,10 +214,11 @@ export function resolveReplyAttribution(
   }
   const messages = group.messages.map(({ message }) => normalizeReplyMessage(message));
   const snapshots = replyMessages.map(({ message }) => normalizeReplyMessage(message));
-  const find = (list: NormalizedMessage[], kind: "id" | "current") =>
-    list.find((message) => message.replyTarget?.kind === kind);
-  const ownCurrent = find(messages, "current");
-  const explicit = find(messages, "id") ?? (ownCurrent ? undefined : find(snapshots, "id"));
+  // Only the attribution owner's target counts (a frame's final answer); other
+  // parts contribute snapshots of that target, never a target of their own.
+  const find = (kind: "id" | "current") =>
+    messages.find((message) => message.replyTarget?.kind === kind);
+  const explicit = find("id");
   if (explicit?.replyTarget?.kind === "id") {
     const target = explicit.replyTarget;
     const matching = snapshots.filter(
@@ -231,7 +232,7 @@ export function resolveReplyAttribution(
       previews.find(Boolean);
     return resolveTargetAttribution(target, snapshot, resolveReplyPreview, group);
   }
-  const current = ownCurrent ?? find(snapshots, "current");
+  const current = find("current");
   if (current) {
     // An unresolved reply_to_current never guesses its origin, not even the latest prompt.
     const source = group.replyCurrentSource;

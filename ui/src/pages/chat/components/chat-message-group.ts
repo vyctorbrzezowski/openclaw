@@ -97,6 +97,7 @@ type RenderMessageGroupOptions = Omit<
 > &
   ChatSendStatusActions &
   Parameters<typeof renderForwardedAvatar>[1] & {
+    /** A run frame's attribution; other groups resolve their own. */
     replyAttribution?: ReplyAttribution;
     hasReplyAttribution?: boolean;
     entryRefFor?: (key: string) => ((element?: Element) => void) | undefined;
@@ -428,8 +429,10 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     !isOwnSenderGroup(group, opts.userId);
   const forwardedSource = hasForwardedSource(group);
   const isForwarded = normalizedRole === "assistant" && forwardedSource;
-  const replyAttribution =
-    opts.replyAttribution ?? resolveReplyAttribution(group, opts.resolveReplyPreview);
+  // A run frame resolves its attribution from its final answer; none means no strip.
+  const replyAttribution = opts.frameContent
+    ? opts.replyAttribution
+    : resolveReplyAttribution(group, opts.resolveReplyPreview);
   const visibleReplyAttribution = isReplyAttributionVisible(replyAttribution)
     ? replyAttribution
     : undefined;

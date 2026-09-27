@@ -76,7 +76,8 @@ export function renderAgentRunFrame(frame: AgentRunFrameRenderItem, opts: AgentR
   const renderFrameGroup = (group: MessageGroup) =>
     renderMessageGroupContent(group, {
       ...opts.renderGroupOptions(group),
-      hasReplyAttribution: Boolean(replyAttribution),
+      // The frame's line is its only one: a part never quotes its own target.
+      hasReplyAttribution: true,
     });
   type BodyPart =
     | Exclude<AgentRunFrameRenderItem["parts"][number], { kind: "stream-run" }>

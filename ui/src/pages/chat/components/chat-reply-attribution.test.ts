@@ -532,6 +532,38 @@ it.each([
   },
 );
 
+it.each([
+  { finalReplies: false, name: undefined },
+  { finalReplies: true, name: "Jordan" },
+])(
+  "attributes a frame only through its final answer's target (final replies $finalReplies)",
+  ({ finalReplies, name }) => {
+    const older = {
+      role: "user",
+      content: "Earlier question",
+      __openclaw: { id: "older", senderId: "jordan", senderName: "Jordan" },
+    };
+    const replyToOlder = { __openclaw: { replyToId: "older" } };
+    draw(
+      prompt,
+      [
+        { role: "assistant", content: "Intermediate answer", ...replyToOlder },
+        { role: "assistant", content: "Final answer", ...(finalReplies ? replyToOlder : {}) },
+      ],
+      true,
+      "frame",
+      {
+        replyShared: true,
+        replyToSender: undefined,
+        replyToMessage: undefined,
+        sources: { older: { message: older, senderLabel: "Jordan" } },
+      },
+    );
+    expect(container.querySelectorAll(".chat-reply-attribution--reply")).toHaveLength(name ? 1 : 0);
+    expect(container.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+  },
+);
+
 it("preserves the resolved display label when sender metadata contains only an ID", () => {
   const { row } = draw(
     { ...prompt, senderLabel: "Alice", __openclaw: { id: "prompt", senderId: "user-123" } },
