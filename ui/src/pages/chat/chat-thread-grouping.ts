@@ -103,16 +103,20 @@ function stampReplyAttribution(
       }
       continue;
     }
-    if (item.kind !== "group" || item.role !== "assistant" || hasForwardedSource(item)) {
+    if (item.kind !== "group") {
+      continue;
+    }
+    // Every strip follows the thread: an unattributed source is "You" only in 1:1.
+    if (shared) {
+      item.replyShared = true;
+    }
+    if (item.role !== "assistant" || hasForwardedSource(item)) {
       continue;
     }
     const currentSource =
       item.runId && item.messages.some((source) => source.replyTarget?.kind === "current")
         ? runPrompts.get(item.runId)
         : undefined;
-    if (shared) {
-      item.replyShared = true;
-    }
     if (turnSource) {
       item.replyTurnSource = turnSource;
     }

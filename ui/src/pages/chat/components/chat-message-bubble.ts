@@ -215,6 +215,8 @@ export function renderGroupedMessage(
     onOpenReply?: (replyToId: string) => void;
     replyNavigationId?: string | null;
     suppressReplyPreview?: boolean;
+    /** Shared thread: an own reply never names an unattributed source "You". */
+    replyShared?: boolean;
   },
   onOpenSidebar?: (content: SidebarContent) => void,
 ) {
@@ -581,7 +583,12 @@ export function renderGroupedMessage(
   const reply = opts.suppressReplyPreview
     ? nothing
     : renderReplyAttribution(
-        resolveMessageReplyAttribution(normalizedMessage, opts.resolveReplyPreview, opts.userId),
+        resolveMessageReplyAttribution(
+          normalizedMessage,
+          opts.resolveReplyPreview,
+          opts.userId,
+          opts.replyShared,
+        ),
         opts,
         "inline",
       );

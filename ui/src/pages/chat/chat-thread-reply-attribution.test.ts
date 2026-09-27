@@ -95,6 +95,24 @@ describe("reply attribution grouping", () => {
     expect(assistant?.replyTurnSource?.message).toMatchObject({ content: "Alice asks" });
   });
 
+  it("marks own user replies as shared once several people speak", () => {
+    const groups = messageGroups({
+      messages: [
+        userMessage("Alice asks", 1000, {
+          __openclaw: { senderId: "alice", senderName: "Alice" },
+        }),
+        userMessage("Bob asks", 1001, { __openclaw: { senderId: "bob", senderName: "Bob" } }),
+        assistantMessage("For Bob", 1002),
+      ],
+    });
+
+    expect(groups.map((group) => [group.role, group.replyShared])).toEqual([
+      ["user", true],
+      ["user", true],
+      ["assistant", true],
+    ]);
+  });
+
   it.each([
     { first: null, second: "older", groups: 2 },
     { first: "older", second: "newer", groups: 2 },

@@ -718,3 +718,60 @@ it.each([
     expect(onOpenReply).toHaveBeenCalledWith("inline-source");
   },
 );
+
+it.each([
+  { shared: false, snapshot: undefined, name: "You" },
+  { shared: true, snapshot: undefined, name: undefined },
+  { shared: true, snapshot: { senderLabel: "Jordan", text: "" }, name: "Jordan" },
+] as const)(
+  "names a fetched original without sender provenance in an own reply only when it cannot be a guess (shared $shared)",
+  ({ shared, snapshot, name }) => {
+    container = document.body.appendChild(document.createElement("div"));
+    const unattributed = { role: "user", content: "Earlier question", __openclaw: { id: "older" } };
+    const resolveReplyPreview = createReplyPreviewResolver(new Map(), {
+      assistantName: "OpenClaw",
+      userId: "alice",
+      replyMessageAccess: {
+        read: (id) => (id === "older" ? unattributed : undefined),
+        missing: () => false,
+        oversized: () => false,
+        pending: () => false,
+      },
+    });
+    render(
+      renderMessageGroup(
+        {
+          kind: "group",
+          key: "own-reply",
+          role: "user",
+          timestamp: 1,
+          isStreaming: false,
+          visibleContent: "text",
+          sender: { id: "alice", name: "Alice", identity: { type: "profile", id: "alice" } },
+          ...(shared ? { replyShared: true } : {}),
+          messages: [
+            {
+              key: "own-reply",
+              hasVisibleContent: true,
+              message: {
+                role: "user",
+                content: "Follow up",
+                __openclaw: {
+                  id: "own-reply",
+                  replyToId: "older",
+                  ...(snapshot ? { replyToPreview: snapshot } : {}),
+                },
+              },
+            },
+          ],
+        },
+        { showReasoning: false, showToolCalls: false, userId: "alice", resolveReplyPreview },
+      ),
+      container,
+    );
+    // Only the signed-in user speaks in a 1:1 thread; a shared thread never falls back to "You".
+    const strip = container.querySelector(".chat-bubble > .chat-reply-attribution--inline");
+    expect(strip?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
+    expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+  },
+);

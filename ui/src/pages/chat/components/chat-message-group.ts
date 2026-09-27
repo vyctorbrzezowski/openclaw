@@ -94,6 +94,7 @@ type RenderMessageGroupOptions = Omit<
   | "entryRef"
   | "resolveReplyPreview"
   | "suppressReplyPreview"
+  | "replyShared"
 > &
   ChatSendStatusActions &
   Parameters<typeof renderForwardedAvatar>[1] & {
@@ -189,6 +190,7 @@ function renderPreparedGroupMessage(
     {
       ...opts,
       suppressReplyPreview: opts.hasReplyAttribution,
+      replyShared: group.replyShared,
       isStreaming: group.isStreaming && index === group.messages.length - 1,
       entryId: persistedMessageEntryId(item.message) ?? undefined,
       entryRef: opts.entryRefFor?.(item.key),
