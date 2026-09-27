@@ -88,6 +88,20 @@ describe("chat pane reply-source history navigation", () => {
     },
   );
 
+  it("treats an unknown reply source as pending before the connection settles", () => {
+    const request = vi.fn();
+    const client = { request } as unknown as GatewayBrowserClient;
+    const { pane, state } = createTestChatPane({ client, sessions: {} as SessionCapability });
+    // A first paint can precede the connected snapshot; the strip row must already be reserved.
+    state.connected = false;
+    pane.context.gateway.snapshot.phase = "connecting";
+
+    expect(pane.isReplyMessagePending("source-message")).toBe(true);
+    pane.requestReplyMessage("source-message");
+    expect(request).not.toHaveBeenCalled();
+    expect(pane.isReplyMessagePending("source-message")).toBe(true);
+  });
+
   it("confirms a missing reply source only from a Gateway answer", async () => {
     const request = vi
       .fn()

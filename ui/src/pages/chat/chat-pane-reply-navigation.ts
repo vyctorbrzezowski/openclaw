@@ -39,10 +39,13 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected readonly isReplyMessageMissing = (messageId: string): boolean =>
     this.currentReplyMessage(messageId)?.missing === true;
 
-  /** Not answered yet on this connection, including a lookup this render will request. */
+  /**
+   * Not answered on the current connection yet. Unknown counts as pending from the
+   * first paint, including a warm boot rendered before the Gateway connects.
+   */
   protected readonly isReplyMessagePending = (messageId: string): boolean => {
-    const scope = this.captureConnectionScope();
-    if (!scope || parseCatalogSessionKey(scope.state.sessionKey)) {
+    const state = this.state;
+    if (!state || parseCatalogSessionKey(state.sessionKey)) {
       return false;
     }
     const cached = this.currentReplyMessage(messageId);
