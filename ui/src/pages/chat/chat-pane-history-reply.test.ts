@@ -96,9 +96,11 @@ describe("chat pane reply-source history navigation", () => {
     const client = { request } as unknown as GatewayBrowserClient;
     const { pane, state } = createTestChatPane({ client, sessions: {} as SessionCapability });
 
+    expect(pane.isReplyMessagePending("source-message")).toBe(true);
     pane.requestReplyMessage("source-message");
     await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
-    await Promise.resolve();
+    // A failed lookup releases the reserved strip row without confirming anything.
+    await vi.waitFor(() => expect(pane.isReplyMessagePending("source-message")).toBe(false));
     expect(pane.isReplyMessageMissing("source-message")).toBe(false);
     pane.connectionGeneration += 1;
     state.connectionEpoch = pane.connectionGeneration;

@@ -24,6 +24,8 @@ export type ReplyAttribution = {
   loadedMessageId?: string | null;
   /** Hidden only: an unresolved id that still asks for its origin. */
   resolveMessageId?: string;
+  /** Hidden only: the lookup is in flight, so the strip row stays reserved. */
+  pending?: boolean;
 };
 
 type ReplyTarget = NormalizedMessage["replyTarget"];
@@ -60,12 +62,22 @@ export function isReplyAttributionVisible(
   return Boolean(attribution && attribution.presentation !== "hidden");
 }
 
-const hiddenAttribution = (target: ReplyTarget, resolveMessageId?: string): ReplyAttribution => ({
+/** A visible strip, or the reserved row of one whose lookup is still in flight. */
+export function holdsReplyAttributionRow(attribution: ReplyAttribution | undefined): boolean {
+  return attribution?.pending === true || isReplyAttributionVisible(attribution);
+}
+
+const hiddenAttribution = (
+  target: ReplyTarget,
+  resolveMessageId?: string,
+  pending?: boolean,
+): ReplyAttribution => ({
   presentation: "hidden",
   sender: {},
   name: "",
   target,
   resolveMessageId,
+  ...(pending ? { pending } : {}),
 });
 
 const fullAttribution = (
@@ -85,16 +97,17 @@ const fullAttribution = (
 
 function lookupReply(resolveReplyPreview: ReplyPreviewLookup | undefined, id: string) {
   const result = resolveReplyPreview?.(id);
-  return result && "missing" in result ? null : result;
+  return result && "missing" in result ? null : result && "pending" in result ? undefined : result;
 }
 
-/** `null` preview: the lookup confirmed the origin is inaccessible. */
+/** A `null` lookup confirmed the origin is inaccessible. */
 function resolveTargetAttribution(
   target: Extract<NonNullable<ReplyTarget>, { kind: "id" }>,
   snapshot: NormalizedMessage["replyPreview"],
-  resolved: ReplyPreview | null | undefined,
+  resolveReplyPreview: ReplyPreviewLookup | undefined,
   group?: ReplyGroup,
 ): ReplyAttribution {
+  const resolved = lookupReply(resolveReplyPreview, target.id);
   if (resolved === null) {
     // Known snapshot facts only: no inferred avatar and nothing to navigate to.
     const known = snapshot?.senderLabel;
@@ -115,9 +128,19 @@ function resolveTargetAttribution(
     ((group.replyTurnSource &&
       persistedMessageEntryId(group.replyTurnSource.message) === target.id) ||
       (group.runId && resolved?.turnRunId === group.runId));
-  return !name || turnSource
-    ? hiddenAttribution(target, resolved || name ? undefined : target.id)
-    : fullAttribution(name, resolved?.sender, resolved, target, target.id);
+  if (name && !turnSource) {
+    return fullAttribution(name, resolved?.sender, resolved, target, target.id);
+  }
+  if (resolved || name) {
+    return hiddenAttribution(target);
+  }
+  // Reserve the row only when the answer can fill it: a 1:1 turn whose prompt
+  // is not loaded may be answering that prompt, which stays hidden.
+  const result = resolveReplyPreview?.(target.id);
+  const pending =
+    Boolean(result && "pending" in result) &&
+    (!group || Boolean(group.replyShared || group.replyTurnSource));
+  return hiddenAttribution(target, target.id, pending);
 }
 
 /** Attribution to a transcript row the group already knows (automatic or resolved current). */
@@ -151,11 +174,7 @@ export function resolveMessageReplyAttribution(
     // A bare reply_to_current names no origin outside its turn context.
     return target ? hiddenAttribution(target) : undefined;
   }
-  const attribution = resolveTargetAttribution(
-    target,
-    message.replyPreview,
-    lookupReply(resolveReplyPreview, target.id),
-  );
+  const attribution = resolveTargetAttribution(target, message.replyPreview, resolveReplyPreview);
   if (
     attribution.presentation === "full" &&
     attribution.sender.identity?.type === "profile" &&
@@ -188,12 +207,7 @@ export function resolveReplyAttribution(
     const snapshot =
       matching.find((message) => message.replyPreview?.text)?.replyPreview ??
       matching.find((message) => message.replyPreview)?.replyPreview;
-    return resolveTargetAttribution(
-      target,
-      snapshot,
-      lookupReply(resolveReplyPreview, target.id),
-      group,
-    );
+    return resolveTargetAttribution(target, snapshot, resolveReplyPreview, group);
   }
   const current = ownCurrent ?? find(snapshots, "current");
   if (current) {
@@ -235,15 +249,24 @@ export function renderReplyAttribution(
   { onOpenReply, onResolveReply, replyNavigationId }: ReplyAttributionActions,
   variant?: "inline" | "peer",
 ) {
+  const inline = variant === "inline";
+  const rowClass = `chat-reply-attribution chat-reply-attribution--${inline ? "inline" : "reply"}`;
+  const label = () => html`<span class="chat-reply-attribution__label"
+    >${inline ? nothing : html`<span class="chat-reply-attribution__mobile-icon" aria-hidden="true">${icons.cornerUpLeft}</span>`}${t("chat.messages.replyingToLabel")}</span
+  >`;
   if (!attribution || attribution.presentation === "hidden") {
     // Nothing to show yet, but an unresolved id still asks for its origin.
     if (attribution?.resolveMessageId) {
       onResolveReply?.(attribution.resolveMessageId);
     }
-    return nothing;
+    // An in-flight lookup keeps the row so the answer fills it in place.
+    return attribution?.pending
+      ? html`<div class="${rowClass} chat-reply-attribution--pending" aria-hidden="true">
+          ${label()}
+        </div>`
+      : nothing;
   }
   const { name, target } = attribution;
-  const inline = variant === "inline";
   const unavailable = attribution.presentation === "unavailable";
   const targetId = target?.kind === "id" ? target.id : undefined;
   const sourceId = unavailable ? undefined : (variant && targetId) || attribution.loadedMessageId;
@@ -252,12 +275,8 @@ export function renderReplyAttribution(
     ${unavailable ? nothing : renderChatAuthorAvatar(attribution.sender, undefined, attribution.agentAvatar)}
     <span class="chat-reply-attribution__name" title=${name}>${name}</span>
   `;
-  return html`<div
-    class="chat-reply-attribution chat-reply-attribution--${inline ? "inline" : "reply"}"
-  >
-    <span class="chat-reply-attribution__label"
-      >${inline ? nothing : html`<span class="chat-reply-attribution__mobile-icon" aria-hidden="true">${icons.cornerUpLeft}</span>`}${t("chat.messages.replyingToLabel")}</span
-    >
+  return html`<div class=${rowClass}>
+    ${label()}
     ${
       sourceId && onOpenReply
         ? html`<button

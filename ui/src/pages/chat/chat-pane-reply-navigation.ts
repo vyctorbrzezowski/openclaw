@@ -17,7 +17,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected replyMessageRevision = 0;
   private readonly replyMessages = new Map<
     string,
-    { client: object; generation: number; message?: unknown; missing?: true }
+    { client: object; generation: number; message?: unknown; missing?: true; failed?: true }
   >();
 
   protected abstract loadOlderMessages(): Promise<boolean>;
@@ -38,6 +38,16 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
 
   protected readonly isReplyMessageMissing = (messageId: string): boolean =>
     this.currentReplyMessage(messageId)?.missing === true;
+
+  /** Not answered yet on this connection, including a lookup this render will request. */
+  protected readonly isReplyMessagePending = (messageId: string): boolean => {
+    const scope = this.captureConnectionScope();
+    if (!scope || parseCatalogSessionKey(scope.state.sessionKey)) {
+      return false;
+    }
+    const cached = this.currentReplyMessage(messageId);
+    return !cached || !(cached.message || cached.missing || cached.failed);
+  };
 
   protected readonly requestReplyMessage = (messageId: string): void => {
     void this.loadReplyMessage(messageId);
@@ -70,7 +80,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
     }
     const attempt = { client: scope.client, generation: scope.generation };
     this.replyMessages.set(cacheKey, attempt);
-    let result: ChatMessageGetResult;
+    let result: ChatMessageGetResult | undefined;
     try {
       result = await scope.client.request<ChatMessageGetResult>("chat.message.get", {
         sessionKey,
@@ -79,20 +89,21 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
         maxChars: 500,
       });
     } catch {
-      // Retain the failed attempt so rendering cannot retry it in a loop.
-      // A new logical connection owns a fresh attempt, even with the same client.
-      return;
+      result = undefined;
     }
     if (!this.isConnectionScopeCurrent(scope) || this.replyMessages.get(cacheKey) !== attempt) {
       return;
     }
-    // A Gateway answer without a message confirms the original is inaccessible;
-    // transport failures above stay unconfirmed.
+    // A Gateway answer without a message confirms the original is inaccessible.
+    // A transport failure stays unconfirmed; retaining it stops render retry loops.
+    // A new logical connection owns a fresh attempt, even with the same client.
     this.replyMessages.set(
       cacheKey,
-      result.ok && result.message
-        ? { ...attempt, message: result.message }
-        : { ...attempt, missing: true },
+      !result
+        ? { ...attempt, failed: true }
+        : result.ok && result.message
+          ? { ...attempt, message: result.message }
+          : { ...attempt, missing: true },
     );
     this.replyMessageRevision += 1;
     if (areUiSessionKeysEquivalent(scope.state.sessionKey, sessionKey)) {
@@ -127,6 +138,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       navigationId: this.currentReplyNavigationId(sessionKey),
       read: this.readReplyMessage,
       missing: this.isReplyMessageMissing,
+      pending: this.isReplyMessagePending,
       request: this.requestReplyMessage,
       open: this.openReplyMessage,
     };

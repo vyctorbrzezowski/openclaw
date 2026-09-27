@@ -20,6 +20,9 @@ export type ReplyPreview = MessageReplyTarget & {
 /** The lookup confirmed that the referenced message is inaccessible. */
 export type MissingReplyPreview = { missing: true };
 
+/** The lookup has not answered yet. */
+export type PendingReplyPreview = { pending: true };
+
 export type ReplyPreviewLookup = (
   replyToId: string,
-) => ReplyPreview | MissingReplyPreview | undefined;
+) => ReplyPreview | MissingReplyPreview | PendingReplyPreview | undefined;

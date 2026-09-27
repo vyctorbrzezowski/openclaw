@@ -1,4 +1,4 @@
-import { render } from "lit";
+import { html, render } from "lit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { resolveTypefaces, syncTypefaceStylesheets } from "../../../app/typography.ts";
@@ -272,3 +272,59 @@ it.each([1440, 390])(
     }
   },
 );
+
+it.each([1440, 390])("fills a pending explicit reply strip in place at %d px", async (width) => {
+  await page.viewport(width, 800);
+  host.style.width = `${width - 32}px`;
+  const group: MessageGroup = {
+    kind: "group",
+    key: "answer",
+    role: "assistant",
+    timestamp: 0,
+    isStreaming: false,
+    visibleContent: "text",
+    replyShared: true,
+    messages: [
+      {
+        key: "answer-message",
+        hasVisibleContent: true,
+        message: {
+          role: "assistant",
+          content: "Step 3 moved to Friday.",
+          __openclaw: { id: "answer", replyToId: "older" },
+        },
+      },
+    ],
+  };
+  const draw = (preview: Parameters<typeof renderMessageGroup>[1]["resolveReplyPreview"]) => {
+    render(
+      html`${renderMessageGroup(group, {
+          showReasoning: false,
+          showToolCalls: false,
+          avatarPlacement: "gutter",
+          onOpenReply: vi.fn(),
+          onResolveReply: vi.fn(),
+          resolveReplyPreview: preview,
+        })}
+        <div class="after">Next</div>`,
+      host,
+    );
+    return {
+      text: host.querySelector(".chat-bubble .chat-text")!.getBoundingClientRect().top,
+      after: host.querySelector(".after")!.getBoundingClientRect().top,
+    };
+  };
+  const pending = draw(() => ({ pending: true }));
+  const row = host.querySelector<HTMLElement>(".chat-reply-attribution--reply")!;
+  expect(getComputedStyle(row).visibility).toBe("hidden");
+  expect(host.querySelector(".chat-reply-connector")).toBeNull();
+  const resolved = draw(() => ({
+    messageId: "older",
+    sourceMessageId: "older",
+    senderLabel: "Mira",
+    sender: { id: "mira", name: "Mira" },
+    text: "Checklist",
+  }));
+  expect(host.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Mira");
+  expect(resolved).toEqual(pending);
+});

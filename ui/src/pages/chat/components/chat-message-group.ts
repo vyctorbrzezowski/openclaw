@@ -56,6 +56,7 @@ import {
 import type { AssistantMessageDisclosure } from "./chat-message-text.ts";
 import { extractGroupMeta, renderMessageMeta } from "./chat-message-timestamp.ts";
 import {
+  holdsReplyAttributionRow,
   isReplyAttributionVisible,
   renderReplyAttribution,
   resolveMessageReplyAttribution,
@@ -562,6 +563,8 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
       : nothing;
 
   const hasReplyConnector = Boolean(visibleReplyAttribution && avatar !== nothing);
+  // A pending lookup keeps the resolved strip's layout; its connector waits for the name.
+  const holdsReplyRow = Boolean(holdsReplyAttributionRow(replyAttribution) && avatar !== nothing);
   return html`
     <div
       class="chat-group ${roleClass} chat-group--with-footer${
@@ -570,7 +573,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
         opts.latestAssistant ? " chat-group--latest-assistant" : ""
       }${isPeerGroup ? " chat-group--peer" : ""}${
         isForwarded ? " chat-group--forwarded" : ""
-      }${senderHue === null ? "" : " chat-group--sender-tint"}${hasReplyConnector ? " chat-group--reply" : ""}"
+      }${senderHue === null ? "" : " chat-group--sender-tint"}${holdsReplyRow ? " chat-group--reply" : ""}"
       style=${senderHue === null ? nothing : `--chat-sender-hue: ${senderHue}`}
       data-chat-row-key=${group.key}
     >
@@ -619,6 +622,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                     )
                   : undefined;
                 const peerVisible = isReplyAttributionVisible(peerAttribution);
+                const peerHoldsRow = holdsReplyAttributionRow(peerAttribution);
                 const message = renderPreparedGroupMessage(
                   group,
                   index,
@@ -627,7 +631,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                     isForwarded: forwardedSource,
                     hasReplyAttribution: Boolean(replyAttribution || peerAttribution),
                     avatar:
-                      !peerVisible &&
+                      !peerHoldsRow &&
                       inlineUserAvatar &&
                       (isPeerGroup || index === lastMessageIndex)
                         ? avatar
@@ -637,11 +641,11 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                 );
                 return html`
                   ${
-                    peerVisible
+                    peerHoldsRow
                       ? html`<div class="chat-message--reply">
                           ${renderReplyAttribution(peerAttribution, opts, "peer")}
                           ${message}${avatar}
-                          ${avatar !== nothing ? renderReplyConnector() : nothing}
+                          ${peerVisible && avatar !== nothing ? renderReplyConnector() : nothing}
                         </div>`
                       : html`${renderReplyAttribution(peerAttribution, opts)}${message}`
                   }

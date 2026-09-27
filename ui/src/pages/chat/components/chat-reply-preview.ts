@@ -9,6 +9,7 @@ import { resolveMessageGroupSenderLabel } from "./chat-message-sender.ts";
 import type {
   LoadedReplySource,
   MissingReplyPreview,
+  PendingReplyPreview,
   ReplyPreview,
   ReplyPreviewLookup,
 } from "./chat-reply-preview.types.ts";
@@ -16,6 +17,7 @@ import { resolveAssistantDisplayAvatar } from "./chat-welcome.ts";
 
 type ResolvedReplyPreview = ReplyPreview | undefined;
 const MISSING_REPLY_PREVIEW: MissingReplyPreview = { missing: true };
+const PENDING_REPLY_PREVIEW: PendingReplyPreview = { pending: true };
 type ReplyPreviewProps = Omit<
   Parameters<typeof resolveAssistantDisplayAvatar>[0],
   "assistantAvatar"
@@ -28,6 +30,7 @@ type ReplyPreviewProps = Omit<
   replyMessageAccess?: {
     read: (messageId: string) => unknown;
     missing?: (messageId: string) => boolean;
+    pending?: (messageId: string) => boolean;
   };
 };
 
@@ -102,7 +105,9 @@ export function createReplyPreviewResolver(
       ? projectResolvedReplyPreview(message, replyToId, props)
       : props.replyMessageAccess?.missing?.(replyToId)
         ? MISSING_REPLY_PREVIEW
-        : undefined;
+        : props.replyMessageAccess?.pending?.(replyToId)
+          ? PENDING_REPLY_PREVIEW
+          : undefined;
     resolved.set(replyToId, preview);
     return preview;
   };
