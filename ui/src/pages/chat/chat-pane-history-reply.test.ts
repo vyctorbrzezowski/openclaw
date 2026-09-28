@@ -115,19 +115,19 @@ describe("chat pane reply-source history navigation", () => {
   });
 
   it("confirms a missing reply source only from a Gateway answer", async () => {
+    const failed = createDeferred<never>();
     const request = vi
       .fn()
-      .mockRejectedValueOnce(new Error("socket closed"))
+      .mockReturnValueOnce(failed.promise)
       .mockResolvedValueOnce({ ok: false, unavailableReason: "not_found" });
     const client = { request } as unknown as GatewayBrowserClient;
     const { pane, state } = createTestChatPane({ client, sessions: {} as SessionCapability });
 
     expect(pane.isReplyMessagePending("source-message")).toBe(true);
     pane.requestReplyMessage("source-message");
-    await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
+    expect(request).toHaveBeenCalledOnce();
+    failed.reject(new Error("socket closed"));
+    await failed.promise.catch(() => {});
     // A failed lookup confirms nothing and keeps the strip row reserved; the
     // same connection does not retry it.
     expect(pane.isReplyMessagePending("source-message")).toBe(true);
