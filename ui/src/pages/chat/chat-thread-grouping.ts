@@ -27,11 +27,24 @@ function assistantMessageKind(message: unknown, visibleContent: MessageGroup["vi
   return resolveAssistantReplyPhase(message) ?? (visibleContent === "none" ? "activity" : "reply");
 }
 
-/** Keys a transcript sender the way session participants are keyed, so one person counts once. */
-function senderPersonKey(sender: SenderIdentity): string | null {
-  return sender.identity
-    ? sessionParticipantIdentityKey(sender.identity)
-    : senderIdentityKey(sender);
+/**
+ * Keys a sender without a typed identity by its id alone; names change, ids do
+ * not. The Gateway stores a profile user's id as `senderId` (typed identities
+ * persist only when their id equals it), so an untyped id that matches a
+ * counted profile is that person. Any other untyped id is its own person.
+ */
+function untypedSenderPersonKey(
+  sender: SenderIdentity,
+  people: ReadonlySet<string>,
+  localPerson: string | undefined,
+): string {
+  if (!sender.id) {
+    return JSON.stringify(["sender-label", sender.username ?? sender.name ?? ""]);
+  }
+  const profile = sessionParticipantIdentityKey({ type: "profile", id: sender.id });
+  return people.has(profile) || profile === localPerson
+    ? profile
+    : JSON.stringify(["sender", sender.id]);
 }
 
 type ReplyState = {
@@ -50,6 +63,7 @@ function stampReplyAttribution(
   { people: sessionPeople, localPerson }: ReplyAttributionContext,
 ): Array<ChatItem | MessageGroup> {
   const people = new Set(sessionPeople);
+  const untypedSenders: SenderIdentity[] = [];
   // reply_to_current names the prompt that started the run. Only the persisted
   // user-turn run identity resolves it; an ambiguous owner stays unresolved.
   const runPrompts = new Map<string, MessageGroup["messages"][number] | null>();
@@ -74,13 +88,12 @@ function stampReplyAttribution(
       }
       // A local message carries no sender metadata: its author is the signed-in
       // viewer, one person for counting, never a name for this message.
-      const person = item.sender
-        ? senderPersonKey(item.sender)
-        : item.senderSession
-          ? null
-          : localPerson;
-      if (person) {
-        people.add(person);
+      if (item.sender?.identity) {
+        people.add(sessionParticipantIdentityKey(item.sender.identity));
+      } else if (item.sender) {
+        untypedSenders.push(item.sender);
+      } else if (!item.senderSession && localPerson) {
+        people.add(localPerson);
       }
       // A sender-less user group clears attribution: no chip is safer than
       // mislabeling the reply as addressed to the previous participant.
@@ -90,6 +103,10 @@ function stampReplyAttribution(
       // Forwarded input starts a turn without a local human reply recipient.
       state = {};
     }
+  }
+  // Untyped senders resolve after every typed person is known, so order never splits one.
+  for (const sender of untypedSenders) {
+    people.add(untypedSenderPersonKey(sender, people, localPerson));
   }
   // Automatic attribution is only useful when several people share the thread.
   const shared = people.size >= 2;

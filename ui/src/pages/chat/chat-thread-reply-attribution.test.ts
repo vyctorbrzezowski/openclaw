@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
-import { localParticipantIdentityKey } from "../../lib/chat/sender-label.ts";
+import {
+  localParticipantIdentityKey,
+  sessionParticipantIdentityKey,
+} from "../../lib/chat/sender-label.ts";
 import { groupMessages } from "./chat-thread-grouping.ts";
 import { buildCachedChatItems, resetChatThreadState } from "./chat-thread.ts";
 
@@ -112,6 +115,52 @@ describe("reply attribution grouping", () => {
       ["user", true],
       ["assistant", true],
     ]);
+  });
+
+  it.each([
+    {
+      case: "a listed profile's legacy messages",
+      people: [sessionParticipantIdentityKey({ type: "profile", id: "alice" })],
+      senders: [{ senderId: "alice", senderName: "Alice" }],
+      shared: undefined,
+    },
+    {
+      case: "an untyped sender whose name changes",
+      people: [],
+      senders: [
+        { senderId: "alice", senderName: "Alice" },
+        { senderId: "alice", senderName: "Alice Liddell", senderUsername: "al" },
+      ],
+      shared: undefined,
+    },
+    {
+      case: "a typed profile after its own untyped messages",
+      people: [],
+      senders: [
+        { senderId: "alice", senderName: "Alice" },
+        { senderId: "alice", senderIdentity: { type: "profile", id: "alice" } },
+      ],
+      shared: undefined,
+    },
+    {
+      case: "two untyped senders",
+      people: [sessionParticipantIdentityKey({ type: "profile", id: "alice" })],
+      senders: [
+        { senderId: "alice", senderName: "Alice" },
+        { senderId: "bob", senderName: "Bob" },
+      ],
+      shared: true,
+    },
+  ])("counts people by stable sender id: $case", ({ people, senders, shared }) => {
+    const groups = messageGroups({
+      replyPeople: people,
+      messages: senders.flatMap((sender, index) => [
+        userMessage(`Ask ${index}`, index * 2, { __openclaw: sender }),
+        assistantMessage(`Answer ${index}`, index * 2 + 1),
+      ]),
+    });
+
+    expect(groups.map((group) => group.replyShared)).toEqual(groups.map(() => shared));
   });
 
   it.each([
