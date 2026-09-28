@@ -178,4 +178,30 @@ describe("quoted agent identity", () => {
       });
     },
   );
+
+  it.each([
+    { roster: { name: "Research" }, name: "Research" },
+    { roster: {}, name: undefined },
+  ])(
+    "names another agent's fetched original by that agent, never the viewing one ($name)",
+    ({ roster, name }) => {
+      const source = {
+        role: "assistant",
+        content: "Findings",
+        senderSession: { sessionKey: "agent:research:main", agentId: "research" },
+        __openclaw: { id: "research-answer" },
+      };
+      const resolve = createReplyPreviewResolver(new Map(), {
+        assistantName: "OpenClaw",
+        currentAgentId: "main",
+        agents: [{ id: "research", identity: roster }],
+        replyMessageAccess: { read: () => source },
+      });
+      const preview = resolve("research-answer");
+      expect(preview).toMatchObject({ sender: { identity: { type: "agent", id: "research" } } });
+      const named = preview && "sender" in preview ? preview : undefined;
+      expect(named?.senderLabel ?? undefined).toBe(name);
+      expect(named?.sender?.name).toBe(name);
+    },
+  );
 });

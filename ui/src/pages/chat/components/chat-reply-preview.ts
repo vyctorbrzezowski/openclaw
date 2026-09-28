@@ -55,10 +55,17 @@ function projectResolvedReplyPreview(
     messages: [{ message }],
   };
   const sourceMessageId = persistedId ?? replyToId;
-  const senderLabel = loaded?.senderLabel ?? resolveMessageGroupSenderLabel(group, props);
   const isAssistant = normalizeRoleForGrouping(normalized.role) === "assistant";
   const agentId = normalized.senderSession?.agentId ?? props.currentAgentId ?? DEFAULT_AGENT_ID;
   const isCurrentAgent = agentId === (props.currentAgentId ?? DEFAULT_AGENT_ID);
+  // Another agent's original is named by that agent, never by the viewing
+  // agent's name; an agent without a display name leaves the author unknown.
+  const senderLabel =
+    isAssistant && !isCurrentAgent
+      ? normalized.senderLabel?.trim() ||
+        props.agents?.find((agent) => agent.id === agentId)?.identity?.name?.trim() ||
+        null
+      : (loaded?.senderLabel ?? resolveMessageGroupSenderLabel(group, props));
   return {
     messageId: loaded?.messageId ?? sourceMessageId,
     sourceMessageId: loaded ? replyToId : sourceMessageId,
@@ -66,7 +73,7 @@ function projectResolvedReplyPreview(
     sender: isAssistant
       ? {
           ...normalized.sender,
-          name: senderLabel,
+          ...(senderLabel ? { name: senderLabel } : {}),
           identity: normalized.sender?.identity ?? { type: "agent", id: agentId },
         }
       : normalized.sender,
