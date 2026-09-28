@@ -488,7 +488,6 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
   const replyLine = opts.frameContent
     ? (opts.frameReplyLine ?? NO_REPLY_LINE)
     : resolveGroupReplyLine(group, opts.resolveReplyPreview);
-  const who = resolveMessageGroupSenderLabel(group, opts);
   // Only a strip naming this same participant replaces the sender label; a
   // shared display name does not. An assistant group is its agent's identity;
   // a user group without a typed identity has none to compare, so it keeps its name.
@@ -514,6 +513,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     (source) => gatewayClientKind(source) !== "web",
   );
   const sourceSessionKey = group.senderSession?.sessionKey;
+  const who = resolveMessageGroupSenderLabel(group, opts);
   const roleClass =
     normalizedRole === "user" || normalizedRole === "assistant" || normalizedRole === "tool"
       ? normalizedRole

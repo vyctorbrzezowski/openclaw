@@ -70,6 +70,12 @@ export function resetChatThreadState(paneId?: string): void {
   expandedUserMessagesBySession.clear();
 }
 
+type ReplySource = MessageGroup["replyToMessage"];
+
+function sameReplySource(previous: ReplySource, next: ReplySource): boolean {
+  return previous?.key === next?.key && previous?.message === next?.message;
+}
+
 function sameMessageGroup(previous: MessageGroup, next: MessageGroup): boolean {
   // Source message identity owns the row timestamp too: normalization supplies
   // Date.now() for missing timestamps, which must not churn stable rows.
@@ -83,13 +89,10 @@ function sameMessageGroup(previous: MessageGroup, next: MessageGroup): boolean {
       messageClientSourcesKey(next.sourceClients ?? []) &&
     JSON.stringify(previous.sender) === JSON.stringify(next.sender) &&
     JSON.stringify(previous.replyToSender) === JSON.stringify(next.replyToSender) &&
-    previous.replyToMessage?.key === next.replyToMessage?.key &&
-    previous.replyToMessage?.message === next.replyToMessage?.message &&
+    sameReplySource(previous.replyToMessage, next.replyToMessage) &&
     previous.replyShared === next.replyShared &&
-    previous.replyTurnSource?.key === next.replyTurnSource?.key &&
-    previous.replyTurnSource?.message === next.replyTurnSource?.message &&
-    previous.replyCurrentSource?.key === next.replyCurrentSource?.key &&
-    previous.replyCurrentSource?.message === next.replyCurrentSource?.message &&
+    sameReplySource(previous.replyTurnSource, next.replyTurnSource) &&
+    sameReplySource(previous.replyCurrentSource, next.replyCurrentSource) &&
     previous.isStreaming === next.isStreaming &&
     previous.visibleContent === next.visibleContent &&
     previous.runId === next.runId &&
@@ -101,10 +104,7 @@ function sameMessageGroup(previous: MessageGroup, next: MessageGroup): boolean {
         entry.key === candidate.key &&
         entry.message === candidate.message &&
         entry.duplicateCount === candidate.duplicateCount &&
-        entry.replyTarget?.kind === candidate.replyTarget?.kind &&
-        (entry.replyTarget?.kind !== "id" ||
-          (candidate.replyTarget?.kind === "id" &&
-            entry.replyTarget.id === candidate.replyTarget.id)) &&
+        JSON.stringify(entry.replyTarget) === JSON.stringify(candidate.replyTarget) &&
         entry.hasVisibleContent === candidate.hasVisibleContent
       );
     })
@@ -150,8 +150,7 @@ function sameChatItem(previous: RenderChatItem, next: RenderChatItem): boolean {
         previous.startedAt === next.startedAt &&
         previous.isStreaming === next.isStreaming &&
         JSON.stringify(previous.replyToSender) === JSON.stringify(next.replyToSender) &&
-        previous.replyToMessage?.key === next.replyToMessage?.key &&
-        previous.replyToMessage?.message === next.replyToMessage?.message &&
+        sameReplySource(previous.replyToMessage, next.replyToMessage) &&
         previous.runId === next.runId &&
         previous.boundaryId === next.boundaryId
       );

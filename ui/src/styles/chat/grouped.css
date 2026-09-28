@@ -920,13 +920,8 @@ img.chat-avatar {
 }
 
 .chat-reply-attribution.chat-reply-attribution--inline {
-  padding: 0;
   margin-block-end: var(--chat-reply-attribution-gap);
-  border: 0;
-  border-radius: 4px;
-  background: none;
   color: inherit;
-  font-family: inherit;
   text-align: start;
 }
 
