@@ -301,6 +301,21 @@ describe("chat transcript replies", () => {
       },
       strips: ["Alice"],
     },
+    {
+      // The owner listed again as a participant, keys reordered, is still one person.
+      case: "the owner reappears as a participant with reordered identity keys",
+      messages: [
+        turn("p1", "user", "Deploy?", alice),
+        turn("a2", "assistant", "Deploying", { replyToId: "p1" }),
+      ],
+      session: {
+        owner: {
+          actor: { type: "human", id: "alice", identity: { type: "profile", id: "alice" } },
+        },
+        participants: [{ identity: { id: "alice", type: "profile" }, label: "Alice" }],
+      },
+      strips: [],
+    },
   ])(
     "keeps reply attribution from the full conversation when $case",
     async ({ messages, query, session, strips }) => {

@@ -65,3 +65,32 @@ export function senderIdentityKey(sender: SenderIdentity | null | undefined): st
     sender.profileAvatarUrl ?? "",
   ].join("\u0000");
 }
+
+/** Keys a participant identity by its fields, so key order never splits one person. */
+export function sessionParticipantIdentityKey(identity: SessionParticipantIdentity): string {
+  switch (identity.type) {
+    case "profile":
+    case "agent":
+      return JSON.stringify([identity.type, identity.id]);
+    case "remote":
+      return JSON.stringify([
+        identity.type,
+        identity.pluginId,
+        identity.domain,
+        identity.idKind,
+        identity.id,
+      ]);
+    case "observation":
+      return JSON.stringify([
+        identity.type,
+        identity.pluginId,
+        identity.accountId,
+        identity.senderKind,
+        identity.id,
+      ]);
+    case "legacy":
+      return JSON.stringify([identity.type, identity.actorType, identity.source, identity.id]);
+    default:
+      return identity satisfies never;
+  }
+}

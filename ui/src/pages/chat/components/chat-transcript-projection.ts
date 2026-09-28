@@ -12,6 +12,7 @@ import {
   resolveMessageRole,
   resolveMessageSender,
 } from "../../../lib/chat/message-normalizer.ts";
+import { sessionParticipantIdentityKey } from "../../../lib/chat/sender-label.ts";
 import {
   isUiGlobalScopeConfigured,
   isSubagentSessionKey,
@@ -116,7 +117,7 @@ export function projectChatTranscript(
         ({ identity }) => identity,
       ),
     ].flatMap((identity) =>
-      identity && identity.type !== "agent" ? [JSON.stringify(identity)] : [],
+      identity && identity.type !== "agent" ? [sessionParticipantIdentityKey(identity)] : [],
     ),
   );
   const mediaPolicyKey = assistantMediaPolicyKey(activeSession, props.mediaPolicyEpoch);
