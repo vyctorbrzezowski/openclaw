@@ -8,8 +8,8 @@ import { DEFAULT_AGENT_ID } from "../../../lib/sessions/session-key.ts";
 import { userTurnRunId } from "../chat-thread-items.ts";
 import { persistedMessageEntryId } from "../chat-thread.ts";
 import type { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
-import { resolveMessageGroupSenderLabel } from "./chat-message-group.ts";
 import { prepareChatMessageRender, resolveMessageReplyText } from "./chat-message-markdown.ts";
+import { resolveMessageGroupSenderLabel } from "./chat-message-sender.ts";
 import type { MessageReplyTarget } from "./chat-message.ts";
 import { resolveAssistantDisplayAvatar } from "./chat-welcome.ts";
 
