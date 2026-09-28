@@ -421,31 +421,29 @@
   pointer-events: auto;
 }
 
-/* The final action belongs to the final bubble, alongside its native metadata. */
+/* The final action belongs to the final bubble, alongside its native metadata.
+   Keep the :has() state on its subject: a combinator after a non-subject :has()
+   joins Chromium's shared :has() invalidation set and restyles every button. */
 .chat-group.user.chat-group--peer:has(
     > .chat-group-messages > .chat-bubble:last-child:hover,
-    > .chat-group-messages > .chat-message--reply:last-child > .chat-bubble:hover
-  )
-  > .chat-group-footer
-  .chat-group-footer-actions
-  button,
-.chat-group.user.chat-group--peer .chat-group-footer:hover .chat-group-footer-actions button {
-  opacity: 0.6;
-  pointer-events: auto;
-}
-
-.chat-group.user.chat-group--peer:has(
+    > .chat-group-messages > .chat-message--reply:last-child > .chat-bubble:hover,
     > .chat-group-messages
       > .chat-bubble:last-child:is(:focus-within, .chat-bubble--actions-revealed),
     > .chat-group-messages
       > .chat-message--reply:last-child
       > .chat-bubble:is(:focus-within, .chat-bubble--actions-revealed)
-  )
-  > .chat-group-footer
-  .chat-group-footer-actions
-  button,
+  ) {
+  --chat-peer-final-action-opacity: 0.6;
+  --chat-peer-final-action-pointer-events: auto;
+}
+
+.chat-group.user.chat-group--peer > .chat-group-footer .chat-group-footer-actions button {
+  opacity: var(--chat-peer-final-action-opacity, 0);
+  pointer-events: var(--chat-peer-final-action-pointer-events, none);
+}
+
 .chat-group.user.chat-group--peer
-  .chat-group-footer:focus-within
+  .chat-group-footer:is(:hover, :focus-within)
   .chat-group-footer-actions
   button {
   opacity: 0.6;
