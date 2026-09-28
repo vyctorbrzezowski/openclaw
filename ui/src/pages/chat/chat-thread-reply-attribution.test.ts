@@ -82,6 +82,24 @@ describe("reply attribution grouping", () => {
     expect(assistantGroups.at(-1)?.replyToMessage).toBeUndefined();
   });
 
+  it("keeps search hits apart across a hidden prompt", () => {
+    const groups = messageGroups({
+      searchOpen: true,
+      searchQuery: "Rollout",
+      messages: [
+        userMessage("Deploy?", 1000, { __openclaw: { senderId: "alice", senderName: "Alice" } }),
+        assistantMessage("Rollout started", 1001),
+        userMessage("Status?", 1002, { __openclaw: { senderId: "bob", senderName: "Bob" } }),
+        assistantMessage("Rollout done", 1003),
+      ],
+    });
+
+    expect(groups.map((group) => [group.messages.length, group.replyToSender?.name])).toEqual([
+      [1, "Alice"],
+      [1, "Bob"],
+    ]);
+  });
+
   it("does not add reply attribution in a single-sender thread", () => {
     const groups = messageGroups({
       messages: [

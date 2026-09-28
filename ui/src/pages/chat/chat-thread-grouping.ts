@@ -179,12 +179,34 @@ export function groupMessages(
   items: ChatItem[],
   replyContext: ReplyAttributionContext = {},
 ): Array<ChatItem | MessageGroup> {
-  const result = groupChatItems(items);
+  const result = groupChatItems(
+    items,
+    replyContext.items && rowsAfterHiddenTurns(items, replyContext.items),
+  );
   const context = replyContext.items ? groupChatItems(replyContext.items) : result;
   return stampReplyAttribution(result, context, replyContext);
 }
 
-function groupChatItems(items: ChatItem[]): Array<ChatItem | MessageGroup> {
+/** Search hides rows, not turns: a row after a hidden turn start never joins the group before it. */
+function rowsAfterHiddenTurns(items: ChatItem[], context: ChatItem[]): Set<string> {
+  const visible = new Set(items.map((item) => item.key));
+  const rows = new Set<string>();
+  let hiddenTurn = false;
+  for (const item of context) {
+    if (!visible.has(item.key)) {
+      hiddenTurn ||= chatItemStartsUserTurn(item);
+    } else if (hiddenTurn) {
+      rows.add(item.key);
+      hiddenTurn = false;
+    }
+  }
+  return rows;
+}
+
+function groupChatItems(
+  items: ChatItem[],
+  rowsAfterHiddenTurn?: ReadonlySet<string>,
+): Array<ChatItem | MessageGroup> {
   const result: Array<ChatItem | MessageGroup> = [];
   let currentGroup: MessageGroup | null = null;
   let currentUserTurnIdentity: string | null = null;
@@ -230,6 +252,7 @@ function groupChatItems(items: ChatItem[]): Array<ChatItem | MessageGroup> {
     const shouldSplitBySender = role === "user" || role === "assistant";
     const startsProjectedTurn =
       item.startsTurn === true ||
+      rowsAfterHiddenTurn?.has(item.key) === true ||
       asRecord(asRecord(item.message)?.["__openclaw"])?.turnBoundary === true;
     const splitsAssistantKind =
       role === "assistant" &&
