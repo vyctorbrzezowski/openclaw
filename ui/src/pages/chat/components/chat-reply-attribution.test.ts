@@ -726,6 +726,56 @@ it.each([
   },
 );
 
+function drawOwnReply(
+  original: Record<string, unknown>,
+  shared: boolean,
+  snapshot?: { senderLabel: string; text: string },
+) {
+  container = document.body.appendChild(document.createElement("div"));
+  const resolveReplyPreview = createReplyPreviewResolver(new Map(), {
+    assistantName: "OpenClaw",
+    userId: "alice",
+    replyMessageAccess: {
+      read: (id) => (id === "older" ? original : undefined),
+      missing: () => false,
+      oversized: () => false,
+      pending: () => false,
+    },
+  });
+  render(
+    renderMessageGroup(
+      {
+        kind: "group",
+        key: "own-reply",
+        role: "user",
+        timestamp: 1,
+        isStreaming: false,
+        visibleContent: "text",
+        sender: { id: "alice", name: "Alice", identity: { type: "profile", id: "alice" } },
+        ...(shared ? { replyShared: true } : {}),
+        messages: [
+          {
+            key: "own-reply",
+            hasVisibleContent: true,
+            message: {
+              role: "user",
+              content: "Follow up",
+              __openclaw: {
+                id: "own-reply",
+                replyToId: "older",
+                ...(snapshot ? { replyToPreview: snapshot } : {}),
+              },
+            },
+          },
+        ],
+      },
+      { showReasoning: false, showToolCalls: false, userId: "alice", resolveReplyPreview },
+    ),
+    container,
+  );
+  return container.querySelector(".chat-bubble > .chat-reply-attribution--inline");
+}
+
 it.each([
   { shared: false, snapshot: undefined, name: "You" },
   { shared: true, snapshot: undefined, name: undefined },
@@ -733,52 +783,57 @@ it.each([
 ] as const)(
   "names a fetched original without sender provenance in an own reply only when it cannot be a guess (shared $shared)",
   ({ shared, snapshot, name }) => {
-    container = document.body.appendChild(document.createElement("div"));
-    const unattributed = { role: "user", content: "Earlier question", __openclaw: { id: "older" } };
-    const resolveReplyPreview = createReplyPreviewResolver(new Map(), {
-      assistantName: "OpenClaw",
-      userId: "alice",
-      replyMessageAccess: {
-        read: (id) => (id === "older" ? unattributed : undefined),
-        missing: () => false,
-        oversized: () => false,
-        pending: () => false,
-      },
-    });
-    render(
-      renderMessageGroup(
-        {
-          kind: "group",
-          key: "own-reply",
-          role: "user",
-          timestamp: 1,
-          isStreaming: false,
-          visibleContent: "text",
-          sender: { id: "alice", name: "Alice", identity: { type: "profile", id: "alice" } },
-          ...(shared ? { replyShared: true } : {}),
-          messages: [
-            {
-              key: "own-reply",
-              hasVisibleContent: true,
-              message: {
-                role: "user",
-                content: "Follow up",
-                __openclaw: {
-                  id: "own-reply",
-                  replyToId: "older",
-                  ...(snapshot ? { replyToPreview: snapshot } : {}),
-                },
-              },
-            },
-          ],
-        },
-        { showReasoning: false, showToolCalls: false, userId: "alice", resolveReplyPreview },
-      ),
-      container,
+    const strip = drawOwnReply(
+      { role: "user", content: "Earlier question", __openclaw: { id: "older" } },
+      shared,
+      snapshot,
     );
     // Only the signed-in user speaks in a 1:1 thread; a shared thread never falls back to "You".
-    const strip = container.querySelector(".chat-bubble > .chat-reply-attribution--inline");
     expect(strip?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
     expect(container.querySelector(".chat-reply-attribution--pending")).toBeNull();
+  },
+);
+
+it.each([
+  {
+    sender: { senderId: "jordan@example.com" },
+    label: undefined,
+    snapshot: "Jordan",
+    name: "Jordan",
+  },
+  {
+    sender: { senderId: "jordan@example.com", senderName: "Jordan Lee" },
+    label: undefined,
+    snapshot: "Jordan",
+    name: "Jordan Lee",
+  },
+  {
+    sender: { senderId: "jordan@example.com" },
+    label: "Jordan Lee",
+    snapshot: "Jordan",
+    name: "Jordan Lee",
+  },
+  {
+    sender: { senderId: "jordan@example.com" },
+    label: undefined,
+    snapshot: undefined,
+    name: "jordan",
+  },
+] as const)(
+  "keeps a shared snapshot's name when the fetched sender has only an id ($name, label $label)",
+  ({ sender, label, snapshot, name }) => {
+    const strip = drawOwnReply(
+      {
+        role: "user",
+        content: "Earlier question",
+        ...(label ? { senderLabel: label } : {}),
+        __openclaw: { id: "older", ...sender },
+      },
+      true,
+      snapshot ? { senderLabel: snapshot, text: "" } : undefined,
+    );
+    // The fetched original's own name or display label wins; an id-only sender
+    // keeps the snapshot's name, and only then its formatted id.
+    expect(strip?.querySelector(".chat-reply-attribution__name")?.textContent).toBe(name);
   },
 );

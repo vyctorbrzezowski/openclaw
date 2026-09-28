@@ -131,11 +131,25 @@ function resolveTargetAttribution(
   // A sender label paints the strip on the first frame; a later lookup still
   // settles it (a confirmed-missing original turns it unavailable in place).
   // A source without sender provenance is the local user only in a 1:1 thread;
-  // shared, only its snapshot can name it.
+  // shared, only its snapshot can name it. A shared sender with an id but no
+  // name keeps the snapshot's name before its raw id, never the viewer fallback.
+  const fetchedSender = resolved?.sender;
+  const fetchedLabel = resolved?.senderLabel || formatSenderLabel(fetchedSender) || "";
+  const fetchedIdOnly =
+    Boolean(fetchedSender) &&
+    !fetchedSender?.name?.trim() &&
+    !fetchedSender?.username?.trim() &&
+    (fetchedLabel === formatSenderLabel(fetchedSender) || fetchedLabel === resolveLocalUserName());
   const name =
-    (resolved && (resolved.sender || !group?.replyShared)
-      ? resolved.senderLabel || formatSenderLabel(resolved.sender)
-      : known) || "";
+    (!resolved
+      ? known
+      : !group?.replyShared
+        ? fetchedLabel
+        : !fetchedSender
+          ? known
+          : fetchedIdOnly
+            ? known || formatSenderLabel(fetchedSender)
+            : fetchedLabel) || "";
   // A 1:1 turn answering its own prompt adds nothing. A prompt paged out of the
   // loaded history is still this turn's by run ownership.
   const turnSource =
