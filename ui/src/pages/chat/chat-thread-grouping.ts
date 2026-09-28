@@ -6,7 +6,11 @@ import type { ChatItem, MessageGroup } from "../../lib/chat/chat-types.ts";
 import { resolveMessageDisplayMarkdown } from "../../lib/chat/message-display.ts";
 import { normalizeRoleForGrouping } from "../../lib/chat/message-normalizer.ts";
 import { resolveMessageVisibleContent } from "../../lib/chat/message-visibility.ts";
-import { senderIdentityKey } from "../../lib/chat/sender-label.ts";
+import {
+  senderIdentityKey,
+  sessionParticipantIdentityKey,
+  type SenderIdentity,
+} from "../../lib/chat/sender-label.ts";
 import { extractToolCardsCached, isToolCardError } from "../../lib/chat/tool-cards.ts";
 import { resolveAssistantReplyPhase } from "./chat-assistant-reply.ts";
 import { prepareMessagesForGrouping } from "./chat-thread-duplicates.ts";
@@ -23,6 +27,13 @@ function assistantMessageKind(message: unknown, visibleContent: MessageGroup["vi
   return resolveAssistantReplyPhase(message) ?? (visibleContent === "none" ? "activity" : "reply");
 }
 
+/** Keys a transcript sender the way session participants are keyed, so one person counts once. */
+function senderPersonKey(sender: SenderIdentity): string | null {
+  return sender.identity
+    ? sessionParticipantIdentityKey(sender.identity)
+    : senderIdentityKey(sender);
+}
+
 type ReplyState = {
   sender?: MessageGroup["sender"];
   message?: MessageGroup["replyToMessage"];
@@ -36,9 +47,9 @@ type ReplyState = {
 function stampReplyAttribution(
   items: Array<ChatItem | MessageGroup>,
   context: Array<ChatItem | MessageGroup>,
-  sessionShared: boolean,
+  { people: sessionPeople, localPerson }: ReplyAttributionContext,
 ): Array<ChatItem | MessageGroup> {
-  const userSenderKeys = new Set<string>();
+  const people = new Set(sessionPeople);
   // reply_to_current names the prompt that started the run. Only the persisted
   // user-turn run identity resolves it; an ambiguous owner stays unresolved.
   const runPrompts = new Map<string, MessageGroup["messages"][number] | null>();
@@ -61,9 +72,15 @@ function stampReplyAttribution(
           runPrompts.set(runId, runPrompts.has(runId) ? null : source);
         }
       }
-      const senderKey = item.sender ? senderIdentityKey(item.sender) : null;
-      if (senderKey) {
-        userSenderKeys.add(senderKey);
+      // A local message carries no sender metadata: its author is the signed-in
+      // viewer, one person for counting, never a name for this message.
+      const person = item.sender
+        ? senderPersonKey(item.sender)
+        : item.senderSession
+          ? null
+          : localPerson;
+      if (person) {
+        people.add(person);
       }
       // A sender-less user group clears attribution: no chip is safer than
       // mislabeling the reply as addressed to the previous participant.
@@ -75,7 +92,7 @@ function stampReplyAttribution(
     }
   }
   // Automatic attribution is only useful when several people share the thread.
-  const shared = sessionShared || userSenderKeys.size >= 2;
+  const shared = people.size >= 2;
 
   // Rows outside the context (live output) take the state of the next row that
   // has one, or the transcript end.
@@ -135,8 +152,10 @@ function stampReplyAttribution(
 export type ReplyAttributionContext = {
   /** Every transcript row, including those a search hides from `items`. */
   items?: ChatItem[];
-  /** Session participants already include more than one person. */
-  shared?: boolean;
+  /** People the session row lists, keyed by `sessionParticipantIdentityKey`. */
+  people?: readonly string[];
+  /** Key of the signed-in viewer, who authors local user messages without a sender. */
+  localPerson?: string;
 };
 
 export function groupMessages(
@@ -145,7 +164,7 @@ export function groupMessages(
 ): Array<ChatItem | MessageGroup> {
   const result = groupChatItems(items);
   const context = replyContext.items ? groupChatItems(replyContext.items) : result;
-  return stampReplyAttribution(result, context, replyContext.shared === true);
+  return stampReplyAttribution(result, context, replyContext);
 }
 
 function groupChatItems(items: ChatItem[]): Array<ChatItem | MessageGroup> {

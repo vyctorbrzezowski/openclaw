@@ -99,8 +99,10 @@ export type BuildChatItemsProps = ChatInputPlacementProps & {
   questionPrompts?: readonly QuestionPrompt[];
   /** True while chat history is loading (initial load or background reload). */
   loading?: boolean;
-  /** Session participants include more than one person, loaded or not. */
-  replyShared?: boolean;
+  /** People the session row lists, loaded or not, keyed by `sessionParticipantIdentityKey`. */
+  replyPeople?: readonly string[];
+  /** Key of the signed-in viewer, who authors local user messages without a sender. */
+  replyLocalPerson?: string;
 };
 
 function canvasAssistantItemKey(
@@ -635,6 +637,7 @@ export function buildChatItems(
   }
   return groupMessages(coalesceToolActivityMessages(items), {
     items: replyContextItems && coalesceToolActivityMessages(replyContextItems),
-    shared: props.replyShared,
+    people: props.replyPeople,
+    localPerson: props.replyLocalPerson,
   });
 }

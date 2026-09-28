@@ -12,7 +12,10 @@ import {
   resolveMessageRole,
   resolveMessageSender,
 } from "../../../lib/chat/message-normalizer.ts";
-import { sessionParticipantIdentityKey } from "../../../lib/chat/sender-label.ts";
+import {
+  localParticipantIdentityKey,
+  sessionParticipantIdentityKey,
+} from "../../../lib/chat/sender-label.ts";
 import {
   isUiGlobalScopeConfigured,
   isSubagentSessionKey,
@@ -110,6 +113,7 @@ export function projectChatTranscript(
       },
     );
   // The session row counts every person who spoke, including rows not loaded yet.
+  // Grouping adds the loaded senders with the same keys, so one person counts once.
   const sessionPeople = new Set(
     [
       activeSession?.owner?.actor.identity,
@@ -185,7 +189,8 @@ export function projectChatTranscript(
     runActive: Boolean(props.runActive),
     questionPrompts: props.questionPrompts,
     loading: props.loading,
-    replyShared: sessionPeople.size >= 2,
+    replyPeople: [...sessionPeople].toSorted(),
+    replyLocalPerson: localParticipantIdentityKey(props.userId),
     searchOpen: state.searchOpen,
     searchQuery: state.searchQuery,
     messageRecovery:

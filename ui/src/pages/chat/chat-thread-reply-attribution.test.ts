@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
+import { localParticipantIdentityKey } from "../../lib/chat/sender-label.ts";
 import { groupMessages } from "./chat-thread-grouping.ts";
 import { buildCachedChatItems, resetChatThreadState } from "./chat-thread.ts";
 
@@ -112,6 +113,40 @@ describe("reply attribution grouping", () => {
       ["assistant", true],
     ]);
   });
+
+  it.each([
+    { peer: "bob", shared: true },
+    { peer: "viewer", shared: undefined },
+  ])(
+    "counts local sender-less prompts as the signed-in viewer (attributed: $peer)",
+    ({ peer, shared }) => {
+      // The session row lists only its owner; the viewer's own prompts carry no sender.
+      const viewer = localParticipantIdentityKey("viewer");
+      const attributed = userMessage("Status?", 1002, {
+        __openclaw: {
+          senderId: peer,
+          senderName: peer,
+          senderIdentity: { type: "profile", id: peer },
+        },
+      });
+      const groups = messageGroups({
+        replyPeople: [viewer],
+        replyLocalPerson: viewer,
+        messages: [
+          userMessage("Deploy?", 1000),
+          assistantMessage("Deploying", 1001),
+          attributed,
+          assistantMessage("Rollout done", 1003),
+        ],
+      });
+
+      const [first, last] = groups.filter((group) => group.role === "assistant");
+      expect(last?.replyShared).toBe(shared);
+      expect(last?.replyToMessage?.message).toBe(shared ? attributed : undefined);
+      // The local prompt counts as a person but never names its reply.
+      expect(first?.replyToSender).toBeUndefined();
+    },
+  );
 
   it.each([
     { first: null, second: "older", groups: 2 },

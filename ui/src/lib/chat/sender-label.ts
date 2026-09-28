@@ -94,3 +94,13 @@ export function sessionParticipantIdentityKey(identity: SessionParticipantIdenti
       return identity satisfies never;
   }
 }
+
+/**
+ * Keys the signed-in viewer, the author of local messages that carry no sender
+ * metadata. Without a profile the viewer is still one distinct person.
+ */
+export function localParticipantIdentityKey(userId: string | null | undefined): string {
+  return userId
+    ? sessionParticipantIdentityKey({ type: "profile", id: userId })
+    : JSON.stringify(["local"]);
+}
