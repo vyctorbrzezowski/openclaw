@@ -440,14 +440,23 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     : undefined;
   const who = resolveMessageGroupSenderLabel(group, opts);
   // Only a strip naming this same participant replaces the sender label; a
-  // shared display name does not. An assistant group is its agent's identity.
-  const ownIdentity = group.sender?.identity ?? {
-    type: "agent",
-    id: group.senderSession?.agentId ?? opts.agentId ?? DEFAULT_AGENT_ID,
-  };
+  // shared display name does not. An assistant group is its agent's identity;
+  // a user group without a typed identity has none to compare, so it keeps its name.
+  const ownIdentity =
+    group.sender?.identity ??
+    (normalizedRole === "assistant"
+      ? {
+          type: "agent" as const,
+          id: group.senderSession?.agentId ?? opts.agentId ?? DEFAULT_AGENT_ID,
+        }
+      : undefined);
   const replyIdentity = visibleReplyAttribution?.sender.identity;
   const showSenderName =
-    !(replyIdentity?.type === ownIdentity.type && replyIdentity.id === ownIdentity.id) &&
+    !(
+      ownIdentity &&
+      replyIdentity?.type === ownIdentity.type &&
+      replyIdentity.id === ownIdentity.id
+    ) &&
     !isForwarded &&
     !sourceOnly &&
     (normalizedRole !== "user" || isPeerGroup || opts.showOwnSenderName !== false);

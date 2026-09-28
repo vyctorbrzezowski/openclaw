@@ -175,6 +175,95 @@ it.each([
   expect(container.querySelector(".chat-sender-name")?.textContent ?? null).toBe(senderLabel);
 });
 
+const agentAnswer = { role: "assistant", content: "Earlier answer", __openclaw: { id: "earlier" } };
+const jordan = { id: "jordan", name: "Jordan" };
+const typedJordan = { ...jordan, identity: { type: "profile", id: "jordan" } } as const;
+
+it.each([
+  {
+    replier: "an untyped participant replying to the agent",
+    role: "user",
+    sender: jordan,
+    original: agentAnswer,
+    strip: "OpenClaw",
+    senderName: "Jordan",
+  },
+  {
+    replier: "the agent replying to its own earlier answer",
+    role: "assistant",
+    sender: undefined,
+    original: agentAnswer,
+    strip: "OpenClaw",
+    senderName: null,
+  },
+  {
+    // A peer's strip sits on the message itself, so the footer keeps their name.
+    replier: "a typed participant replying to their own earlier message",
+    role: "user",
+    sender: typedJordan,
+    original: {
+      role: "user",
+      content: "Earlier question",
+      __openclaw: {
+        id: "earlier",
+        senderId: "jordan",
+        senderName: "Jordan",
+        senderIdentity: typedJordan.identity,
+      },
+    },
+    strip: "Jordan",
+    senderName: "Jordan",
+  },
+] as const)(
+  "keeps the sender name of $replier unless the group strip names that same identity",
+  ({ role, sender, original, strip, senderName }) => {
+    container = document.body.appendChild(document.createElement("div"));
+    const resolveReplyPreview = createReplyPreviewResolver(
+      new Map([["earlier", { message: original, messageId: "earlier-key", senderLabel: strip }]]),
+      { assistantName: "OpenClaw", userId: "alice" },
+    );
+    render(
+      renderMessageGroup(
+        {
+          kind: "group",
+          key: "reply-group",
+          role,
+          timestamp: 1,
+          isStreaming: false,
+          visibleContent: "text",
+          replyShared: true,
+          ...(sender ? { sender, senderLabel: sender.name } : {}),
+          messages: [
+            {
+              key: "reply",
+              hasVisibleContent: true,
+              message: {
+                role,
+                content: "Reply",
+                __openclaw: { id: "reply", replyToId: "earlier" },
+              },
+            },
+          ],
+        },
+        {
+          showReasoning: false,
+          showToolCalls: false,
+          avatarPlacement: "none",
+          userId: "alice",
+          assistantName: "OpenClaw",
+          resolveReplyPreview,
+        },
+      ),
+      container,
+    );
+    expect(
+      container.querySelector(".chat-reply-attribution--reply .chat-reply-attribution__name")
+        ?.textContent,
+    ).toBe(strip);
+    expect(container.querySelector(".chat-sender-name")?.textContent ?? null).toBe(senderName);
+  },
+);
+
 it.each([
   { snapshot: undefined, missing: [] },
   { snapshot: { text: "Earlier question" }, missing: [] },
