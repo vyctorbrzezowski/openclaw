@@ -218,18 +218,20 @@ describe("quoted agent identity", () => {
       expected: { id: "research", avatar: null, textAvatar: null },
     },
     {
-      agentId: "main",
+      agentId: undefined,
       roster: [],
       expected: { id: "main", avatar: "/avatars/current.png", textAvatar: null },
     },
   ])(
-    "draws an agent-identity original without session provenance with its own avatar ($agentId, roster $roster.length)",
+    "draws a fetched agent original with its own avatar, never the viewing agent's ($agentId, roster $roster.length)",
     ({ agentId, roster, expected }) => {
-      const identity = { type: "agent", id: agentId } as const;
+      // A Gateway `chat.message.get` result names another agent's message only by
+      // its session provenance; its transcript metadata never carries an agent identity.
       const source = {
         role: "assistant",
         content: "Findings",
-        __openclaw: { id: "agent-answer", senderId: agentId, senderIdentity: identity },
+        ...(agentId ? { senderSession: { sessionKey: `agent:${agentId}:main`, agentId } } : {}),
+        __openclaw: { id: "agent-answer" },
       };
       const resolve = createReplyPreviewResolver(new Map(), {
         assistantName: "OpenClaw",
@@ -239,7 +241,7 @@ describe("quoted agent identity", () => {
         replyMessageAccess: { read: () => source },
       });
       expect(resolve("agent-answer")).toMatchObject({
-        sender: { identity },
+        sender: { identity: { type: "agent", id: expected.id } },
         agentAvatar: expected,
       });
     },
