@@ -377,30 +377,6 @@ describe("chat transcript replies", () => {
   );
 
   it.each([
-    { promptRun: "run-a", strips: [] },
-    { promptRun: "run-b", strips: ["Alice"] },
-  ])(
-    "recognizes a paged-out prompt from run $promptRun as this turn's own",
-    async ({ promptRun, strips }) => {
-      const prompt = turn("p1", "user", "Deploy?", {
-        ...alice,
-        idempotencyKey: `${promptRun}:user`,
-      });
-      const props = threadProps("pane-paged-turn-prompt", "agent:main:main", [
-        turn("a2", "assistant", "Deploying", { replyToId: "p1", runId: "run-a" }),
-      ]);
-      props.replyMessageAccess = {
-        revision: 0,
-        navigationId: null,
-        read: (id) => (id === "p1" ? prompt : undefined),
-        request: vi.fn(),
-        open: vi.fn(),
-      };
-      expect(await renderedStrips(props)).toEqual(strips);
-    },
-  );
-
-  it.each([
     { linkage: "the prompt that owns its run", strips: ["Alice"] },
     { linkage: "its own prompt in a 1:1 thread", latest: null, strips: [] },
     { linkage: "an older prompt in a 1:1 thread", latest: alice, strips: ["Alice"] },

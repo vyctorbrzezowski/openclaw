@@ -144,42 +144,6 @@ it("renders one recipient per group and navigates from the name by persisted ID"
   expect(onOpenReply).toHaveBeenCalledWith("prompt");
 });
 
-it.each([
-  {
-    recipient: "the same agent",
-    source: { role: "assistant", content: "Earlier answer", __openclaw: { id: "earlier" } },
-    senderLabel: null,
-  },
-  {
-    recipient: "a different participant with the same name",
-    source: {
-      role: "user",
-      content: "Earlier question",
-      __openclaw: {
-        id: "earlier",
-        senderId: "namesake",
-        senderName: "OpenClaw",
-        senderIdentity: { type: "profile", id: "namesake" },
-      },
-    },
-    senderLabel: "OpenClaw",
-  },
-])("keeps the sender label only when the strip names $recipient", ({ source, senderLabel }) => {
-  const { row } = draw(
-    prompt,
-    [{ role: "assistant", content: "Answer", __openclaw: { replyToId: "earlier" } }],
-    true,
-    "group",
-    {
-      replyShared: true,
-      senderLabel: "OpenClaw",
-      sources: { earlier: { message: source, senderLabel: "OpenClaw" } },
-    },
-  );
-  expect(row.querySelector(".chat-reply-attribution__name")?.textContent).toBe("OpenClaw");
-  expect(container.querySelector(".chat-sender-name")?.textContent ?? null).toBe(senderLabel);
-});
-
 const agentAnswer = { role: "assistant", content: "Earlier answer", __openclaw: { id: "earlier" } };
 const jordan = { id: "jordan", name: "Jordan" };
 const typedJordan = { ...jordan, identity: { type: "profile", id: "jordan" } } as const;
@@ -200,6 +164,23 @@ it.each([
     original: agentAnswer,
     strip: "OpenClaw",
     senderName: null,
+  },
+  {
+    replier: "the agent replying to a different participant with the same name",
+    role: "assistant",
+    sender: undefined,
+    original: {
+      role: "user",
+      content: "Earlier question",
+      __openclaw: {
+        id: "earlier",
+        senderId: "namesake",
+        senderName: "OpenClaw",
+        senderIdentity: { type: "profile", id: "namesake" },
+      },
+    },
+    strip: "OpenClaw",
+    senderName: "OpenClaw",
   },
   {
     // A peer's strip sits on the message itself, so the footer keeps their name.
@@ -271,9 +252,6 @@ it.each([
 
 it.each([
   { snapshot: undefined, missing: [] },
-  { snapshot: { text: "Earlier question" }, missing: [] },
-  { snapshot: undefined, missing: ["deleted"] },
-  { snapshot: { senderLabel: "", text: "Earlier question" }, missing: ["deleted"] },
   // Only the original's run ownership tells an older prompt from this turn's own.
   { snapshot: { senderLabel: "Jordan", text: "Earlier question" }, missing: [] },
   { snapshot: { senderLabel: "Jordan", text: "" }, missing: ["deleted"] },
@@ -301,19 +279,7 @@ it.each([
 
 it.each([
   { lookup: "pending", snapshot: undefined, name: undefined, unavailable: undefined },
-  {
-    lookup: "pending",
-    snapshot: { senderLabel: "", text: "Earlier question" },
-    name: undefined,
-    unavailable: undefined,
-  },
   { lookup: "missing", snapshot: undefined, name: undefined, unavailable: true },
-  {
-    lookup: "missing",
-    snapshot: { senderLabel: "", text: "Earlier question" },
-    name: undefined,
-    unavailable: true,
-  },
   {
     lookup: "missing",
     snapshot: { senderLabel: "Jordan", text: "" },

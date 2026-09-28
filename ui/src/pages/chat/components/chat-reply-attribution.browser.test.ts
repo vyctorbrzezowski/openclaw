@@ -273,62 +273,6 @@ it.each([1440, 390])(
   },
 );
 
-it.each([1440, 390])("fills a pending explicit reply strip in place at %d px", async (width) => {
-  await page.viewport(width, 800);
-  host.style.width = `${width - 32}px`;
-  const group: MessageGroup = {
-    kind: "group",
-    key: "answer",
-    role: "assistant",
-    timestamp: 0,
-    isStreaming: false,
-    visibleContent: "text",
-    replyShared: true,
-    messages: [
-      {
-        key: "answer-message",
-        hasVisibleContent: true,
-        message: {
-          role: "assistant",
-          content: "Step 3 moved to Friday.",
-          __openclaw: { id: "answer", replyToId: "older" },
-        },
-      },
-    ],
-  };
-  const drawGroup = (preview: Parameters<typeof renderMessageGroup>[1]["resolveReplyPreview"]) => {
-    render(
-      html`${renderMessageGroup(group, {
-          showReasoning: false,
-          showToolCalls: false,
-          avatarPlacement: "gutter",
-          onOpenReply: vi.fn(),
-          onResolveReply: vi.fn(),
-          resolveReplyPreview: preview,
-        })}
-        <div class="after">Next</div>`,
-      host,
-    );
-    return {
-      text: host.querySelector(".chat-bubble .chat-text")!.getBoundingClientRect().top,
-      after: host.querySelector(".after")!.getBoundingClientRect().top,
-    };
-  };
-  const pending = drawGroup(() => ({ pending: true }));
-  const row = host.querySelector<HTMLElement>(".chat-reply-attribution--reply")!;
-  expect(getComputedStyle(row).visibility).toBe("hidden");
-  expect(host.querySelector(".chat-reply-connector")).toBeNull();
-  const resolved = drawGroup(() => ({
-    messageId: "older",
-    sourceMessageId: "older",
-    senderLabel: "Mira",
-    sender: { id: "mira", name: "Mira" },
-    text: "Checklist",
-  }));
-  expect(host.querySelector(".chat-reply-attribution__name")?.textContent).toBe("Mira");
-  expect(resolved).toEqual(pending);
-});
-
 it.each([1440, 390])(
   "keeps a reserved reply strip row at a fixed height through every lookup outcome at %d px",
   async (width) => {
@@ -452,6 +396,12 @@ it.each([1440, 390])(
         await frame();
         const reserved = measure();
         expect(reserved.rowHeight).toBeGreaterThan(0);
+        if (!outcome.snapshot) {
+          // A pending row holds its place invisibly; the connector waits for the name.
+          const row = host.querySelector(".chat-reply-attribution--reply")!;
+          expect(getComputedStyle(row).visibility, outcome.name).toBe("hidden");
+          expect(host.querySelector(".chat-reply-connector"), outcome.name).toBeNull();
+        }
         // A sender-only snapshot paints the name before the lookup answers.
         expect(host.querySelector(".chat-reply-attribution__name")?.textContent, outcome.name).toBe(
           outcome.snapshot?.senderLabel,
