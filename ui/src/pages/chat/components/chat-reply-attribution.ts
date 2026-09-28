@@ -327,3 +327,24 @@ export function renderReplyAttribution(
     }
   </div>`;
 }
+
+/** Resolves and renders a message's own inline "Replying to" row in one step. */
+export function renderInlineReplyAttribution(
+  message: NormalizedMessage,
+  opts: ReplyAttributionActions & {
+    resolveReplyPreview?: ReplyPreviewLookup;
+    userId?: string | null;
+    replyShared?: boolean;
+  },
+) {
+  return renderReplyAttribution(
+    resolveMessageReplyAttribution(
+      message,
+      opts.resolveReplyPreview,
+      opts.userId,
+      opts.replyShared,
+    ),
+    opts,
+    "inline",
+  );
+}

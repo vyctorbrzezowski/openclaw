@@ -60,10 +60,7 @@ import {
   type AssistantMessageDisclosure,
 } from "./chat-message-text.ts";
 import { isSentPastedTextAttachment } from "./chat-pasted-text.ts";
-import {
-  renderReplyAttribution,
-  resolveMessageReplyAttribution,
-} from "./chat-reply-attribution.ts";
+import { renderInlineReplyAttribution } from "./chat-reply-attribution.ts";
 import type { ReplyPreviewLookup } from "./chat-reply-preview.types.ts";
 import { isSentCommentAttachment } from "./chat-sent-comments.ts";
 import type { SidebarContent } from "./chat-sidebar.ts";
@@ -582,16 +579,7 @@ export function renderGroupedMessage(
 
   const reply = opts.suppressReplyPreview
     ? nothing
-    : renderReplyAttribution(
-        resolveMessageReplyAttribution(
-          normalizedMessage,
-          opts.resolveReplyPreview,
-          opts.userId,
-          opts.replyShared,
-        ),
-        opts,
-        "inline",
-      );
+    : renderInlineReplyAttribution(normalizedMessage, opts);
   return html`
     <div
       class="${bubbleClasses}"
