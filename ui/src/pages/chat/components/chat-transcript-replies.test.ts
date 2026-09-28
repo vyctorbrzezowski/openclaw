@@ -109,6 +109,50 @@ describe("chat transcript replies", () => {
     },
   );
 
+  it("reveals a loaded original without text instead of paging history", async () => {
+    const transcript = createTestTranscript();
+    const container = document.body.appendChild(document.createElement("div"));
+    const open = vi.fn();
+    const props = threadProps("pane-reply-textless", "agent:main:main", [
+      // Rendered for its own reply line, with no text of its own.
+      {
+        role: "user",
+        content: [],
+        __openclaw: { id: "textless", replyToId: "elsewhere" },
+        timestamp: 1_000,
+      },
+      {
+        role: "user",
+        content: "Follow up",
+        __openclaw: { id: "reply-message", replyToId: "textless" },
+        timestamp: 2_000,
+      },
+    ]);
+    props.replyMessageAccess = {
+      revision: 0,
+      navigationId: null,
+      read: () => undefined,
+      request: vi.fn(),
+      open,
+    };
+    try {
+      render(renderChatThread(props, transcript), container);
+      transcript.hostConnected();
+      transcript.hostUpdated();
+      await flushDeferredRowPrune();
+      requireElement(container, ".chat-reply-attribution--inline button").click();
+      await Promise.resolve();
+      expect(open).not.toHaveBeenCalled();
+      expect(
+        requireElement(container, "[data-entry-id='textless']").classList.contains(
+          "chat-bubble--reply-target",
+        ),
+      ).toBe(true);
+    } finally {
+      transcript.hostDisconnected();
+    }
+  });
+
   it.each([
     ["assistant", null, false, "Molty"],
     ["CLI", ["cli", "cli", "Release helper"], false, "via CLI (Release helper)"],

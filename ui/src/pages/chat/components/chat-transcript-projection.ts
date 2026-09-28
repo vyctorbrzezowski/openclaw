@@ -42,7 +42,6 @@ import { renderAgentRunFrame } from "./chat-agent-run-frame.ts";
 import { resolveChatDefaultAvatarPlacement } from "./chat-author-avatar.ts";
 import { renderBackgroundTasksStatusRow } from "./chat-background-tasks-status.ts";
 import { buildChatArchiveNotice, renderChatDivider, renderChatNotice } from "./chat-divider.ts";
-import { resolveMessageReplyText } from "./chat-message-markdown.ts";
 import { assistantMediaPolicyKey } from "./chat-message-media.ts";
 import {
   getChatMediaRenderVersion,
@@ -702,7 +701,8 @@ export function projectChatTranscript(
   state.transcriptRenderContext.onSetReply = props.onSetReply;
   state.transcriptRenderContext.onOpenReply = (replyToId) => {
     const loaded = loadedReplySources.get(replyToId);
-    if (loaded && resolveMessageReplyText(loaded.message)) {
+    // A loaded original is revealed in place, with or without text.
+    if (loaded) {
       // Loaded targets also serve read-only views without reply-message access.
       // Reveal waits for this expansion to commit before locating the bubble.
       expandReplyTargetWork(transcriptItems, expandedToolCards, replyToId);
