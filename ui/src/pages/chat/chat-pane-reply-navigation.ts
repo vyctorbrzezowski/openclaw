@@ -7,6 +7,7 @@ import { areUiSessionKeysEquivalent } from "../../lib/sessions/session-key.ts";
 import { ChatPaneSession } from "./chat-pane-session.ts";
 import type { ChatPageHost } from "./chat-state-host.ts";
 import { persistedMessageEntryId } from "./chat-thread.ts";
+import type { ReplyMessageStatus } from "./components/chat-reply-preview.ts";
 
 registerChatMessageMetadataEnglish();
 
@@ -17,13 +18,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected replyMessageRevision = 0;
   private readonly replyMessages = new Map<
     string,
-    {
-      client: object;
-      generation: number;
-      message?: unknown;
-      missing?: true;
-      oversized?: true;
-    }
+    { client: object; generation: number; message?: unknown; status?: "missing" | "oversized" }
   >();
 
   protected abstract loadOlderMessages(): Promise<boolean>;
@@ -42,25 +37,19 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
   protected readonly readReplyMessage = (messageId: string): unknown =>
     this.currentReplyMessage(messageId)?.message;
 
-  protected readonly isReplyMessageMissing = (messageId: string): boolean =>
-    this.currentReplyMessage(messageId)?.missing === true;
-
-  /** The original exists but is too large to return. */
-  protected readonly isReplyMessageOversized = (messageId: string): boolean =>
-    this.currentReplyMessage(messageId)?.oversized === true;
-
   /**
-   * Not answered on the current connection yet. Unknown counts as pending from the
-   * first paint, including a warm boot rendered before the Gateway connects, and a
-   * transport failure stays pending until a new connection's retry answers.
+   * How the current connection answered a lookup without a message. Unknown is
+   * pending from the first paint, including a warm boot rendered before the
+   * Gateway connects, and a transport failure stays pending until a new
+   * connection's retry answers.
    */
-  protected readonly isReplyMessagePending = (messageId: string): boolean => {
+  protected readonly replyMessageStatus = (messageId: string): ReplyMessageStatus | undefined => {
     const state = this.state;
     if (!state || parseCatalogSessionKey(state.sessionKey)) {
-      return false;
+      return undefined;
     }
     const cached = this.currentReplyMessage(messageId);
-    return !cached || !(cached.message || cached.missing || cached.oversized);
+    return cached?.message ? undefined : (cached?.status ?? "pending");
   };
 
   protected readonly requestReplyMessage = (messageId: string): void => {
@@ -121,9 +110,10 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       cacheKey,
       result.ok && result.message
         ? { ...attempt, message: result.message }
-        : result.unavailableReason === "oversized"
-          ? { ...attempt, oversized: true }
-          : { ...attempt, missing: true },
+        : {
+            ...attempt,
+            status: result.unavailableReason === "oversized" ? "oversized" : "missing",
+          },
     );
     this.replyMessageRevision += 1;
     if (areUiSessionKeysEquivalent(scope.state.sessionKey, sessionKey)) {
@@ -157,9 +147,7 @@ export abstract class ChatPaneReplyNavigation extends ChatPaneSession {
       revision: this.replyMessageRevision,
       navigationId: this.currentReplyNavigationId(sessionKey),
       read: this.readReplyMessage,
-      missing: this.isReplyMessageMissing,
-      oversized: this.isReplyMessageOversized,
-      pending: this.isReplyMessagePending,
+      status: this.replyMessageStatus,
       request: this.requestReplyMessage,
       open: this.openReplyMessage,
     };

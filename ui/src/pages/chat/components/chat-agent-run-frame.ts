@@ -19,7 +19,7 @@ import {
   type StreamGroupOptions,
   type StreamGroupPart,
 } from "./chat-message.ts";
-import { resolveReplyAttribution } from "./chat-reply-attribution.ts";
+import { resolveGroupReplyLine } from "./chat-reply-attribution.ts";
 import { renderChatSourcePreviews } from "./chat-source-previews.ts";
 import { renderBrowserTabPreviews } from "./chat-tool-cards.ts";
 
@@ -66,19 +66,14 @@ export function renderAgentRunFrame(frame: AgentRunFrameRenderItem, opts: AgentR
     isStreaming: frame.outcome.kind === "active",
     runId: frame.runId,
   };
-  const attributionGroup =
-    (actionOwner && groups.find((group) => group.messages.includes(actionOwner))) || shell;
-  const replyAttribution = resolveReplyAttribution(
-    attributionGroup,
+  // The frame's one line follows its final answer's target.
+  const frameReplyLine = resolveGroupReplyLine(
+    (actionOwner && groups.find((group) => group.messages.includes(actionOwner))) || shell,
     opts.renderGroupOptions(shell).resolveReplyPreview,
     groups.flatMap((group) => group.messages),
   );
   const renderFrameGroup = (group: MessageGroup) =>
-    renderMessageGroupContent(group, {
-      ...opts.renderGroupOptions(group),
-      // The frame's line is its only one: a part never quotes its own target.
-      hasReplyAttribution: true,
-    });
+    renderMessageGroupContent(group, opts.renderGroupOptions(group));
   type BodyPart =
     | Exclude<AgentRunFrameRenderItem["parts"][number], { kind: "stream-run" }>
     | StreamGroupPart;
@@ -139,7 +134,7 @@ export function renderAgentRunFrame(frame: AgentRunFrameRenderItem, opts: AgentR
   return renderMessageGroup(shell, {
     ...opts.renderGroupOptions(shell),
     frameContent,
-    replyAttribution,
+    frameReplyLine,
     frameActionOwner: actionOwner,
     turnRecap: opts.turnRecap,
   });

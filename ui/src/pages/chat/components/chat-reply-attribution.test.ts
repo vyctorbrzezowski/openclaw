@@ -77,9 +77,14 @@ function draw(
       assistantName: "Assistant",
       replyMessageAccess: {
         read: (id) => fetched[id],
-        missing: (id) => missing.includes(id),
-        oversized: (id) => oversized.includes(id),
-        pending: (id) => pending.includes(id),
+        status: (id) =>
+          missing.includes(id)
+            ? "missing"
+            : oversized.includes(id)
+              ? "oversized"
+              : pending.includes(id)
+                ? "pending"
+                : undefined,
       },
     },
   );
@@ -826,9 +831,6 @@ function drawOwnReply(
     userId: "alice",
     replyMessageAccess: {
       read: (id) => (id === "older" ? original : undefined),
-      missing: () => false,
-      oversized: () => false,
-      pending: () => false,
     },
   });
   render(

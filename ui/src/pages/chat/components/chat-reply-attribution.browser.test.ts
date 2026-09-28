@@ -67,7 +67,6 @@ async function draw(name: string, source = true, onOpenReply = vi.fn()) {
         sender: { id: "casey", name },
         agentAvatar: { avatar: null, textAvatar: "🦀" },
         text: "Original question",
-        isLoaded: true,
       }),
     }),
     host,

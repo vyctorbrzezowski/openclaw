@@ -1,8 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { describe, expect, it } from "vitest";
-import { createReplyPreviewResolver } from "./chat-reply-preview.ts";
-import type { LoadedReplySource } from "./chat-reply-preview.types.ts";
+import { createReplyPreviewResolver, type LoadedReplySource } from "./chat-reply-preview.ts";
 
 describe("attachment reply previews", () => {
   it.each(["loaded", "fetched"] as const)(
@@ -75,7 +74,6 @@ describe("text-less reply previews", () => {
         sourceMessageId: "photo",
         senderLabel: "Mira",
         sender: { id: "mira", name: "Mira", identity },
-        isLoaded: location === "loaded",
         text: "",
       });
     },

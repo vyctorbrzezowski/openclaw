@@ -1,25 +1,48 @@
 // Reply-preview resolution: memoized quoted-source previews served from
 // already-loaded transcript rows first, then the reply-message access loader.
-import { normalizeRoleForGrouping } from "../../../lib/chat/message-normalizer.ts";
+import {
+  normalizeRoleForGrouping,
+  type normalizeMessage,
+} from "../../../lib/chat/message-normalizer.ts";
 import { DEFAULT_AGENT_ID } from "../../../lib/sessions/session-key.ts";
 import { userTurnRunId } from "../chat-thread-items.ts";
 import { persistedMessageEntryId } from "../chat-thread.ts";
+import type { renderChatAuthorAvatar } from "./chat-author-avatar.ts";
+import { resolveMessageGroupSenderLabel } from "./chat-message-group.ts";
 import { prepareChatMessageRender, resolveMessageReplyText } from "./chat-message-markdown.ts";
-import { resolveMessageGroupSenderLabel } from "./chat-message-sender.ts";
-import type {
-  LoadedReplySource,
-  MissingReplyPreview,
-  OversizedReplyPreview,
-  PendingReplyPreview,
-  ReplyPreview,
-  ReplyPreviewLookup,
-} from "./chat-reply-preview.types.ts";
+import type { MessageReplyTarget } from "./chat-message.ts";
 import { resolveAssistantDisplayAvatar } from "./chat-welcome.ts";
 
-type ResolvedReplyPreview = ReplyPreview | undefined;
-const MISSING_REPLY_PREVIEW: MissingReplyPreview = { missing: true };
-const PENDING_REPLY_PREVIEW: PendingReplyPreview = { pending: true };
-const OVERSIZED_REPLY_PREVIEW: OversizedReplyPreview = { oversized: true };
+export type LoadedReplySource = {
+  message: unknown;
+  messageId: string;
+  senderLabel: string;
+};
+
+export type ReplyPreview = MessageReplyTarget & {
+  sourceMessageId: string;
+  sender?: ReturnType<typeof normalizeMessage>["sender"];
+  /** The run a source prompt started, from its persisted user-turn identity. */
+  turnRunId?: string;
+  agentAvatar?: Parameters<typeof renderChatAuthorAvatar>[2];
+};
+
+/**
+ * How the Gateway answered a lookup without a message: not yet (`pending`), the
+ * original is inaccessible (`missing`), or it exists but is too large (`oversized`).
+ */
+export type ReplyMessageStatus = "pending" | "missing" | "oversized";
+
+const STATUS_PREVIEWS = {
+  pending: { pending: true },
+  missing: { missing: true },
+  oversized: { oversized: true },
+} as const;
+
+export type ReplyPreviewLookup = (
+  replyToId: string,
+) => ReplyPreview | (typeof STATUS_PREVIEWS)[ReplyMessageStatus] | undefined;
+
 type ReplyPreviewProps = Omit<
   Parameters<typeof resolveAssistantDisplayAvatar>[0],
   "assistantAvatar"
@@ -31,9 +54,7 @@ type ReplyPreviewProps = Omit<
   senderAgentAvatars?: ReadonlyMap<string, string | null>;
   replyMessageAccess?: {
     read: (messageId: string) => unknown;
-    missing?: (messageId: string) => boolean;
-    oversized?: (messageId: string) => boolean;
-    pending?: (messageId: string) => boolean;
+    status?: (messageId: string) => ReplyMessageStatus | undefined;
   };
 };
 
@@ -42,7 +63,7 @@ function projectResolvedReplyPreview(
   replyToId: string,
   props: ReplyPreviewProps,
   loaded?: LoadedReplySource,
-): ResolvedReplyPreview {
+): ReplyPreview | undefined {
   const { normalizedMessage: normalized, displayMarkdown } = prepareChatMessageRender(message);
   const text = resolveMessageReplyText(message, normalized, displayMarkdown);
   const persistedId = persistedMessageEntryId(message);
@@ -91,9 +112,7 @@ function projectResolvedReplyPreview(
               : props.senderAgentAvatars?.get(agentId),
           }),
         }
-      : {}),
-    isLoaded: Boolean(loaded),
-    ...(isAssistant ? {} : { turnRunId: userTurnRunId(message) ?? undefined }),
+      : { turnRunId: userTurnRunId(message) ?? undefined }),
     text,
   };
 }
@@ -108,23 +127,11 @@ export function createReplyPreviewResolver(
       return resolved.get(replyToId);
     }
     const loaded = loadedReplySources.get(replyToId);
-    const loadedPreview = loaded
-      ? projectResolvedReplyPreview(loaded.message, replyToId, props, loaded)
-      : undefined;
-    if (loadedPreview) {
-      resolved.set(replyToId, loadedPreview);
-      return loadedPreview;
-    }
-    const message = props.replyMessageAccess?.read(replyToId);
+    const message = loaded?.message ?? props.replyMessageAccess?.read(replyToId);
+    const status = message ? undefined : props.replyMessageAccess?.status?.(replyToId);
     const preview = message
-      ? projectResolvedReplyPreview(message, replyToId, props)
-      : props.replyMessageAccess?.missing?.(replyToId)
-        ? MISSING_REPLY_PREVIEW
-        : props.replyMessageAccess?.oversized?.(replyToId)
-          ? OVERSIZED_REPLY_PREVIEW
-          : props.replyMessageAccess?.pending?.(replyToId)
-            ? PENDING_REPLY_PREVIEW
-            : undefined;
+      ? projectResolvedReplyPreview(message, replyToId, props, loaded)
+      : status && STATUS_PREVIEWS[status];
     resolved.set(replyToId, preview);
     return preview;
   };

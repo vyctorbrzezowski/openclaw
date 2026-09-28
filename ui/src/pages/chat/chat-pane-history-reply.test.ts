@@ -96,10 +96,10 @@ describe("chat pane reply-source history navigation", () => {
     state.connected = false;
     pane.context.gateway.snapshot.phase = "connecting";
 
-    expect(pane.isReplyMessagePending("source-message")).toBe(true);
+    expect(pane.replyMessageStatus("source-message")).toBe("pending");
     pane.requestReplyMessage("source-message");
     expect(request).not.toHaveBeenCalled();
-    expect(pane.isReplyMessagePending("source-message")).toBe(true);
+    expect(pane.replyMessageStatus("source-message")).toBe("pending");
   });
 
   it("keeps an oversized reply source as existing rather than missing", async () => {
@@ -109,9 +109,7 @@ describe("chat pane reply-source history navigation", () => {
 
     pane.requestReplyMessage("source-message");
 
-    await vi.waitFor(() => expect(pane.isReplyMessageOversized("source-message")).toBe(true));
-    expect(pane.isReplyMessageMissing("source-message")).toBe(false);
-    expect(pane.isReplyMessagePending("source-message")).toBe(false);
+    await vi.waitFor(() => expect(pane.replyMessageStatus("source-message")).toBe("oversized"));
   });
 
   it("confirms a missing reply source only from a Gateway answer", async () => {
@@ -123,22 +121,21 @@ describe("chat pane reply-source history navigation", () => {
     const client = { request } as unknown as GatewayBrowserClient;
     const { pane, state } = createTestChatPane({ client, sessions: {} as SessionCapability });
 
-    expect(pane.isReplyMessagePending("source-message")).toBe(true);
+    expect(pane.replyMessageStatus("source-message")).toBe("pending");
     pane.requestReplyMessage("source-message");
     expect(request).toHaveBeenCalledOnce();
     failed.reject(new Error("socket closed"));
     await failed.promise.catch(() => {});
     // A failed lookup confirms nothing and keeps the strip row reserved; the
     // same connection does not retry it.
-    expect(pane.isReplyMessagePending("source-message")).toBe(true);
-    expect(pane.isReplyMessageMissing("source-message")).toBe(false);
+    expect(pane.replyMessageStatus("source-message")).toBe("pending");
     pane.requestReplyMessage("source-message");
     expect(request).toHaveBeenCalledOnce();
     pane.connectionGeneration += 1;
     state.connectionEpoch = pane.connectionGeneration;
     pane.requestReplyMessage("source-message");
 
-    await vi.waitFor(() => expect(pane.isReplyMessageMissing("source-message")).toBe(true));
+    await vi.waitFor(() => expect(pane.replyMessageStatus("source-message")).toBe("missing"));
     expect(pane.readReplyMessage("source-message")).toBeUndefined();
   });
 

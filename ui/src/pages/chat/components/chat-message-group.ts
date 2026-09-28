@@ -1,6 +1,8 @@
+import { asNullableRecord } from "@openclaw/normalization-core/record-coerce";
 import { html, nothing } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { groupToolCalls, type ToolCallGroup } from "../../../../../src/chat/tool-call-grouping.js";
+import { resolveLocalUserName } from "../../../app/user-identity.ts";
 import type { BrowserTabSelection } from "../../../components/browser/browser-target.ts";
 import { icons } from "../../../components/icons.ts";
 import {
@@ -44,11 +46,6 @@ import {
 } from "./chat-message-markdown.ts";
 import { renderChatSendStatus, type ChatSendStatusActions } from "./chat-message-send-status.ts";
 import {
-  isOwnSenderGroup,
-  isSourceOnlyUserGroup,
-  resolveMessageGroupSenderLabel,
-} from "./chat-message-sender.ts";
-import {
   emptyGroupFooter,
   renderStreamGroupParts,
   type StreamGroupOptions,
@@ -57,15 +54,14 @@ import {
 import type { AssistantMessageDisclosure } from "./chat-message-text.ts";
 import { extractGroupMeta, renderMessageMeta } from "./chat-message-timestamp.ts";
 import {
-  holdsReplyAttributionRow,
-  isReplyAttributionVisible,
-  renderReplyAttribution,
-  resolveMessageReplyAttribution,
-  resolveReplyAttribution,
-  type ReplyAttribution,
+  NO_REPLY_LINE,
+  renderReplyLine,
+  renderReplyLineConnector,
+  resolveGroupReplyLine,
+  resolveMessageReplyLine,
+  type ReplyLine,
 } from "./chat-reply-attribution.ts";
-import { renderReplyConnector } from "./chat-reply-connector.ts";
-import type { ReplyPreviewLookup } from "./chat-reply-preview.types.ts";
+import type { ReplyPreviewLookup } from "./chat-reply-preview.ts";
 import { chatResponsiveLayout } from "./chat-responsive-layout.ts";
 import type { SidebarContent, SidebarFullMessageLoader } from "./chat-sidebar.ts";
 import {
@@ -92,15 +88,12 @@ type RenderMessageGroupOptions = Omit<
   | "messageActions"
   | "entryId"
   | "entryRef"
-  | "resolveReplyPreview"
-  | "suppressReplyPreview"
-  | "replyShared"
+  | "replyLine"
 > &
   ChatSendStatusActions &
   Parameters<typeof renderForwardedAvatar>[1] & {
-    /** A run frame's attribution; other groups resolve their own. */
-    replyAttribution?: ReplyAttribution;
-    hasReplyAttribution?: boolean;
+    /** A run frame's line, from its final answer; other groups resolve their own. */
+    frameReplyLine?: ReplyLine;
     entryRefFor?: (key: string) => ((element?: Element) => void) | undefined;
     latestBrowserTabs?: ReadonlyMap<string, BrowserTabSelection>;
     /** Configured main-session key; an agent's main source labels as the agent. */
@@ -164,7 +157,7 @@ function prepareGroupMessage(
 function renderPreparedGroupMessage(
   group: MessageGroup,
   index: number,
-  opts: RenderMessageGroupOptions,
+  opts: RenderMessageGroupOptions & Pick<GroupedMessageRenderOptions, "replyLine">,
   { item, source, actions: actionDetails }: ReturnType<typeof prepareGroupMessage>,
 ) {
   let assistantMessageDisclosure: AssistantMessageDisclosure | undefined;
@@ -189,8 +182,6 @@ function renderPreparedGroupMessage(
     item.key,
     {
       ...opts,
-      suppressReplyPreview: opts.hasReplyAttribution,
-      replyShared: group.replyShared,
       isStreaming: group.isStreaming && index === group.messages.length - 1,
       entryId: persistedMessageEntryId(item.message) ?? undefined,
       entryRef: opts.entryRefFor?.(item.key),
@@ -202,6 +193,14 @@ function renderPreparedGroupMessage(
     },
     opts.onOpenSidebar,
   );
+}
+
+function isOwnSenderGroup(
+  group: Pick<MessageGroup, "sender">,
+  userId: string | null | undefined,
+): boolean {
+  const identity = group.sender?.identity;
+  return identity?.type === "profile" && identity.id === userId;
 }
 
 export function renderActivityGroup(
@@ -388,6 +387,61 @@ export function renderActivityGroup(
       `;
 }
 
+function isSourceOnlyUserGroup(
+  group: Pick<MessageGroup, "role" | "sender" | "senderLabel" | "sourceClients">,
+): boolean {
+  return (
+    normalizeRoleForGrouping(group.role) === "user" &&
+    Boolean(group.sourceClients?.length) &&
+    !group.sender &&
+    !group.senderLabel?.trim()
+  );
+}
+
+export function resolveMessageGroupSenderLabel(
+  group: Pick<MessageGroup, "role" | "sender" | "senderLabel" | "sourceClients"> & {
+    messages: ReadonlyArray<{ message: unknown }>;
+  },
+  opts: Pick<RenderMessageGroupOptions, "assistantName" | "userId" | "userName">,
+): string {
+  const normalizedRole = normalizeRoleForGrouping(group.role);
+  if (isSourceOnlyUserGroup(group)) {
+    return messageClientSourcesLabel(group.sourceClients ?? []);
+  }
+  if (normalizedRole === "custom") {
+    const isError = group.messages.every(({ message }) => {
+      const customType = asNullableRecord(message)?.customType;
+      return (
+        customType === "run-failed-before-reply" || customType === "cloud-workspace-recovery-failed"
+      );
+    });
+    if (isError) {
+      const isContention = group.messages.every(({ message }) => {
+        const entry = asNullableRecord(message);
+        return (
+          entry?.customType === "run-failed-before-reply" &&
+          asNullableRecord(entry.details)?.errorKind === "state_contention"
+        );
+      });
+      return t(isContention ? "common.system" : "chat.messages.errorSender");
+    }
+    return group.messages.every(({ message }) => workspaceResultConflictFromTranscript(message))
+      ? t("chat.workspaceConflict.eventSender")
+      : t("common.system");
+  }
+  const resolvedUserName = resolveLocalUserName({ name: opts.userName });
+  const userLabel = group.senderLabel?.trim();
+  return normalizedRole === "user"
+    ? isOwnSenderGroup(group, opts.userId)
+      ? resolvedUserName
+      : (userLabel ?? resolvedUserName)
+    : normalizedRole === "assistant"
+      ? (userLabel ?? opts.assistantName ?? "Assistant")
+      : normalizedRole === "tool"
+        ? t("chat.messages.toolSender")
+        : normalizedRole;
+}
+
 function isActivityMessageGroup(group: MessageGroup): boolean {
   if (normalizeRoleForGrouping(group.role) !== "tool") {
     return false;
@@ -431,13 +485,9 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
     !isOwnSenderGroup(group, opts.userId);
   const forwardedSource = hasForwardedSource(group);
   const isForwarded = normalizedRole === "assistant" && forwardedSource;
-  // A run frame resolves its attribution from its final answer; none means no strip.
-  const replyAttribution = opts.frameContent
-    ? opts.replyAttribution
-    : resolveReplyAttribution(group, opts.resolveReplyPreview);
-  const visibleReplyAttribution = isReplyAttributionVisible(replyAttribution)
-    ? replyAttribution
-    : undefined;
+  const replyLine = opts.frameContent
+    ? (opts.frameReplyLine ?? NO_REPLY_LINE)
+    : resolveGroupReplyLine(group, opts.resolveReplyPreview);
   const who = resolveMessageGroupSenderLabel(group, opts);
   // Only a strip naming this same participant replaces the sender label; a
   // shared display name does not. An assistant group is its agent's identity;
@@ -450,7 +500,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
           id: group.senderSession?.agentId ?? opts.agentId ?? DEFAULT_AGENT_ID,
         }
       : undefined);
-  const replyIdentity = visibleReplyAttribution?.sender.identity;
+  const replyIdentity = replyLine.sender?.identity;
   const showSenderName =
     !(
       ownIdentity &&
@@ -584,9 +634,8 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
           )
       : nothing;
 
-  const hasReplyConnector = Boolean(visibleReplyAttribution && avatar !== nothing);
-  // A pending lookup keeps the resolved strip's layout; its connector waits for the name.
-  const holdsReplyRow = holdsReplyAttributionRow(replyAttribution) && avatar !== nothing;
+  // A reserved line keeps the resolved layout; its connector waits for the name.
+  const holdsReplyRow = replyLine.state !== "hidden" && avatar !== nothing;
   return html`
     <div
       class="chat-group ${roleClass} chat-group--with-footer${
@@ -602,7 +651,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
       ${inlineUserAvatar ? nothing : avatar}
       <div class="chat-group-messages">
         ${forwardedSource ? renderForwardedAttribution(group, opts) : nothing}
-        ${renderReplyAttribution(replyAttribution, opts)}
+        ${renderReplyLine(replyLine, opts)}
         ${
           opts.frameContent ??
           chatResponsiveLayout((mobile) =>
@@ -636,23 +685,25 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                           ${renderMessageActionButtons(actionDetails, opts)}
                         </div>`
                     : nothing;
-                const peerAttribution = isPeerGroup
-                  ? resolveMessageReplyAttribution(
-                      prepared.source.normalizedMessage,
-                      opts.resolveReplyPreview,
-                      opts.userId,
-                      true,
-                    )
-                  : undefined;
-                const peerVisible = isReplyAttributionVisible(peerAttribution);
-                const peerHoldsRow = holdsReplyAttributionRow(peerAttribution);
+                // Assistant groups carry one line; your own replies keep theirs in the
+                // bubble, and a participant's sits above the message beside its avatar.
+                const line =
+                  normalizedRole === "assistant"
+                    ? NO_REPLY_LINE
+                    : resolveMessageReplyLine(
+                        prepared.source.normalizedMessage,
+                        opts.resolveReplyPreview,
+                        opts.userId,
+                        isPeerGroup || group.replyShared,
+                      );
+                const peerHoldsRow = isPeerGroup && line.state !== "hidden";
                 const message = renderPreparedGroupMessage(
                   group,
                   index,
                   {
                     ...opts,
                     isForwarded: forwardedSource,
-                    hasReplyAttribution: Boolean(replyAttribution || peerAttribution),
+                    replyLine: isPeerGroup ? undefined : line,
                     avatar:
                       !peerHoldsRow &&
                       inlineUserAvatar &&
@@ -662,15 +713,14 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                   },
                   prepared,
                 );
+                const peerLine = isPeerGroup ? renderReplyLine(line, opts) : nothing;
                 return html`
                   ${
                     peerHoldsRow
                       ? html`<div class="chat-message--reply">
-                          ${renderReplyAttribution(peerAttribution, opts, "peer")}
-                          ${message}${avatar}
-                          ${peerVisible && avatar !== nothing ? renderReplyConnector() : nothing}
+                          ${peerLine} ${message}${avatar} ${renderReplyLineConnector(line, avatar)}
                         </div>`
-                      : html`${renderReplyAttribution(peerAttribution, opts)}${message}`
+                      : html`${peerLine}${message}`
                   }
                   ${actions}
                 `;
@@ -736,7 +786,7 @@ export function renderMessageGroup(group: MessageGroup, opts: RenderMessageGroup
                 }
               </div>`
       }
-      ${hasReplyConnector ? renderReplyConnector() : nothing}
+      ${renderReplyLineConnector(replyLine, avatar)}
     </div>
   `;
 }

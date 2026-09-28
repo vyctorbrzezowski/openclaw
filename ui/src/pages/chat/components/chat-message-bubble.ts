@@ -60,8 +60,7 @@ import {
   type AssistantMessageDisclosure,
 } from "./chat-message-text.ts";
 import { isSentPastedTextAttachment } from "./chat-pasted-text.ts";
-import { renderInlineReplyAttribution } from "./chat-reply-attribution.ts";
-import type { ReplyPreviewLookup } from "./chat-reply-preview.types.ts";
+import { renderReplyLine, type ReplyLine } from "./chat-reply-attribution.ts";
 import { isSentCommentAttachment } from "./chat-sent-comments.ts";
 import type { SidebarContent } from "./chat-sidebar.ts";
 import {
@@ -170,7 +169,6 @@ export function renderGroupedMessage(
     transcriptVisible?: boolean;
     boardProvider?: BoardProvider;
     agentId?: string;
-    userId?: string | null;
     duplicateCount?: number;
     showReasoning: boolean;
     showToolCalls?: boolean;
@@ -207,13 +205,11 @@ export function renderGroupedMessage(
     entryId?: string;
     /** Freshly submitted user turn: play the one-shot composer entry animation. */
     entryRef?: (element?: Element) => void;
-    resolveReplyPreview?: ReplyPreviewLookup;
+    /** This message's own "Replying to" line, drawn inside the bubble. */
+    replyLine?: ReplyLine;
     onResolveReply?: (replyToId: string) => void;
     onOpenReply?: (replyToId: string) => void;
     replyNavigationId?: string | null;
-    suppressReplyPreview?: boolean;
-    /** Shared thread: an own reply never names an unattributed source "You". */
-    replyShared?: boolean;
   },
   onOpenSidebar?: (content: SidebarContent) => void,
 ) {
@@ -577,9 +573,6 @@ export function renderGroupedMessage(
     }
   `;
 
-  const reply = opts.suppressReplyPreview
-    ? nothing
-    : renderInlineReplyAttribution(normalizedMessage, opts);
   return html`
     <div
       class="${bubbleClasses}"
@@ -589,7 +582,7 @@ export function renderGroupedMessage(
       data-message-text=${actionText || nothing}
       .messageActions=${opts.messageActions}
     >
-      ${reply}
+      ${opts.replyLine ? renderReplyLine(opts.replyLine, opts, true) : nothing}
       ${
         onlyToolCards
           ? renderInlineToolCards(toolCards, toolRenderOptions)

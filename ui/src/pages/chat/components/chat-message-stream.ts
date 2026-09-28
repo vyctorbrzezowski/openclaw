@@ -18,11 +18,11 @@ import {
 import { renderChatTimestamp } from "./chat-message-timestamp.ts";
 import { renderChatQuestionSummary } from "./chat-question-card.ts";
 import {
-  isReplyAttributionVisible,
-  renderReplyAttribution,
-  resolveReplyAttribution,
+  renderReplyLine,
+  renderReplyLineConnector,
+  resolveGroupReplyLine,
 } from "./chat-reply-attribution.ts";
-import { renderReplyConnector } from "./chat-reply-connector.ts";
+import type { ReplyPreviewLookup } from "./chat-reply-preview.ts";
 import type { SidebarContent } from "./chat-sidebar.ts";
 import { shouldToggleSelectableDisclosure, syncToolDisclosureOverflow } from "./chat-tool-cards.ts";
 import { renderToolOutcomeSummary } from "./chat-tool-outcome-summary.ts";
@@ -36,7 +36,6 @@ export type StreamGroupPart = Extract<
 
 type StreamMessageOptions = Pick<
   Parameters<typeof renderGroupedMessage>[2],
-  | "resolveReplyPreview"
   | "onResolveReply"
   | "onOpenReply"
   | "replyNavigationId"
@@ -66,6 +65,7 @@ type StreamMessageOptions = Pick<
 >;
 
 export type StreamGroupOptions = StreamMessageOptions & {
+  resolveReplyPreview?: ReplyPreviewLookup;
   branding?: ThemeBranding;
   entryRefFor?: (key: string) => ((element?: Element) => void) | undefined;
   onReply?: (target: MessageReplyTarget) => void;
@@ -155,7 +155,7 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
       ? nothing
       : renderChatAvatar("assistant", assistant);
   const sourcePart = parts.find((part) => part.kind === "stream");
-  const replyAttribution = resolveReplyAttribution(
+  const replyLine = resolveGroupReplyLine(
     {
       role: "assistant",
       messages: [],
@@ -164,17 +164,16 @@ export function renderStreamGroup(parts: StreamGroupPart[], opts: StreamGroupOpt
     },
     opts.resolveReplyPreview,
   );
-  const hasReplyConnector = isReplyAttributionVisible(replyAttribution) && avatar !== nothing;
-  const groupClass = `chat-group assistant${hasReplyConnector ? " chat-group--reply" : ""}${workingOnly ? " chat-group--working" : ""}${footerStartedAt !== null ? " chat-group--with-footer" : ""}`;
+  const hasReplyRow = replyLine.state !== "hidden" && avatar !== nothing;
+  const groupClass = `chat-group assistant${hasReplyRow ? " chat-group--reply" : ""}${workingOnly ? " chat-group--working" : ""}${footerStartedAt !== null ? " chat-group--with-footer" : ""}`;
 
   return html`
     <div class=${groupClass} data-chat-row-key=${parts[0]?.key ?? nothing}>
       ${avatar}
       <div class="chat-group-messages">
-        ${renderReplyAttribution(replyAttribution, opts)}
-        ${renderStreamGroupParts(parts, opts, "standalone")}
+        ${renderReplyLine(replyLine, opts)} ${renderStreamGroupParts(parts, opts, "standalone")}
       </div>
-      ${hasReplyConnector ? renderReplyConnector() : nothing}
+      ${renderReplyLineConnector(replyLine, avatar)}
       ${
         footerStartedAt === null
           ? nothing
