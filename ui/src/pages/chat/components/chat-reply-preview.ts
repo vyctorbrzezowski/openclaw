@@ -56,7 +56,14 @@ function projectResolvedReplyPreview(
   };
   const sourceMessageId = persistedId ?? replyToId;
   const isAssistant = normalizeRoleForGrouping(normalized.role) === "assistant";
-  const agentId = normalized.senderSession?.agentId ?? props.currentAgentId ?? DEFAULT_AGENT_ID;
+  // The quoted author's agent comes from its session provenance or its typed
+  // agent identity; only an original with neither is the viewing agent's own.
+  const senderIdentity = normalized.sender?.identity;
+  const agentId =
+    normalized.senderSession?.agentId ??
+    (senderIdentity?.type === "agent" ? senderIdentity.id : undefined) ??
+    props.currentAgentId ??
+    DEFAULT_AGENT_ID;
   const isCurrentAgent = agentId === (props.currentAgentId ?? DEFAULT_AGENT_ID);
   // Another agent's original is named by that agent, never by the viewing
   // agent's name; an agent without a display name leaves the author unknown.

@@ -202,6 +202,46 @@ describe("quoted agent identity", () => {
       const named = preview && "sender" in preview ? preview : undefined;
       expect(named?.senderLabel ?? undefined).toBe(name);
       expect(named?.sender?.name).toBe(name);
+      expect(named?.agentAvatar).toMatchObject({ id: "research" });
+    },
+  );
+
+  it.each([
+    {
+      agentId: "research",
+      roster: [{ id: "research", identity: { avatarUrl: "/avatars/research.png" } }],
+      expected: { id: "research", avatar: "/avatars/research.png", textAvatar: null },
+    },
+    {
+      agentId: "research",
+      roster: [],
+      expected: { id: "research", avatar: null, textAvatar: null },
+    },
+    {
+      agentId: "main",
+      roster: [],
+      expected: { id: "main", avatar: "/avatars/current.png", textAvatar: null },
+    },
+  ])(
+    "draws an agent-identity original without session provenance with its own avatar ($agentId, roster $roster.length)",
+    ({ agentId, roster, expected }) => {
+      const identity = { type: "agent", id: agentId } as const;
+      const source = {
+        role: "assistant",
+        content: "Findings",
+        __openclaw: { id: "agent-answer", senderId: agentId, senderIdentity: identity },
+      };
+      const resolve = createReplyPreviewResolver(new Map(), {
+        assistantName: "OpenClaw",
+        currentAgentId: "main",
+        assistantAvatarUrl: "/avatars/current.png",
+        agents: roster,
+        replyMessageAccess: { read: () => source },
+      });
+      expect(resolve("agent-answer")).toMatchObject({
+        sender: { identity },
+        agentAvatar: expected,
+      });
     },
   );
 });
